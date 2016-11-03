@@ -44,7 +44,6 @@ public final class RealCluster extends AbstractNodesGroup<RealCluster, SwarmNode
     @Builder
     RealCluster(DiscoveryStorageImpl storage, SwarmNodesGroupConfig config) {
         super(config, storage, Collections.singleton(Feature.SWARM));
-        getMapper().loadOrCreate();
     }
 
     public static ClusterConfigImpl getDefaultConfig(String clusterId) {
@@ -86,7 +85,12 @@ public final class RealCluster extends AbstractNodesGroup<RealCluster, SwarmNode
         return getClusterConfig().getStrategy();
     }
 
-    void init() {
+    protected void init() {
+        try {
+            getMapper().loadOrCreate();
+        } catch (Exception e) {
+            log.error("Can not load cluster from KV.", e);
+        }
         DockerServices dses = this.getDiscoveryStorage().getDockerServices();
         this.docker = dses.getOrCreateCluster(getClusterConfig(), (dsb) -> {
             dsb.setInfoInterceptor(this::dockerInfoModifier);

@@ -16,18 +16,20 @@
 
 package com.codeabovelab.dm.cluman.ds.clusters;
 
+import com.codeabovelab.dm.cluman.security.AclModifier;
+import com.codeabovelab.dm.cluman.security.SecuredType;
 import com.codeabovelab.dm.common.kv.mapping.KvMapper;
 import com.codeabovelab.dm.cluman.ds.nodes.NodeStorage;
 import com.codeabovelab.dm.cluman.model.NodesGroup;
 import com.codeabovelab.dm.common.security.acl.AclSource;
 import com.google.common.collect.ImmutableSet;
 import lombok.ToString;
+import org.springframework.security.acls.model.ObjectIdentity;
 import org.springframework.util.Assert;
 
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Set;
-import java.util.function.UnaryOperator;
 
 /**
  */
@@ -41,6 +43,7 @@ abstract class AbstractNodesGroup<T extends AbstractNodesGroup<T, C>, C extends 
     private volatile KvMapper<C> mapper;
     protected volatile C config;
     protected final Object lock = new Object();
+    private final ObjectIdentity oid;
 
     @SuppressWarnings("unchecked")
     public AbstractNodesGroup(C config,
@@ -52,8 +55,13 @@ abstract class AbstractNodesGroup<T extends AbstractNodesGroup<T, C>, C extends 
         String name = config.getName();
         Assert.notNull(name, "name is null");
         this.name = name;
+        this.oid = SecuredType.CLUSTER.id(name);
         this.features = features == null? Collections.emptySet() : ImmutableSet.copyOf(features);
         setConfig(config.clone());
+    }
+
+    protected void init() {
+        //none
     }
 
     @Override
@@ -147,14 +155,20 @@ abstract class AbstractNodesGroup<T extends AbstractNodesGroup<T, C>, C extends 
     }
 
     @Override
-    public void updateAcl(UnaryOperator<AclSource> operator) {
+    public void updateAcl(AclModifier operator) {
         KvMapper<C> mapper;
         synchronized (lock) {
             AclSource acl = this.config.getAcl();
-            AclSource modified = operator.apply(acl);
-            if(modified == acl) {
+            AclSource.Builder b = AclSource.builder().from(acl);
+            b.setObjectIdentity(oid);// it need for newly created acl
+            if(!operator.modify(b)) {
                 return;
             }
+            // we set true oid before modification for using in modifier, but not allow modifier to change it
+            if(!oid.equals(b.getObjectIdentity())) {
+                throw new IllegalArgumentException("Invalid oid of updated acl: " + b);
+            }
+            AclSource modified = b.build();
             onSet("acl", acl, modified);
             this.config.setAcl(modified);
             mapper = this.mapper;

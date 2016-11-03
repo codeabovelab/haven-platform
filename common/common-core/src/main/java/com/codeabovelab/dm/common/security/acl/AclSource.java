@@ -16,6 +16,7 @@
 
 package com.codeabovelab.dm.common.security.acl;
 
+import com.codeabovelab.dm.common.security.MultiTenancySupport;
 import com.codeabovelab.dm.common.security.dto.ObjectIdentityData;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
@@ -42,6 +43,9 @@ public class AclSource {
         private boolean entriesInheriting;
 
         public Builder from(AclSource acl) {
+            if(acl == null) {
+                return this;
+            }
             this.setEntries(acl.getEntries());
             this.setObjectIdentity(acl.getObjectIdentity());
             this.setOwner(acl.getOwner());
@@ -108,8 +112,8 @@ public class AclSource {
     protected AclSource(Builder b) {
         Assert.notNull(b.objectIdentity, "Object Identity required");
         Assert.notNull(b.owner, "Owner required");
-
         this.owner = b.owner;
+        Assert.notNull(MultiTenancySupport.getTenant(this.owner), "Tenant of owner is null");
         this.objectIdentity = b.objectIdentity;
         this.parentAcl = b.parentAcl;
         this.entriesInheriting = b.entriesInheriting;

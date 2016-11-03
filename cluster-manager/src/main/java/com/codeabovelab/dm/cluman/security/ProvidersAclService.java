@@ -65,7 +65,7 @@ public class ProvidersAclService extends AbstractAclService {
         return provider;
     }
 
-    public void updateAclSource(ObjectIdentity oid, UnaryOperator<AclSource> modifier) {
+    public void updateAclSource(ObjectIdentity oid, AclModifier modifier) {
         AclProvider provider = getAclProvider(oid);
         provider.update(oid.getIdentifier(), modifier);
     }

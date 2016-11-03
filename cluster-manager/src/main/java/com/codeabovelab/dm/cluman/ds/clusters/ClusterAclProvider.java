@@ -18,8 +18,8 @@ package com.codeabovelab.dm.cluman.ds.clusters;
 
 import com.codeabovelab.dm.cluman.model.DiscoveryStorage;
 import com.codeabovelab.dm.cluman.model.NodesGroup;
+import com.codeabovelab.dm.cluman.security.AclModifier;
 import com.codeabovelab.dm.cluman.security.AclProvider;
-import com.codeabovelab.dm.cluman.security.SecuredType;
 import com.codeabovelab.dm.common.security.acl.AclSource;
 import org.springframework.beans.factory.ObjectFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -27,7 +27,6 @@ import org.springframework.security.acls.model.NotFoundException;
 import org.springframework.stereotype.Component;
 
 import java.io.Serializable;
-import java.util.function.UnaryOperator;
 
 /**
  */
@@ -49,7 +48,7 @@ public class ClusterAclProvider implements AclProvider {
     }
 
     @Override
-    public void update(Serializable id, UnaryOperator<AclSource> operator) {
+    public void update(Serializable id, AclModifier operator) {
         DiscoveryStorage ds = discoveryStorage.getObject();
         NodesGroup cluster = ds.getCluster((String) id);
         if(cluster == null) {

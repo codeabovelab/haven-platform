@@ -21,13 +21,16 @@ import com.codeabovelab.dm.cluman.security.AbstractAclService;
 import com.codeabovelab.dm.cluman.security.AuthoritiesService;
 import com.codeabovelab.dm.cluman.security.ProvidersAclService;
 import com.codeabovelab.dm.cluman.security.SecuredType;
+import com.codeabovelab.dm.cluman.ui.model.UiAclUpdate;
 import com.codeabovelab.dm.cluman.ui.model.UiRole;
 import com.codeabovelab.dm.cluman.ui.model.UiUser;
 import com.codeabovelab.dm.cluman.users.UserRegistration;
 import com.codeabovelab.dm.cluman.users.UsersStorage;
 import com.codeabovelab.dm.cluman.validate.ExtendedAssert;
 import com.codeabovelab.dm.common.security.*;
+import com.codeabovelab.dm.common.security.acl.AceSource;
 import com.codeabovelab.dm.common.security.acl.AclSource;
+import com.codeabovelab.dm.common.utils.Sugar;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.acls.model.ObjectIdentity;
@@ -39,10 +42,8 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.List;
-import java.util.Objects;
+import java.io.Serializable;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
@@ -200,13 +201,49 @@ public class SecurityApi {
     }
 
     @RequestMapping(path = "/acl/{type}/{id}", method = RequestMethod.POST)
-    public void setAcl(@PathVariable("type") String type, @PathVariable("id") String id, @RequestBody AclSource aclSource) {
+    public void setAcl(@PathVariable("type") String type, @PathVariable("id") String id, @RequestBody UiAclUpdate aclSource) {
         SecuredType securedType = SecuredType.valueOf(type);
         ObjectIdentity oid = securedType.id(id);
         try {
             providersAclService.updateAclSource(oid, as -> {
-                //TODO now full update with skip all old data, but it wrong
-                return aclSource;
+                Sugar.setIfNotNull(as::setOwner, MultiTenancySupport.fixTenant(aclSource.getOwner()));
+                List<UiAclUpdate.UiAceUpdate> list = aclSource.getEntries();
+                Map<Object, UiAclUpdate.UiAceUpdate> entries = new HashMap<>();
+                list.forEach(l -> entries.put(l.getId(), l));
+                List<AceSource> existed = as.getEntries();
+                ListIterator<AceSource> iterator = existed.listIterator();
+                while(iterator.hasNext()) {
+                    AceSource ace = iterator.next();
+                    Serializable aceId = ace.getId();
+                    UiAclUpdate.UiAceUpdate entry = entries.remove(aceId);
+                    if(entry == null) {
+                        continue;
+                    }
+                    if(entry.isDelete()) {
+                        iterator.remove();
+                        continue;
+                    }
+                    AceSource.Builder b = AceSource.builder().from(ace);
+                    b.setId(aceId);
+                    Sugar.setIfNotNull(b::setAuditFailure, entry.getAuditFailure());
+                    Sugar.setIfNotNull(b::setAuditSuccess, entry.getAuditSuccess());
+                    Sugar.setIfNotNull(b::setSid, entry.getSid());
+                    Sugar.setIfNotNull(b::setGranting, entry.getGranting());
+                    Sugar.setIfNotNull(b::setPermission, entry.getPermission());
+                    iterator.set(b.build());
+                }
+                //add that is not existed
+                entries.forEach((aceId, entry) -> {
+                    AceSource.Builder b = AceSource.builder();
+                    b.setId((Serializable) aceId);
+                    b.setAuditFailure(entry.getAuditFailure());
+                    b.setAuditSuccess(entry.getAuditSuccess());
+                    b.setSid(entry.getSid());
+                    b.setGranting(entry.getGranting());
+                    b.setPermission(entry.getPermission());
+                    as.addEntry(b.build());
+                });
+                return true;
             });
         } catch (org.springframework.security.acls.model.NotFoundException e) {
             throw new NotFoundException(e);

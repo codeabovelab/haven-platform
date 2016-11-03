@@ -16,6 +16,13 @@
 
 package com.codeabovelab.dm.common.security;
 
+import com.codeabovelab.dm.common.security.acl.TenantSid;
+import org.springframework.security.acls.domain.GrantedAuthoritySid;
+import org.springframework.security.acls.domain.PrincipalSid;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.context.SecurityContextHolder;
+
 /**
  * Some constants methods and constants for multi tenancy support
  */
@@ -39,4 +46,31 @@ public class MultiTenancySupport {
         return NO_TENANT;
     }
 
+    /**
+     * Fix null tenant for principals and validate.
+     * @param sid
+     * @param <T>
+     * @return
+     */
+    @SuppressWarnings("unchecked")
+    public static <T extends TenantSid> T fixTenant(T sid) {
+        final String tenant = sid.getTenant();
+        if(sid instanceof GrantedAuthoritySid && tenant == null) {
+            return sid;
+        }
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        ExtendedUserDetails eud = (ExtendedUserDetails) auth.getPrincipal();
+        final String authTenant = eud.getTenant();
+        if(authTenant.equals(tenant)) {
+            return sid;
+        }
+        if(tenant == null) {
+            return (T) TenantPrincipalSid.from((PrincipalSid) sid);
+        }
+        if(!ROOT_TENANT.equals(authTenant)) {
+            // we must check tenancy access through TenantHierarchy, but now we does not have any full tenancy support
+            throw new IllegalArgumentException("Sid " + sid + " has incorrect tenant: " + tenant + " it allow only for root tenant.");
+        }
+        return sid;
+    }
 }

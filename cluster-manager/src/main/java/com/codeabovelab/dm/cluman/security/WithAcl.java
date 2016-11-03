@@ -18,8 +18,6 @@ package com.codeabovelab.dm.cluman.security;
 
 import com.codeabovelab.dm.common.security.acl.AclSource;
 
-import java.util.function.UnaryOperator;
-
 /**
  */
 public interface WithAcl {
@@ -29,5 +27,5 @@ public interface WithAcl {
      * Do not place time consumption ops here.
      * @param operator
      */
-    void updateAcl(UnaryOperator<AclSource> operator);
+    void updateAcl(AclModifier operator);
 }

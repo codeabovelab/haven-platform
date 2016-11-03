@@ -16,11 +16,13 @@
 
 package com.codeabovelab.dm.common.security.acl;
 
+import com.codeabovelab.dm.common.security.MultiTenancySupport;
 import com.codeabovelab.dm.common.security.dto.PermissionData;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import lombok.Data;
+import org.springframework.security.acls.domain.PrincipalSid;
 import org.springframework.security.acls.model.*;
 import org.springframework.util.Assert;
 
@@ -125,6 +127,7 @@ public class AceSource implements AuditableAccessControlEntry {
         Assert.notNull(b.permission, "Permission required");
         this.id = b.id;
         this.sid = b.sid;
+        Assert.notNull(MultiTenancySupport.getTenant(this.sid), "Tenant of sid is null");
         this.permission = b.permission;
         this.granting = b.granting;
         this.auditSuccess = b.auditSuccess;

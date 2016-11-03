@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *      http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -18,13 +18,13 @@ package com.codeabovelab.dm.cluman.security;
 
 import com.codeabovelab.dm.common.security.acl.AclSource;
 
-import java.io.Serializable;
-
 /**
- * Provide acl source for specified object id.
  */
-public interface AclProvider {
-    AclSource provide(Serializable id);
-
-    void update(Serializable id, AclModifier operator);
+public interface AclModifier {
+    /**
+     * Modify builder.
+     * @param builder
+     * @return true if builder is modified
+     */
+    boolean modify(AclSource.Builder builder);
 }
