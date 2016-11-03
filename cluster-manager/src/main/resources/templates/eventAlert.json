@@ -1,0 +1,12 @@
+{
+  "templateEngine": "spel",
+  "headSource": {
+    "subject": "DockMaster ${severity} from: '${eventSource}'.",
+    "to": ["${to}"],
+    "from": "${from}"
+  },
+  "bodySource": {
+    "mime": "text/plain",
+    "data": "Dear ${to}.\n${severity} from '${eventSource}':\n${eventText}"
+  }
+}

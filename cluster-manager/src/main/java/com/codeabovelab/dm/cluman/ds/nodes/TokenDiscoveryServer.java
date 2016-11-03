@@ -1,0 +1,105 @@
+/*
+ * Copyright 2016 Code Above Lab LLC
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package com.codeabovelab.dm.cluman.ds.nodes;
+
+import com.codeabovelab.dm.cluman.model.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+import java.time.LocalDateTime;
+import java.util.Map;
+
+import static org.springframework.util.MimeTypeUtils.APPLICATION_JSON_VALUE;
+import static org.springframework.util.MimeTypeUtils.TEXT_PLAIN_VALUE;
+import static org.springframework.web.bind.annotation.RequestMethod.POST;
+
+
+/**
+ * REST Service for swarm clients (Swarm discovery hub service)
+ */
+@RestController
+@RequestMapping({"/swarm_token_discovery" /*deprecated*/, "/discovery"})
+public class TokenDiscoveryServer {
+
+    private static final Logger LOG = LoggerFactory.getLogger(TokenDiscoveryServer.class);
+
+    private final NodeStorage storage;
+
+    @Autowired
+    public TokenDiscoveryServer(NodeStorage storage) {
+        this.storage = storage;
+    }
+
+    @RequestMapping(value = "/nodes/{name}", method = POST, consumes = {TEXT_PLAIN_VALUE, APPLICATION_JSON_VALUE})
+    public ResponseEntity<String> registerNodeFromAgent(@RequestBody NodeAgentData data,
+                             @PathVariable("name") String name,
+                             @RequestParam("ttl") int ttl) {
+        NodeInfoImpl.Builder builder = NodeInfoImpl.builder()
+          .from(data)
+          .name(name);
+        builder.health(createNodeHealth(data));
+        NodeInfo node = builder.build();
+        storage.updateNode(NodeUpdate.builder().node(node).build(), ttl);
+        LOG.info("Update node {}", node.getName());
+        return new ResponseEntity<>(HttpStatus.OK);
+    }
+
+    private NodeMetrics createNodeHealth(NodeAgentData nad) {
+        NodeAgentData.SystemStatus system = nad.getSystem();
+        NodeMetrics.Builder nhb = NodeMetrics.builder();
+        nhb.setTime(nad.getTime());
+        if(system != null) {
+            NodeAgentData.Tau mem = system.getMemory();
+            if(mem != null) {
+                nhb.setSysMemAvail(mem.getAvailable());
+                nhb.setSysMemTotal(mem.getTotal());
+                nhb.setSysMemUsed(mem.getUsed());
+            }
+            Map<String, NodeAgentData.Tu> disks = system.getDisks();
+            if(disks != null) {
+                for(Map.Entry<String, NodeAgentData.Tu> disk: disks.entrySet()) {
+                    NodeAgentData.Tu value = disk.getValue();
+                    if(value == null) {
+                        continue;
+                    }
+                    long used = value.getUsed();
+                    nhb.addDisk(new DiskInfo(disk.getKey(), used, value.getTotal()));
+                }
+            }
+            Map<String, NodeAgentData.Nic> net = system.getNet();
+            if(net != null) {
+                for(Map.Entry<String, NodeAgentData.Nic> nic: net.entrySet()) {
+                    if(nic == null) {
+                        continue;
+                    }
+                    NodeAgentData.Nic nicValue = nic.getValue();
+                    NetIfaceCounter counter = new NetIfaceCounter(nic.getKey(), nicValue.getBytesIn(), nicValue.getBytesOut());
+                    nhb.addNet(counter);
+                }
+            }
+            nhb.setSysCpuLoad(system.getCpuLoad());
+        }
+
+        //we can resolve healthy through analysis of disk and mem availability
+        nhb.setHealthy(true);
+        return nhb.build();
+    }
+}

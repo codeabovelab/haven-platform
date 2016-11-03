@@ -1,0 +1,8 @@
+{
+  "templateEngine": "spel",
+  "headSource": {
+    "subject": "Welcome, dear ${user.name}!",
+    "to": ["${user.email}"],
+    "from": "src@src.src"
+  }
+}

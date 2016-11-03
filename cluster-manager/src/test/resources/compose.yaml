@@ -1,0 +1,157 @@
+messaging-gateway:
+  image: registry.slidepresenter.com:5000/gateway-http:0.0.13
+  ports:
+    8001: 8080
+  links:
+    rabbitmq: rabbitmq
+  env_file: ./env/spring-amqp.env
+  restart: always
+  mem_limit: 384m
+
+event-store:
+  image: registry.slidepresenter.com:5000/eventstore-service:0.0.7
+  ports:
+    8002: 8080
+  links:
+    rabbitmq: rabbitmq
+    event-store-mysql: mysql
+  environment:
+    SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/eventstore
+    SPRING_PROFILES_ACTIVE: jpa
+  restart: always
+  mem_limit: 768m
+
+event-store-mysql:
+  image: tutum/mysql:5.6
+  env_file: ./env/mysql.env
+  environment:
+    ON_CREATE_DB: eventstore
+  ports:
+    13306: 3306
+  volumes:
+    /opt/docker/event-store-mysql: /var/lib/mysql
+
+logging-gateway:
+  image: registry.slidepresenter.com:5000/logging-gateway:0.0.2
+  ports:
+    8006: 8080
+  links:
+    rabbitmq: rabbitmq
+  environment:
+    LOGGING_APPENDER_AMQP_ENABLED: false
+  restart: always
+  mem_limit: 256m
+
+direct-recorder:
+  image: registry.slidepresenter.com:5000/sp-directrecorder-api:1.0.7
+  ports:
+    8005: 9000
+  environment:
+    PROFILE: prod
+  volumes:
+    /tmp: /tmp
+  restart: always
+
+videoeditor-rest:
+  image: registry.slidepresenter.com:5000/videoeditor-rest:0.0.6
+  links:
+    rabbitmq: rabbitmq
+    videoeditor-mysql: mysql
+  ports:
+    8003: 8080
+  restart: always
+  volumes:
+    home/slidepresenter/platform/application/storage/files/: /files/
+    /tmp/: /tmp/
+    /etc/localtime: /etc/localtime:ro
+  restart: always
+  mem_limit: 768m
+
+videoeditor-worker:
+  image: registry.slidepresenter.com:5000/videoeditor-worker:0.0.6
+  links:
+    rabbitmq: rabbitmq
+  environment:
+    SPRING_PROFILES_ACTIVE: prod
+    APPLICATION_FFMPEG_PATH: /usr/bin/ffmpeg
+    APPLICATION_FFPROBE_PATH: /usr/bin/ffprobe
+  volumes:
+    /home/slidepresenter/platform/application/storage/files/: /files/
+    /tmp/: /tmp/
+  restart: always
+  mem_limit: 3G
+
+videoeditor-mysql:
+  image: tutum/mysql:5.6
+  ports:
+    13308: 3306
+  environment:
+    ON_CREATE_DB: videoeditor
+  volumes:
+    /opt/docker/videoeditor-mysql: /var/lib/mysql
+
+quizzes:
+  image: registry.slidepresenter.com:5000/sp-quiz-api:1.0.5
+  ports:
+    8004: 9000
+  links:
+    quizzes-mysql: mysql
+    logging-gateway: logging-gateway
+  environment:
+    DATABASE_HOST: mysql
+    DATABASE_NAME: quizzes
+  restart: always
+
+quizzes-mysql:
+  image: tutum/mysql:5.6
+  ports:
+    13307: 3306
+  env_file: ./env/mysql.env
+  environment:
+    ON_CREATE_DB: quizzes
+  restart: always
+  mem_limit: 384m
+  volumes:
+    /opt/docker/quizzes-mysql: /var/lib/mysql
+
+#    RABBITMQ
+rabbitmq:
+  image: rabbitmq:3.5.6-management
+  ports:
+    15672: 15672
+  volumes:
+      /opt/docker/rabbitmq: /var/lib/rabbitmq
+
+# LOGGING
+elasticsearch:
+  image: elasticsearch:2.1.0
+  environment:
+    ES_HEAP_SIZE: 512m
+  volumes:
+    /opt/docker/elasticsearch/data: /usr/share/elasticsearch/data
+    /opt/docker/elasticsearch/logs: /usr/share/elasticsearch/logs
+  mem_limit: 768m
+  cpu_shares: 128
+  restart: always
+
+logstash:
+  image: registry.slidepresenter.com:5000/logstash:2.1.1-1
+  links:
+    elasticsearch: elasticsearch
+    rabbitmq: rabbitmq
+  ports:
+    2004: 2004
+  volumes:
+    ./config/logstash/logstash.conf: /etc/logstash/logstash.conf
+  environment:
+    ENVIRONMENT: PROD
+  mem_limit: 384m
+  cpu_shares: 64
+
+kibana:
+  image: kibana:4.3.0
+  volumes:
+    ./config/kibana: /opt/kibana/config
+  ports:
+    7001: 5601
+  mem_limit: 384m

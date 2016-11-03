@@ -1,0 +1,22 @@
+dm:
+  config:
+    git:
+      enabled: true
+      uri: https://github.com/codeabovelab/dockmaster-example-configuration.git
+      username: null
+      password: null
+spring:
+  application:
+    name: cluster-manager
+
+  cloud:
+    config:
+      server:
+        bootstrap: ${dm.config.git.enabled}
+        prefix: /config
+        git:
+          uri: ${dm.config.git.uri}
+          username: ${dm.config.git.username}
+          password: ${dm.config.git.password}
+
+

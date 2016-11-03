@@ -1,0 +1,4 @@
+<h1> Welcome dear ${user.name}! </h1>
+
+Full name: ${user.name} ${user.surname} ${user.patronymic} <br/>
+Email: ${user.email}

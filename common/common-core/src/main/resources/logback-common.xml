@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<included>
+
+    <property name="PATH" value="./log"/>
+    <property name="ENCODER_PATTERN" value="%d{HH:mm:ss.SSS} [%thread] %-5level %logger{5} - %msg%n" />
+    <property name="ROLLING_PATTERN" value="%d{yyyy-MM-dd}.log.zip" />
+
+    <appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${PATH}/${HOSTNAME}.log</file>
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <fileNamePattern>${PATH}/${HOSTNAME}_${ROLLING_PATTERN}.log</fileNamePattern>
+            <maxHistory>10</maxHistory>
+        </rollingPolicy>
+        <append>true</append>
+        <encoder>
+            <pattern>${ENCODER_PATTERN}</pattern>
+            <charset>UTF-8</charset>
+            <immediateFlush>false</immediateFlush>
+        </encoder>
+    </appender>
+
+    <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>${ENCODER_PATTERN}</pattern>
+        </encoder>
+    </appender>
+
+    <!--default level is warn can be overridden in logback.xml-->
+    <root level="WARN">
+        <appender-ref ref="STDOUT"/>
+        <appender-ref ref="FILE"/>
+    </root>
+
+</included>

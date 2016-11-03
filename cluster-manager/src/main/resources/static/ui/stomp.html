@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test page for web socket</title>
+    <!-- we do not known anything about security of below cdn therefore cannot use it in production-->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/sockjs-client/1.0.3/sockjs.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/stomp.js/2.3.3/stomp.js"></script>
+    <script type="text/javascript">
+        var stompClient = null;
+
+        function setConnected(connected) {
+            document.getElementById('connect').disabled = connected;
+            document.getElementById('disconnect').disabled = !connected;
+
+            document.getElementById('response').innerHTML = '';
+        }
+
+        function connect() {
+            var socket = new SockJS('/ui/stomp');
+            stompClient = Stomp.over(socket);
+            stompClient.connect({}, function(frame) {
+                setConnected(true);
+                console.log('Connected: ' + frame);
+                /*stompClient.subscribe('/topic/**', function(msg){
+                    showGreeting("TOPIC: " + msg.body);
+                });*/
+                subscription = stompClient.subscribe('/user/queue/*', function(msg){
+                    showGreeting("USER QUEUE: " + msg.body);
+                });
+                stompClient.subscribe('/user/queue/subscriptions/get', msg => loadInSelect("subsList", JSON.parse(msg.body)));
+                stompClient.subscribe('/user/queue/subscriptions/available', msg => loadInSelect("availList", JSON.parse(msg.body)));
+
+                requestAvailable();
+            });
+        }
+
+        function disconnect() {
+            stompClient.disconnect();
+            setConnected(false);
+            console.log("Disconnected");
+        }
+
+        function loadInSelect(id, list) {
+            var s = document.getElementById(id);
+            var len = s.length;
+            while(len > 0) {
+                s.remove(--len);
+            }
+            list.forEach(i => {
+                var opt = document.createElement('option');
+                opt.appendChild(document.createTextNode(i));
+                s.add(opt);
+            })
+        }
+
+        function showGreeting(message) {
+            var response = document.getElementById('response');
+            var p = document.createElement('p');
+            p.appendChild(document.createTextNode(message));
+            response.insertBefore(p, response.firstChild);
+        }
+
+        function sendSelected(selectId, dest, proc) {
+            var s = document.getElementById(selectId);
+            var len = s.selectedOptions.length;
+            if(len == 0) {
+                return;
+            }
+            var arr = new Array(len);
+            for(var i = 0; i < len; ++i) {
+                var item = s.selectedOptions[i].value;
+                if(proc) {
+                    item = proc(item)
+                }
+                arr[i] = item;
+            }
+            stompClient.send(dest, {}, JSON.stringify(arr));
+        }
+
+        function subscribeOnSelected() {
+            sendSelected('availList', '/app/subscriptions/add', function (id) {
+                //new way, use com.codeabovelab.dm.cluman.ui.msg.UiAddSubscription
+                // old way (simple string) also supported but deprecated
+                var yesterday = new Date();
+                yesterday.setDate(yesterday.getDate() - 1);
+                return {
+                    source: id,
+                    historyCount: 7,
+                    historySince: yesterday
+                };
+            });
+        }
+
+        function unsubscribeOnSelected() {
+            sendSelected('subsList', '/app/subscriptions/del');
+        }
+
+        function requestAvailable() {
+            stompClient.send('/app/subscriptions/available');
+        }
+    </script>
+    <style type="text/css">
+        #response > p {
+            word-wrap: break-word;
+            font-family: monospace;
+            border-bottom: 1px solid black;
+
+        }
+
+        select {
+            min-width: 10em;
+            width: auto;
+            display: block;
+            height: 10em
+        }
+
+        .block {
+            display: inline-block;
+        }
+    </style>
+</head>
+<body onload="connect()">
+<noscript><h2 style="color: #ff0000">Seems your browser doesn't support Javascript! Websocket relies on Javascript being enabled. Please enable
+    Javascript and reload this page!</h2></noscript>
+<div>
+    <div>
+        <div class="block">
+            <button id="connect" onclick="connect();">Connect</button> <br/>
+            <button id="disconnect" disabled="disabled" onclick="disconnect();">Disconnect</button>
+        </div>
+        <div class="block">
+            <label>Subscriptions</label><select multiple size="10" id="subsList"></select>
+            <button onclick="stompClient.send('/app/subscriptions/get');">Refresh subs</button>
+            <button onclick="unsubscribeOnSelected()">Delete subs</button>
+        </div>
+        <div class="block">
+            <label>Available subs</label><select multiple size="10" id="availList"></select>
+            <button onclick="requestAvailable()">Refresh avail</button>
+            <button onclick="subscribeOnSelected()">Subscribe</button>
+        </div>
+    </div>
+    <div id="conversationDiv">
+        <p id="response"></p>
+    </div>
+</div>
+</body>
+</html>

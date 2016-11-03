@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <artifactId>common</artifactId>
+    <name>Common libraries for DockerMsster</name>
+
+    <parent>
+        <groupId>com.codeabovelab.dm</groupId>
+        <artifactId>dm-parent</artifactId>
+        <version>1.0.231-SNAPSHOT</version>
+    </parent>
+    <packaging>pom</packaging>
+    <modules>
+        <module>gateway-balancer-common</module>
+        <module>common-core</module>
+        <module>common-utils</module>
+        <module>gateway-common</module>
+        <module>platform-common</module>
+        <module>mail</module>
+        <module>filestorage</module>
+        <module>filestorage-dto</module>
+        <!--<module>security</module>-->
+    </modules>
+</project>

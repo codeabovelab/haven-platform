@@ -1,0 +1,11 @@
+spring:
+  application:
+    name: dm-balancer-web
+
+
+  cloud:
+    config:
+      env: default
+      label: master
+      uri: http://configuration-server:8900
+
