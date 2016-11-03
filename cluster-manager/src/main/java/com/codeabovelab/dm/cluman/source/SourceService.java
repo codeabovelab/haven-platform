@@ -16,7 +16,6 @@
 
 package com.codeabovelab.dm.cluman.source;
 
-import com.codeabovelab.dm.cluman.ContainerUtils;
 import com.codeabovelab.dm.cluman.cluster.docker.management.DockerService;
 import com.codeabovelab.dm.cluman.cluster.docker.management.argument.GetContainersArg;
 import com.codeabovelab.dm.cluman.cluster.docker.model.*;
@@ -29,7 +28,6 @@ import com.codeabovelab.dm.cluman.job.JobsManager;
 import com.codeabovelab.dm.cluman.model.*;
 import com.codeabovelab.dm.common.utils.Joiner;
 import com.codeabovelab.dm.common.utils.Throwables;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.AllArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;

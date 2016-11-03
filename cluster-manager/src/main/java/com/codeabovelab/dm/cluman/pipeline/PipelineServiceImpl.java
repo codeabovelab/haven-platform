@@ -16,7 +16,7 @@
 
 package com.codeabovelab.dm.cluman.pipeline;
 
-import com.codeabovelab.dm.cluman.ContainerUtils;
+import com.codeabovelab.dm.cluman.utils.ContainerUtils;
 import com.codeabovelab.dm.cluman.batch.LoadContainersOfImageTasklet;
 import com.codeabovelab.dm.cluman.cluster.docker.management.DockerService;
 import com.codeabovelab.dm.cluman.cluster.docker.management.argument.CreateContainerArg;

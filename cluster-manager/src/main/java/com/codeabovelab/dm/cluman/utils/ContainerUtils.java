@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.codeabovelab.dm.cluman;
+package com.codeabovelab.dm.cluman.utils;
 
 import com.codeabovelab.dm.cluman.model.ContainerBaseIface;
 import com.codeabovelab.dm.cluman.model.ImageName;
@@ -183,6 +183,7 @@ public final class ContainerUtils {
         return image.substring(0, i + 1) + version;
     }
 
+    @Deprecated
     public static Long parseMemorySettings(String memory) {
         if (!StringUtils.hasText(memory)) {
             return null;

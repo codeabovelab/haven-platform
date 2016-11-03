@@ -16,7 +16,7 @@
 
 package com.codeabovelab.dm.cluman.ui.model;
 
-import com.codeabovelab.dm.cluman.ContainerUtils;
+import com.codeabovelab.dm.cluman.utils.ContainerUtils;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 

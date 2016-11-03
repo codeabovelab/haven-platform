@@ -16,7 +16,7 @@
 
 package com.codeabovelab.dm.cluman.source;
 
-import com.codeabovelab.dm.cluman.ContainerUtils;
+import com.codeabovelab.dm.cluman.utils.ContainerUtils;
 import com.codeabovelab.dm.cluman.cluster.docker.model.*;
 import com.codeabovelab.dm.cluman.ds.SwarmUtils;
 import com.codeabovelab.dm.cluman.model.ContainerSource;

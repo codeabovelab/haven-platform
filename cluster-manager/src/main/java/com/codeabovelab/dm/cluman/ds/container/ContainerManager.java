@@ -16,7 +16,7 @@
 
 package com.codeabovelab.dm.cluman.ds.container;
 
-import com.codeabovelab.dm.cluman.ContainerUtils;
+import com.codeabovelab.dm.cluman.utils.ContainerUtils;
 import com.codeabovelab.dm.cluman.cluster.docker.management.DockerService;
 import com.codeabovelab.dm.cluman.cluster.docker.management.DockerServiceImpl;
 import com.codeabovelab.dm.cluman.cluster.docker.management.DockerUtils;

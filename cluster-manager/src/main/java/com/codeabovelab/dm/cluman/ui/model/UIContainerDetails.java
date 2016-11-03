@@ -16,7 +16,6 @@
 
 package com.codeabovelab.dm.cluman.ui.model;
 
-import com.codeabovelab.dm.cluman.ContainerUtils;
 import com.codeabovelab.dm.cluman.cluster.docker.model.ContainerDetails;
 import com.codeabovelab.dm.cluman.cluster.docker.model.ContainerState;
 import com.codeabovelab.dm.cluman.model.ContainerSource;
