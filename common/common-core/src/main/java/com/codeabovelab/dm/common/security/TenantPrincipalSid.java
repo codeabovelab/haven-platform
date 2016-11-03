@@ -16,8 +16,10 @@
 
 package com.codeabovelab.dm.common.security;
 
+import com.codeabovelab.dm.common.security.acl.TenantSid;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonTypeName;
 import org.springframework.security.acls.domain.PrincipalSid;
 import org.springframework.security.acls.model.Sid;
 import org.springframework.security.core.Authentication;
@@ -26,7 +28,8 @@ import org.springframework.security.core.userdetails.UserDetails;
 /**
  * {@link PrincipalSid} extension which implement {@link com.codeabovelab.dm.common.security.OwnedByTenant }
  */
-public class TenantPrincipalSid extends PrincipalSid implements OwnedByTenant {
+@JsonTypeName("PRINCIPAL")
+public class TenantPrincipalSid extends PrincipalSid implements TenantSid {
     private final String tenantId;
 
     @JsonCreator
@@ -78,5 +81,9 @@ public class TenantPrincipalSid extends PrincipalSid implements OwnedByTenant {
      */
     public static TenantPrincipalSid from(UserDetails userDetails) {
         return new TenantPrincipalSid(userDetails.getUsername(), MultiTenancySupport.getTenant(userDetails));
+    }
+
+    public static TenantPrincipalSid from(PrincipalSid sid) {
+        return new TenantPrincipalSid(sid.getPrincipal(), MultiTenancySupport.getTenant(sid));
     }
 }

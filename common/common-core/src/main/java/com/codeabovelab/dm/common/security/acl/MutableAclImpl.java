@@ -16,6 +16,7 @@
 
 package com.codeabovelab.dm.common.security.acl;
 
+import com.codeabovelab.dm.common.security.dto.PermissionData;
 import org.springframework.security.acls.domain.AclAuthorizationStrategy;
 import org.springframework.security.acls.domain.DefaultPermissionGrantingStrategy;
 import org.springframework.security.acls.model.*;
@@ -238,7 +239,7 @@ public class MutableAclImpl implements Acl, MutableAcl, AuditableAcl, OwnershipA
 
         AccessControlEntryImpl ace = new AccessControlEntryImpl.Builder()
                 .acl(this)
-                .sid(sid)
+                .sid(TenantSid.from(sid))
                 .permission(permission)
                 .granting(granting).build();
 

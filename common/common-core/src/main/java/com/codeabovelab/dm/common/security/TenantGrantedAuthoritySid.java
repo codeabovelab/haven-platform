@@ -16,8 +16,10 @@
 
 package com.codeabovelab.dm.common.security;
 
+import com.codeabovelab.dm.common.security.acl.TenantSid;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonTypeName;
 import org.springframework.security.acls.domain.GrantedAuthoritySid;
 import org.springframework.security.core.GrantedAuthority;
 
@@ -26,7 +28,8 @@ import java.util.Objects;
 /**
  * a {@link GrantedAuthoritySid } extension which implement {@link com.codeabovelab.dm.common.security.OwnedByTenant }
  */
-public class TenantGrantedAuthoritySid extends GrantedAuthoritySid implements OwnedByTenant {
+@JsonTypeName("GRANTED_AUTHORITY")
+public class TenantGrantedAuthoritySid extends GrantedAuthoritySid implements TenantSid {
 
     private final String tenant;
 
@@ -77,5 +80,9 @@ public class TenantGrantedAuthoritySid extends GrantedAuthoritySid implements Ow
     @Override
     public String toString() {
         return "TenantGrantedAuthoritySid[" + getGrantedAuthority() + ":" + tenant + ']';
+    }
+
+    public static TenantGrantedAuthoritySid from(GrantedAuthoritySid sid) {
+        return new TenantGrantedAuthoritySid(sid.getGrantedAuthority(), MultiTenancySupport.getTenant(sid));
     }
 }

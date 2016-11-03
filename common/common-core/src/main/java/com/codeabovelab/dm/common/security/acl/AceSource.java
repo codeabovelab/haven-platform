@@ -16,6 +16,10 @@
 
 package com.codeabovelab.dm.common.security.acl;
 
+import com.codeabovelab.dm.common.security.dto.PermissionData;
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import lombok.Data;
 import org.springframework.security.acls.model.*;
 import org.springframework.util.Assert;
@@ -37,11 +41,12 @@ public class AceSource implements AuditableAccessControlEntry {
     }
 
     @Data
+    @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, defaultImpl = Builder.class)
     public abstract static class AbstractBuilder<T> implements AuditableAccessControlEntry {
         protected Serializable id;
-        protected Sid sid;
+        protected TenantSid sid;
         protected boolean granting;
-        protected Permission permission;
+        protected PermissionData permission;
         protected boolean auditFailure = false;
         protected boolean auditSuccess = false;
 
@@ -55,7 +60,7 @@ public class AceSource implements AuditableAccessControlEntry {
             return thiz();
         }
 
-        public T sid(Sid sid) {
+        public T sid(TenantSid sid) {
             setSid(sid);
             return thiz();
         }
@@ -66,7 +71,7 @@ public class AceSource implements AuditableAccessControlEntry {
         }
 
         public T permission(Permission permission) {
-            setPermission(permission);
+            setPermission(PermissionData.from(permission));
             return thiz();
         }
 
@@ -93,9 +98,9 @@ public class AceSource implements AuditableAccessControlEntry {
          */
         public T from(AccessControlEntry entry) {
             this.id = entry.getId();
-            this.sid = entry.getSid();
+            this.sid = TenantSid.from(entry.getSid());
             this.granting = entry.isGranting();
-            this.permission = entry.getPermission();
+            this.permission = PermissionData.from(entry.getPermission());
             if(entry instanceof AuditableAccessControlEntry) {
                 AuditableAccessControlEntry ae = (AuditableAccessControlEntry) entry;
                 this.auditFailure = ae.isAuditFailure();
@@ -108,12 +113,13 @@ public class AceSource implements AuditableAccessControlEntry {
     }
 
     protected final Serializable id;
-    protected final Sid sid;
+    protected final TenantSid sid;
     protected final boolean granting;
-    protected final Permission permission;
+    protected final PermissionData permission;
     protected final boolean auditFailure;
     protected final boolean auditSuccess;
 
+    @JsonCreator
     protected AceSource(AbstractBuilder<?> b) {
         Assert.notNull(b.sid, "Sid required");
         Assert.notNull(b.permission, "Permission required");
@@ -129,6 +135,7 @@ public class AceSource implements AuditableAccessControlEntry {
         return new Builder();
     }
 
+    @JsonIgnore
     @Override
     public Acl getAcl() {
         //as planned

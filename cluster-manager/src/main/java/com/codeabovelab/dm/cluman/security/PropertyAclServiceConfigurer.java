@@ -22,6 +22,7 @@ import com.codeabovelab.dm.common.security.TenantPrincipalSid;
 import com.codeabovelab.dm.common.security.acl.AceSource;
 import com.codeabovelab.dm.common.security.acl.AclSource;
 import com.codeabovelab.dm.common.security.acl.AclUtils;
+import com.codeabovelab.dm.common.security.acl.TenantSid;
 import com.google.common.base.Splitter;
 import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;
@@ -101,7 +102,7 @@ public class PropertyAclServiceConfigurer implements AclServiceConfigurer {
             throw new IllegalArgumentException("rule: " + token + " must start with 'grant' or 'revoke'");
         }
         try {
-            Sid sid = parseSid(it.next());
+            TenantSid sid = parseSid(it.next());
             asb.sid(sid);
         } catch (Exception e) {
             throw new IllegalArgumentException("rule: " + token + " contains invalid sid", e);
@@ -141,7 +142,7 @@ public class PropertyAclServiceConfigurer implements AclServiceConfigurer {
         return perm;
     }
 
-    private static Sid parseSid(String token) {
+    private static TenantSid parseSid(String token) {
         String[] arr = StringUtils.split(token, "@");
         if(arr == null) {
             throw new IllegalArgumentException("Can not parse sid: " + token + " expect something like 'text@text'");

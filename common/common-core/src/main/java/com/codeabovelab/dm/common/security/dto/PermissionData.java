@@ -16,8 +16,10 @@
 
 package com.codeabovelab.dm.common.security.dto;
 
+import com.codeabovelab.dm.common.security.Action;
 import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonValue;
 import org.springframework.security.acls.domain.AclFormattingUtils;
 import org.springframework.security.acls.model.Permission;
 
@@ -38,7 +40,7 @@ public class PermissionData implements Permission {
 
         @Override
         public String getPattern() {
-            return null;
+            return pattern;
         }
 
 
@@ -88,14 +90,37 @@ public class PermissionData implements Permission {
         }
     }
 
+    private final String expression;
     private final String pattern;
     private final int mask;
 
     @JsonCreator
-    public PermissionData(@JsonProperty("pattern") String pattern,
-                          @JsonProperty("mask") int mask) {
-        this.pattern = pattern;
+    public static PermissionData fromString(String expression) {
+        int mask = 0;
+        for(int i = 0; i < expression.length(); ++i) {
+            char c = expression.charAt(i);
+            Action action = Action.fromLetter(c);
+            if(action == null) {
+                throw new IllegalArgumentException("Unknown action letter: " + c + " in permission expression: " + expression);
+            }
+            mask |= action.getMask();
+        }
+        return new PermissionData(null, mask);
+    }
+
+    public PermissionData(String pattern,
+                          int mask) {
         this.mask = mask;
+        this.pattern = pattern != null? pattern : AclFormattingUtils.printBinary(mask);
+
+        Action[] values = Action.values();
+        StringBuilder sb = new StringBuilder(values.length);
+        for(Action a : values) {
+            if((a.getMask() & this.mask) != 0) {
+                sb.append(a.getLetter());
+            }
+        }
+        this.expression = sb.toString();
     }
 
     public static PermissionData from(Permission permission) {
@@ -109,6 +134,7 @@ public class PermissionData implements Permission {
         return new Builder();
     }
 
+    @JsonIgnore
     @Override
     public String getPattern() {
         return this.pattern;
@@ -119,8 +145,14 @@ public class PermissionData implements Permission {
         return mask;
     }
 
+    @JsonValue
+    public String getExpression() {
+        return expression;
+    }
+
+
     public final String toString() {
-        return this.getClass().getSimpleName() + "[" + getPattern() + "=" + mask + "]";
+        return getExpression();
     }
 
     public final boolean equals(Object obj) {

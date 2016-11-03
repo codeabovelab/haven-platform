@@ -16,6 +16,9 @@
 
 package com.codeabovelab.dm.common.security.acl;
 
+import com.codeabovelab.dm.common.security.dto.ObjectIdentityData;
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.google.common.collect.ImmutableList;
 import lombok.Data;
 import org.springframework.security.acls.model.*;
@@ -34,7 +37,7 @@ public class AclSource {
     public static class Builder {
         private final List<AceSource> entries = new ArrayList<>();
         private ObjectIdentity objectIdentity;
-        private Sid owner;
+        private TenantSid owner;
         private AclSource parentAcl;
         private boolean entriesInheriting;
 
@@ -52,7 +55,13 @@ public class AclSource {
             return this;
         }
 
-        public Builder owner(Sid owner) {
+        /* we must use any Id except NONE, because then it skip default value */
+        @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, defaultImpl = ObjectIdentityData.class)
+        public void setObjectIdentity(ObjectIdentity objectIdentity) {
+            this.objectIdentity = objectIdentity;
+        }
+
+        public Builder owner(TenantSid owner) {
             setOwner(owner);
             return this;
         }
@@ -91,10 +100,11 @@ public class AclSource {
 
     private final List<AceSource> entries;
     private final ObjectIdentity objectIdentity;
-    private final Sid owner;
+    private final TenantSid owner;
     private final AclSource parentAcl;
     private final boolean entriesInheriting;
 
+    @JsonCreator
     protected AclSource(Builder b) {
         Assert.notNull(b.objectIdentity, "Object Identity required");
         Assert.notNull(b.owner, "Owner required");
