@@ -135,6 +135,7 @@
                                 <!-- below code add 'Implementation-Title', 'Implementation-Version' and
                                 'Implementation-Vendor-Id' entries to MANIFEST file -->
                                 <addDefaultImplementationEntries>true</addDefaultImplementationEntries>
+                                <addDefaultSpecificationEntries>true</addDefaultSpecificationEntries>
                             </manifest>
                         </archive>
                     </configuration>

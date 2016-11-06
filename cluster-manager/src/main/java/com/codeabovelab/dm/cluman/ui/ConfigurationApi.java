@@ -22,8 +22,10 @@ import com.codeabovelab.dm.cluman.source.DeployOptions;
 import com.codeabovelab.dm.cluman.source.SourceService;
 import com.codeabovelab.dm.cluman.model.RootSource;
 import com.codeabovelab.dm.cluman.reconfig.AppConfigService;
+import com.codeabovelab.dm.cluman.ui.model.UiApplicationInfo;
 import com.codeabovelab.dm.cluman.ui.model.UiJob;
 import com.codeabovelab.dm.cluman.yaml.YamlUtils;
+import com.codeabovelab.dm.common.utils.AppInfo;
 import lombok.AllArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
@@ -84,5 +86,10 @@ public class ConfigurationApi {
                               DeployOptions.Builder options) throws Exception {
         JobInstance jobInstance = sourceService.setRootSource(root, options.build());
         return UiJob.toUi(jobInstance);
+    }
+
+    @RequestMapping(path = "version", method = RequestMethod.GET)
+    public UiApplicationInfo getAppInfo() throws IOException {
+        return new UiApplicationInfo(AppInfo.getApplicationName(), AppInfo.getApplicationVersion());
     }
 }

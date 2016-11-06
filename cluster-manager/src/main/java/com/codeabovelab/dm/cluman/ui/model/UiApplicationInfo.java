@@ -16,16 +16,15 @@
 
 package com.codeabovelab.dm.cluman.ui.model;
 
-import com.codeabovelab.dm.common.security.acl.TenantSid;
-import com.codeabovelab.dm.common.security.dto.PermissionData;
-import lombok.Data;
-
-import java.util.ArrayList;
-import java.util.List;
+import com.fasterxml.jackson.annotation.JsonCreator;
+import lombok.AllArgsConstructor;
+import lombok.Value;
 
 /**
  */
-@Data
+@Value
+@AllArgsConstructor(onConstructor = @__(@JsonCreator))
 public class UiApplicationInfo {
-
+    private final String name;
+    private final String version;
 }
