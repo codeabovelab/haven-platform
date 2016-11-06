@@ -20,7 +20,10 @@ import com.codeabovelab.dm.cluman.job.JobInfo;
 import com.codeabovelab.dm.cluman.job.JobInstance;
 import com.codeabovelab.dm.cluman.job.JobParameters;
 import com.codeabovelab.dm.cluman.job.JobStatus;
-import lombok.Data;
+import com.fasterxml.jackson.annotation.JsonCreator;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Value;
 import org.springframework.util.StringUtils;
 
 import java.time.LocalDateTime;
@@ -28,33 +31,38 @@ import java.time.LocalDateTime;
 /**
  * Model of ui representation of {@link com.codeabovelab.dm.cluman.job.JobInstance }
  */
-@Data
+@Value
+@Builder
+@AllArgsConstructor(onConstructor = @__(@JsonCreator))
 public class UiJob {
-    private String id;
-    private String title;
-    private JobStatus status;
-    private LocalDateTime createTime;
-    private LocalDateTime startTime;
-    private LocalDateTime endTime;
-    private boolean running;
-    private JobParameters parameters;
+    private final String id;
+    private final String title;
+    private final JobStatus status;
+    private final LocalDateTime createTime;
+    private final LocalDateTime startTime;
+    private final LocalDateTime endTime;
+    private final boolean running;
+    private final JobParameters parameters;
 
-    public static UiJob toUi(JobInstance ji) {
-        UiJob uj = new UiJob();
+    public static UiJobBuilder toUiBuilder(JobInstance ji) {
         JobInfo jh = ji.getInfo();
-        uj.setId(jh.getId());
         String title = jh.getTitle();
-        if(!StringUtils.hasText(title)) {
+        if (!StringUtils.hasText(title)) {
             title = jh.getType();
         }
-        uj.setTitle(title);
-        uj.setCreateTime(jh.getCreateTime());
-        uj.setStartTime(jh.getStartTime());
-        uj.setEndTime(jh.getEndTime());
         JobStatus status = jh.getStatus();
-        uj.setStatus(status);
-        uj.setRunning(status == JobStatus.STARTED);
-        return uj;
+        return UiJob.builder()
+                .id(jh.getId())
+                .title(title)
+                .createTime(jh.getCreateTime())
+                .startTime(jh.getStartTime())
+                .endTime(jh.getEndTime())
+                .status(status)
+                .running(status == JobStatus.STARTED);
+    }
+
+    public static UiJob toUi(JobInstance ji) {
+        return toUiBuilder(ji).build();
     }
 
 }

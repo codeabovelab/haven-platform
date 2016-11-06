@@ -17,8 +17,8 @@
 package com.codeabovelab.dm.cluman.ui;
 
 import com.codeabovelab.dm.cluman.cluster.docker.management.argument.CreateContainerArg;
-import com.codeabovelab.dm.cluman.model.NotFoundException;
 import com.codeabovelab.dm.cluman.model.ContainerSource;
+import com.codeabovelab.dm.cluman.model.NotFoundException;
 import com.codeabovelab.dm.cluman.pipeline.PipelineService;
 import com.codeabovelab.dm.cluman.pipeline.arg.PipelineDeployArg;
 import com.codeabovelab.dm.cluman.pipeline.arg.PipelinePromoteArg;
@@ -154,8 +154,15 @@ public class PipelineApi {
 
     private Map<String, UIPipelineInstance> convertInstances(Map<String, PipelineInstance> instancesMap) {
         return instancesMap.values().stream()
-                .map(p -> new UIPipelineInstance(p.getId(), p.getPipeline(), p.getState(), p.getName(), p.getRegistry(),
-                        convertHistory(p.getHistories()), p.getArgs()))
+                .map(p -> UIPipelineInstance.builder()
+                        .id(p.getId())
+                        .pipeline(p.getPipeline())
+                        .state(p.getState())
+                        .name(p.getName())
+                        .registry(p.getRegistry())
+                        .histories(convertHistory(p.getHistories()))
+                        .args(p.getArgs())
+                        .build())
                 .collect(Collectors.toMap(a -> a.getId(), a -> a));
     }
 

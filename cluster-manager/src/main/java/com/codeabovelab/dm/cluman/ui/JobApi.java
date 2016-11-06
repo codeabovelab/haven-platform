@@ -20,7 +20,6 @@ import com.codeabovelab.dm.cluman.job.*;
 import com.codeabovelab.dm.cluman.ui.model.UiJob;
 import com.codeabovelab.dm.cluman.ui.model.UiJobEvent;
 import com.codeabovelab.dm.common.mb.Subscription;
-import com.codeabovelab.dm.common.utils.Closeables;
 import com.codeabovelab.dm.common.utils.ExecutorUtils;
 import com.codeabovelab.dm.common.utils.Throwables;
 import lombok.AllArgsConstructor;
@@ -29,7 +28,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
-import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseBodyEmitter;
 
@@ -79,9 +77,9 @@ public class JobApi {
         if(ji == null) {
             throw new HttpException(HttpStatus.NOT_FOUND, "Not found job with id: " + job);
         }
-        UiJob uj = UiJob.toUi(ji);
-        uj.setParameters(ji.getJobContext().getParameters());
-        return uj;
+        return UiJob.toUiBuilder(ji)
+                .parameters(ji.getJobContext().getParameters())
+                .build();
     }
 
     @RequestMapping(value = "/jobs/{job:.*}/log", method = GET)
@@ -124,9 +122,6 @@ public class JobApi {
     }
 
     private static UiJobEvent toUi(JobEvent event) {
-        UiJobEvent uje = new UiJobEvent();
-        uje.setInfo(event.getInfo());
-        uje.setTime(event.getTime());
         String message = event.getMessage();
         Throwable exception = event.getException();
         if(exception != null) {
@@ -137,8 +132,11 @@ public class JobApi {
                 message += "\n" + exceptionString;
             }
         }
-        uje.setMessage(message);
-        return uje;
+        return UiJobEvent.builder()
+                .info(event.getInfo())
+                .time(event.getTime())
+                .message(message)
+                .build();
     }
 
     public static class JobEventConsumer implements Consumer<JobEvent> {

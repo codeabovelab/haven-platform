@@ -16,6 +16,8 @@
 
 package com.codeabovelab.dm.cluman.ui.model;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
 
@@ -25,7 +27,7 @@ import java.util.Map;
 /**
  */
 @Data
-@RequiredArgsConstructor
+@AllArgsConstructor(onConstructor = @__(@JsonCreator))
 public class UiTagCatalog implements Comparable<UiTagCatalog> {
     private final String registry;
     private final String name;

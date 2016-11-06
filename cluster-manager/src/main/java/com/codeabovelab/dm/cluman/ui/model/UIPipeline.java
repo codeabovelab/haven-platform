@@ -16,35 +16,34 @@
 
 package com.codeabovelab.dm.cluman.ui.model;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
 import io.swagger.annotations.ApiModelProperty;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 import javax.validation.constraints.NotNull;
 import java.util.List;
 
-@Data
-@NoArgsConstructor
-@AllArgsConstructor
+@Value
+@Builder
+@AllArgsConstructor(onConstructor = @__(@JsonCreator))
 public class UIPipeline {
 
     @NotNull
     @ApiModelProperty(value = "Name of pipeline can be equal to filter")
-    private String name;
+    private final String name;
 
     @NotNull
     @ApiModelProperty(value = "application/image which will be part of pipeline")
-    private String filter;
+    private final String filter;
 
     @NotNull
     @ApiModelProperty(value = "upstream registry")
-    private String registry;
+    private final String registry;
 
     @ApiModelProperty(value = "List of users which will get notifications")
-    private List<String> recipients;
+    private final List<String> recipients;
 
     @NotNull
-    private List<UIPipelineStage> pipelineStages;
+    private final List<UIPipelineStage> pipelineStages;
 
 }

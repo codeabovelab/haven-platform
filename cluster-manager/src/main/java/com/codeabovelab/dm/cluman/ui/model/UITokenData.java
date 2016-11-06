@@ -16,12 +16,17 @@
 
 package com.codeabovelab.dm.cluman.ui.model;
 
-import lombok.Data;
+import com.fasterxml.jackson.annotation.JsonCreator;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Value;
 
-@Data
+@Value
+@Builder
+@AllArgsConstructor(onConstructor = @__(@JsonCreator))
 public class UITokenData {
-    private String userName;
-    private String key;
-    private long creationTime;
-    private long expireAtTime;
+    private final String userName;
+    private final String key;
+    private final long creationTime;
+    private final long expireAtTime;
 }

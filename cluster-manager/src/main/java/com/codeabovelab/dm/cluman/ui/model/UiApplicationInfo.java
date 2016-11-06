@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *      http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -16,19 +16,16 @@
 
 package com.codeabovelab.dm.cluman.ui.model;
 
-import com.fasterxml.jackson.annotation.JsonCreator;
-import lombok.AllArgsConstructor;
+import com.codeabovelab.dm.common.security.acl.TenantSid;
+import com.codeabovelab.dm.common.security.dto.PermissionData;
 import lombok.Data;
-import lombok.Value;
 
-import java.util.Map;
+import java.util.ArrayList;
+import java.util.List;
 
-@Value
-@AllArgsConstructor(onConstructor = @__(@JsonCreator))
-public class UIPipelinePromote {
-
-    private final String comment;
-    private final Map<String, String> arguments;
-    private final PipeLineAction action;
+/**
+ */
+@Data
+public class UiApplicationInfo {
 
 }

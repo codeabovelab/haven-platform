@@ -17,21 +17,27 @@
 package com.codeabovelab.dm.cluman.ui.model;
 
 import com.codeabovelab.dm.cluman.model.ContainerSource;
+import com.fasterxml.jackson.annotation.JsonCreator;
 import io.swagger.annotations.ApiModelProperty;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
+import lombok.Value;
 
 import java.util.Map;
 
-@Data
+@Value
+@Builder
+@AllArgsConstructor(onConstructor = @__(@JsonCreator))
 public class UIPipelineDeploy {
 
-    private String comment;
-    private String stage;
+    private final String comment;
+    private final String stage;
 
-    private Map<String, String> arguments;
+    private final Map<String, String> arguments;
 
     @ApiModelProperty(value = "Additional container parameters")
-    private ContainerSource uiContainer;
+    private final ContainerSource uiContainer;
 
 
 }

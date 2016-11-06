@@ -17,6 +17,9 @@
 package com.codeabovelab.dm.cluman.ui.model;
 
 import com.codeabovelab.dm.cluman.cluster.docker.model.Statistics;
+import com.fasterxml.jackson.annotation.JsonCreator;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 
 import java.time.LocalDateTime;
@@ -30,42 +33,44 @@ import static com.codeabovelab.dm.cluman.ui.UiUtils.convertToStringFromJiffies;
 
 
 @Data
+@Builder
+@AllArgsConstructor(onConstructor = @__(@JsonCreator))
 public class UIStatistics {
 
-    private LocalDateTime time = LocalDateTime.now();
+    private final LocalDateTime time = LocalDateTime.now();
 
-    private Map<String, Object> networks;
-    private Map<String, Object> blkioStats;
+    private final Map<String, Object> networks;
+    private final Map<String, Object> blkioStats;
 
-    //memory_stats in MB
-    //usage
-    private Double memoryMBUsage; //usage
-    private Double memoryMBMaxUsage; //max_usage
-    private Double memoryMBLimit;
-    private Double memoryPercentage;
+    //memoryfinal _stats in MB
+    //usagefinal
+    private final Double memoryMBUsage; //usage
+    private final Double memoryMBMaxUsage; //max_usage
+    private final Double memoryMBLimit;
+    private final Double memoryPercentage;
 
-    //cpu_stats
-    //cpu_usage
-    private String cpuTotalUsage; //total_usage
-    private String cpuKernel;     //usage_in_kernelmode
-    private String cpuUser;       //usage_in_usermode
+    //cpu_stfinal ats
+    //cpu_usfinal age
+    private final String cpuTotalUsage; //total_usage
+    private final String cpuKernel;     //usage_in_kernelmode
+    private final String cpuUser;       //usage_in_usermode
 
-    private String cpuSystem;     //system_cpu_usage
+    private final String cpuSystem;     //system_cpu_usage
 
-    private Double cpuTotalPercents; //total_usage
+    private final Double cpuTotalPercents; //total_usage
 
     @SuppressWarnings("unchecked")
     public static UIStatistics from(Statistics s) {
-        UIStatistics uis = new UIStatistics();
+        UIStatisticsBuilder builder = UIStatistics.builder();
         Map<String, Object> cpuStats = s.getCpuStats();
         Map<String, Object> cpuUsage = (Map<String, Object>) cpuStats.get("cpu_usage");
         Long totalUsage = toLong(cpuUsage.get("total_usage"));
-        uis.setCpuTotalUsage(convertToStringFromJiffies(totalUsage));
+        builder.cpuTotalUsage(convertToStringFromJiffies(totalUsage));
 
-        uis.setCpuKernel(convertToStringFromJiffies(toLong(cpuUsage.get("usage_in_kernelmode"))));
-        uis.setCpuUser(convertToStringFromJiffies(toLong(cpuUsage.get("usage_in_usermode"))));
+        builder.cpuKernel(convertToStringFromJiffies(toLong(cpuUsage.get("usage_in_kernelmode"))));
+        builder.cpuUser(convertToStringFromJiffies(toLong(cpuUsage.get("usage_in_usermode"))));
         Long systemCpuUsage = toLong(cpuStats.get("system_cpu_usage"));
-        uis.setCpuSystem(convertToStringFromJiffies(systemCpuUsage / 1000_000L));
+        builder.cpuSystem(convertToStringFromJiffies(systemCpuUsage / 1000_000L));
 
         Map<String, Object> precpuStats = s.getPrecpuStats();
         Map<String, Object> preCpuUsage = (Map<String, Object>) precpuStats.get("cpu_usage");
@@ -76,7 +81,7 @@ public class UIStatistics {
         Collection percpu_usage = (Collection) cpuUsage.get("percpu_usage");
 
         double percents = convertToPercentFromJiffies(totalUsage, prevTotalUsage, systemCpuUsage, prevSystemUsage, percpu_usage == null ? 0 : percpu_usage.size());
-        uis.setCpuTotalPercents(percents);
+        builder.cpuTotalPercents(percents);
 
         Map<String, Object> memoryStats = s.getMemoryStats();
         Long maxUsage = toLong(memoryStats.get("max_usage"));
@@ -84,14 +89,14 @@ public class UIStatistics {
         Long limit = toLong(memoryStats.get("limit"));
         Double percentage = Math.round(usage / limit.doubleValue() * 100_00) / 100d;
 
-        uis.setMemoryMBMaxUsage(convertToMb(maxUsage));
-        uis.setMemoryMBUsage(convertToMb(usage));
-        uis.setMemoryMBLimit(convertToMb(limit));
-        uis.setMemoryPercentage(percentage);
+        builder.memoryMBMaxUsage(convertToMb(maxUsage));
+        builder.memoryMBUsage(convertToMb(usage));
+        builder.memoryMBLimit(convertToMb(limit));
+        builder.memoryPercentage(percentage);
 
-        uis.setNetworks(s.getNetworks());
-        uis.setBlkioStats(s.getBlkioStats());
-        return uis;
+        builder.networks(s.getNetworks());
+        builder.blkioStats(s.getBlkioStats());
+        return builder.build();
     }
 
 

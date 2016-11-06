@@ -16,19 +16,20 @@
 
 package com.codeabovelab.dm.cluman.ui.model;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import lombok.Value;
 
 import java.util.List;
 
-@Data
-@AllArgsConstructor
-@NoArgsConstructor
+@Value
+@AllArgsConstructor(onConstructor = @__(@JsonCreator))
 public class UIPipelineInstanceHistory {
 
-    private List<String> comments;
-    private String stage;
-    private String tag;
+    private final List<String> comments;
+    private final String stage;
+    private final String tag;
 
 }

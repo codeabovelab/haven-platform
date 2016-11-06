@@ -17,14 +17,18 @@
 package com.codeabovelab.dm.cluman.ui.model;
 
 import com.codeabovelab.dm.cluman.cluster.registry.RegistryType;
+import com.fasterxml.jackson.annotation.JsonCreator;
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
+import lombok.Value;
 
 /**
  * DTO which is used for Registry
  */
-@Data
+@Value
 @Builder
+@AllArgsConstructor(onConstructor = @__(@JsonCreator))
 public final class UiRegistry {
     private final boolean disabled;
     private final boolean readOnly;

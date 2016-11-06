@@ -17,26 +17,25 @@
 package com.codeabovelab.dm.cluman.ui.model;
 
 import com.codeabovelab.dm.cluman.pipeline.instance.State;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import com.fasterxml.jackson.annotation.JsonCreator;
+import lombok.*;
 
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
 
-@Data
-@AllArgsConstructor
-@NoArgsConstructor
+@Value
+@Builder
+@AllArgsConstructor(onConstructor = @__(@JsonCreator))
 public class UIPipelineInstance {
 
     private String id;
     private String pipeline;
-    private State state = State.IN_PROGRESS;
+    private State state;
     private String name;
     private String registry;
-    private Map<String, UIPipelineInstanceHistory> histories = new HashMap<>();
+    private Map<String, UIPipelineInstanceHistory> histories;
     private Map<String, String> args;
 
 }

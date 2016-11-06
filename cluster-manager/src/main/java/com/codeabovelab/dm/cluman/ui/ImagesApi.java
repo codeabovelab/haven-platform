@@ -111,7 +111,7 @@ public class ImagesApi {
             result = registryRepository.search(query, page, size);
         }
         if (result == null) {
-            return new UiSearchResult();
+            return UiSearchResult.builder().build();
         }
         return UiSearchResult.from(result);
     }

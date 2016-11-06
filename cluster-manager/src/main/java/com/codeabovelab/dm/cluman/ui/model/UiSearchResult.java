@@ -17,7 +17,10 @@
 package com.codeabovelab.dm.cluman.ui.model;
 
 import com.codeabovelab.dm.cluman.cluster.registry.data.SearchResult;
-import lombok.Data;
+import com.fasterxml.jackson.annotation.JsonCreator;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Value;
 
 import java.util.Collection;
 import java.util.List;
@@ -25,39 +28,43 @@ import java.util.stream.Collectors;
 
 /**
  */
-@Data
+@Value
+@Builder
+@AllArgsConstructor(onConstructor = @__(@JsonCreator))
 public class UiSearchResult {
-    private int totalPages;
-    private int totalResults;
-    private int pageSize;
-    private int page;
-    private String query;
-    private List<Result> results;
+    private final int totalPages;
+    private final int totalResults;
+    private final int pageSize;
+    private final int page;
+    private final String query;
+    private final List<Result> results;
 
-    @Data
+    @Value
+    @Builder
+    @AllArgsConstructor(onConstructor = @__(@JsonCreator))
     public static class Result {
-        private String name;
-        private String description;
-        private Collection<String> registries;
+        private final String name;
+        private final String description;
+        private final Collection<String> registries;
 
         public static Result from(SearchResult.Result res) {
-            Result ui = new Result();
-            ui.setName(res.getName());
-            ui.setDescription(res.getDescription());
-            ui.setRegistries(res.getRegistries());
-            return ui;
+            return Result.builder()
+                    .name(res.getName())
+                    .description(res.getDescription())
+                    .registries(res.getRegistries())
+                    .build();
         }
     }
 
     public static UiSearchResult from(SearchResult res) {
-        UiSearchResult ui = new UiSearchResult();
-        ui.setTotalPages(res.getNumPages());
-        ui.setTotalResults(res.getNumResults());
-        ui.setPageSize(res.getPageSize());
-        ui.setPage(res.getPage());
-        ui.setQuery(res.getQuery());
-        ui.setResults(res.getResults().stream().map(Result::from).collect(Collectors.toList()));
-        return ui;
+        return UiSearchResult.builder()
+                .totalPages(res.getNumPages())
+                .totalResults(res.getNumResults())
+                .pageSize(res.getPageSize())
+                .page(res.getPage())
+                .query(res.getQuery())
+                .results(res.getResults().stream().map(Result::from).collect(Collectors.toList()))
+                .build();
     }
 
 }

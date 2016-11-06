@@ -17,15 +17,21 @@
 package com.codeabovelab.dm.cluman.ui.model;
 
 import com.codeabovelab.dm.cluman.job.JobInfo;
+import com.fasterxml.jackson.annotation.JsonCreator;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
+import lombok.Value;
 
 import java.time.LocalDateTime;
 
 /**
  */
-@Data
+@Value
+@Builder
+@AllArgsConstructor(onConstructor = @__(@JsonCreator))
 public class UiJobEvent {
-    private JobInfo info;
-    private LocalDateTime time;
-    private String message;
+    private final JobInfo info;
+    private final LocalDateTime time;
+    private final String message;
 }

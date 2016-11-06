@@ -82,12 +82,12 @@ public class TokenApi {
     }
 
     private UITokenData fillFields(TokenData token) {
-        UITokenData uiTokenData = new UITokenData();
-        uiTokenData.setCreationTime(token.getCreationTime());
-        uiTokenData.setExpireAtTime(token.getCreationTime() + tokenValidatorSettings.getExpireAfterInSec() * 1000L);
-        uiTokenData.setKey(token.getKey());
-        uiTokenData.setUserName(token.getUserName());
-        return uiTokenData;
+        return UITokenData.builder()
+                .creationTime(token.getCreationTime())
+                .expireAtTime(token.getCreationTime() + tokenValidatorSettings.getExpireAfterInSec() * 1000L)
+                .key(token.getKey())
+                .userName(token.getUserName())
+                .build();
     }
 
 }
