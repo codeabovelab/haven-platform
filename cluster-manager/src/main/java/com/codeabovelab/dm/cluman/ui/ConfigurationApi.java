@@ -89,7 +89,7 @@ public class ConfigurationApi {
     }
 
     @RequestMapping(path = "version", method = RequestMethod.GET)
-    public UiApplicationInfo getAppInfo() throws IOException {
+    public UiApplicationInfo getAppInfo() {
         return new UiApplicationInfo(AppInfo.getApplicationName(), AppInfo.getApplicationVersion());
     }
 }
