@@ -14,7 +14,7 @@
     <name>DockerMaster</name>
 
     <scm>
-        <connection>scm:git:git@github.com:codeabovelab/dockmaster-example-configuration.git</connection>
+        <connection>scm:git:git@github.com:codeabovelab/dockmaster-platform.git</connection>
         <tag>dm-parent-1.0.19</tag>
     </scm>
 
