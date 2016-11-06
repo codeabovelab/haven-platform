@@ -7,7 +7,7 @@
     <parent>
         <groupId>com.codeabovelab.dm</groupId>
         <artifactId>dm-parent</artifactId>
-        <version>1.0.234</version>
+        <version>1.0.235-SNAPSHOT</version>
     </parent>
     <packaging>pom</packaging>
     <modules>
