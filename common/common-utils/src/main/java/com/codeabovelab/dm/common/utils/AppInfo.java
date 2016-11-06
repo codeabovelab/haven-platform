@@ -16,74 +16,33 @@
 
 package com.codeabovelab.dm.common.utils;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import java.io.IOException;
-import java.io.InputStream;
-import java.net.URL;
-import java.net.URLClassLoader;
-import java.util.jar.Attributes;
-import java.util.jar.Manifest;
+import com.jcabi.manifests.Manifests;
 
 /**
  * Tool for gathering application info
- *
  */
 public class AppInfo {
 
-    private static final Logger LOG = LoggerFactory.getLogger(AppInfo.class);
-    private static final String name = "META-INF/MANIFEST.MF";
-    private static final LazyInitializer<Manifest> MANIFEST_LAZY_INITIALIZER = new LazyInitializer<>(() -> {
-        URL res;
-        ClassLoader cl = Thread.currentThread().getContextClassLoader();
-        if(cl instanceof URLClassLoader) {
-            // we need to find resources from local jar
-            URLClassLoader ucl = (URLClassLoader) cl;
-            res = ucl.findResource(name);
-        } else {
-            res = cl.getResource(name);
-        }
-        if(res == null) {
-            LOG.error("No appropriate manifests.");
-            return null;
-        } else {
-            LOG.error("Found manifests at {}.", res);
-        }
-        try(InputStream is = res.openStream()) {
-            return new Manifest(is);
-        } catch (IOException e) {
-            LOG.error("On resource:" + name, e);
-        }
-        return null;
-    });
-
     /**
      * extract '$artifactId' from manifest (Implementation-Title) or other places.
+     *
      * @return
      */
     public static String getApplicationName() {
-        return getApplicationName(MANIFEST_LAZY_INITIALIZER.get());
+        return Manifests.read("Implementation-Title");
     }
 
     /**
      * extract '$version' from manifest (Implementation-Version) or other places.
+     *
      * @return
      */
     public static String getApplicationVersion() {
-        Manifest manifest = MANIFEST_LAZY_INITIALIZER.get();
-        if(manifest == null) {
-            return null;
-        }
-        return manifest.getMainAttributes().getValue("Implementation-Version");
+        return Manifests.read("Implementation-Version");
     }
 
-    static String getApplicationName(Manifest manifest) {
-        if(manifest == null) {
-            return null;
-        }
-        Attributes attributes = manifest.getMainAttributes();
-        return/* attributes.getValue("Implementation-Vendor-Id") + ":" +  /* disabled because not need */
-               attributes.getValue("Implementation-Title");
+    public static String getBuildTime() {
+        return Manifests.read("Build-Time");
     }
+
 }

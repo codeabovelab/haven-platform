@@ -18,10 +18,10 @@ package com.codeabovelab.dm.cluman.ui;
 
 import com.codeabovelab.dm.cluman.job.JobInstance;
 import com.codeabovelab.dm.cluman.job.JobsManager;
-import com.codeabovelab.dm.cluman.source.DeployOptions;
-import com.codeabovelab.dm.cluman.source.SourceService;
 import com.codeabovelab.dm.cluman.model.RootSource;
 import com.codeabovelab.dm.cluman.reconfig.AppConfigService;
+import com.codeabovelab.dm.cluman.source.DeployOptions;
+import com.codeabovelab.dm.cluman.source.SourceService;
 import com.codeabovelab.dm.cluman.ui.model.UiApplicationInfo;
 import com.codeabovelab.dm.cluman.ui.model.UiJob;
 import com.codeabovelab.dm.cluman.yaml.YamlUtils;
@@ -90,6 +90,10 @@ public class ConfigurationApi {
 
     @RequestMapping(path = "version", method = RequestMethod.GET)
     public UiApplicationInfo getAppInfo() {
-        return new UiApplicationInfo(AppInfo.getApplicationName(), AppInfo.getApplicationVersion());
+        return UiApplicationInfo.builder()
+                .name(AppInfo.getApplicationName())
+                .version(AppInfo.getApplicationVersion())
+                .buildTime(AppInfo.getBuildTime())
+                .build();
     }
 }

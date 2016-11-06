@@ -18,13 +18,16 @@ package com.codeabovelab.dm.cluman.ui.model;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Value;
 
 /**
  */
 @Value
+@Builder
 @AllArgsConstructor(onConstructor = @__(@JsonCreator))
 public class UiApplicationInfo {
     private final String name;
     private final String version;
+    private final String buildTime;
 }
