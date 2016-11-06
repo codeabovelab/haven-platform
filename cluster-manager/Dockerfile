@@ -2,8 +2,8 @@ FROM debian:stretch
 
 MAINTAINER docker@codeabovelab.com
 
-RUN apt-get update && apt-get install -y --no-install-recommends curl git procps golang openjdk-8-jdk-headless && apt-get clean
-RUN curl -L https://github.com/docker/compose/releases/download/1.8.0/docker-compose-`uname -s`-`uname -m` > /usr/local/bin/docker-compose && \
+RUN apt-get update && apt-get install -y --no-install-recommends curl golang openjdk-8-jdk-headless && apt-get clean
+RUN curl -L https://github.com/docker/compose/releases/download/1.8.1/docker-compose-`uname -s`-`uname -m` > /usr/local/bin/docker-compose && \
   chmod +x /usr/local/bin/docker-compose
 
 RUN export GOPATH=/gocode && \

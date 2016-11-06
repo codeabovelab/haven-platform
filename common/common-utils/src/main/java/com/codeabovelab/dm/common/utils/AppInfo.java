@@ -29,7 +29,7 @@ public class AppInfo {
      * @return
      */
     public static String getApplicationName() {
-        return Manifests.read("Implementation-Title");
+        return Manifests.read("dm-cluman-info-name");
     }
 
     /**
@@ -38,11 +38,11 @@ public class AppInfo {
      * @return
      */
     public static String getApplicationVersion() {
-        return Manifests.read("Implementation-Version");
+        return Manifests.read("dm-cluman-info-version");
     }
 
     public static String getBuildTime() {
-        return Manifests.read("Build-Time");
+        return Manifests.read("dm-cluman-info-date");
     }
 
 }
