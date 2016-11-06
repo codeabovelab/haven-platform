@@ -3,8 +3,6 @@ dm:
     git:
       enabled: true
       uri: https://github.com/codeabovelab/dockmaster-example-configuration.git
-      username: null
-      password: null
 spring:
   application:
     name: cluster-manager
