@@ -9,7 +9,7 @@
 
     <groupId>com.codeabovelab.dm</groupId>
     <artifactId>dm-parent</artifactId>
-    <version>1.0.235-SNAPSHOT</version>
+    <version>1.0.236-SNAPSHOT</version>
     <packaging>pom</packaging>
     <name>DockerMaster</name>
 
@@ -180,47 +180,47 @@
             <dependency>
                 <groupId>com.codeabovelab.dm</groupId>
                 <artifactId>cluster-manager</artifactId>
-                <version>1.0.235-SNAPSHOT</version>
+                <version>1.0.236-SNAPSHOT</version>
             </dependency>
             <dependency>
                 <groupId>com.codeabovelab.dm</groupId>
                 <artifactId>common-utils</artifactId>
-                <version>1.0.235-SNAPSHOT</version>
+                <version>1.0.236-SNAPSHOT</version>
             </dependency>
             <dependency>
                 <groupId>com.codeabovelab.dm</groupId>
                 <artifactId>common-core</artifactId>
-                <version>1.0.235-SNAPSHOT</version>
+                <version>1.0.236-SNAPSHOT</version>
             </dependency>
             <dependency>
                 <groupId>com.codeabovelab.dm</groupId>
                 <artifactId>gateway-common</artifactId>
-                <version>1.0.235-SNAPSHOT</version>
+                <version>1.0.236-SNAPSHOT</version>
             </dependency>
             <dependency>
                 <groupId>com.codeabovelab.dm</groupId>
                 <artifactId>gateway-balancer-common</artifactId>
-                <version>1.0.235-SNAPSHOT</version>
+                <version>1.0.236-SNAPSHOT</version>
             </dependency>
             <dependency>
                 <groupId>com.codeabovelab.dm</groupId>
                 <artifactId>platform-common</artifactId>
-                <version>1.0.235-SNAPSHOT</version>
+                <version>1.0.236-SNAPSHOT</version>
             </dependency>
             <dependency>
                 <groupId>com.codeabovelab.dm</groupId>
                 <artifactId>mail</artifactId>
-                <version>1.0.235-SNAPSHOT</version>
+                <version>1.0.236-SNAPSHOT</version>
             </dependency>
             <dependency>
                 <groupId>com.codeabovelab.dm</groupId>
                 <artifactId>filestorage</artifactId>
-                <version>1.0.235-SNAPSHOT</version>
+                <version>1.0.236-SNAPSHOT</version>
             </dependency>
             <dependency>
                 <groupId>com.codeabovelab.dm</groupId>
                 <artifactId>filestorage-dto</artifactId>
-                <version>1.0.235-SNAPSHOT</version>
+                <version>1.0.236-SNAPSHOT</version>
             </dependency>
 
 
