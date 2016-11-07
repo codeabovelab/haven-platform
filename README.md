@@ -1,13 +1,13 @@
 # Dockmaster: Container Management Simplified
  
 ## Introduction
- Dockmaster is a Docker cluster management system. It is created to let user have a  simple and easy to use all of Docker’s features through
- a user friendly and powerful UI and command line tools. It is built on top of Docker, Swarm, and Compose. It offer management of multiple 
- clusters and image registries from one place and is built on top of Docker, Docker Swarm, and Docker Compose.
+Dockmaster is a Docker cluster management system. It let user with basic Docker understaning to have a straightforward to use its 
+features through a user-friendly yet powerful UI and command line tools. It is built on top of Docker, Swarm, and Compose. It 
+offers management of multiple clusters and image registries from one place and is built on top of Docker, Swarm, and Compose.
 
 ### Requirements
 
-Dockmaster is comprised of Master and Node components. The common requirements for both are: 
+Dockmaster is comprised of Master and Agent nodes. The common requirements for both are: 
  
  * Docker >= 1.10
  * Python >= 3.5
@@ -20,7 +20,7 @@ For master node:
 
 The following installation instruction has been tested on Debian / Ubuntu.
 
-*Installation for both Master and Node*
+*Installation for both Master and Agent*
 1. Define common variables for configuration:
  
 ```sh
@@ -32,7 +32,7 @@ The following installation instruction has been tested on Debian / Ubuntu.
  SELF_IP=172.31.0.12 or 172.31.0.12 
 ```
  
-2. Configure Docker on each instance. By default, Docker listens on Unix socket and we need to configure it for the TCP socket.
+2. Configure Docker on each instance. By default, Docker listens on Unix socket so TCP socket configuration is needed.
   
 ```sh
  %cat /etc/default/docker
@@ -71,16 +71,16 @@ or via Git repository:
 
 dm.kv.etcd.urls=http://$MASTER_IP:2379
 
- *For installing Node:*
+ *For installing Agent:*
  
- On the Node instances, only Docker and [dockmaster-agent](/doc/agent.md) are required.
+ On the Agent node, only Docker and [dockmaster-agent](/doc/agent.md) are required.
  
 ```sh
  wget 'http://$MASTER_IP:8762/res/agent/dockmaster-agent.py'
  chmod +x dockmaster-agent.py
 ```
  
- Create the config file for agent in one of following locations or use command line options of agent: 
+ Create the config file for Agent in one of following locations or use command line options of agent: 
  
  * ./dm-agent.ini
  * ~/.config/dm-agent.ini
@@ -103,6 +103,8 @@ with the following content:
 ```
 
 ## Index ##
+
+For additional technical detail, see:
 
 * [Documentation](/doc/)
 
