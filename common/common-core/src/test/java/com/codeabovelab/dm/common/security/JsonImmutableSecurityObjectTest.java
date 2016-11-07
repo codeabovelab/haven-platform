@@ -58,11 +58,13 @@ public class JsonImmutableSecurityObjectTest {
         testJson(b.build());
 
         b.addEntry(AceSource.builder()
+          .id(1L)
           .sid(owner)
           .permission(PermissionData.builder().add(Action.READ).add(Action.UPDATE).build())
           .granting(true)
           .build());
         b.addEntry(AceSource.builder()
+          .id(2L)
           .sid(owner)
           .permission(Action.ALTER_INSIDE)
           .granting(true)

@@ -24,6 +24,7 @@ import org.springframework.security.acls.model.Sid;
 import org.springframework.util.Assert;
 import org.springframework.util.StringUtils;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.function.Consumer;
 
@@ -59,10 +60,12 @@ public class AclUtils {
         return true;
     }
 
-    public static void buildEntries(Acl acl, List<?> from, Consumer<AccessControlEntry> to) {
+    public static void buildEntries(Acl acl, Collection<?> from, Consumer<AccessControlEntry> to) {
         for(Object object: from) {
             AccessControlEntry ace;
-            if(object instanceof AccessControlEntryImpl.Builder) {
+            if(object instanceof AceSource) {
+                ace = new AccessControlEntryImpl.Builder().from((AccessControlEntry) object).acl(acl).build();
+            } else if(object instanceof AccessControlEntryImpl.Builder) {
                 ace = ((AccessControlEntryImpl.Builder)object).acl(acl).build();
             } else if(object instanceof AccessControlEntry) {
                 ace = (AccessControlEntry) object;

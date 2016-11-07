@@ -205,48 +205,49 @@ public class SecurityApi {
         SecuredType securedType = SecuredType.valueOf(type);
         ObjectIdentity oid = securedType.id(id);
         try {
-            providersAclService.updateAclSource(oid, as -> {
-                Sugar.setIfNotNull(as::setOwner, MultiTenancySupport.fixTenant(aclSource.getOwner()));
-                List<UiAclUpdate.UiAceUpdate> list = aclSource.getEntries();
-                Map<Object, UiAclUpdate.UiAceUpdate> entries = new HashMap<>();
-                list.forEach(l -> entries.put(l.getId(), l));
-                List<AceSource> existed = as.getEntries();
-                ListIterator<AceSource> iterator = existed.listIterator();
-                while(iterator.hasNext()) {
-                    AceSource ace = iterator.next();
-                    Serializable aceId = ace.getId();
-                    UiAclUpdate.UiAceUpdate entry = entries.remove(aceId);
-                    if(entry == null) {
-                        continue;
-                    }
-                    if(entry.isDelete()) {
-                        iterator.remove();
-                        continue;
-                    }
-                    AceSource.Builder b = AceSource.builder().from(ace);
-                    b.setId(aceId);
-                    Sugar.setIfNotNull(b::setAuditFailure, entry.getAuditFailure());
-                    Sugar.setIfNotNull(b::setAuditSuccess, entry.getAuditSuccess());
-                    Sugar.setIfNotNull(b::setSid, entry.getSid());
-                    Sugar.setIfNotNull(b::setGranting, entry.getGranting());
-                    Sugar.setIfNotNull(b::setPermission, entry.getPermission());
-                    iterator.set(b.build());
-                }
-                //add that is not existed
-                entries.forEach((aceId, entry) -> {
-                    AceSource.Builder b = AceSource.builder();
-                    b.setId((Serializable) aceId);
-                    b.setAuditFailure(entry.getAuditFailure());
-                    b.setAuditSuccess(entry.getAuditSuccess());
-                    b.setSid(entry.getSid());
-                    b.setGranting(entry.getGranting());
-                    b.setPermission(entry.getPermission());
-                    as.addEntry(b.build());
-                });
-                return true;
-            });
+            providersAclService.updateAclSource(oid, as -> updateAcl(aclSource, as));
         } catch (org.springframework.security.acls.model.NotFoundException e) {
             throw new NotFoundException(e);
         }
+    }
+
+    private boolean updateAcl(UiAclUpdate aclSource, AclSource.Builder as) {
+        Sugar.setIfNotNull(as::setOwner, MultiTenancySupport.fixTenant(aclSource.getOwner()));
+        List<UiAclUpdate.UiAceUpdate> list = aclSource.getEntries();
+        Map<Long, AceSource> existed = as.getEntries();
+        if(list.isEmpty()) {
+            return false;
+        }
+        for (UiAclUpdate.UiAceUpdate entry : list) {
+            Long aceId = entry.getId();
+            AceSource ace = aceId == null ? null : existed.get(aceId);
+            if (ace == null) {
+                // add new
+                AceSource.Builder b = AceSource.builder();
+                // note that id may be null, it is normal
+                b.setId(aceId);
+                b.setAuditFailure(entry.getAuditFailure());
+                b.setAuditSuccess(entry.getAuditSuccess());
+                b.setSid(entry.getSid());
+                b.setGranting(entry.getGranting());
+                b.setPermission(entry.getPermission());
+                as.addEntry(b.build());
+                continue;
+            }
+            if (entry.isDelete()) {
+                existed.remove(aceId);
+                continue;
+            }
+            // modify existed
+            AceSource.Builder b = AceSource.builder().from(ace);
+            b.setId(aceId);
+            Sugar.setIfNotNull(b::setAuditFailure, entry.getAuditFailure());
+            Sugar.setIfNotNull(b::setAuditSuccess, entry.getAuditSuccess());
+            Sugar.setIfNotNull(b::setSid, entry.getSid());
+            Sugar.setIfNotNull(b::setGranting, entry.getGranting());
+            Sugar.setIfNotNull(b::setPermission, entry.getPermission());
+            as.addEntry(b.build());
+        }
+        return true;
     }
 }

@@ -25,8 +25,7 @@ import lombok.Data;
 import org.springframework.security.acls.model.*;
 import org.springframework.util.Assert;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 
 /**
  * Immutable source for acl
@@ -36,7 +35,7 @@ public class AclSource {
 
     @Data
     public static class Builder {
-        private final List<AceSource> entries = new ArrayList<>();
+        private final Map<Long, AceSource> entries = new LinkedHashMap<>();
         private ObjectIdentity objectIdentity;
         private TenantSid owner;
         private AclSource parentAcl;
@@ -76,7 +75,22 @@ public class AclSource {
         }
 
         public Builder addEntry(AceSource entry) {
-            this.entries.add(entry);
+            Long id = entry.getId();
+            if(id == null) {
+                // this is new entry
+                id = newId();
+                AceSource.builder().from(entry).id(id).build();
+            }
+            this.entries.put(id, entry);
+            return this;
+        }
+
+        private Long newId() {
+            return this.entries.keySet().stream().max(Long::compare).orElse(1L);
+        }
+
+        public Builder entriesMap(Map<Long, AceSource> entries) {
+            setEntriesMap(entries);
             return this;
         }
 
@@ -88,7 +102,14 @@ public class AclSource {
         public void setEntries(List<AceSource> entries) {
             this.entries.clear();
             if(entries != null) {
-                this.entries.addAll(entries);
+                entries.forEach(this::addEntry);
+            }
+        }
+
+        public void setEntriesMap(Map<Long, AceSource> entries) {
+            this.entries.clear();
+            if(entries != null) {
+                entries.forEach((k, v) -> this.addEntry(v));
             }
         }
 
@@ -102,7 +123,7 @@ public class AclSource {
         }
     }
 
-    private final List<AceSource> entries;
+    private final Map<Long, AceSource> entriesMap;
     private final ObjectIdentity objectIdentity;
     private final TenantSid owner;
     private final AclSource parentAcl;
@@ -117,8 +138,12 @@ public class AclSource {
         this.objectIdentity = b.objectIdentity;
         this.parentAcl = b.parentAcl;
         this.entriesInheriting = b.entriesInheriting;
+        // we must save order of  ACEs
+        this.entriesMap = Collections.unmodifiableMap(new LinkedHashMap<>(b.entries));
+    }
 
-        this.entries = ImmutableList.copyOf(b.entries);
+    public List<AceSource> getEntries() {
+        return ImmutableList.copyOf(this.entriesMap.values());
     }
 
     public static Builder builder() {

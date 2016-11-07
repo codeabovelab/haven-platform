@@ -31,7 +31,7 @@ public class UiAclUpdate {
     @Data
     public static class UiAceUpdate {
         protected boolean delete = false;
-        protected Object id;
+        protected Long id;
         protected TenantSid sid;
         protected Boolean granting;
         protected PermissionData permission;

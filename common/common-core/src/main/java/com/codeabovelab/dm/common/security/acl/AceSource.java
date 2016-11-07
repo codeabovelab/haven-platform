@@ -22,11 +22,8 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import lombok.Data;
-import org.springframework.security.acls.domain.PrincipalSid;
 import org.springframework.security.acls.model.*;
 import org.springframework.util.Assert;
-
-import java.io.Serializable;
 
 /**
  * Source foe access control entry. It cannot be used as {@link AccessControlEntry } because has null Acl
@@ -45,7 +42,7 @@ public class AceSource implements AuditableAccessControlEntry {
     @Data
     @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, defaultImpl = Builder.class)
     public abstract static class AbstractBuilder<T> implements AuditableAccessControlEntry {
-        protected Serializable id;
+        protected Long id;
         protected TenantSid sid;
         protected boolean granting;
         protected PermissionData permission;
@@ -57,9 +54,14 @@ public class AceSource implements AuditableAccessControlEntry {
             return (T) this;
         }
 
-        public T id(Serializable id) {
+        public T id(Long id) {
             setId(id);
             return thiz();
+        }
+
+        @Override
+        public Long getId() {
+            return id;
         }
 
         public T sid(TenantSid sid) {
@@ -99,7 +101,7 @@ public class AceSource implements AuditableAccessControlEntry {
          * @return
          */
         public T from(AccessControlEntry entry) {
-            this.id = entry.getId();
+            this.id = (Long) entry.getId();
             this.sid = TenantSid.from(entry.getSid());
             this.granting = entry.isGranting();
             this.permission = PermissionData.from(entry.getPermission());
@@ -114,7 +116,7 @@ public class AceSource implements AuditableAccessControlEntry {
         public abstract AceSource build();
     }
 
-    protected final Serializable id;
+    protected final Long id;
     protected final TenantSid sid;
     protected final boolean granting;
     protected final PermissionData permission;
