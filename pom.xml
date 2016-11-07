@@ -52,7 +52,7 @@
         <aws.version>1.11.27</aws.version>
 
         <maven.javadoc.failOnError>false</maven.javadoc.failOnError>
-        <maven.build.timestamp.format>yyyy-MM-dd HH:mm</maven.build.timestamp.format>
+        <maven.build.timestamp.format>yyyy-MM-dd'T'HH:mm:ss.SSSZ</maven.build.timestamp.format>
     </properties>
 
     <modules>

@@ -91,7 +91,6 @@ public class ConfigurationApi {
     @RequestMapping(path = "version", method = RequestMethod.GET)
     public UiApplicationInfo getAppInfo() {
         return UiApplicationInfo.builder()
-                .name(AppInfo.getApplicationName())
                 .version(AppInfo.getApplicationVersion())
                 .buildTime(AppInfo.getBuildTime())
                 .build();

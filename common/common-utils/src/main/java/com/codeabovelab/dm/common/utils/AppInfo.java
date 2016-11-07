@@ -18,10 +18,17 @@ package com.codeabovelab.dm.common.utils;
 
 import com.jcabi.manifests.Manifests;
 
+import java.text.DateFormat;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+
 /**
  * Tool for gathering application info
  */
 public class AppInfo {
+
+    private final static DateFormat FORMAT = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSZ");
 
     /**
      * extract '$artifactId' from manifest (Implementation-Title) or other places.
@@ -41,8 +48,12 @@ public class AppInfo {
         return Manifests.read("dm-cluman-info-version");
     }
 
-    public static String getBuildTime() {
-        return Manifests.read("dm-cluman-info-date");
+    public static Date getBuildTime() {
+        try {
+            return FORMAT.parse(Manifests.read("dm-cluman-info-date"));
+        } catch (ParseException e) {
+            throw Throwables.asRuntime(e);
+        }
     }
 
 }
