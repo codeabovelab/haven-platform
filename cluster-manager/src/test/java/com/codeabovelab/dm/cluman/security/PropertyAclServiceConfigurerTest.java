@@ -63,8 +63,8 @@ public class PropertyAclServiceConfigurerTest {
         assertNotNull("No acl for syscont container", syscont);
         assertEquals(new TenantPrincipalSid("user", "root"), syscont.getOwner());
         List<AceSource> entries = syscont.getEntries();
-        assertThat(entries, hasSize(1));
-        AceSource ace = entries.get(0);
+        assertThat(entries, hasSize(2));
+        AceSource ace = entries.get(1);
         assertEquals(false, ace.isGranting());
         assertEquals(PermissionData.from(Action.DELETE), ace.getPermission());
         assertEquals(new TenantGrantedAuthoritySid("ROLE_USER", "root"), ace.getSid());
