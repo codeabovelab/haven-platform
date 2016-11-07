@@ -17,10 +17,9 @@
 package com.codeabovelab.dm.cluman.ui.model;
 
 import com.codeabovelab.dm.common.security.ExtendedUserDetails;
-import com.codeabovelab.dm.common.security.ExtendedUserDetailsImpl;
 import com.codeabovelab.dm.common.security.MultiTenancySupport;
-import com.codeabovelab.dm.common.utils.Sugar;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
@@ -31,22 +30,9 @@ import java.util.stream.Collectors;
 /**
  */
 @Data
-public class UiUser {
-    /**
-     * Stub for any non null password
-     */
-    public static final String PWD_STUB = "********";
-    private String user;
-    private String title;
-    private String email;
-    private String tenant;
-    private String password;
+@EqualsAndHashCode(callSuper = true)
+public class UiUser extends UiUserBase {
     private List<UiRole> roles;
-    private List<UiPermission> permissions;
-    private Boolean accountNonExpired;
-    private Boolean accountNonLocked;
-    private Boolean credentialsNonExpired;
-    private Boolean enabled;
 
     public static UiUser fromDetails(UserDetails details) {
         UiUser user = new UiUser();
@@ -65,20 +51,5 @@ public class UiUser {
         user.setRoles(roles);
         user.setTenant(MultiTenancySupport.getTenant(details));
         return user;
-    }
-
-    public void toBuilder(ExtendedUserDetailsImpl.Builder builder) {
-        Sugar.setIfNotNull(builder::setTenant, getTenant());
-        Sugar.setIfNotNull(builder::setEmail, getEmail());
-        Sugar.setIfNotNull(builder::setTitle, getTitle());
-        String password = getPassword();
-        if(password != null && !PWD_STUB.equals(password)) {
-            builder.setPassword(password);
-        }
-        Sugar.setIfNotNull(builder::setUsername, getUser());
-        Sugar.setIfNotNull(builder::setAccountNonExpired, getAccountNonExpired());
-        Sugar.setIfNotNull(builder::setCredentialsNonExpired, getCredentialsNonExpired());
-        Sugar.setIfNotNull(builder::setAccountNonLocked, getAccountNonLocked());
-        Sugar.setIfNotNull(builder::setEnabled, getEnabled());
     }
 }
