@@ -21,7 +21,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Value;
 
-import java.util.Date;
+import java.time.OffsetDateTime;
 
 /**
  */
@@ -30,5 +30,5 @@ import java.util.Date;
 @AllArgsConstructor(onConstructor = @__(@JsonCreator))
 public class UiApplicationInfo {
     private final String version;
-    private final Date buildTime;
+    private final OffsetDateTime buildTime;
 }
