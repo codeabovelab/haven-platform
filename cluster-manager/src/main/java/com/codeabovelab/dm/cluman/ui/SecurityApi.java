@@ -28,7 +28,9 @@ import com.codeabovelab.dm.cluman.validate.ExtendedAssert;
 import com.codeabovelab.dm.common.security.*;
 import com.codeabovelab.dm.common.security.acl.AceSource;
 import com.codeabovelab.dm.common.security.acl.AclSource;
+import com.codeabovelab.dm.common.security.dto.ObjectIdentityData;
 import com.codeabovelab.dm.common.utils.Sugar;
+import io.swagger.annotations.ApiOperation;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.acls.model.ObjectIdentity;
@@ -202,6 +204,22 @@ public class SecurityApi {
     @RequestMapping(path = "/acl/", method = RequestMethod.GET)
     public List<String> getSecuredTypes() {
         return Arrays.asList(SecuredType.values()).stream().map(SecuredType::name).collect(Collectors.toList());
+    }
+
+    @ApiOperation("Batch update of ACLs. Not that, due to we can not guarantee consistency of batch update, we return " +
+      "map with result of updating each ACL.")
+    @RequestMapping(path = "/acl/", method = RequestMethod.POST)
+    public Map<String, UIResult> setAcls(@RequestBody Map<ObjectIdentityData, UiAclUpdate> acls) {
+        // we save order of calls
+        Map<String, UIResult> results = new LinkedHashMap<>();
+        acls.forEach((oid, aclSource) -> {
+            try {
+                providersAclService.updateAclSource(oid, as -> updateAcl(aclSource, as));
+            } catch (org.springframework.security.acls.model.NotFoundException e) {
+                throw new NotFoundException(e);
+            }
+        });
+        return results;
     }
 
     @RequestMapping(path = "/acl/{type}/{id}", method = RequestMethod.GET)

@@ -16,21 +16,60 @@
 
 package com.codeabovelab.dm.common.security.acl;
 
-import org.springframework.security.acls.domain.ObjectIdentityImpl;
+import com.codeabovelab.dm.common.security.dto.ObjectIdentityData;
+import com.google.common.collect.ImmutableMap;
 import org.springframework.security.acls.model.AccessControlEntry;
 import org.springframework.security.acls.model.Acl;
 import org.springframework.security.acls.model.ObjectIdentity;
 import org.springframework.security.acls.model.Sid;
 import org.springframework.util.Assert;
-import org.springframework.util.StringUtils;
 
+import java.io.Serializable;
 import java.util.Collection;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.function.Consumer;
+import java.util.function.Function;
 
 /**
  */
 public class AclUtils {
+
+    private static class TypeSupport {
+        private final String id;
+        private final Class<?> type;
+        private final Function<String, Object> reader;
+
+        TypeSupport(String id, Class<?> type, Function<String, Object> reader) {
+            this.id = id;
+            this.type = type;
+            this.reader = reader;
+        }
+    }
+
+    private static final Map<Object, TypeSupport> SUPPORTED_TYPES;
+    static {
+        final ImmutableMap.Builder<Object, TypeSupport> b = ImmutableMap.builder();
+        TypeSupport[] ts = {
+          new TypeSupport("s", String.class, a -> a),
+          new TypeSupport("i", Integer.class, Integer::valueOf),
+          new TypeSupport("l", Long.class, Long::valueOf)
+        };
+        for(TypeSupport t: ts) {
+            b.put(t.id, t);
+            b.put(t.type, t);
+        }
+        SUPPORTED_TYPES  = b.build();
+    }
+
+    public static boolean isSupportedId(Serializable id) {
+        if(id == null) {
+            return true;
+        }
+        Class<?> type = id.getClass();
+        return SUPPORTED_TYPES.get(type) != null;
+    }
 
     public static boolean isSidLoaded(List<Sid> loadedSids, List<Sid> sids) {
         // If loadedSides is null, this indicates all SIDs were loaded
@@ -85,10 +124,21 @@ public class AclUtils {
     }
 
     public static String toId(String type, Object id) {
-        if(id == null) {
+        Assert.isTrue(type.indexOf(':') < 0, "Type contains ':'.");
+        if(id == null || id instanceof String && ((String) id).isEmpty()) {
             return type + ":";
         }
-        return type + ":" + id.toString();
+        return type + ":" + getIdType(id) + ":" + id.toString();
+    }
+
+    private static String getIdType(Object id) {
+        if(id == null) {
+            return "";
+        }
+        Class<?> clazz = id.getClass();
+        TypeSupport support = SUPPORTED_TYPES.get(clazz);
+        Assert.notNull(support, "Unsupported id type: " + clazz);
+        return support.id;
     }
 
     /**
@@ -106,8 +156,27 @@ public class AclUtils {
         return toId(type, null);
     }
 
-    public static ObjectIdentity fromId(String id) {
-        String[] split = StringUtils.split(id, ":");
-        return new ObjectIdentityImpl(split[0], split[1]);
+    public static ObjectIdentityData fromId(String oid) {
+        Assert.notNull(oid, "oid is null");
+        int typeEnd = oid.indexOf(':');
+        Assert.notNull(typeEnd < 1, "Bad string. Expect like: 'type:s:id'.");
+        String type = oid.substring(0, typeEnd);
+        String idType = "s";
+        String idStr;
+        String second = oid.substring(typeEnd + 1);
+        int idTypeEnd = second.indexOf(':');
+        if(idTypeEnd >= 0) {
+            idStr = second.substring(idTypeEnd + 1);
+            idType = second.substring(0, idTypeEnd);
+        } else {
+            idStr = second;
+        }
+        Object id = "";
+        if(!idStr.isEmpty()) {
+            TypeSupport typeSupport = SUPPORTED_TYPES.get(idType);
+            Assert.notNull(typeSupport, "Unsupported id type:" + idType);
+            id = typeSupport.reader.apply(idStr);
+        }
+        return new ObjectIdentityData(type, (Serializable) id);
     }
 }
