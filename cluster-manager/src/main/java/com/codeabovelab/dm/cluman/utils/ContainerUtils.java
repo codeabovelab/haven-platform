@@ -183,44 +183,6 @@ public final class ContainerUtils {
         return image.substring(0, i + 1) + version;
     }
 
-    @Deprecated
-    public static Long parseMemorySettings(String memory) {
-        if (!StringUtils.hasText(memory)) {
-            return null;
-        }
-        String trim = memory.trim();
-        if (isInteger(trim)) {
-            return Long.parseLong(trim);
-        } else {
-            String substring = trim.substring(0, trim.length() - 1);
-            if (isInteger(substring)) {
-                long value = Long.parseLong(substring);
-                String suffix = trim.substring(trim.length() - 1, trim.length());
-                switch (suffix.toLowerCase()) {
-                    case "k":
-                        return value * 1024;
-                    case "m":
-                        return value * 1024 * 1024;
-                    case "g":
-                        return value * 1024 * 1024 * 1024;
-                }
-            } else {
-                throw new IllegalArgumentException("can't parse memory settings: " + memory);
-            }
-        }
-
-        return null;
-    }
-
-    public static boolean isInteger(String s) {
-        Scanner sc = new Scanner(s.trim());
-        if (!sc.hasNextInt()) return false;
-        // we know it starts with a valid int, now make sure
-        // there's nothing left!
-        sc.nextInt();
-        return !sc.hasNext();
-    }
-
     public static int getPort(String addr) {
         if (addr == null) {
             return -1;
