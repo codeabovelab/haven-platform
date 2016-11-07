@@ -6,6 +6,7 @@ import com.codeabovelab.dm.common.security.TenantPrincipalSid;
 import com.codeabovelab.dm.common.security.acl.AceSource;
 import com.codeabovelab.dm.common.security.acl.AclSource;
 import com.codeabovelab.dm.common.security.acl.AclUtils;
+import com.codeabovelab.dm.common.security.dto.PermissionData;
 import lombok.extern.slf4j.Slf4j;
 import org.hamcrest.Matchers;
 import org.junit.Test;
@@ -65,7 +66,7 @@ public class PropertyAclServiceConfigurerTest {
         assertThat(entries, hasSize(1));
         AceSource ace = entries.get(0);
         assertEquals(false, ace.isGranting());
-        assertEquals(Action.DELETE, ace.getPermission());
+        assertEquals(PermissionData.from(Action.DELETE), ace.getPermission());
         assertEquals(new TenantGrantedAuthoritySid("ROLE_USER", "root"), ace.getSid());
     }
 }
