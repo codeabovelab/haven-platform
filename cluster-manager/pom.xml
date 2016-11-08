@@ -236,22 +236,6 @@
                                     </resources>
                                 </configuration>
                             </execution>
-                            <execution>
-                                <id>copy-resources-keys</id>
-                                <phase>validate</phase>
-                                <goals>
-                                    <goal>copy-resources</goal>
-                                </goals>
-                                <configuration>
-                                    <outputDirectory>${basedir}/target/keys</outputDirectory>
-                                    <resources>
-                                        <resource>
-                                            <directory>${basedir}/keys</directory>
-                                            <filtering>false</filtering>
-                                        </resource>
-                                    </resources>
-                                </configuration>
-                            </execution>
                         </executions>
                     </plugin>
                 </plugins>
