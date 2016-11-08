@@ -26,7 +26,7 @@ public class DtoJsonTest {
             b.setId(101L);
             b.setOwner(new TenantPrincipalSid("principal2", "7l"));
             b.setEntriesInheriting(false);
-            b.setObjectIdentity(new ObjectIdentityImpl("otherobjclass", 6789L));
+            b.setObjectIdentity(new ObjectIdentityImpl("otherobjclass", "6789"));
             b.setEntries(Arrays.asList(
                     AceDataImpl.builder()
                             .id(1L)
@@ -50,7 +50,7 @@ public class DtoJsonTest {
         b.setParentAclData(parent);
         b.setOwner(new TenantPrincipalSid("principal", "2l"));
         b.setEntriesInheriting(true);
-        b.setObjectIdentity(new ObjectIdentityImpl("someobjectclass", 1234L));
+        b.setObjectIdentity(new ObjectIdentityImpl("someobjectclass", "1234"));
         final AclDataImpl expected = b.build();
 
         String res = mapper.writeValueAsString(expected);

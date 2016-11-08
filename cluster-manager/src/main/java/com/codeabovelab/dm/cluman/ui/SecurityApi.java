@@ -21,16 +21,16 @@ import com.codeabovelab.dm.cluman.security.AbstractAclService;
 import com.codeabovelab.dm.cluman.security.AuthoritiesService;
 import com.codeabovelab.dm.cluman.security.ProvidersAclService;
 import com.codeabovelab.dm.cluman.security.SecuredType;
-import com.codeabovelab.dm.cluman.ui.model.UiAclUpdate;
-import com.codeabovelab.dm.cluman.ui.model.UiRole;
-import com.codeabovelab.dm.cluman.ui.model.UiUser;
+import com.codeabovelab.dm.cluman.ui.model.*;
 import com.codeabovelab.dm.cluman.users.UserRegistration;
 import com.codeabovelab.dm.cluman.users.UsersStorage;
 import com.codeabovelab.dm.cluman.validate.ExtendedAssert;
 import com.codeabovelab.dm.common.security.*;
 import com.codeabovelab.dm.common.security.acl.AceSource;
 import com.codeabovelab.dm.common.security.acl.AclSource;
+import com.codeabovelab.dm.common.security.dto.ObjectIdentityData;
 import com.codeabovelab.dm.common.utils.Sugar;
+import io.swagger.annotations.ApiOperation;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.acls.model.ObjectIdentity;
@@ -42,7 +42,6 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
-import java.io.Serializable;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -98,7 +97,7 @@ public class SecurityApi {
     }
 
     @RequestMapping(value = "/users/{user}", method = RequestMethod.POST)
-    public void setUser(@PathVariable("user") String username, @RequestBody UiUser user) {
+    public UiUser setUser(@PathVariable("user") String username, @RequestBody UiUserUpdate user) {
         user.setUser(username);
         String password = user.getPassword();
         // we must encode password
@@ -106,11 +105,13 @@ public class SecurityApi {
             String encodedPwd = passwordEncoder.encode(password);
             user.setPassword(encodedPwd);
         }
-        usersStorage.update(username, (ur) -> {
+        UserRegistration reg = usersStorage.get(username);
+        reg.update((ur) -> {
             ExtendedUserDetailsImpl.Builder builder = ExtendedUserDetailsImpl.builder(ur.getDetails());
             user.toBuilder(builder);
             ur.setDetails(builder);
         });
+        return UiUser.fromDetails(reg.getDetails());
     }
 
     @RequestMapping(value = "/users/{user}", method = RequestMethod.DELETE)
@@ -134,6 +135,23 @@ public class SecurityApi {
     @RequestMapping(value = "/users/{user}/roles/", method = RequestMethod.GET)
     public List<UiRole> getUserRoles(@PathVariable("user") String username) {
         ExtendedUserDetails details = getUserDetails(username);
+        List<UiRole> roles = details.getAuthorities().stream().map(UiRole::fromAuthority).collect(Collectors.toList());
+        roles.sort(null);
+        return roles;
+    }
+
+    @RequestMapping(value = "/users/{user}/roles/", method = RequestMethod.POST)
+    public List<UiRole> updateUserRoles(@PathVariable("user") String username, @RequestBody List<UiRoleUpdate> updatedRoles) {
+        UserRegistration ur = usersStorage.get(username);
+        ExtendedAssert.notFound(ur, "Can not find user: " + username);
+        if(!updatedRoles.isEmpty()) {
+            ur.update((r) -> {
+                ExtendedUserDetailsImpl.Builder builder = ExtendedUserDetailsImpl.builder(ur.getDetails());
+                UiUserUpdate.updateRoles(updatedRoles, builder);
+                r.setDetails(builder);
+            });
+        }
+        ExtendedUserDetails details = ur.getDetails();
         List<UiRole> roles = details.getAuthorities().stream().map(UiRole::fromAuthority).collect(Collectors.toList());
         roles.sort(null);
         return roles;
@@ -186,6 +204,22 @@ public class SecurityApi {
     @RequestMapping(path = "/acl/", method = RequestMethod.GET)
     public List<String> getSecuredTypes() {
         return Arrays.asList(SecuredType.values()).stream().map(SecuredType::name).collect(Collectors.toList());
+    }
+
+    @ApiOperation("Batch update of ACLs. Not that, due to we can not guarantee consistency of batch update, we return " +
+      "map with result of updating each ACL.")
+    @RequestMapping(path = "/acl/", method = RequestMethod.POST)
+    public Map<String, UIResult> setAcls(@RequestBody Map<ObjectIdentityData, UiAclUpdate> acls) {
+        // we save order of calls
+        Map<String, UIResult> results = new LinkedHashMap<>();
+        acls.forEach((oid, aclSource) -> {
+            try {
+                providersAclService.updateAclSource(oid, as -> updateAcl(aclSource, as));
+            } catch (org.springframework.security.acls.model.NotFoundException e) {
+                throw new NotFoundException(e);
+            }
+        });
+        return results;
     }
 
     @RequestMapping(path = "/acl/{type}/{id}", method = RequestMethod.GET)

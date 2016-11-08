@@ -79,14 +79,14 @@ public class AclSource {
             if(id == null) {
                 // this is new entry
                 id = newId();
-                AceSource.builder().from(entry).id(id).build();
+                entry = AceSource.builder().from(entry).id(id).build();
             }
             this.entries.put(id, entry);
             return this;
         }
 
         private Long newId() {
-            return this.entries.keySet().stream().max(Long::compare).orElse(1L);
+            return this.entries.keySet().stream().max(Long::compare).orElse(0L) + 1L;
         }
 
         public Builder entriesMap(Map<Long, AceSource> entries) {

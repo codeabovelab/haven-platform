@@ -54,6 +54,9 @@ public class MultiTenancySupport {
      */
     @SuppressWarnings("unchecked")
     public static <T extends TenantSid> T fixTenant(T sid) {
+        if(sid == null) {
+            return sid;
+        }
         final String tenant = sid.getTenant();
         if(sid instanceof GrantedAuthoritySid && tenant == null) {
             return sid;
