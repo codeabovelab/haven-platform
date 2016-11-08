@@ -17,17 +17,15 @@
 package com.codeabovelab.dm.cluman.ui;
 
 import com.codeabovelab.dm.cluman.yaml.MappingYamlHttpMessageConverter;
-import com.codeabovelab.dm.cluman.yaml.YamlUtils;
 import com.codeabovelab.dm.common.json.JacksonUtils;
-import com.codeabovelab.dm.common.json.JtModule;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.converter.HttpMessageConverter;
-import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
 import org.springframework.web.servlet.config.annotation.CorsRegistration;
 import org.springframework.web.servlet.config.annotation.CorsRegistry;
 import org.springframework.web.servlet.config.annotation.PathMatchConfigurer;
@@ -35,7 +33,6 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurerAdapter
 import org.springframework.web.util.UrlPathHelper;
 
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 
 /**
@@ -85,6 +82,12 @@ public class UiConfiguration {
                 }
             }
         };
+    }
+
+
+    @Bean
+    public WelcomePageHandlerMapping welcomePageMapping(@Value("${dm.ui.welcome.paths}") String[] paths) {
+        return new WelcomePageHandlerMapping(Arrays.asList(paths));
     }
 
 
