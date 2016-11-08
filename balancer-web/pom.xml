@@ -21,36 +21,11 @@
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
             </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-dependency-plugin</artifactId>
-                <configuration>
-                    <includeTypes>tar.gz</includeTypes>
-                    <excludeTransitive>true</excludeTransitive>
-                    <outputDirectory>static</outputDirectory>
-                    <!--<useSubDirectoryPerArtifact>true</useSubDirectoryPerArtifact>-->
-                    <stripVersion>true</stripVersion>
-                </configuration>
-                <executions>
-                    <execution>
-                        <id>unpack</id>
-                        <phase>initialize</phase>
-                        <goals>
-                            <goal>unpack-dependencies</goal>
-                        </goals>
-                    </execution>
-                </executions>
-            </plugin>
         </plugins>
     </build>
 
     <dependencies>
-        <dependency>
-            <groupId>com.codeabovelab</groupId>
-            <artifactId>dm-ui</artifactId>
-            <version>0.1</version>
-            <type>tar.gz</type>
-        </dependency>
+
         <dependency>
             <groupId>org.springframework.cloud</groupId>
             <artifactId>spring-cloud-netflix-core</artifactId>
