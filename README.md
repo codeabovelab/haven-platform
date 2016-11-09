@@ -29,10 +29,23 @@ The following installation instruction has been tested on Debian / Ubuntu.
  MASTER_IP=172.31.0.3 
  
  # IP of current configured node. This IP must be accessible from master instance
- SELF_IP=172.31.0.12 or 172.31.0.12 
+ SELF_IP=172.31.0.12
 ```
- 
-2. Configure Docker on each instance. By default, Docker listens on Unix socket so TCP socket configuration is needed.
+
+*Skip steps 2 and 3 if you already use docker with etcd*
+
+2. Configure etcd on master
+https://coreos.com/etcd/docs/latest/docker_guide.html
+```sh
+docker run -d -v /usr/share/ca-certificates/:/etc/ssl/certs -p 4001:4001 -p 2380:2380 -p 2379:2379 \
+     --name etcd quay.io/coreos/etcd:v2.3.7  -name etcd0  -advertise-client-urls http://$MASTER_IP:2379,http://$MASTER_IP:4001 \
+     -listen-client-urls http://0.0.0.0:2379,http://0.0.0.0:4001  -initial-advertise-peer-urls http://$MASTER_IP:2380 \
+     -listen-peer-urls http://0.0.0.0:2380  -initial-cluster-token etcd-cluster-1 \
+     -initial-cluster etcd0=http://$MASTER_IP:2380  -initial-cluster-state new
+
+```
+
+3. Configure Docker on each instance. By default, Docker listens on Unix socket so TCP socket configuration is needed.
   
 ```sh
  %cat /etc/default/docker
@@ -40,7 +53,7 @@ The following installation instruction has been tested on Debian / Ubuntu.
   -H tcp://0.0.0.0:2375"
 ```
  
- *For installing Master:*
+4. *installing DockMaster:*
  
 ```sh
  docker run -d --name=cluster-manager -p 8761:8761 -e "kv_etcd_urls=http://$MASTER_IP:2379" ni1.codeabovelab.com/cluster-manager
@@ -71,9 +84,7 @@ or via Git repository:
 
 dm.kv.etcd.urls=http://$MASTER_IP:2379
 
- *For installing Agent:*
- 
- On the Agent node, only Docker and [dockmaster-agent](/doc/agent.md) are required.
+ *For installing Agent [dockmaster-agent](/doc/agent.md):*
  
 ```sh
  wget 'http://$MASTER_IP:8762/res/agent/dockmaster-agent.py'
