@@ -11,6 +11,7 @@ import com.codeabovelab.dm.common.security.Authorities;
 import com.codeabovelab.dm.common.security.GrantedAuthorityImpl;
 import com.codeabovelab.dm.common.security.MultiTenancySupport;
 import com.codeabovelab.dm.common.security.TempAuth;
+import com.codeabovelab.dm.common.security.acl.ExtPermissionGrantingStrategy;
 import com.codeabovelab.dm.common.security.dto.AuthenticationData;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.Before;
@@ -25,7 +26,6 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
 import org.springframework.context.annotation.Primary;
 import org.springframework.security.access.AccessDeniedException;
-import org.springframework.security.acls.model.AclService;
 import org.springframework.security.acls.model.SidRetrievalStrategy;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -57,8 +57,8 @@ public class DockerServiceSecurityWrapperTest {
     public static class AppConfiguration {
         @Primary
         @Bean
-        AclContextFactory aclContextFactory(ConfigurableAclService aclService, SidRetrievalStrategy sidRetrievalStrategy) {
-            return new StandardAclContextFactory(aclService, sidRetrievalStrategy);
+        AclContextFactory aclContextFactory(ConfigurableAclService aclService, ExtPermissionGrantingStrategy pgs, SidRetrievalStrategy sidRetrievalStrategy) {
+            return new StandardAclContextFactory(aclService, pgs, sidRetrievalStrategy);
         }
     }
 
