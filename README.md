@@ -56,7 +56,7 @@ docker run -d -v /usr/share/ca-certificates/:/etc/ssl/certs -p 4001:4001 -p 2380
 4. *installing DockMaster:*
  
 ```sh
- docker run -d --name=cluster-manager -p 8761:8761 -e "kv_etcd_urls=http://$MASTER_IP:2379" ni1.codeabovelab.com/cluster-manager
+ docker run -d --name=cluman -p 8761:8761 -e "dm_kv_etcd_urls=http://$MASTER_IP:2379" codeabovelab/cluster-manager
 
 ```
  
@@ -66,8 +66,7 @@ Any settings can be passed via environment variables or via git repository.  For
 you must specify the URL, username, and password:
 
 ```properties
- -e "dm_config_git_enabled=true"
- -e "dm_config_git_uri=https://bitbucket.org/<git repo url>"
+ -e "dm_config_git_uri=https://github.com/codeabovelab/dockmaster-example-configuration.git"
  -e "dm_config_git_username=username"
  -e "dm_config_git_password=password"
 ```
