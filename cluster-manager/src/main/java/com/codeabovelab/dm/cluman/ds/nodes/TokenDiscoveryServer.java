@@ -17,14 +17,12 @@
 package com.codeabovelab.dm.cluman.ds.nodes;
 
 import com.codeabovelab.dm.cluman.model.*;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.time.LocalDateTime;
 import java.util.Map;
 
 import static org.springframework.util.MimeTypeUtils.APPLICATION_JSON_VALUE;
@@ -37,9 +35,8 @@ import static org.springframework.web.bind.annotation.RequestMethod.POST;
  */
 @RestController
 @RequestMapping({"/swarm_token_discovery" /*deprecated*/, "/discovery"})
+@Slf4j
 public class TokenDiscoveryServer {
-
-    private static final Logger LOG = LoggerFactory.getLogger(TokenDiscoveryServer.class);
 
     private final NodeStorage storage;
 
@@ -58,7 +55,7 @@ public class TokenDiscoveryServer {
         builder.health(createNodeHealth(data));
         NodeInfo node = builder.build();
         storage.updateNode(NodeUpdate.builder().node(node).build(), ttl);
-        LOG.info("Update node {}", node.getName());
+        log.info("Update node {}", node.getName());
         return new ResponseEntity<>(HttpStatus.OK);
     }
 
