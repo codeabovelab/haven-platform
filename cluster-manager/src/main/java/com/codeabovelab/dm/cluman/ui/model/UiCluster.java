@@ -43,6 +43,7 @@ public class UiCluster extends UiClusterEditablePart implements Comparable<UiClu
     private Set<NodesGroup.Feature> features;
     private Entry nodes;
     private Entry containers;
+    private UiPermission permission;
     private Set<String> applications = new HashSet<>();
 
     @Override

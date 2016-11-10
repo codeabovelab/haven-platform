@@ -106,6 +106,10 @@ public class UsersStorage implements UserIdentifiersDetailsService {
         return map.get(name);
     }
 
+    public UserRegistration getOrCreate(String name) {
+        return internalLoadUser(name);
+    }
+
     @Override
     public Collection<ExtendedUserDetails> getUsers() {
         Collection<UserRegistration> values = map.values();

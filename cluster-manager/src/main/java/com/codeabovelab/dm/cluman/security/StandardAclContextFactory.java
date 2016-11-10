@@ -16,6 +16,7 @@
 
 package com.codeabovelab.dm.cluman.security;
 
+import com.codeabovelab.dm.common.security.acl.ExtPermissionGrantingStrategy;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.acls.model.AclService;
 import org.springframework.security.acls.model.Sid;
@@ -30,10 +31,12 @@ import java.util.List;
 public class StandardAclContextFactory implements AclContextFactory {
 
     private final AclService aclService;
+    private final ExtPermissionGrantingStrategy pgs;
     private final SidRetrievalStrategy sidStrategy;
 
-    public StandardAclContextFactory(AclService aclService, SidRetrievalStrategy sidStrategy) {
+    public StandardAclContextFactory(AclService aclService, ExtPermissionGrantingStrategy pgs, SidRetrievalStrategy sidStrategy) {
         this.aclService = aclService;
+        this.pgs = pgs;
         this.sidStrategy = sidStrategy;
     }
 
@@ -46,6 +49,6 @@ public class StandardAclContextFactory implements AclContextFactory {
         } else {
             sids = sidStrategy.getSids(authentication);
         }
-        return new AclContext(aclService, sids);
+        return new AclContext(aclService, pgs, sids);
     }
 }

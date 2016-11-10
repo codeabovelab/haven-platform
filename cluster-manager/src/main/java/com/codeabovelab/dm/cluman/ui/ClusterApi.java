@@ -23,6 +23,9 @@ import com.codeabovelab.dm.cluman.cluster.docker.management.DockerUtils;
 import com.codeabovelab.dm.cluman.cluster.docker.management.argument.GetContainersArg;
 import com.codeabovelab.dm.cluman.cluster.registry.RegistryRepository;
 import com.codeabovelab.dm.cluman.job.JobInstance;
+import com.codeabovelab.dm.cluman.security.AclContext;
+import com.codeabovelab.dm.cluman.security.AclContextFactory;
+import com.codeabovelab.dm.cluman.security.SecuredType;
 import com.codeabovelab.dm.cluman.source.DeployOptions;
 import com.codeabovelab.dm.cluman.source.DeploySourceJob;
 import com.codeabovelab.dm.cluman.source.SourceService;
@@ -37,6 +40,7 @@ import com.codeabovelab.dm.cluman.validate.ExtendedAssert;
 import com.codeabovelab.dm.cluman.yaml.YamlUtils;
 import com.codeabovelab.dm.common.cache.DefineCache;
 import com.codeabovelab.dm.common.cache.MessageBusCacheInvalidator;
+import com.codeabovelab.dm.common.security.acl.AclSource;
 import com.codeabovelab.dm.common.utils.Sugar;
 import io.swagger.annotations.ApiOperation;
 import lombok.RequiredArgsConstructor;
@@ -73,18 +77,21 @@ public class ClusterApi {
     private final ApplicationService applicationService;
     private final ContainerStorage containerStorage;
     private final FilterApi filterApi;
+    private final AclContextFactory aclContextFactory;
 
     @RequestMapping(value = "/clusters/", method = GET)
     public List<UiCluster> listClusters() {
+        AclContext ac = aclContextFactory.getContext();
         Collection<NodesGroup> clusters = this.discoveryStorage.getClusters();
-        List<UiCluster> ucs = clusters.stream().map(this::toUi).collect(Collectors.toList());
+        List<UiCluster> ucs = clusters.stream().map(c -> this.toUi(ac, c)).collect(Collectors.toList());
         ucs.sort(Comparator.naturalOrder());
         return ucs;
     }
 
-    private UiCluster toUi(NodesGroup cluster) {
+    private UiCluster toUi(AclContext ac, NodesGroup cluster) {
         UiCluster uc = new UiCluster();
-        uc.setName(cluster.getName());
+        final String name = cluster.getName();
+        uc.setName(name);
         uc.getTitle().accept(cluster.getTitle());
         uc.getDescription().accept(cluster.getDescription());
         uc.getFilter().accept(cluster.getImageFilter());
@@ -94,11 +101,12 @@ public class ClusterApi {
         uc.setNodes(new UiCluster.Entry(info.getNodeCount(), info.getOffNodeCount()));
         try {
             Set<String> apps = uc.getApplications();
-            List<Application> applications = applicationService.getApplications(cluster.getName());
+            List<Application> applications = applicationService.getApplications(name);
             applications.forEach(a -> apps.add(a.getName()));
         } catch (Exception e) {
             //nothing
         }
+        uc.setPermission(UiPermission.toUi(ac.getPermission(SecuredType.CLUSTER.id(name))));
         return uc;
     }
 

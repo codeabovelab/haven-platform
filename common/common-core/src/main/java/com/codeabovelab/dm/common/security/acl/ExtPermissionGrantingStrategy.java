@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *      http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -14,27 +14,23 @@
  * limitations under the License.
  */
 
-package com.codeabovelab.dm.cluman.ui.model;
+package com.codeabovelab.dm.common.security.acl;
 
 import com.codeabovelab.dm.common.security.dto.PermissionData;
-import io.swagger.annotations.ApiModelProperty;
-import lombok.Data;
+import org.springframework.security.acls.model.Acl;
+import org.springframework.security.acls.model.PermissionGrantingStrategy;
+import org.springframework.security.acls.model.Sid;
+
+import java.util.List;
 
 /**
  */
-@Data
-public class UiPermission {
+public interface ExtPermissionGrantingStrategy extends PermissionGrantingStrategy {
     /**
-     * String with chars from Action.
-     * @see com.codeabovelab.dm.common.security.dto.PermissionData#getExpression()
-     * @see com.codeabovelab.dm.common.security.Action
+     * Collecting ACE entries and default permissions to single permission fo specified sids.
+     * @param acl
+     * @param sids
+     * @return collected permission
      */
-    @ApiModelProperty("String expression like 'CRUDEA'")
-    private String expr;
-
-    public static UiPermission toUi(PermissionData permission) {
-        UiPermission up = new UiPermission();
-        up.setExpr(permission.getExpression());
-        return up;
-    }
+    PermissionData getPermission(Acl acl, List<Sid> sids);
 }

@@ -18,6 +18,7 @@ package com.codeabovelab.dm.common.security.acl;
 
 import com.codeabovelab.dm.common.security.MultiTenancySupport;
 import com.codeabovelab.dm.common.security.OwnedByTenant;
+import com.codeabovelab.dm.common.security.dto.PermissionData;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.acls.domain.AuditLogger;
 import org.springframework.security.acls.domain.PrincipalSid;
@@ -32,7 +33,7 @@ import java.util.List;
  * of tenant user attribute
  *
  */
-public final class TenantBasedPermissionGrantedStrategy implements PermissionGrantingStrategy {
+public final class TenantBasedPermissionGrantedStrategy implements ExtPermissionGrantingStrategy {
 
     private final PermissionGrantingJudge defaultBehavior;
     
@@ -59,7 +60,7 @@ public final class TenantBasedPermissionGrantedStrategy implements PermissionGra
         if(ownerTenantId == MultiTenancySupport.NO_TENANT) {
             throw new RuntimeException("Can not retrieve tenant from acl owner: acl.objectIdentity=" + acl.getObjectIdentity().getIdentifier());
         }
-        
+
         final String currentPrincipalTenant = getPrincipalSidTenant(sids);
         
         PermissionGrantingContext pgc = new PermissionGrantingContext(this, ownerSid, currentPrincipalTenant);
@@ -209,5 +210,58 @@ public final class TenantBasedPermissionGrantedStrategy implements PermissionGra
         final OwnedByTenant user = (OwnedByTenant)userDetailsService.loadUserByUsername(owner.getPrincipal());
         final String tenantId = user.getTenant();
         return tenantId;
+    }
+
+    @Override
+    public PermissionData getPermission(Acl acl, List<Sid> sids) {
+        Assert.notNull(tenantsService, "tenantsService is null");
+        Assert.notNull(userDetailsService, "userDetailsService is null");
+
+        final Sid ownerSid = acl.getOwner();
+        final String ownerTenantId = getTenantFromSid(ownerSid);
+        if(ownerTenantId == MultiTenancySupport.NO_TENANT) {
+            throw new RuntimeException("Can not retrieve tenant from acl owner: acl.objectIdentity=" + acl.getObjectIdentity().getIdentifier());
+        }
+
+        final String currentPrincipalTenant = getPrincipalSidTenant(sids);
+
+        PermissionGrantingContext pgc = new PermissionGrantingContext(this, ownerSid, currentPrincipalTenant);
+        // below code based on DefaultPermissionGrantingStrategy
+        final List<AccessControlEntry> aces = acl.getEntries();
+
+
+        PermissionData.Builder pb = PermissionData.builder();
+        // !! not use foreach here
+        for(int sidIndex = 0; sidIndex < sids.size(); ++sidIndex) {
+            final Sid sid = sids.get(sidIndex);
+
+            pgc.setHasAces(!aces.isEmpty());
+            pgc.setCurrentSid(sid);
+
+            //TODO obtain default permission
+            defaultBehavior.allow(pgc);
+
+            for(int aceIndex = 0; aceIndex < aces.size(); ++ aceIndex) {
+                AccessControlEntry ace = aces.get(aceIndex);
+                final String aceTenant = getTenantFromSid(ace.getSid());
+                Assert.notNull(aceTenant, "Tenant of " + ace + " is null.");
+                //root SIDs consume all ACE
+                if(!pgc.getCurrentTenants().contains(aceTenant)) {
+                    continue;
+                }
+                if(!ace.getSid().equals(sid)) {
+                    continue;
+                }
+
+                Permission acep = ace.getPermission();
+                if(ace.isGranting()) {
+                    pb.add(acep);
+                } else {
+                    pb.remove(acep);
+                }
+            }
+        }
+        //TODO handle ACL inheriting
+        return pb.build();
     }
 }

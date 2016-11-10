@@ -16,9 +16,13 @@
 
 package com.codeabovelab.dm.cluman.security;
 
+import com.codeabovelab.dm.cluman.model.NodesGroup;
 import com.codeabovelab.dm.common.security.Authorities;
 import com.codeabovelab.dm.common.security.MultiTenancySupport;
 import com.codeabovelab.dm.common.security.TenantGrantedAuthoritySid;
+import com.codeabovelab.dm.common.security.acl.AclSource;
+import com.codeabovelab.dm.common.security.acl.ExtPermissionGrantingStrategy;
+import com.codeabovelab.dm.common.security.dto.PermissionData;
 import org.springframework.security.acls.model.*;
 import org.springframework.util.Assert;
 
@@ -29,10 +33,12 @@ import java.util.List;
  */
 public class AclContext {
     private final AclService aclService;
+    private final ExtPermissionGrantingStrategy pgs;
     private final List<Sid> sids;
 
-    public AclContext(AclService aclService, List<Sid> sids) {
+    AclContext(AclService aclService, ExtPermissionGrantingStrategy pgs, List<Sid> sids) {
         this.aclService = aclService;
+        this.pgs = pgs;
         this.sids = sids;
     }
 
@@ -44,6 +50,18 @@ public class AclContext {
      */
     public boolean isGranted(ObjectIdentity o, Permission ... perms) {
         Assert.notNull(o, "Secured object is null");
+        if (isAdminFor(o)) {
+            return true;
+        }
+        try {
+            Acl acl = aclService.readAclById(o);
+            return acl.isGranted(Arrays.asList(perms), sids, false);
+        } catch (NotFoundException e) {
+            return false;
+        }
+    }
+
+    private boolean isAdminFor(ObjectIdentity o) {
         final String role = Authorities.adminOf(o.getType());
         final String objectTenant = MultiTenancySupport.getTenant(o);
         for(Sid sid: sids) {
@@ -66,11 +84,19 @@ public class AclContext {
                 return true;
             }
         }
+        return false;
+    }
+
+    public PermissionData getPermission(ObjectIdentity oid) {
+        Assert.notNull(oid, "Secured object is null");
+        if(isAdminFor(oid)) {
+            return PermissionData.ALL;
+        }
         try {
-            Acl acl = aclService.readAclById(o);
-            return acl.isGranted(Arrays.asList(perms), sids, false);
+            Acl realAcl = aclService.readAclById(oid);
+            return pgs.getPermission(realAcl, sids);
         } catch (NotFoundException e) {
-            return false;
+            return PermissionData.NONE;
         }
     }
 }

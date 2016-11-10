@@ -105,7 +105,7 @@ public class SecurityApi {
             String encodedPwd = passwordEncoder.encode(password);
             user.setPassword(encodedPwd);
         }
-        UserRegistration reg = usersStorage.get(username);
+        UserRegistration reg = usersStorage.getOrCreate(username);
         reg.update((ur) -> {
             ExtendedUserDetailsImpl.Builder builder = ExtendedUserDetailsImpl.builder(ur.getDetails());
             user.toBuilder(builder);
@@ -260,8 +260,8 @@ public class SecurityApi {
                 AceSource.Builder b = AceSource.builder();
                 // note that id may be null, it is normal
                 b.setId(aceId);
-                b.setAuditFailure(entry.getAuditFailure());
-                b.setAuditSuccess(entry.getAuditSuccess());
+                Sugar.setIfNotNull(b::setAuditFailure, entry.getAuditFailure());
+                Sugar.setIfNotNull(b::setAuditSuccess, entry.getAuditSuccess());
                 b.setSid(entry.getSid());
                 b.setGranting(entry.getGranting());
                 b.setPermission(entry.getPermission());

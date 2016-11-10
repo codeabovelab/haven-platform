@@ -68,8 +68,8 @@ public class SecurityConfiguration {
     }
 
     @Bean
-    AclContextFactory aclContextFactory(AclService aclService, SidRetrievalStrategy sidRetrievalStrategy) {
-        return new StandardAclContextFactory(aclService, sidRetrievalStrategy);
+    AclContextFactory aclContextFactory(AclService aclService, ExtPermissionGrantingStrategy pgs, SidRetrievalStrategy sidRetrievalStrategy) {
+        return new StandardAclContextFactory(aclService, pgs, sidRetrievalStrategy);
     }
 
     @Bean
@@ -101,7 +101,7 @@ public class SecurityConfiguration {
     }
 
     @Bean
-    PermissionGrantingStrategy createPermissionGrantingStrategy(TenantsService tenantsService) {
+    ExtPermissionGrantingStrategy createPermissionGrantingStrategy(TenantsService tenantsService) {
         PermissionGrantingJudgeDefaultBehavior behavior = new PermissionGrantingJudgeDefaultBehavior(tenantsService);
         return new TenantBasedPermissionGrantedStrategy(behavior);
     }

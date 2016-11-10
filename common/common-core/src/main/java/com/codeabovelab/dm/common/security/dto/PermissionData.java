@@ -61,7 +61,13 @@ public class PermissionData implements Permission {
         public Builder add(Permission permission) {
             this.mask |= permission.getMask();
             this.pattern = AclFormattingUtils.mergePatterns(this.pattern, permission.getPattern());
+            return this;
+        }
 
+        public Builder add(Permission ... permissions) {
+            for(Permission permission: permissions) {
+                add(permission);
+            }
             return this;
         }
 
@@ -89,6 +95,9 @@ public class PermissionData implements Permission {
             return new PermissionData(pattern, mask);
         }
     }
+
+    public static final PermissionData ALL = PermissionData.builder().add((Permission[]) Action.values()).build();
+    public static final PermissionData NONE = builder().build();
 
     private final String expression;
     private final String pattern;
