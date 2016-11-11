@@ -19,6 +19,7 @@ package com.codeabovelab.dm.common.security.acl;
 import com.codeabovelab.dm.common.security.MultiTenancySupport;
 import com.codeabovelab.dm.common.security.dto.ObjectIdentityData;
 import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.google.common.collect.ImmutableList;
 import lombok.Data;
@@ -138,6 +139,11 @@ public class AclSource {
         this.entriesInheriting = b.entriesInheriting;
         // we must save order of  ACEs
         this.entriesMap = Collections.unmodifiableMap(new LinkedHashMap<>(b.entries));
+    }
+
+    @JsonIgnore
+    public Map<Long, AceSource> getEntriesMap() {
+        return entriesMap;
     }
 
     public List<AceSource> getEntries() {

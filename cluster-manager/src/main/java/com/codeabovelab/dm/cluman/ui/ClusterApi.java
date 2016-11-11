@@ -41,6 +41,7 @@ import com.codeabovelab.dm.cluman.yaml.YamlUtils;
 import com.codeabovelab.dm.common.cache.DefineCache;
 import com.codeabovelab.dm.common.cache.MessageBusCacheInvalidator;
 import com.codeabovelab.dm.common.security.acl.AclSource;
+import com.codeabovelab.dm.common.security.dto.ObjectIdentityData;
 import com.codeabovelab.dm.common.utils.Sugar;
 import io.swagger.annotations.ApiOperation;
 import lombok.RequiredArgsConstructor;
@@ -106,7 +107,7 @@ public class ClusterApi {
         } catch (Exception e) {
             //nothing
         }
-        uc.setPermission(UiPermission.toUi(ac.getPermission(SecuredType.CLUSTER.id(name))));
+        uc.setPermission(UiPermission.create(ac, SecuredType.CLUSTER.id(name)));
         return uc;
     }
 
