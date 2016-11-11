@@ -22,9 +22,9 @@ import com.codeabovelab.dm.common.kv.mapping.KvMapper;
 import com.codeabovelab.dm.cluman.ds.nodes.NodeStorage;
 import com.codeabovelab.dm.cluman.model.NodesGroup;
 import com.codeabovelab.dm.common.security.acl.AclSource;
+import com.codeabovelab.dm.common.security.dto.ObjectIdentityData;
 import com.google.common.collect.ImmutableSet;
 import lombok.ToString;
-import org.springframework.security.acls.model.ObjectIdentity;
 import org.springframework.util.Assert;
 
 import java.util.Collection;
@@ -43,7 +43,7 @@ abstract class AbstractNodesGroup<T extends AbstractNodesGroup<T, C>, C extends 
     private volatile KvMapper<C> mapper;
     protected volatile C config;
     protected final Object lock = new Object();
-    private final ObjectIdentity oid;
+    private final ObjectIdentityData oid;
 
     @SuppressWarnings("unchecked")
     public AbstractNodesGroup(C config,

@@ -28,6 +28,7 @@ import com.codeabovelab.dm.cluman.validate.ExtendedAssert;
 import com.codeabovelab.dm.common.security.*;
 import com.codeabovelab.dm.common.security.acl.AceSource;
 import com.codeabovelab.dm.common.security.acl.AclSource;
+import com.codeabovelab.dm.common.security.acl.AclUtils;
 import com.codeabovelab.dm.common.security.dto.ObjectIdentityData;
 import com.codeabovelab.dm.common.utils.Sugar;
 import io.swagger.annotations.ApiOperation;
@@ -199,6 +200,19 @@ public class SecurityApi {
             }
             r.setDetails(builder);
         });
+    }
+
+    @RequestMapping(path = "/users/{user}/acls/", method = RequestMethod.GET)
+    public Map<ObjectIdentityData, AclSource> getUserAcls(@PathVariable("user") String username) {
+        Map<ObjectIdentityData, AclSource> map = new HashMap<>();
+        providersAclService.getAcls((a) -> {
+            if(!AclUtils.isContainsUser(a, username)) {
+                return;
+            }
+            // we must serialize as our object, it allow save it as correct string
+            map.put(a.getObjectIdentity(), a);
+        });
+        return map;
     }
 
     @RequestMapping(path = "/acl/", method = RequestMethod.GET)

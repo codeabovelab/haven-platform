@@ -27,6 +27,8 @@ import org.springframework.security.acls.model.NotFoundException;
 import org.springframework.stereotype.Component;
 
 import java.io.Serializable;
+import java.util.List;
+import java.util.function.Consumer;
 
 /**
  */
@@ -55,5 +57,17 @@ public class ClusterAclProvider implements AclProvider {
             throw new NotFoundException("can not found object for id: " + id);
         }
         cluster.updateAcl(operator);
+    }
+
+    @Override
+    public void list(Consumer<AclSource> consumer) {
+        DiscoveryStorage ds = discoveryStorage.getObject();
+        List<NodesGroup> clusters = ds.getClusters();
+        clusters.forEach(ng -> {
+            AclSource acl = ng.getAcl();
+            if(acl != null) {
+                consumer.accept(acl);
+            }
+        });
     }
 }

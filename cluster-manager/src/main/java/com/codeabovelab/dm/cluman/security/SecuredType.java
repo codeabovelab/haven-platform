@@ -17,6 +17,7 @@
 package com.codeabovelab.dm.cluman.security;
 
 import com.codeabovelab.dm.common.security.Authorities;
+import com.codeabovelab.dm.common.security.dto.ObjectIdentityData;
 import org.springframework.security.acls.domain.ObjectIdentityImpl;
 import org.springframework.security.acls.model.ObjectIdentity;
 
@@ -51,11 +52,11 @@ public enum SecuredType {
      * @param id if null then act like {@link #typeId()}
      * @return ObjectIdentity for specified id and type, or only type if id is null
      */
-    public ObjectIdentity id(String id) {
+    public ObjectIdentityData id(String id) {
         if(id == null) {
             return typeId();
         }
-        return new ObjectIdentityImpl(name(), id);
+        return new ObjectIdentityData(name(), id);
     }
 
     /**
@@ -63,8 +64,8 @@ public enum SecuredType {
      * @see com.codeabovelab.dm.common.security.acl.AclUtils#toTypeId(ObjectIdentity)
      * @return
      */
-    public ObjectIdentity typeId() {
-        return new ObjectIdentityImpl(name(), "");
+    public ObjectIdentityData typeId() {
+        return new ObjectIdentityData(name(), "");
     }
 
     public String admin() {

@@ -18,6 +18,7 @@ package com.codeabovelab.dm.common.security.acl;
 
 import com.codeabovelab.dm.common.security.dto.ObjectIdentityData;
 import com.google.common.collect.ImmutableMap;
+import org.springframework.security.acls.domain.PrincipalSid;
 import org.springframework.security.acls.model.AccessControlEntry;
 import org.springframework.security.acls.model.Acl;
 import org.springframework.security.acls.model.ObjectIdentity;
@@ -178,5 +179,29 @@ public class AclUtils {
             id = typeSupport.reader.apply(idStr);
         }
         return new ObjectIdentityData(type, (Serializable) id);
+    }
+
+    /**
+     * Test that specified acl contains specified user.
+     * @param acl
+     * @param username
+     * @return
+     */
+    public static boolean isContainsUser(AclSource acl, String username) {
+        Sid owner = acl.getOwner();
+        if(isPrincipal(owner, username)) {
+            return true;
+        }
+        for(AceSource ace: acl.getEntriesMap().values()) {
+            if(isPrincipal(ace.getSid(), username)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static boolean isPrincipal(Sid sid, String username) {
+        return sid instanceof PrincipalSid &&
+          username.equals(((PrincipalSid) sid).getPrincipal());
     }
 }

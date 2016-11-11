@@ -22,13 +22,13 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.google.common.collect.ImmutableList;
 import lombok.Data;
-import org.springframework.security.acls.model.*;
 import org.springframework.util.Assert;
 
 import java.util.*;
 
 /**
- * Immutable source for acl
+ * Immutable source for acl.
+ * We use classes instead of ifaces because need correct serialization to json.
  */
 @Data
 public class AclSource {
@@ -36,7 +36,7 @@ public class AclSource {
     @Data
     public static class Builder {
         private final Map<Long, AceSource> entries = new LinkedHashMap<>();
-        private ObjectIdentity objectIdentity;
+        private ObjectIdentityData objectIdentity;
         private TenantSid owner;
         private AclSource parentAcl;
         private boolean entriesInheriting;
@@ -53,14 +53,12 @@ public class AclSource {
             return this;
         }
 
-        public Builder objectIdentity(ObjectIdentity objectIdentity) {
+        public Builder objectIdentity(ObjectIdentityData objectIdentity) {
             setObjectIdentity(objectIdentity);
             return this;
         }
 
-        /* we must use any Id except NONE, because then it skip default value */
-        @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, defaultImpl = ObjectIdentityData.class)
-        public void setObjectIdentity(ObjectIdentity objectIdentity) {
+        public void setObjectIdentity(ObjectIdentityData objectIdentity) {
             this.objectIdentity = objectIdentity;
         }
 
@@ -124,7 +122,7 @@ public class AclSource {
     }
 
     private final Map<Long, AceSource> entriesMap;
-    private final ObjectIdentity objectIdentity;
+    private final ObjectIdentityData objectIdentity;
     private final TenantSid owner;
     private final AclSource parentAcl;
     private final boolean entriesInheriting;

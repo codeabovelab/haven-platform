@@ -24,6 +24,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.function.Consumer;
 
 /**
  */
@@ -38,6 +39,12 @@ public class ProvidersAclService extends AbstractAclService {
 
     public Map<String, AclProvider> getProviders() {
         return providers;
+    }
+
+    public void getAcls(Consumer<AclSource> consumer) {
+        providers.forEach((k, p) -> {
+            p.list(consumer);
+        });
     }
 
     @Override
