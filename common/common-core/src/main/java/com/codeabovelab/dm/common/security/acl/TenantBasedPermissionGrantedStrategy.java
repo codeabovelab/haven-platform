@@ -77,7 +77,6 @@ public final class TenantBasedPermissionGrantedStrategy implements ExtPermission
         mainLoop:
         for(int permIndex = 0; permIndex < permission.size(); ++permIndex) {
             final Permission p = permission.get(permIndex);
-            pgc.setPermission(p);
             for(int sidIndex = 0; sidIndex < sids.size(); ++sidIndex) {
                 final Sid sid = sids.get(sidIndex);
                 
@@ -85,8 +84,8 @@ public final class TenantBasedPermissionGrantedStrategy implements ExtPermission
                 pgc.setCurrentSid(sid);
 
                 //default behaviour
-                boolean allowByDefault = defaultBehavior.allow(pgc);
-                if(allowByDefault) {
+                PermissionData defaultPerm = defaultBehavior.getPermission(pgc);
+                if((p.getMask() & defaultPerm.getMask()) == p.getMask()) {
                     allow = true;
                     break mainLoop;
                 }
@@ -238,8 +237,7 @@ public final class TenantBasedPermissionGrantedStrategy implements ExtPermission
             pgc.setHasAces(!aces.isEmpty());
             pgc.setCurrentSid(sid);
 
-            //TODO obtain default permission
-            defaultBehavior.allow(pgc);
+            pb.add(defaultBehavior.getPermission(pgc));
 
             for(int aceIndex = 0; aceIndex < aces.size(); ++ aceIndex) {
                 AccessControlEntry ace = aces.get(aceIndex);

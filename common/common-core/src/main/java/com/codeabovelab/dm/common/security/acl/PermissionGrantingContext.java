@@ -17,7 +17,6 @@
 package com.codeabovelab.dm.common.security.acl;
 
 import com.codeabovelab.dm.common.security.MultiTenancySupport;
-import org.springframework.security.acls.model.Permission;
 import org.springframework.security.acls.model.Sid;
 
 import java.util.Collections;
@@ -36,7 +35,6 @@ public final class PermissionGrantingContext {
     private final String currentDefaultTenant;
     private Sid currentSid;
     private String currentSidTenant;
-    private Permission permission;
     private boolean hasAces;
     
     PermissionGrantingContext(TenantBasedPermissionGrantedStrategy strategy, Sid ownerSid, String currentDefaultTenant) {
@@ -66,14 +64,6 @@ public final class PermissionGrantingContext {
         }
         currentSidTenants.add(currentSidTenant);
         strategy.tenantsService.getChildTenants(currentSidTenant, currentSidTenants);
-    }
-
-    public Permission getPermission() {
-        return permission;
-    }
-
-    void setPermission(Permission permission) {
-        this.permission = permission;
     }
 
     /**

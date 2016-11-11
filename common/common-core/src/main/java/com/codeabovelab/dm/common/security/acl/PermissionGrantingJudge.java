@@ -16,6 +16,8 @@
 
 package com.codeabovelab.dm.common.security.acl;
 
+import com.codeabovelab.dm.common.security.dto.PermissionData;
+
 public interface PermissionGrantingJudge {
-    boolean allow(PermissionGrantingContext context);    
+    PermissionData getPermission(PermissionGrantingContext context);
 }
