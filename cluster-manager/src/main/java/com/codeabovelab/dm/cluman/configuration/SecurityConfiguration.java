@@ -80,13 +80,13 @@ public class SecurityConfiguration {
     @Bean
     RoleHierarchy roleHierarchy() {
         return RoleHierarchyImpl.builder()
-          .childs(Authorities.ADMIN_ROLE, SecuredType.CLUSTER.admin(), Authorities.USER_ROLE)
-          .childs(SecuredType.CLUSTER.admin(), Authorities.USER_ROLE)
+          .childs(Authorities.ADMIN_ROLE, /*SecuredType.CLUSTER.admin(),*/ Authorities.USER_ROLE)
+          /*.childs(SecuredType.CLUSTER.admin(), Authorities.USER_ROLE)
           .childs(SecuredType.CLUSTER.admin(), SecuredType.CONTAINER.admin(),
              SecuredType.LOCAL_IMAGE.admin(),
              SecuredType.NETWORK.admin(),
              SecuredType.NODE.admin()
-          )
+          )*/
           .build();
     }
 
