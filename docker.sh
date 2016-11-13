@@ -10,7 +10,7 @@ function deploy
         echo "Try to deploy to docker"
         cd target
         docker build -t ${DOCKER_REPO}/$2:$3 .
-        docker tag -f ${DOCKER_REPO}/$2:$3 ${DOCKER_REPO}/$2:latest
+        docker tag ${DOCKER_REPO}/$2:$3 ${DOCKER_REPO}/$2:latest
         docker push ${DOCKER_REPO}/$2
 
 }
