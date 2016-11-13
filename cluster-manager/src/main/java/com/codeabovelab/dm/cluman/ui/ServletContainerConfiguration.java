@@ -17,7 +17,6 @@
 package com.codeabovelab.dm.cluman.ui;
 
 import com.codeabovelab.dm.cluman.ds.SwarmAdapterConfiguration;
-import com.codeabovelab.dm.common.security.Authorities;
 import com.codeabovelab.dm.common.security.SecurityUtils;
 import com.codeabovelab.dm.common.security.token.TokenValidator;
 import com.codeabovelab.dm.common.security.token.TokenValidatorConfiguration;
@@ -26,6 +25,7 @@ import com.codeabovelab.dm.gateway.token.RequestTokenHeaderRequestMatcher;
 import com.codeabovelab.dm.gateway.token.TokenAuthFilterConfigurer;
 import com.codeabovelab.dm.gateway.token.TokenAuthProvider;
 import com.codeabovelab.dm.gateway.token.TokenServiceConfiguration;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.catalina.connector.Connector;
 import org.apache.coyote.http11.Http11NioProtocol;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -41,8 +41,8 @@ import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
-import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.util.StringUtils;
 
 import java.io.File;
 
@@ -52,6 +52,7 @@ import java.io.File;
 @Import({WebMvcAutoConfiguration.class, SwarmAdapterConfiguration.class, TokenServiceConfiguration.class, TokenValidatorConfiguration.class})
 @ComponentScan(basePackageClasses = {UserCompositeAuthProvider.class})
 @Configuration
+@Slf4j
 public class ServletContainerConfiguration {
 
     /**
@@ -100,14 +101,14 @@ public class ServletContainerConfiguration {
         };
     }
 
-    @Value("${https.keystore:}")
+    @Value("${dm.https.keystore:}")
     private String keystoreFile;
-    @Value("${https.keystore.password:}")
+    @Value("${dm.https.keystore.password:}")
     private String keystorePass;
-    @Value("${https.port:8762}")
+    @Value("${dm.https.port:8762}")
     private int tlsPort;
 
-    @Value("${security.basic.enabled:true}")
+    @Value("${dm.security.basic.enabled:true}")
     private boolean basicAuthEnable;
 
     /**
@@ -118,7 +119,7 @@ public class ServletContainerConfiguration {
     @Bean
     public EmbeddedServletContainerFactory servletContainer() {
         TomcatEmbeddedServletContainerFactory tomcat = new TomcatEmbeddedServletContainerFactory();
-        if (!keystoreFile.isEmpty()) {
+        if (StringUtils.hasText(keystoreFile)) {
             tomcat.addAdditionalTomcatConnectors(createSslConnector());
         }
         return tomcat;
@@ -130,6 +131,7 @@ public class ServletContainerConfiguration {
      * @return
      */
     Connector createSslConnector() {
+        log.info("About to start ssl connector at port {} with {} keystoreFile", tlsPort, keystoreFile);
         final String absoluteKeystoreFile = new File(keystoreFile).getAbsolutePath();
 
         Connector connector = new Connector("org.apache.coyote.http11.Http11NioProtocol");
