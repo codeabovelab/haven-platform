@@ -86,6 +86,17 @@ public class ContainerStorageImpl implements ContainerStorage, InitializingBean 
     }
 
     @Override
+    public ContainerRegistration findContainer(String name) {
+        ContainerRegistration cr = containerMap.get(name);
+        if(cr == null) {
+            cr = containerMap.values().stream().filter((c) -> {
+                return c.getId().startsWith(name) || c.getContainer().getName().equals(name);
+            }).findAny().orElse(null);
+        }
+        return cr;
+    }
+
+    @Override
     public List<ContainerRegistration> getContainersByNode(String nodeName) {
         return containerMap.values()
           .stream()

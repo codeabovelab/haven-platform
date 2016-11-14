@@ -19,6 +19,7 @@ package com.codeabovelab.dm.cluman.ds.container;
 import com.codeabovelab.dm.cluman.ds.nodes.NodeStorage;
 import com.codeabovelab.dm.cluman.security.SecuredType;
 import com.codeabovelab.dm.cluman.security.VirtualAclProvider;
+import com.codeabovelab.dm.cluman.utils.ContainerUtils;
 import com.codeabovelab.dm.common.security.dto.ObjectIdentityData;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.acls.model.NotFoundException;
@@ -38,7 +39,11 @@ public class ContainersAclProvider extends VirtualAclProvider {
 
     @Override
     protected String getCluster(Serializable id) {
-        ContainerRegistration cr = containers.getContainer((String) id);
+        String strId = (String) id;
+        if(!ContainerUtils.isContainerId(strId)) {
+            throw new IllegalArgumentException("Invalid container id: " + id);
+        }
+        ContainerRegistration cr = containers.getContainer(strId);
         if(cr == null) {
             throw new NotFoundException("Container '" + id + "' is not registered.");
         }

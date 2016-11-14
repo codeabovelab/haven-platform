@@ -48,6 +48,7 @@ import org.springframework.cache.annotation.Cacheable;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.util.MimeTypeUtils;
 import org.springframework.web.bind.annotation.*;
 
@@ -98,7 +99,9 @@ public class ClusterApi {
             DockerServiceInfo info = cluster.getDocker().getInfo();
             uc.setContainers(new UiCluster.Entry(info.getContainers(), info.getOffContainers()));
             uc.setNodes(new UiCluster.Entry(info.getNodeCount(), info.getOffNodeCount()));
-        } catch (Exception e) {
+        } catch (AccessDeniedException e) {
+            uc.setContainers(new UiCluster.Entry(0, 0));
+            uc.setNodes(new UiCluster.Entry(0, 0));
             //nothing
         }
         try {

@@ -24,6 +24,13 @@ public interface ContainerStorage {
 
     List<ContainerRegistration> getContainers();
     ContainerRegistration getContainer(String id);
+
+    /**
+     * Find container by 'cluster:name' too.
+     * @param name
+     * @return find registration or null
+     */
+    ContainerRegistration findContainer(String name);
     List<ContainerRegistration> getContainersByNode(String nodeName);
     ContainerRegistration getOrCreateContainer(ContainerBaseIface container, String node);
 
