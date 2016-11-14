@@ -39,7 +39,7 @@ import java.util.function.Consumer;
 /**
  */
 @Slf4j
-public class VirtualDockerService implements DockerService {
+class VirtualDockerService implements DockerService {
 
     private final NodesGroupImpl cluster;
     // we need empty config for prevent NPE

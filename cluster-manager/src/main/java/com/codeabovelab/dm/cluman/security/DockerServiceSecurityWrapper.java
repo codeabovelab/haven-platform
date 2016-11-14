@@ -54,14 +54,18 @@ public class DockerServiceSecurityWrapper implements DockerService {
     private void checkServiceAccessInternal(AclContext context, Action action) {
         Assert.notNull(action, "Action is null");
         String cluster = getCluster();
-        if(cluster == null) {
-            // when cluster null we try access to single node, and cannot check cluster
-            //TODO check node access
-            return;
+        if(cluster != null) {
+            boolean granted = context.isGranted(SecuredType.CLUSTER.id(cluster), action);
+            if(!granted) {
+                throw new AccessDeniedException("Access to cluster docker service '" + cluster + "' with " + action + " is denied.");
+            }
         }
-        boolean granted = context.isGranted(SecuredType.CLUSTER.id(cluster), action);
-        if(!granted) {
-            throw new AccessDeniedException("Access to docker service '" + cluster + "' with " + action + " is denied.");
+        String node = getNode();
+        if(node != null) {
+            boolean granted = context.isGranted(SecuredType.NODE.id(node), action);
+            if(!granted) {
+                throw new AccessDeniedException("Access to node docker service '" + node + "' with " + action + " is denied.");
+            }
         }
     }
 
