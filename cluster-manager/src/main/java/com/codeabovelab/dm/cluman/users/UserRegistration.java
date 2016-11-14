@@ -36,6 +36,7 @@ public class UserRegistration {
     UserRegistration(UsersStorage storage, String name) {
         this.mapper = storage.getMapper();
         this.name = name;
+        normalizeDetails();
     }
 
     public ExtendedUserDetails getDetails() {
@@ -62,14 +63,20 @@ public class UserRegistration {
     void load() {
         synchronized (lock) {
             this.mapper.load(name, this);
-            if(this.details != null) {
-                if(!this.name.equals(this.details.getUsername())) {
-                    this.details = ExtendedUserDetailsImpl.builder(this.details).username(name).build();
-                }
+            if(details == null || !this.name.equals(this.details.getUsername())) {
+                normalizeDetails();
             }
         }
     }
 
+    private void normalizeDetails() {
+        this.details = ExtendedUserDetailsImpl.builder(this.details).username(name).build();
+    }
+
+    /**
+     * Invoke consumer in local lock.
+     * @param consumer
+     */
     public void update(Consumer<UserRegistration> consumer) {
         synchronized (lock) {
             consumer.accept(this);
