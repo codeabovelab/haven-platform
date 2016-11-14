@@ -33,7 +33,7 @@ import java.util.List;
  */
 @Data
 @EqualsAndHashCode(callSuper = true)
-public class UIContainerDetails extends ContainerSource implements UiContainerIface {
+public class UIContainerDetails extends ContainerSource implements UiContainerIface, WithUiPermission {
 
     private Date created;
     private Date started;
@@ -44,6 +44,7 @@ public class UIContainerDetails extends ContainerSource implements UiContainerIf
     private String lockCause;
     private boolean run;
     private String status;
+    private UiPermission permission;
 
     public UIContainerDetails() {
     }

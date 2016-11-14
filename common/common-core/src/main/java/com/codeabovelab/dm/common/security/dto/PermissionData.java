@@ -179,4 +179,9 @@ public class PermissionData implements Permission {
     public final int hashCode() {
         return this.mask;
     }
+
+    public boolean has(Permission permission) {
+        int req = permission.getMask();
+        return (this.mask & req) == req;
+    }
 }

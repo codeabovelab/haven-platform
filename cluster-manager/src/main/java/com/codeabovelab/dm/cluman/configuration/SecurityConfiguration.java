@@ -32,14 +32,15 @@ import org.springframework.security.acls.domain.*;
 import org.springframework.security.acls.model.AclService;
 import org.springframework.security.acls.model.PermissionGrantingStrategy;
 import org.springframework.security.acls.model.SidRetrievalStrategy;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.crypto.encrypt.BouncyCastleAesGcmBytesEncryptor;
 import org.springframework.security.crypto.encrypt.BytesEncryptor;
 import org.springframework.security.crypto.encrypt.TextEncryptor;
 import org.springframework.util.Assert;
 import org.springframework.util.StringUtils;
 
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  */
@@ -135,6 +136,24 @@ public class SecurityConfiguration {
                 service.getProviders().putAll(providers);
             }
             return service;
+        }
+
+        @Bean
+        SuccessAuthProcessor successAuthProcessor() {
+            return (a, ud) -> {
+                Set<GrantedAuthority> authorities = new HashSet<>(ud.getAuthorities());
+                authorities.add(Authorities.USER);
+                // we add GA for user, because we do not implement ACL tuning for this,
+                // and anyway check cluster and node access
+                authorities.add(Authorities.fromName(SecuredType.LOCAL_IMAGE.admin()));
+                authorities.add(Authorities.fromName(SecuredType.REMOTE_IMAGE.admin()));
+                authorities.add(Authorities.fromName(SecuredType.NETWORK.admin()));
+
+                final UsernamePasswordAuthenticationToken result = new UsernamePasswordAuthenticationToken(
+                  ud, ud.getPassword(), authorities);
+                result.setDetails(a.getDetails());
+                return result;
+            };
         }
     }
 

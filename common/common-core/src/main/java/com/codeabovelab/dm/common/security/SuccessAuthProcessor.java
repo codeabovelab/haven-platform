@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *      http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -16,18 +16,18 @@
 
 package com.codeabovelab.dm.common.security;
 
-import org.springframework.security.core.AuthenticationException;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.userdetails.UserDetails;
 
 /**
- * Abstract authenticator
+ * Process authentication for user. Can be used, for example to inject granted authorities.
  */
-public interface Authenticator {
+public interface SuccessAuthProcessor {
     /**
-     * For successful credentials method must return 'true'.
-     * If authorization is failed then method can return 'false' (it interpreted as UsernameNotFound ) or throw AuthenticationException.
-     * @param request
+     * @see SecurityUtils#createSuccessAuthentication(Authentication, UserDetails)
+     * @param source
+     * @param userDetails
      * @return
-     * @throws AuthenticationException
      */
-    boolean authenticate(AuthenticatorRequest request) throws AuthenticationException;
+    Authentication createSuccessAuth(Authentication source, UserDetails userDetails);
 }

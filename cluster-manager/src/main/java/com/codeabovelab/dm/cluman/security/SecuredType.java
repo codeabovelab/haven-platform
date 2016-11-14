@@ -18,7 +18,6 @@ package com.codeabovelab.dm.cluman.security;
 
 import com.codeabovelab.dm.common.security.Authorities;
 import com.codeabovelab.dm.common.security.dto.ObjectIdentityData;
-import org.springframework.security.acls.domain.ObjectIdentityImpl;
 import org.springframework.security.acls.model.ObjectIdentity;
 
 /**

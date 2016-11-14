@@ -30,7 +30,7 @@ import java.util.Set;
 @NoArgsConstructor
 @EqualsAndHashCode(callSuper = true)
 @Data
-public class UiCluster extends UiClusterEditablePart implements Comparable<UiCluster> {
+public class UiCluster extends UiClusterEditablePart implements Comparable<UiCluster>, WithUiPermission {
 
     @AllArgsConstructor
     @Data

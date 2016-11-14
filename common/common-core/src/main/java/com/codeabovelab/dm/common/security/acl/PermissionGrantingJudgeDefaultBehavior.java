@@ -54,12 +54,13 @@ public class PermissionGrantingJudgeDefaultBehavior implements PermissionGrantin
                 pdb.add(PermissionData.ALL);
             }
         }
-        if(PermissionData.ALL.getMask() != pdb.getMask() && !context.isHasAces()) {
-            // tenant allow only read
-            if(isAllowByTenant(context)) {
-                pdb.add(Action.READ);
-            }
-        }
+        //below need some discussion
+//        if(PermissionData.ALL.getMask() != pdb.getMask() && !context.isHasAces()) {
+//            // tenant allow only read
+//            if(isAllowByTenant(context)) {
+//                pdb.add(Action.READ);
+//            }
+//        }
         return pdb.build();
     }
 

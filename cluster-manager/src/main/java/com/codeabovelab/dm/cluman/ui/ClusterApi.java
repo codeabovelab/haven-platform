@@ -94,9 +94,13 @@ public class ClusterApi {
         uc.getDescription().accept(cluster.getDescription());
         uc.getFilter().accept(cluster.getImageFilter());
         uc.setFeatures(cluster.getFeatures());
-        DockerServiceInfo info = cluster.getDocker().getInfo();
-        uc.setContainers(new UiCluster.Entry(info.getContainers(), info.getOffContainers()));
-        uc.setNodes(new UiCluster.Entry(info.getNodeCount(), info.getOffNodeCount()));
+        try {
+            DockerServiceInfo info = cluster.getDocker().getInfo();
+            uc.setContainers(new UiCluster.Entry(info.getContainers(), info.getOffContainers()));
+            uc.setNodes(new UiCluster.Entry(info.getNodeCount(), info.getOffNodeCount()));
+        } catch (Exception e) {
+            //nothing
+        }
         try {
             Set<String> apps = uc.getApplications();
             List<Application> applications = applicationService.getApplications(name);
@@ -104,12 +108,13 @@ public class ClusterApi {
         } catch (Exception e) {
             //nothing
         }
-        uc.setPermission(UiPermission.create(ac, SecuredType.CLUSTER.id(name)));
+        UiPermission.inject(uc, ac, SecuredType.CLUSTER.id(name));
         return uc;
     }
 
     @RequestMapping(value = "/clusters/{cluster}/containers", method = GET)
     public ResponseEntity<Collection<UiContainer>> listContainers(@PathVariable("cluster") String cluster) {
+        AclContext ac = aclContextFactory.getContext();
         List<UiContainer> list = new ArrayList<>();
         GetContainersArg arg = new GetContainersArg(true);
         NodesGroup nodesGroup = discoveryStorage.getCluster(cluster);
@@ -124,6 +129,7 @@ public class ClusterApi {
             UiContainer uic = UiContainer.from(container);
             uic.enrich(discoveryStorage, containerStorage);
             uic.setApplication(apps.get(uic.getId()));
+            UiPermission.inject(uic, ac, SecuredType.CONTAINER.id(uic.getId()));
             list.add(uic);
         }
         Collections.sort(list);

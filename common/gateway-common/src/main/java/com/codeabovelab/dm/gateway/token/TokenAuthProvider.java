@@ -17,6 +17,7 @@
 package com.codeabovelab.dm.gateway.token;
 
 import com.codeabovelab.dm.common.security.SecurityUtils;
+import com.codeabovelab.dm.common.security.SuccessAuthProcessor;
 import com.codeabovelab.dm.common.security.token.TokenData;
 import com.codeabovelab.dm.common.security.token.TokenException;
 import com.codeabovelab.dm.common.security.token.TokenValidator;
@@ -40,11 +41,15 @@ public class TokenAuthProvider implements AuthenticationProvider {
 
     private final TokenValidator tokenValidator;
     private final UserDetailsService userDetailsService;
+    private final SuccessAuthProcessor authProcessor;
 
     @Autowired
-    public TokenAuthProvider(TokenValidator tokenValidator, UserDetailsService userDetailsService) {
+    public TokenAuthProvider(TokenValidator tokenValidator,
+                             UserDetailsService userDetailsService,
+                             SuccessAuthProcessor authProcessor) {
         this.tokenValidator = tokenValidator;
         this.userDetailsService = userDetailsService;
+        this.authProcessor = authProcessor;
     }
 
     @Override
@@ -53,7 +58,7 @@ public class TokenAuthProvider implements AuthenticationProvider {
         if (tokenData != null) {
             final UserDetails userDetails = userDetailsService.loadUserByUsername(tokenData.getUserName());
             LOG.debug("Token {} is valid; userDetails is {}", tokenData, userDetails);
-            return SecurityUtils.createSuccessAuthentication(authentication, userDetails);
+            return authProcessor.createSuccessAuth(authentication, userDetails);
         } else {
             throw new UsernameNotFoundException("User not found" + authentication.getCredentials());
         }

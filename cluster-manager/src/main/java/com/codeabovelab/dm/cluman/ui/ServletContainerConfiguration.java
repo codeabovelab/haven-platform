@@ -18,6 +18,7 @@ package com.codeabovelab.dm.cluman.ui;
 
 import com.codeabovelab.dm.cluman.ds.SwarmAdapterConfiguration;
 import com.codeabovelab.dm.common.security.SecurityUtils;
+import com.codeabovelab.dm.common.security.SuccessAuthProcessor;
 import com.codeabovelab.dm.common.security.token.TokenValidator;
 import com.codeabovelab.dm.common.security.token.TokenValidatorConfiguration;
 import com.codeabovelab.dm.gateway.auth.UserCompositeAuthProvider;
@@ -65,7 +66,8 @@ public class ServletContainerConfiguration {
     @Autowired
     WebSecurityConfigurerAdapter webSecurityConfigurerAdapter(final AuthenticationProvider provider,
                                                               UserDetailsService userDetailsService,
-                                                              TokenValidator tokenValidator) {
+                                                              TokenValidator tokenValidator,
+                                                              SuccessAuthProcessor authProcessor) {
         return new WebSecurityConfigurerAdapter() {
             @Override
             protected void configure(HttpSecurity http) throws Exception {
@@ -74,7 +76,7 @@ public class ServletContainerConfiguration {
 
                 TokenAuthFilterConfigurer<HttpSecurity> tokenFilterConfigurer =
                         new TokenAuthFilterConfigurer<>(new RequestTokenHeaderRequestMatcher(),
-                                new TokenAuthProvider(tokenValidator, userDetailsService));
+                                new TokenAuthProvider(tokenValidator, userDetailsService, authProcessor));
                 http.csrf().disable()
                         .authenticationProvider(provider).userDetailsService(userDetailsService)
                         .anonymous().principal(SecurityUtils.USER_ANONYMOUS).and()
