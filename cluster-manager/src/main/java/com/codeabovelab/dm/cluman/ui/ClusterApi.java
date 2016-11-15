@@ -39,6 +39,7 @@ import com.codeabovelab.dm.cluman.validate.ExtendedAssert;
 import com.codeabovelab.dm.cluman.yaml.YamlUtils;
 import com.codeabovelab.dm.common.cache.DefineCache;
 import com.codeabovelab.dm.common.cache.MessageBusCacheInvalidator;
+import com.codeabovelab.dm.common.security.Authorities;
 import com.codeabovelab.dm.common.utils.Sugar;
 import io.swagger.annotations.ApiOperation;
 import lombok.RequiredArgsConstructor;
@@ -49,6 +50,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.access.annotation.Secured;
 import org.springframework.util.MimeTypeUtils;
 import org.springframework.web.bind.annotation.*;
 
@@ -261,6 +263,12 @@ public class ClusterApi {
         discoveryStorage.deleteCluster(cluster);
     }
 
+    /**
+     *
+     * @param clusterName
+     * @param clusterData
+     */
+    @Secured({Authorities.ADMIN_ROLE, SecuredType.CLUSTER_ADMIN})
     @RequestMapping(value = "/clusters/{cluster}", method = PUT)
     public void createCluster(@PathVariable("cluster") String clusterName, @RequestBody(required = false) UiClusterEditablePart clusterData) {
         SwarmNodesGroupConfig sgnc = new SwarmNodesGroupConfig();

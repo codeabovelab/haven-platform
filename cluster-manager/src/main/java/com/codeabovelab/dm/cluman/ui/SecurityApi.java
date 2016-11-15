@@ -34,6 +34,7 @@ import com.codeabovelab.dm.common.utils.Sugar;
 import io.swagger.annotations.ApiOperation;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.access.annotation.Secured;
 import org.springframework.security.acls.model.ObjectIdentity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
@@ -51,6 +52,7 @@ import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 /**
  */
 @RestController
+@Secured(Authorities.ADMIN_ROLE)
 @RequestMapping(value = "/ui/api/", produces = APPLICATION_JSON_VALUE)
 public class SecurityApi {
 
@@ -120,6 +122,7 @@ public class SecurityApi {
         usersStorage.delete(username);
     }
 
+    @Secured(Authorities.USER_ROLE)
     @RequestMapping(value = "/users-current", method = RequestMethod.GET)
     public UiUser getCurrentUser() {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
@@ -127,6 +130,7 @@ public class SecurityApi {
         return UiUser.fromDetails(userDetails);
     }
 
+    @Secured(Authorities.USER_ROLE)
     @RequestMapping(value = "/roles/", method = RequestMethod.GET)
     public Collection<UiRole> getGroups() {
         Collection<GrantedAuthority> authorities = authoritiesService.getAuthorities();
