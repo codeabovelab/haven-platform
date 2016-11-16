@@ -239,6 +239,7 @@ public class SwarmProcesses {
         File logDir = null;
         if(logDirName != null) {
             logDir = new File(logDirName);
+            logDir.mkdirs();
             if(!logDir.isDirectory()) {
                 log.error("Bad value of logDir '" + logDir.getAbsolutePath() + "': is not a directory.");
                 logDir = null;
