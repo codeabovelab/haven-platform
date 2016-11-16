@@ -60,7 +60,7 @@ public class SwaggerConfiguration {
                 .title("DockMaster API")
                 .description("Dockmaster is an open source Docker container management system. " +
                         "It integrates container, application, cluster, image, and registry management in one single place.")
-                .contact(new Contact("Code Above Lab", "https://github.com/codeabovelab/dockmaster-platform", "info@codeabovelab.com"))
+                .contact(new Contact("Code Above Lab LLC", "https://github.com/codeabovelab/dockmaster-platform", "info@codeabovelab.com"))
                 .license("Apache License")
                 .licenseUrl("https://www.apache.org/licenses/LICENSE-2.0")
                 .version("1.0")
