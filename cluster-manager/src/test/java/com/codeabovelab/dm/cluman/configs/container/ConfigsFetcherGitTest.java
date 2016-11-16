@@ -33,10 +33,8 @@ public class ConfigsFetcherGitTest {
 
     public static ConfigProvider createConfigProvider() throws Exception {
         GitSettings gitSettings = new GitSettings();
-        gitSettings.setUrl("https://bitbucket.org/codeabovelab/containers-configuration.git");
+        gitSettings.setUrl("https://github.com/codeabovelab/dockmaster-example-container-configuration.git");
         //test read only user for test repo
-        gitSettings.setUsername("codeabovelab_test_user");
-        gitSettings.setPassword("codeabovelab_test_password");
         List<Parser> parsers = new ArrayList<Parser>() {{
             add(new DefaultParser());
             add(new YamlParser());
