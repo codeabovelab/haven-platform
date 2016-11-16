@@ -24,6 +24,7 @@ import springfox.documentation.builders.ApiInfoBuilder;
 import springfox.documentation.builders.PathSelectors;
 import springfox.documentation.builders.RequestHandlerSelectors;
 import springfox.documentation.service.ApiInfo;
+import springfox.documentation.service.Contact;
 import springfox.documentation.spi.DocumentationType;
 import springfox.documentation.spring.web.plugins.Docket;
 
@@ -56,7 +57,12 @@ public class SwaggerConfiguration {
 
     private ApiInfo apiInfo() {
         return new ApiInfoBuilder()
-                .title("DockMaster server API description")
+                .title("DockMaster API")
+                .description("Dockmaster is an open source Docker container management system. " +
+                        "It integrates containers, applications, clusters, images, and registries management in one single place. ")
+                .contact(new Contact("Code Above Lab", "https://github.com/codeabovelab/dockmaster-platform", "info@codeabovelab.com"))
+                .license("Apache License")
+                .licenseUrl("https://www.apache.org/licenses/LICENSE-2.0")
                 .version("1.0")
                 .build();
     }
