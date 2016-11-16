@@ -2,7 +2,7 @@ server.port: ${dm.server.port}
 dm:
   config:
     git:
-      enabled: true
+      enabled: false
       uri: https://github.com/codeabovelab/dockmaster-example-configuration.git
 spring:
   application:
