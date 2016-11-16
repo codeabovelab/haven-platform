@@ -110,7 +110,7 @@ public class UpdateTest {
             ContainerManager cm = new ContainerManager(discoveryStorage,
               mock(NodeRegistry.class),
               confProv,
-              new ContainersNameService(new ContainerNamesSupplier(dockerServiceFactory)),
+              new ContainersNameService(new ContainerNamesSupplier()),
               contStorage,
               mock(NetworkManager.class),
               containerSourceFactory

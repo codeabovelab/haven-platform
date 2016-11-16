@@ -59,7 +59,6 @@ public class ApplicationServiceImpl implements ApplicationService {
     private static final Logger LOG = LoggerFactory.getLogger(ApplicationServiceImpl.class);
 
     private final KeyValueStorage keyValueStorage;
-    private final SourceService configFetcher;
     private final DockerServiceRegistry dockerServiceRegistry;
     private final String appPrefix;
     private final ComposeExecutor composeExecutor;
@@ -70,14 +69,12 @@ public class ApplicationServiceImpl implements ApplicationService {
 
     @Autowired
     public ApplicationServiceImpl(KeyValueStorage keyValueStorage, ObjectMapper objectMapper,
-                                  SourceService configFetcher,
                                   DockerServiceRegistry dockerServiceRegistry,
                                   ComposeExecutor composeExecutor,
                                   ContainerSourceFactory sourceService,
                                   @Qualifier(ApplicationEvent.BUS) MessageBus<ApplicationEvent> applicationBus) {
         this.keyValueStorage = keyValueStorage;
         this.dockerServiceRegistry = dockerServiceRegistry;
-        this.configFetcher = configFetcher;
         this.appPrefix = keyValueStorage.getDockMasterPrefix() + "/applications/";
         this.objectMapper = objectMapper;
         this.composeExecutor = composeExecutor;

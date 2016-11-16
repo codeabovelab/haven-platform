@@ -70,10 +70,7 @@ public class PermissionGrantingJudgeDefaultBehavior implements PermissionGrantin
 
     private boolean isAllowByTenant(PermissionGrantingContext context) {
         // if SID owned by 'ownerTenantId' or it supertenants then he can read
-        if(context.getCurrentTenants().contains(context.getOwnerTenant())) {
-            return true;
-        }
-        return false;
+        return context.getCurrentTenants().contains(context.getOwnerTenant());
     }
 
     private boolean isAllowByOwner(PermissionGrantingContext context) {

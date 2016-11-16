@@ -18,6 +18,7 @@ package com.codeabovelab.dm.cluman.ui;
 
 import com.codeabovelab.dm.cluman.cluster.docker.model.Network;
 import com.codeabovelab.dm.cluman.ds.swarm.NetworkManager;
+import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -30,10 +31,10 @@ import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 
 @RestController
 @RequestMapping(value = "/ui/api/networks", produces = APPLICATION_JSON_VALUE)
+@RequiredArgsConstructor(onConstructor = @__(@Autowired))
 public class NetworkApi {
 
-    @Autowired
-    private NetworkManager networkManager;
+    private final NetworkManager networkManager;
 
     @RequestMapping(value = "{cluster}/all", method = RequestMethod.GET)
     public List<Network> getNetworks(@PathVariable("cluster") String clusterName) {

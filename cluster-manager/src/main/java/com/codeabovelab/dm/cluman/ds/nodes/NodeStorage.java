@@ -62,7 +62,6 @@ public class NodeStorage implements NodeInfoProvider {
     private final MessageBus<NodeEvent> nodeEventBus;
     private final LoadingCache<String, NodeRegistrationImpl> nodes;
     private final String nodesPrefix;
-    private final MessageBus<DockerServiceEvent> dockerBus;
     private final PersistentBusFactory persistentBusFactory;
     private final ExecutorService executorService;
 
@@ -74,7 +73,6 @@ public class NodeStorage implements NodeInfoProvider {
                        ExecutorService executorService) {
         this.kvmf = kvmf;
         this.nodeEventBus = nodeEventBus;
-        this.dockerBus = dockerBus;
         this.persistentBusFactory = persistentBusFactory;
         this.nodes = CacheBuilder.newBuilder().build(new CacheLoader<String, NodeRegistrationImpl>() {
             @Override

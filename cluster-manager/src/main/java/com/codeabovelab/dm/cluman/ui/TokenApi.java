@@ -24,6 +24,7 @@ import com.codeabovelab.dm.common.security.token.TokenService;
 import com.codeabovelab.dm.common.security.token.TokenValidatorSettings;
 import com.codeabovelab.dm.gateway.token.AuthenticationTokenFilter;
 import io.swagger.annotations.ApiOperation;
+import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.BadCredentialsException;
@@ -42,14 +43,12 @@ import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 
 @RestController
 @RequestMapping(value = "/ui/token/", produces = APPLICATION_JSON_VALUE)
+@RequiredArgsConstructor(onConstructor = @__(@Autowired))
 public class TokenApi {
 
-    @Autowired
-    private TokenService tokenService;
-    @Autowired
-    private AuthenticationProvider authenticationProvider;
-    @Autowired
-    private TokenValidatorSettings tokenValidatorSettings;
+    private final TokenService tokenService;
+    private final AuthenticationProvider authenticationProvider;
+    private final TokenValidatorSettings tokenValidatorSettings;
 
     @ApiOperation("Use header name: " + AuthenticationTokenFilter.X_AUTH_TOKEN)
     @RequestMapping(value = "login", method = RequestMethod.POST)

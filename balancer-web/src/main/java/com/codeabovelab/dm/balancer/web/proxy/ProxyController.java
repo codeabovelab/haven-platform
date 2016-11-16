@@ -48,10 +48,6 @@ public class ProxyController extends GenericServlet {
     private final Random random = new Random();
     private static final Logger LOG = LoggerFactory.getLogger(ProxyController.class);
     private final HttpProxy httpProxy;
-    private final RibbonLoadBalancerContext context;
-    private final IClientConfig clientConfig;
-    private final ILoadBalancer loadBalancer;
-    private final HttpClientLoadBalancerErrorHandler requestSpecificRetryHandler;
     private final LoadBalancerCommand.Builder<Object> commandBuilder;
 
     /**
@@ -64,10 +60,10 @@ public class ProxyController extends GenericServlet {
     public ProxyController(HttpProxy httpProxy, SpringClientFactory springClientFactory) {
         this.httpProxy = httpProxy;
 
-        this.context = springClientFactory.getLoadBalancerContext(SERVICEID);
-        this.clientConfig = springClientFactory.getClientConfig(SERVICEID);
-        this.loadBalancer = springClientFactory.getLoadBalancer(SERVICEID);
-        this.requestSpecificRetryHandler = getRequestSpecificRetryHandler(clientConfig);
+        RibbonLoadBalancerContext context = springClientFactory.getLoadBalancerContext(SERVICEID);
+        IClientConfig clientConfig = springClientFactory.getClientConfig(SERVICEID);
+        ILoadBalancer loadBalancer = springClientFactory.getLoadBalancer(SERVICEID);
+        HttpClientLoadBalancerErrorHandler requestSpecificRetryHandler = getRequestSpecificRetryHandler(clientConfig);
 
         this.commandBuilder = LoadBalancerCommand.builder()
                 .withRetryHandler(requestSpecificRetryHandler)

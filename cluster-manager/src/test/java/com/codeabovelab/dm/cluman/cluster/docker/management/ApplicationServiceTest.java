@@ -72,7 +72,7 @@ public class ApplicationServiceTest {
             when(dockerServiceRegistry.getService(anyString())).thenReturn(dockerService);
             when(dockerService.getContainer(anyString())).thenReturn(mock(ContainerDetails.class));
             ApplicationService applicationService = new ApplicationServiceImpl(keyValueStorage, objectMapper,
-                    mock(SourceService.class), dockerServiceRegistry, mock(ComposeExecutor.class),
+                    dockerServiceRegistry, mock(ComposeExecutor.class),
                     srcService,
                     mock(MessageBus.class));
             return applicationService;

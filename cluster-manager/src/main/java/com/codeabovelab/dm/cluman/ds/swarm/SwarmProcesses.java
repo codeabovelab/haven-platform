@@ -272,5 +272,6 @@ public class SwarmProcesses {
     @PreDestroy
     public void close() {
         this.executor.shutdownNow();
+        this.watcher.shutdown();
     }
 }

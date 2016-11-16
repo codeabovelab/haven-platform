@@ -32,6 +32,7 @@ import com.codeabovelab.dm.common.security.acl.AclUtils;
 import com.codeabovelab.dm.common.security.dto.ObjectIdentityData;
 import com.codeabovelab.dm.common.utils.Sugar;
 import io.swagger.annotations.ApiOperation;
+import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.annotation.Secured;
@@ -54,25 +55,15 @@ import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 @RestController
 @Secured(Authorities.ADMIN_ROLE)
 @RequestMapping(value = "/ui/api/", produces = APPLICATION_JSON_VALUE)
+@RequiredArgsConstructor(onConstructor = @__(@Autowired))
 public class SecurityApi {
 
-    @Autowired
-    private UserIdentifiersDetailsService usersService;
-
-    @Autowired
-    private UsersStorage usersStorage;
-
-    @Autowired
-    private AuthoritiesService authoritiesService;
-
-    @Autowired
-    private PasswordEncoder passwordEncoder;
-
-    @Autowired
-    private AbstractAclService aclService;
-
-    @Autowired
-    private ProvidersAclService providersAclService;
+    private final UserIdentifiersDetailsService usersService;
+    private final UsersStorage usersStorage;
+    private final AuthoritiesService authoritiesService;
+    private final PasswordEncoder passwordEncoder;
+    private final AbstractAclService aclService;
+    private final ProvidersAclService providersAclService;
 
     @RequestMapping(value = "/users/", method = RequestMethod.GET)
     public Collection<UiUser> getUsers() {

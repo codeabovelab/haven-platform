@@ -33,13 +33,6 @@ import java.util.function.Function;
 @Component
 public class ContainerNamesSupplier implements Function<DockerService, Collection<String>> {
 
-    private final ObjectFactory<DockerService> dockerServiceFactory;
-
-    @Autowired
-    public ContainerNamesSupplier(ObjectFactory<DockerService> dockerServiceFactory) {
-        this.dockerServiceFactory = dockerServiceFactory;
-    }
-
     @Override
     public Collection<String> apply(DockerService dockerService) {
         List<DockerContainer> containerIfaces = getContainers(dockerService);

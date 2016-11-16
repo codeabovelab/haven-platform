@@ -84,7 +84,7 @@ public class UpdateToTagOrCreateScheduledJob implements Runnable {
     //TODO: stop after N errors!
     @Override
     public void run() {
-        synchronized (context) {
+        synchronized (versions) {
             log.debug("started job {}", this);
             log.debug("checking image for update {}", imagePattern);
             List<ProcessedContainer> containers = loader.getContainers(this::filterInner);

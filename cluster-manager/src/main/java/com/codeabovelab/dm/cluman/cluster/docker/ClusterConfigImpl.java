@@ -225,11 +225,11 @@ public class ClusterConfigImpl implements ClusterConfig {
         return this;
     }
 
-    public static final Builder builder(ClusterConfig cc) {
+    public static Builder builder(ClusterConfig cc) {
         return builder().from(cc);
     }
 
-    public static final Builder builder() {
+    public static Builder builder() {
         return new Builder();
     }
 }

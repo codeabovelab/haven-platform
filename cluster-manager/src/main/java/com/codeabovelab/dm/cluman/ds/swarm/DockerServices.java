@@ -65,7 +65,6 @@ public class DockerServices implements DockerServiceRegistry, NodeRegistry {
     private final Logger log = LoggerFactory.getLogger(getClass());
     private final ConcurrentMap<String, DockerService> clusters = new ConcurrentHashMap<>();
     private final ConcurrentMap<String, DockerService> nodes = new ConcurrentHashMap<>();
-    private final DockerServicesConfig configuration;
     private final RegistryRepository registryRepository;
     private final ScheduledExecutorService scheduledExecutorService;
     private final ScheduledExecutorService scheduledExecutor;
@@ -91,7 +90,6 @@ public class DockerServices implements DockerServiceRegistry, NodeRegistry {
                           @Qualifier(NodeEvent.BUS) MessageBus<NodeEvent> nodeInfoMessageBus,
                           @Qualifier(DockerLogEvent.BUS) MessageBus<DockerLogEvent> dockerEventMessageBus,
                           @Qualifier(DockerServiceEvent.BUS) MessageBus<DockerServiceEvent> dockerServiceEventMessageBus) {
-        this.configuration = configuration;
         this.containerStorage = containerStorage;
         this.registryRepository = registryRepository;
         this.swarmProcesses = swarmProcesses;

@@ -16,7 +16,6 @@
 
 package com.codeabovelab.dm.platform.cache;
 
-import com.google.common.base.Supplier;
 import com.google.common.cache.CacheBuilder;
 import com.codeabovelab.dm.common.cache.CacheConfig;
 import com.codeabovelab.dm.common.cache.ConfigurableCacheManager;
@@ -29,6 +28,7 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Supplier;
 
 /**
  */

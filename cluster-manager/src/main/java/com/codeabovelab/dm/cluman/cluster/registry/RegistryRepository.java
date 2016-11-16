@@ -56,7 +56,6 @@ public class RegistryRepository implements SupportSearch {
     //docker hub registry
     private final DockerHubRegistry defaultRegistry;
     private final KvClassMapper<RegistryConfig> classMapper;
-    private final String prefix;
     private final MessageBus<RegistryEvent> eventBus;
     private final RegistryFactory factory;
     private final ExecutorService executorService;
@@ -67,8 +66,8 @@ public class RegistryRepository implements SupportSearch {
                               @Qualifier(RegistryEvent.BUS) MessageBus<RegistryEvent> eventBus) {
         this.defaultRegistry = defaultRegistry;
         this.factory = factory;
-        this.prefix = classMapper.getStorage().getDockMasterPrefix() + "/docker-registry/";
-        this.classMapper = classMapper.createClassMapper(this.prefix, RegistryConfig.class);
+        String prefix = classMapper.getStorage().getDockMasterPrefix() + "/docker-registry/";
+        this.classMapper = classMapper.createClassMapper(prefix, RegistryConfig.class);
         this.eventBus = eventBus;
         this.executorService = Executors.newSingleThreadExecutor(new ThreadFactoryBuilder()
           .setDaemon(true)

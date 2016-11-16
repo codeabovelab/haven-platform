@@ -42,15 +42,11 @@ public class ContainerStorageImpl implements ContainerStorage, InitializingBean 
     private final KvMapperFactory kvmf;
 
     private final ConcurrentMap<String, ContainerRegistration> containerMap;
-    private final DockerServicesConfig configuration;
     private final String prefix;
 
     @Autowired
-    public ContainerStorageImpl(DockerServicesConfig configuration,
-                                KvMapperFactory kvmf
-    ) {
+    public ContainerStorageImpl(KvMapperFactory kvmf) {
         this.kvmf = kvmf;
-        this.configuration = configuration;
         this.prefix = kvmf.getStorage().getDockMasterPrefix() + "/containers/";
         this.containerMap = new ConcurrentHashMap<>();
     }
