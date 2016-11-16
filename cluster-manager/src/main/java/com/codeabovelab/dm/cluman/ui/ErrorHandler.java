@@ -107,7 +107,15 @@ public class ErrorHandler {
     @ResponseBody
     public UiError badCredentialsException(HttpServletRequest req, TokenException e) {
         log.error("Can't process request", e);
-        throw new BadCredentialsException(e.getMessage());
+        return createResponse(e.getMessage(), e.getMessage(), HttpStatus.UNAUTHORIZED);
+    }
+
+    @ExceptionHandler(BadCredentialsException.class)
+    @ResponseStatus(HttpStatus.UNAUTHORIZED)
+    @ResponseBody
+    public UiError badCredentialsException(HttpServletRequest req, BadCredentialsException e) {
+        log.error("Can't process request", e);
+        return createResponse(e.getMessage(), e.getMessage(), HttpStatus.UNAUTHORIZED);
     }
 
     static UiError createResponse(String message, String stackTrace, HttpStatus httpStatus) {
