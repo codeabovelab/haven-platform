@@ -17,6 +17,7 @@
 package com.codeabovelab.dm.cluman.ui;
 
 import com.codeabovelab.dm.cluman.ui.model.UITokenData;
+import com.codeabovelab.dm.cluman.ui.model.UiUserCredentials;
 import com.codeabovelab.dm.common.security.token.TokenConfiguration;
 import com.codeabovelab.dm.common.security.token.TokenData;
 import com.codeabovelab.dm.common.security.token.TokenService;
@@ -47,7 +48,14 @@ public class TokenApi {
 
     @ApiOperation("Use header name: " + AuthenticationTokenFilter.X_AUTH_TOKEN)
     @RequestMapping(value = "login", method = RequestMethod.POST)
-    public UITokenData getToken(@RequestParam("username") String username, @RequestParam("password") String password) {
+    public UITokenData getToken(@RequestParam(value = "username", required = false) String username,
+                                @RequestParam(value = "password", required = false) String password,
+                                @RequestBody(required = false) UiUserCredentials credentials) {
+        // due to legacy we allow to use request parameters, but it deprecated
+        if(credentials != null) {
+            username = credentials.getUsername();
+            password = credentials.getPassword();
+        }
         Authentication authentication = new UsernamePasswordAuthenticationToken(username, password);
         final Authentication authenticate = authenticationProvider.authenticate(authentication);
         if (authenticate != null && authenticate.isAuthenticated()) {
