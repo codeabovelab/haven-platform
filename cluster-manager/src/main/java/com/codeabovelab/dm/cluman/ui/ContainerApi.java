@@ -328,11 +328,12 @@ public class ContainerApi {
     @RequestMapping(value = "/containers/{cluster}/{name}", method = RequestMethod.GET)
     public UIContainerDetails getContainerDetailsByName(@PathVariable("cluster") String cluster, @PathVariable("name") String name)
             throws Exception {
+        ContainerRegistration cr = containerStorage.findContainer(name);
+        ExtendedAssert.notFound(cr, "Can't find container by name " + name);
         DockerService service = dockerServices.getService(cluster);
         ExtendedAssert.notFound(service, "Can't find cluster by id " + cluster);
         ContainerDetails container = service.getContainer(name);
         ExtendedAssert.notFound(container, "Can't find container by id " + container + " in cluster " + cluster);
-        ContainerRegistration cr = containerStorage.getContainer(container.getId());
         return toContainerDetails(cr, container);
     }
 

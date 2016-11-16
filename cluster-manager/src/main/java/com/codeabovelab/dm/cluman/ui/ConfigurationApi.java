@@ -38,6 +38,7 @@ import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBo
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.time.OffsetDateTime;
 
 /**
  */
@@ -90,9 +91,17 @@ public class ConfigurationApi {
 
     @RequestMapping(path = "version", method = RequestMethod.GET)
     public UiApplicationInfo getAppInfo() {
-        return UiApplicationInfo.builder()
-                .version(AppInfo.getApplicationVersion())
-                .buildTime(AppInfo.getBuildTime())
-                .build();
+        try {
+            return UiApplicationInfo.builder()
+                    .version(AppInfo.getApplicationVersion())
+                    .buildTime(AppInfo.getBuildTime()).build();
+
+        } catch (IllegalArgumentException e) {
+            // we expect error like IllegalArgumentException: Attribute 'dm-cluman-info-version' not found in MANIFEST.MF file(s) among 90 other attribute(s):
+            // which appear anytime when we run app without jar file
+            return UiApplicationInfo.builder()
+              .version("1.0-CAN_NOT_FOUND_MANIFEST")
+              .buildTime(OffsetDateTime.now()).build();
+        }
     }
 }

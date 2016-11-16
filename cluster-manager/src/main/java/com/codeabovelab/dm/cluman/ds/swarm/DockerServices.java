@@ -37,7 +37,6 @@ import com.codeabovelab.dm.cluman.validate.ExtendedAssert;
 import com.codeabovelab.dm.common.mb.MessageBus;
 import com.codeabovelab.dm.common.security.TempAuth;
 import com.codeabovelab.dm.platform.http.async.NettyRequestFactory;
-import com.google.common.base.MoreObjects;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import org.slf4j.Logger;
@@ -325,7 +324,7 @@ public class DockerServices implements DockerServiceRegistry, NodeRegistry {
             dockerConsumer.accept(b);
         }
         DockerService ds = b.build();
-        ds = new DockerServiceSecurityWrapper(this.aclContextFactory, ds);
+        ds = securityWrapper(ds);
         return ds;
     }
 
@@ -399,5 +398,9 @@ public class DockerServices implements DockerServiceRegistry, NodeRegistry {
     public void shutdown() {
         scheduledExecutor.shutdown();
         scheduledExecutorService.shutdown();
+    }
+
+    public DockerService securityWrapper(DockerService dockerService) {
+        return new DockerServiceSecurityWrapper(aclContextFactory, dockerService);
     }
 }

@@ -19,6 +19,7 @@ package com.codeabovelab.dm.cluman.users;
 import com.codeabovelab.dm.common.security.ExtendedUserDetails;
 import com.codeabovelab.dm.common.security.UserIdentifiers;
 import com.codeabovelab.dm.common.security.UserIdentifiersDetailsService;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Primary;
 import org.springframework.core.annotation.AnnotationAwareOrderComparator;
@@ -30,6 +31,7 @@ import java.util.*;
 /**
  */
 @Primary
+@Slf4j
 @Component
 public class CompositeUserDetailsService implements UserIdentifiersDetailsService {
     private List<UserIdentifiersDetailsService> services;
@@ -49,6 +51,10 @@ public class CompositeUserDetailsService implements UserIdentifiersDetailsServic
         for(UserIdentifiersDetailsService service: services) {
             Collection<ExtendedUserDetails> users = service.getUsers();
             users.forEach(e -> {
+                if(e == null) {
+                    log.error("Service {} has null in user list.", service);
+                    return;
+                }
                 // note that services has precedence, so we cannot replace details
                 map.putIfAbsent(e.getUsername(), e);
             });

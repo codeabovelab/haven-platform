@@ -29,6 +29,7 @@ import com.codeabovelab.dm.cluman.ds.swarm.DockerServices;
 import com.codeabovelab.dm.cluman.model.*;
 import com.codeabovelab.dm.cluman.model.Node;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.util.Assert;
 
 import java.util.ArrayList;
@@ -39,7 +40,7 @@ import java.util.function.Consumer;
 /**
  */
 @Slf4j
-public class VirtualDockerService implements DockerService {
+class VirtualDockerService implements DockerService {
 
     private final NodesGroupImpl cluster;
     // we need empty config for prevent NPE
@@ -87,8 +88,12 @@ public class VirtualDockerService implements DockerService {
                 // due to different causes service can be null
                 continue;
             }
-            List<DockerContainer> nodeContainer = service.getContainers(arg);
-            virtConts.addAll(nodeContainer);
+            try {
+                List<DockerContainer> nodeContainer = service.getContainers(arg);
+                virtConts.addAll(nodeContainer);
+            } catch (AccessDeniedException e) {
+                //nothing
+            }
         }
         return virtConts;
     }
@@ -102,8 +107,12 @@ public class VirtualDockerService implements DockerService {
                 // due to different causes service can be null
                 continue;
             }
-            List<ImageItem> images = service.getImages(arg);
-            virt.addAll(images);
+            try {
+                List<ImageItem> images = service.getImages(arg);
+                virt.addAll(images);
+            } catch (AccessDeniedException e) {
+                //nothing
+            }
         }
         return virt;
     }
@@ -168,6 +177,8 @@ public class VirtualDockerService implements DockerService {
                 int running = (int) nodeContainer.stream().filter(DockerContainer::isRun).count();
                 containers += running;
                 offContainers += nodeContainer.size() - running;
+            } catch (AccessDeniedException e) {
+                //nothing
             } catch (Exception e) {
                 log.warn("Can not list containers on {}, due to error {}", node.getName(), e.toString());
             }
@@ -250,7 +261,11 @@ public class VirtualDockerService implements DockerService {
             if (isOffline(service)) {
                 continue;
             }
-            service.removeImage(removeImageArg);
+            try {
+                service.removeImage(removeImageArg);
+            } catch (AccessDeniedException e) {
+                //nothing
+            }
         }
         return removeImageResult;
     }
@@ -297,9 +312,13 @@ public class VirtualDockerService implements DockerService {
                 // due to different causes service can be null
                 continue;
             }
-            image = service.getImage(name);
-            if(image != null) {
-                break;
+            try {
+                image = service.getImage(name);
+                if (image != null) {
+                    break;
+                }
+            } catch (AccessDeniedException e) {
+                //nothing
             }
         }
         return image;

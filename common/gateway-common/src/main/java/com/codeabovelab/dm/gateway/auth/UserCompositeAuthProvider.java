@@ -16,10 +16,7 @@
 
 package com.codeabovelab.dm.gateway.auth;
 
-import com.codeabovelab.dm.common.security.SecurityUtils;
-import com.codeabovelab.dm.common.security.UserCompositeAuthenticationToken;
-import com.codeabovelab.dm.common.security.UserCompositePrincipal;
-import com.codeabovelab.dm.common.security.UserIdentifiersDetailsService;
+import com.codeabovelab.dm.common.security.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -46,6 +43,8 @@ public class UserCompositeAuthProvider implements AuthenticationProvider {
     @Autowired
     private PasswordEncoder passwordEncoder;
 
+    @Autowired
+    private SuccessAuthProcessor authProcessor;
 
     @Override
     public Authentication authenticate(Authentication authentication) throws AuthenticationException {
@@ -58,7 +57,7 @@ public class UserCompositeAuthProvider implements AuthenticationProvider {
             throw new BadCredentialsException("Bad credentials");
         }
 
-        return SecurityUtils.createSuccessAuthentication(authentication, userDetails);
+        return authProcessor.createSuccessAuth(authentication, userDetails);
     }
 
     private UserCompositeAuthenticationToken convert(Authentication authentication) {

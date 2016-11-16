@@ -18,7 +18,6 @@ package com.codeabovelab.dm.cluman.security;
 
 import com.codeabovelab.dm.common.security.Authorities;
 import com.codeabovelab.dm.common.security.dto.ObjectIdentityData;
-import org.springframework.security.acls.domain.ObjectIdentityImpl;
 import org.springframework.security.acls.model.ObjectIdentity;
 
 /**
@@ -38,7 +37,10 @@ public enum SecuredType {
      */
     REMOTE_IMAGE,
     NETWORK;
-
+    /**
+     * It can not be calculated, because it is used for annotation.
+     */
+    public static final String CLUSTER_ADMIN = "ROLE_CLUSTER_ADMIN";
     private final String adminRole;
     private final String userRole;
 

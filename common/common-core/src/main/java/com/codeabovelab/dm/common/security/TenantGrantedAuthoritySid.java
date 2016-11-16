@@ -85,4 +85,8 @@ public class TenantGrantedAuthoritySid extends GrantedAuthoritySid implements Te
     public static TenantGrantedAuthoritySid from(GrantedAuthoritySid sid) {
         return new TenantGrantedAuthoritySid(sid.getGrantedAuthority(), MultiTenancySupport.getTenant(sid));
     }
+
+    public static TenantGrantedAuthoritySid from(GrantedAuthority ga) {
+        return new TenantGrantedAuthoritySid(ga.getAuthority(), MultiTenancySupport.getTenant(ga));
+    }
 }

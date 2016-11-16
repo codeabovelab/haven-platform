@@ -31,7 +31,7 @@ import java.util.*;
  * UI representation for Container
  */
 @Data
-public class UiContainer implements Comparable<UiContainer>, UiContainerIface {
+public class UiContainer implements Comparable<UiContainer>, UiContainerIface, WithUiPermission {
     @NotNull protected String id;
     @NotNull protected String name;
     @NotNull protected String node;
@@ -47,6 +47,7 @@ public class UiContainer implements Comparable<UiContainer>, UiContainerIface {
     protected String lockCause;
     protected final Map<String, String> labels = new HashMap<>();
     protected boolean run;
+    private UiPermission permission;
 
     @Override
     public int compareTo(UiContainer o) {

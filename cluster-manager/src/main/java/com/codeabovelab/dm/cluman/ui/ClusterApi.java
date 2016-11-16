@@ -27,7 +27,6 @@ import com.codeabovelab.dm.cluman.security.AclContext;
 import com.codeabovelab.dm.cluman.security.AclContextFactory;
 import com.codeabovelab.dm.cluman.security.SecuredType;
 import com.codeabovelab.dm.cluman.source.DeployOptions;
-import com.codeabovelab.dm.cluman.source.DeploySourceJob;
 import com.codeabovelab.dm.cluman.source.SourceService;
 import com.codeabovelab.dm.cluman.ds.DockerServiceRegistry;
 import com.codeabovelab.dm.cluman.ds.clusters.RealCluster;
@@ -40,8 +39,7 @@ import com.codeabovelab.dm.cluman.validate.ExtendedAssert;
 import com.codeabovelab.dm.cluman.yaml.YamlUtils;
 import com.codeabovelab.dm.common.cache.DefineCache;
 import com.codeabovelab.dm.common.cache.MessageBusCacheInvalidator;
-import com.codeabovelab.dm.common.security.acl.AclSource;
-import com.codeabovelab.dm.common.security.dto.ObjectIdentityData;
+import com.codeabovelab.dm.common.security.Authorities;
 import com.codeabovelab.dm.common.utils.Sugar;
 import io.swagger.annotations.ApiOperation;
 import lombok.RequiredArgsConstructor;
@@ -51,6 +49,8 @@ import org.springframework.cache.annotation.Cacheable;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.access.annotation.Secured;
 import org.springframework.util.MimeTypeUtils;
 import org.springframework.web.bind.annotation.*;
 
@@ -97,9 +97,15 @@ public class ClusterApi {
         uc.getDescription().accept(cluster.getDescription());
         uc.getFilter().accept(cluster.getImageFilter());
         uc.setFeatures(cluster.getFeatures());
-        DockerServiceInfo info = cluster.getDocker().getInfo();
-        uc.setContainers(new UiCluster.Entry(info.getContainers(), info.getOffContainers()));
-        uc.setNodes(new UiCluster.Entry(info.getNodeCount(), info.getOffNodeCount()));
+        try {
+            DockerServiceInfo info = cluster.getDocker().getInfo();
+            uc.setContainers(new UiCluster.Entry(info.getContainers(), info.getOffContainers()));
+            uc.setNodes(new UiCluster.Entry(info.getNodeCount(), info.getOffNodeCount()));
+        } catch (AccessDeniedException e) {
+            uc.setContainers(new UiCluster.Entry(0, 0));
+            uc.setNodes(new UiCluster.Entry(0, 0));
+            //nothing
+        }
         try {
             Set<String> apps = uc.getApplications();
             List<Application> applications = applicationService.getApplications(name);
@@ -107,12 +113,13 @@ public class ClusterApi {
         } catch (Exception e) {
             //nothing
         }
-        uc.setPermission(UiPermission.create(ac, SecuredType.CLUSTER.id(name)));
+        UiPermission.inject(uc, ac, SecuredType.CLUSTER.id(name));
         return uc;
     }
 
     @RequestMapping(value = "/clusters/{cluster}/containers", method = GET)
     public ResponseEntity<Collection<UiContainer>> listContainers(@PathVariable("cluster") String cluster) {
+        AclContext ac = aclContextFactory.getContext();
         List<UiContainer> list = new ArrayList<>();
         GetContainersArg arg = new GetContainersArg(true);
         NodesGroup nodesGroup = discoveryStorage.getCluster(cluster);
@@ -127,6 +134,7 @@ public class ClusterApi {
             UiContainer uic = UiContainer.from(container);
             uic.enrich(discoveryStorage, containerStorage);
             uic.setApplication(apps.get(uic.getId()));
+            UiPermission.inject(uic, ac, SecuredType.CONTAINER.id(uic.getId()));
             list.add(uic);
         }
         Collections.sort(list);
@@ -255,6 +263,12 @@ public class ClusterApi {
         discoveryStorage.deleteCluster(cluster);
     }
 
+    /**
+     *
+     * @param clusterName
+     * @param clusterData
+     */
+    @Secured({Authorities.ADMIN_ROLE, SecuredType.CLUSTER_ADMIN})
     @RequestMapping(value = "/clusters/{cluster}", method = PUT)
     public void createCluster(@PathVariable("cluster") String clusterName, @RequestBody(required = false) UiClusterEditablePart clusterData) {
         SwarmNodesGroupConfig sgnc = new SwarmNodesGroupConfig();

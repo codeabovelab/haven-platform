@@ -22,7 +22,6 @@ import com.codeabovelab.dm.common.utils.ContainerDetector;
 import com.codeabovelab.dm.common.utils.OSUtils;
 import org.springframework.util.StringUtils;
 
-import java.util.*;
 
 public final class ContainerUtils {
 
@@ -231,5 +230,23 @@ public final class ContainerUtils {
             name = name.substring(1);
         }
         return name;
+    }
+
+    public static boolean isContainerId(String id) {
+        // id like f75dea595d92ae635125ba37300c076682e80a311149782707a8c43893582236
+        if(id == null || id.length() != 64) {
+            return false;
+        }
+        for(int i = 0; i < id.length(); ++i) {
+            char c = id.charAt(i);
+            if(!isHex(c)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private static boolean isHex(char c) {
+        return c >= '0' && c <= '9' || c >= 'a' && c <= 'f' || c >= 'A' && c <= 'F';
     }
 }
