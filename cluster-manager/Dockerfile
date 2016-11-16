@@ -16,7 +16,6 @@ RUN export GOPATH=/gocode && \
   git checkout -b v1.2.5 v1.2.5 &&\
   godep go install .
 
-
 ENV PATH $PATH:/bin:/usr/bin:/gocode/bin
 
 LABEL service-type=system
@@ -28,8 +27,6 @@ LABEL arg.ports=8761:8761
 ENV JAVA_OPTS=" -Xms64M -Xmx512M -Xss256k -XX:-HeapDumpOnOutOfMemoryError "
 
 EXPOSE 8761
-EXPOSE 8762
-
 
 RUN mkdir /data
 WORKDIR /data
@@ -37,8 +34,4 @@ VOLUME  /data
 
 ADD ./cluster-manager-*-boot.jar /${artifactId}.jar
 ENTRYPOINT java -server $JAVA_OPTS -Djava.security.egd=file:/dev/./urandom -Dspring.profiles.active=staging -jar /${artifactId}.jar \
-  --https.keystore.password=dockmaster \
-  --https.keystore=/server.p12 \
-  --server.port=8761 \
-  --https.port=8762 \
   --dm.swarm-exec.path=/gocode/bin/swarm \
