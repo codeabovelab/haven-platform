@@ -2,20 +2,19 @@
 <included>
 
     <property name="PATH" value="./log"/>
-    <property name="ENCODER_PATTERN" value="%d{HH:mm:ss.SSS} [%thread] %-5level %logger{5} - %msg%n" />
-    <property name="ROLLING_PATTERN" value="%d{yyyy-MM-dd}.log.zip" />
+    <property name="ENCODER_PATTERN" value="%d{HH:mm:ss.SSS} [%thread] %-5level %logger{5} - %msg%n"/>
+    <property name="ROLLING_PATTERN" value="%d{yyyy-MM-dd}.dm.log.zip"/>
 
     <appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
-        <file>${PATH}/${HOSTNAME}.log</file>
+        <file>${PATH}/dm.log</file>
         <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
-            <fileNamePattern>${PATH}/${HOSTNAME}_${ROLLING_PATTERN}.log</fileNamePattern>
+            <fileNamePattern>${PATH}/${ROLLING_PATTERN}</fileNamePattern>
             <maxHistory>10</maxHistory>
         </rollingPolicy>
         <append>true</append>
         <encoder>
             <pattern>${ENCODER_PATTERN}</pattern>
             <charset>UTF-8</charset>
-            <immediateFlush>false</immediateFlush>
         </encoder>
     </appender>
 
@@ -23,12 +22,28 @@
         <encoder>
             <pattern>${ENCODER_PATTERN}</pattern>
         </encoder>
+
     </appender>
 
-    <!--default level is warn can be overridden in logback.xml-->
-    <root level="WARN">
-        <appender-ref ref="STDOUT"/>
+    <root level="DEBUG">
         <appender-ref ref="FILE"/>
     </root>
+
+    <logger name="org.springframework" level="INFO"/>
+    <logger name="org.apache" level="ERROR"/>
+    <logger name="springfox" level="ERROR"/>
+    <logger name="mousio" level="ERROR"/>
+
+    <logger name="com.codeabovelab" level="TRACE" additivity="false">
+        <appender-ref ref="FILE"/>
+    </logger>
+
+    <logger name="org.springframework.cloud.bootstrap.config" level="INFO" additivity="false">
+        <appender-ref ref="STDOUT"/>
+    </logger>
+
+    <logger name="com.codeabovelab" level="INFO" additivity="false">
+        <appender-ref ref="STDOUT"/>
+    </logger>
 
 </included>
