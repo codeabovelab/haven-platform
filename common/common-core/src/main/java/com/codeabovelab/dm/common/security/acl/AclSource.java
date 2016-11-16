@@ -18,9 +18,9 @@ package com.codeabovelab.dm.common.security.acl;
 
 import com.codeabovelab.dm.common.security.MultiTenancySupport;
 import com.codeabovelab.dm.common.security.dto.ObjectIdentityData;
+import com.codeabovelab.dm.common.utils.Uuids;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.google.common.collect.ImmutableList;
 import lombok.Data;
 import org.springframework.util.Assert;
@@ -36,7 +36,7 @@ public class AclSource {
 
     @Data
     public static class Builder {
-        private final Map<Long, AceSource> entries = new LinkedHashMap<>();
+        private final Map<String, AceSource> entries = new LinkedHashMap<>();
         private ObjectIdentityData objectIdentity;
         private TenantSid owner;
         private AclSource parentAcl;
@@ -74,7 +74,7 @@ public class AclSource {
         }
 
         public Builder addEntry(AceSource entry) {
-            Long id = entry.getId();
+            String id = entry.getId();
             if(id == null) {
                 // this is new entry
                 id = newId();
@@ -84,8 +84,13 @@ public class AclSource {
             return this;
         }
 
-        private Long newId() {
-            return this.entries.keySet().stream().max(Long::compare).orElse(0L) + 1L;
+        private String newId() {
+            while(true) {
+                String id = Uuids.longUid();
+                if(!this.entries.containsKey(id)) {
+                    return id;
+                }
+            }
         }
 
         public Builder entriesMap(Map<Long, AceSource> entries) {
@@ -122,7 +127,7 @@ public class AclSource {
         }
     }
 
-    private final Map<Long, AceSource> entriesMap;
+    private final Map<String, AceSource> entriesMap;
     private final ObjectIdentityData objectIdentity;
     private final TenantSid owner;
     private final AclSource parentAcl;
@@ -142,7 +147,7 @@ public class AclSource {
     }
 
     @JsonIgnore
-    public Map<Long, AceSource> getEntriesMap() {
+    public Map<String, AceSource> getEntriesMap() {
         return entriesMap;
     }
 

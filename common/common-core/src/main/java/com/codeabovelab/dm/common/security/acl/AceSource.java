@@ -18,6 +18,7 @@ package com.codeabovelab.dm.common.security.acl;
 
 import com.codeabovelab.dm.common.security.MultiTenancySupport;
 import com.codeabovelab.dm.common.security.dto.PermissionData;
+import com.codeabovelab.dm.common.utils.StringUtils;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
@@ -42,7 +43,7 @@ public class AceSource implements AuditableAccessControlEntry {
     @Data
     @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, defaultImpl = Builder.class)
     public abstract static class AbstractBuilder<T> implements AuditableAccessControlEntry {
-        protected Long id;
+        protected String id;
         protected TenantSid sid;
         protected boolean granting;
         protected PermissionData permission;
@@ -54,13 +55,13 @@ public class AceSource implements AuditableAccessControlEntry {
             return (T) this;
         }
 
-        public T id(Long id) {
+        public T id(String id) {
             setId(id);
             return thiz();
         }
 
         @Override
-        public Long getId() {
+        public String getId() {
             return id;
         }
 
@@ -101,7 +102,7 @@ public class AceSource implements AuditableAccessControlEntry {
          * @return
          */
         public T from(AccessControlEntry entry) {
-            this.id = (Long) entry.getId();
+            this.id = StringUtils.valueOf(entry.getId());
             this.sid = TenantSid.from(entry.getSid());
             this.granting = entry.isGranting();
             this.permission = PermissionData.from(entry.getPermission());
@@ -116,7 +117,7 @@ public class AceSource implements AuditableAccessControlEntry {
         public abstract AceSource build();
     }
 
-    protected final Long id;
+    protected final String id;
     protected final TenantSid sid;
     protected final boolean granting;
     protected final PermissionData permission;

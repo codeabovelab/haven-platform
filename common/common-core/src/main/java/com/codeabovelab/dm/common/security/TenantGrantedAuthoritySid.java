@@ -79,7 +79,8 @@ public class TenantGrantedAuthoritySid extends GrantedAuthoritySid implements Te
     
     @Override
     public String toString() {
-        return "TenantGrantedAuthoritySid[" + getGrantedAuthority() + ":" + tenant + ']';
+        //Do not change below code, it must matches scheme from config file.
+        return getGrantedAuthority() + ":" + tenant;
     }
 
     public static TenantGrantedAuthoritySid from(GrantedAuthoritySid sid) {

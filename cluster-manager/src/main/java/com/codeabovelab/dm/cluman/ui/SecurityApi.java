@@ -266,12 +266,12 @@ public class SecurityApi {
     private boolean updateAcl(UiAclUpdate aclSource, AclSource.Builder as) {
         Sugar.setIfNotNull(as::setOwner, MultiTenancySupport.fixTenant(aclSource.getOwner()));
         List<UiAclUpdate.UiAceUpdate> list = aclSource.getEntries();
-        Map<Long, AceSource> existed = as.getEntries();
+        Map<String, AceSource> existed = as.getEntries();
         if(list.isEmpty()) {
             return false;
         }
         for (UiAclUpdate.UiAceUpdate entry : list) {
-            Long aceId = entry.getId();
+            String aceId = entry.getId();
             AceSource ace = aceId == null ? null : existed.get(aceId);
             if (ace == null) {
                 // add new

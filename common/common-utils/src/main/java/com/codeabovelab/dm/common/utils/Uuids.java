@@ -61,4 +61,12 @@ public final class Uuids {
         long last = RANDOM.nextLong();
         return new UUID(most, last);
     }
+
+    /**
+     * Long based random uid.
+     * @return
+     */
+    public static String longUid() {
+        return Long.toUnsignedString(RANDOM.nextLong(), 32);
+    }
 }
