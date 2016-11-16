@@ -29,7 +29,8 @@
         <appender-ref ref="FILE"/>
     </root>
 
-    <logger name="org.springframework" level="INFO"/>
+    <logger name="org.springframework" level="WARN"/>
+    <logger name="com.jcabi" level="WARN"/>
     <logger name="org.apache" level="ERROR"/>
     <logger name="springfox" level="ERROR"/>
     <logger name="mousio" level="ERROR"/>
@@ -39,6 +40,10 @@
     </logger>
 
     <logger name="org.springframework.cloud.bootstrap.config" level="INFO" additivity="false">
+        <appender-ref ref="STDOUT"/>
+    </logger>
+
+    <logger name="org" level="ERROR" additivity="false">
         <appender-ref ref="STDOUT"/>
     </logger>
 
