@@ -28,7 +28,7 @@
         <surefire.junit.version>2.17</surefire.junit.version>
         <codehaus.woodstox.version>4.4.1</codehaus.woodstox.version>
 
-        <spring-cloud-starter.version>Brixton.SR4</spring-cloud-starter.version>
+        <spring-cloud-starter.version>Camden.SR2</spring-cloud-starter.version>
         <javax.validation.version>1.1.0.Final</javax.validation.version>
 
         <commons-validator.version>1.5.1</commons-validator.version>
