@@ -33,6 +33,11 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.util.Assert;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
+import java.util.Date;
+
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 
 @RestController
@@ -90,9 +95,10 @@ public class TokenApi {
     }
 
     private UITokenData fillFields(TokenData token) {
+        Instant instant = Instant.ofEpochMilli(token.getCreationTime());
         return UITokenData.builder()
-                .creationTime(token.getCreationTime())
-                .expireAtTime(token.getCreationTime() + tokenValidatorSettings.getExpireAfterInSec() * 1000L)
+                .creationTime(LocalDateTime.ofInstant(instant, ZoneOffset.UTC))
+                .expireAtTime(LocalDateTime.ofInstant(instant.plusSeconds(tokenValidatorSettings.getExpireAfterInSec()), ZoneOffset.UTC))
                 .key(token.getKey())
                 .userName(token.getUserName())
                 .build();

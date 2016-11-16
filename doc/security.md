@@ -8,6 +8,33 @@ System use Access Control List (ACL) extended to use roles as security model. Al
 System support BasicAuth and token-based authentication. Token is obtain by login-password pair. Token has 
 lifetime, also each token usage update lifetime on configured timeout.
 
+### Token ###
+
+Token can be obtain through `/ui/token/login` entry point:
+
+    curl -X POST --header 'Content-Type: application/json' \
+    --data-raw '{"username":"admin","password":"password"}' \
+    'http://cluman.server:8761/ui/token/login'
+
+It return json object like:
+
+    {
+      "userName": "admin",
+      "key": "sit:MAA..TL;DR..KO===",
+      "creationTime": "2016-11-16T15:44:24.266",
+      "expireAtTime": "2016-11-17T15:44:24.266"
+    }
+
+Response has 'key' with token data. So you must place it key in 'X-Auth-Token' header. 
+Note that toke will expire at `expireAtTime` (`dm.token.expireAfterInSec` in config), but each request with token
+will prolong token lifetime to `expireLastAccessInSec` value (`dm.token.expireAfterInSec` in config).   
+
+For getting new token you can invoke `/ui/token/refresh`:
+
+    curl -X PUT -H 'X-Auth-Token: sit:MAA..TL;DR..KO===' 'http://cluman.server:8761/ui/token/refresh'
+
+It return same result as `/ui/token/login`.
+
 ## Authorization ##
 
 Authorization based on following objects:
