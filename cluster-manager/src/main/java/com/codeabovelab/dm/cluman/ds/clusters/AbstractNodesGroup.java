@@ -21,6 +21,8 @@ import com.codeabovelab.dm.cluman.security.SecuredType;
 import com.codeabovelab.dm.common.kv.mapping.KvMapper;
 import com.codeabovelab.dm.cluman.ds.nodes.NodeStorage;
 import com.codeabovelab.dm.cluman.model.NodesGroup;
+import com.codeabovelab.dm.common.security.SecurityUtils;
+import com.codeabovelab.dm.common.security.TenantPrincipalSid;
 import com.codeabovelab.dm.common.security.acl.AclSource;
 import com.codeabovelab.dm.common.security.dto.ObjectIdentityData;
 import com.google.common.collect.ImmutableSet;
@@ -150,8 +152,19 @@ abstract class AbstractNodesGroup<T extends AbstractNodesGroup<T, C>, C extends 
     @Override
     public AclSource getAcl() {
         synchronized (lock) {
-            return this.config.getAcl();
+            AclSource acl = this.config.getAcl();
+            if(acl == null) {
+                // we must not return null, but also can not update config here, so make default non null value
+                acl = defaultAclBuilder().build();
+            }
+            return acl;
         }
+    }
+
+    private AclSource.Builder defaultAclBuilder() {
+        return AclSource.builder()
+          .owner(TenantPrincipalSid.from(SecurityUtils.USER_SYSTEM))
+          .objectIdentity(oid);
     }
 
     @Override
@@ -159,8 +172,7 @@ abstract class AbstractNodesGroup<T extends AbstractNodesGroup<T, C>, C extends 
         KvMapper<C> mapper;
         synchronized (lock) {
             AclSource acl = this.config.getAcl();
-            AclSource.Builder b = AclSource.builder().from(acl);
-            b.setObjectIdentity(oid);// it need for newly created acl
+            AclSource.Builder b = defaultAclBuilder().from(acl);
             if(!operator.modify(b)) {
                 return;
             }
@@ -187,11 +199,19 @@ abstract class AbstractNodesGroup<T extends AbstractNodesGroup<T, C>, C extends 
     @Override
     public void setConfig(AbstractNodesGroupConfig<?> config) {
         this.configClazz.cast(config);
+        validateConfig(config);
         KvMapper<C> mapper;
         synchronized (lock) {
             this.config = (C) config.clone();
             mapper = this.mapper = storage.getKvMapperFactory().createMapper(this.config, storage.getPrefix() + name);
         }
         mapper.save();
+    }
+
+    private void validateConfig(AbstractNodesGroupConfig<?> config) {
+        AclSource acl = config.getAcl();
+        if(acl != null && !oid.equals(acl.getObjectIdentity())) {
+            throw new IllegalArgumentException("Bad acl.objectIdentity in config: " + config);
+        }
     }
 }

@@ -46,17 +46,22 @@ public class ClusterAclProvider implements AclProvider {
     public AclSource provide(Serializable id) {
         DiscoveryStorage ds = discoveryStorage.getObject();
         NodesGroup cluster = ds.getCluster((String) id);
-        return cluster == null? null : cluster.getAcl();
+        checkExistence(cluster, id);
+        return cluster.getAcl();
     }
 
     @Override
     public void update(Serializable id, AclModifier operator) {
         DiscoveryStorage ds = discoveryStorage.getObject();
         NodesGroup cluster = ds.getCluster((String) id);
-        if(cluster == null) {
-            throw new NotFoundException("can not found object for id: " + id);
-        }
+        checkExistence(cluster, id);
         cluster.updateAcl(operator);
+    }
+
+    private void checkExistence(NodesGroup cluster, Serializable id) {
+        if(cluster == null) {
+            throw new NotFoundException("Can not found nodes group for id: " + id);
+        }
     }
 
     @Override
