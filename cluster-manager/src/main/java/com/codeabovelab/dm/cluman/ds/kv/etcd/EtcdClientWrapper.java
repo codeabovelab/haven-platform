@@ -288,6 +288,6 @@ public class EtcdClientWrapper implements KeyValueStorage {
 
     @Override
     public String getDockMasterPrefix() {
-        return dockMasterPrefix;
+        return dockMasterPrefix.trim();
     }
 }
