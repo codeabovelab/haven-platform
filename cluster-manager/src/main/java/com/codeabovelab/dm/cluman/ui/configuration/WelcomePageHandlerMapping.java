@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.codeabovelab.dm.cluman.ui;
+package com.codeabovelab.dm.cluman.ui.configuration;
 
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;

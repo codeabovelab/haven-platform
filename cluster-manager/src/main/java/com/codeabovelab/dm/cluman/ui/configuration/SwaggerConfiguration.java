@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.codeabovelab.dm.cluman.ui;
+package com.codeabovelab.dm.cluman.ui.configuration;
 
 import com.google.common.base.Predicate;
 import org.springframework.beans.factory.annotation.Autowired;

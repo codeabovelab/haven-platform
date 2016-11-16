@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.codeabovelab.dm.cluman.ui;
+package com.codeabovelab.dm.cluman.ui.configuration;
 
 import com.codeabovelab.dm.common.security.TempAuth;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -22,8 +22,6 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.MessageHandler;
-import org.springframework.messaging.simp.SimpAttributes;
-import org.springframework.messaging.simp.SimpAttributesContextHolder;
 import org.springframework.messaging.simp.SimpMessageHeaderAccessor;
 import org.springframework.messaging.simp.config.ChannelRegistration;
 import org.springframework.messaging.simp.config.MessageBrokerRegistry;

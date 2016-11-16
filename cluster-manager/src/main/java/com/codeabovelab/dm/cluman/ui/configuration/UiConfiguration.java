@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.codeabovelab.dm.cluman.ui;
+package com.codeabovelab.dm.cluman.ui.configuration;
 
 import com.codeabovelab.dm.cluman.yaml.MappingYamlHttpMessageConverter;
 import com.codeabovelab.dm.common.json.JacksonUtils;

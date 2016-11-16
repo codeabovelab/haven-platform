@@ -25,8 +25,10 @@ import com.codeabovelab.dm.cluman.reconfig.AppConfigService;
 import com.codeabovelab.dm.cluman.source.SourceService;
 import com.codeabovelab.dm.cluman.users.UsersStorage;
 import com.codeabovelab.dm.common.kv.mapping.KvMapperFactory;
+import com.codeabovelab.dm.common.utils.AppInfo;
 import com.codeabovelab.dm.platform.configuration.CacheConfiguration;
 import com.codeabovelab.dm.platform.configuration.SecurityApplicationConfiguration;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.actuate.autoconfigure.EndpointWebMvcAutoConfiguration;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
@@ -44,26 +46,28 @@ import springfox.documentation.swagger2.annotations.EnableSwagger2;
 @Configuration
 @EnableSwagger2
 @Import({
-  SecurityApplicationConfiguration.class, CacheConfiguration.class, JobConfiguration.class,
-  MailConfiguration.class
+        SecurityApplicationConfiguration.class, CacheConfiguration.class, JobConfiguration.class,
+        MailConfiguration.class
 })
 // we use ComponentScan and do not use personal subpackage for app therefore we get ugly thing below
 @ComponentScan(basePackages = {"com.codeabovelab.dm.cluman.cluster",
-        "com.codeabovelab.dm.cluman.ui","com.codeabovelab.dm.cluman.ds", "com.codeabovelab.dm.cluman.pipeline",
+        "com.codeabovelab.dm.cluman.ui", "com.codeabovelab.dm.cluman.ds", "com.codeabovelab.dm.cluman.pipeline",
         "com.codeabovelab.dm.cluman.configs", "com.codeabovelab.dm.common.security"},
         basePackageClasses = {
-          SecurityConfiguration.class,
-          EventsConfiguration.class,
-          AppConfigService.class,
-          ObjectPrinterFactory.class,
-          SourceService.class,
-          UsersStorage.class,
-          KvMapperFactory.class
+                SecurityConfiguration.class,
+                EventsConfiguration.class,
+                AppConfigService.class,
+                ObjectPrinterFactory.class,
+                SourceService.class,
+                UsersStorage.class,
+                KvMapperFactory.class
         })
 @EnableGlobalMethodSecurity(securedEnabled = true, prePostEnabled = true)
+@Slf4j
 public class Application {
 
     public static void main(String[] args) {
+        log.info("Application Version: {}, Build time: {}", AppInfo.getApplicationVersion(), AppInfo.getBuildTime());
         SpringApplication.run(Application.class, args);
     }
 
