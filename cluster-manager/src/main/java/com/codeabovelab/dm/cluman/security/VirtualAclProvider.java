@@ -90,7 +90,7 @@ public abstract class VirtualAclProvider implements AclProvider {
         return AclSource.builder().objectIdentity(toOid(id))
           .owner(PRINCIPAL_SYS)
           .addEntry(AceSource.builder()
-            .id(1L)
+            .id(GA_USER.toString())
             .sid(GA_USER)
             .granting(true)
             .permission(PermissionData.ALL)

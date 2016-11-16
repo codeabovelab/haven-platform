@@ -16,6 +16,7 @@
 
 package com.codeabovelab.dm.common.utils;
 
+import java.io.Serializable;
 import java.util.function.IntPredicate;
 
 /**
@@ -135,5 +136,14 @@ public class StringUtils {
      */
     public static boolean isForFileName(int cp) {
         return isAz09(cp) || cp == '-' || cp == '_' || cp == '.';
+    }
+
+    /**
+     * Invoke {@link Object#toString()} on specified argument, if arg is null then return null.
+     * @param o
+     * @return null or result of o.toString()
+     */
+    public static String valueOf(Object o) {
+        return o == null? null : o.toString();
     }
 }
