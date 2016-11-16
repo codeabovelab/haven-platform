@@ -162,50 +162,6 @@ public class SecurityApi {
         return roles;
     }
 
-    @RequestMapping(
-      value = {
-        "/users/{user}/roles/{role}",
-        "/users/{user}/roles/{tenant}/{role}"
-      },
-      method = RequestMethod.DELETE)
-    public void deleteUserRole(@PathVariable("user") String username,
-                               @PathVariable("role") String role,
-                               @PathVariable(value = "tenant", required = false) String tenant) {
-        UserRegistration ur = usersStorage.get(username);
-        ExtendedAssert.notFound(ur, "Can not find user: " + username);
-        ur.update((r) -> {
-            ExtendedUserDetailsImpl.Builder builder = ExtendedUserDetailsImpl.builder(ur.getDetails());
-            boolean removed = builder.getAuthorities().removeIf(a -> a.getAuthority().equals(role) && Objects.equals(tenant, MultiTenancySupport.getTenant(a)));
-            if (!removed) {
-                throw new NotFoundException("Can not found specified role.");
-            }
-            r.setDetails(builder);
-        });
-    }
-
-    @RequestMapping(
-      value = {
-        "/users/{user}/roles/{role}",
-        "/users/{user}/roles/{tenant}/{role}"
-      },
-      method = RequestMethod.POST)
-    public void addUserRole(@PathVariable("user") String username,
-                            @PathVariable("role") String role,
-                            @PathVariable(value = "tenant", required = false) String tenant) {
-        GrantedAuthority authority = Authorities.fromName(role, tenant);
-        // also we can check that this authority is exists
-        UserRegistration ur = usersStorage.get(username);
-        ExtendedAssert.notFound(ur, "Can not find user: " + username);
-        ur.update((r) -> {
-            ExtendedUserDetailsImpl.Builder builder = ExtendedUserDetailsImpl.builder(ur.getDetails());
-            boolean added = builder.getAuthorities().add(authority);
-            if(!added) {
-                throw new HttpException(HttpStatus.NOT_MODIFIED, "User already has specified authority.");
-            }
-            r.setDetails(builder);
-        });
-    }
-
     @RequestMapping(path = "/users/{user}/acls/", method = RequestMethod.GET)
     public Map<ObjectIdentityData, AclSource> getUserAcls(@PathVariable("user") String username) {
         Map<ObjectIdentityData, AclSource> map = new HashMap<>();
