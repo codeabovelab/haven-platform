@@ -380,26 +380,6 @@
     </dependencyManagement>
 
     <profiles>
-
-        <profile>
-            <id>codeabove</id>
-            <repositories>
-                <repository>
-                    <id>codeabove-public</id>
-                    <url>http://ni1.codeabovelab.com:8081/repository/maven-public/</url>
-                </repository>
-            </repositories>
-            <distributionManagement>
-                <repository>
-                    <id>codeabove-release</id>
-                    <url>http://ni1.codeabovelab.com:8081/repository/maven-releases/</url>
-                </repository>
-                <snapshotRepository>
-                    <id>codeabove-snapshot</id>
-                    <url>http://ni1.codeabovelab.com:8081/repository/maven-snapshots/</url>
-                </snapshotRepository>
-            </distributionManagement>
-        </profile>
         <profile>
             <id>dev</id>
             <activation>
@@ -467,6 +447,14 @@
             <properties>
                 <spring.profiles.active>staging</spring.profiles.active>
             </properties>
+
+            <repositories>
+                <repository>
+                    <id>codeabove-public</id>
+                    <url>http://ni1.codeabovelab.com:8081/repository/maven-public/</url>
+                </repository>
+            </repositories>
+
             <build>
                 <pluginManagement>
                     <plugins>
@@ -556,4 +544,16 @@
             </build>
         </profile>
     </profiles>
+
+    <distributionManagement>
+        <repository>
+            <id>codeabove-release</id>
+            <url>http://ni1.codeabovelab.com:8081/repository/maven-releases/</url>
+        </repository>
+        <snapshotRepository>
+            <id>codeabove-snapshot</id>
+            <url>http://ni1.codeabovelab.com:8081/repository/maven-snapshots/</url>
+        </snapshotRepository>
+    </distributionManagement>
+    
 </project>
