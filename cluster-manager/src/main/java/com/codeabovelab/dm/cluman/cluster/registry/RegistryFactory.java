@@ -53,7 +53,7 @@ public class RegistryFactory implements DisposableBean {
     @Value("${dm.registry.read.to:20000}")
     private Integer readTimeOut = 10000;
 
-    @Value("${dm.registry.dockerhub.url:https://registry.hub.docker.com}")
+    @Value("${dm.registry.dockerhub.search.url:https://registry.hub.docker.com}")
     private String dockerSearchHubUrl = "https://registry.hub.docker.com";
 
     @Value("${dm.registry.dockerhub.url:https://registry-1.docker.io}")

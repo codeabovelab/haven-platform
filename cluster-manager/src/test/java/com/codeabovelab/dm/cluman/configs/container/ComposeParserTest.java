@@ -14,7 +14,7 @@ public class ComposeParserTest {
     @Test
     public void testLoadFile() throws Exception {
         final ObjectMapper mapper = new ObjectMapper(new YAMLFactory());
-        Map<String, ComposeModel> configuration = mapper.readValue(ComposeParserTest.class.getResourceAsStream("/compose.yaml"),
+        Map<String, ComposeModel> configuration = mapper.readValue(ComposeParserTest.class.getResourceAsStream("/docker-compose.yml"),
                 mapper.getTypeFactory().constructMapType(HashMap.class, String.class, ComposeModel.class));
         Assert.assertNotNull(configuration);
         Assert.assertFalse(configuration.isEmpty());
