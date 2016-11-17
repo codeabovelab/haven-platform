@@ -35,7 +35,7 @@ public class PermissionData implements Permission {
 
         @Override
         public int getMask() {
-            return 0;
+            return mask;
         }
 
         @Override
