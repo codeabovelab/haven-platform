@@ -1,4 +1,4 @@
-# How to build Cluman from sources #
+# Building Cluman from sources #
 
 ## Requirements ##
 
@@ -16,32 +16,35 @@ For running:
 
 ## Building ##
 
-Obtain project source code from git:
+Get source code from git:
 
     git clone https://github.com/codeabovelab/dockmaster-platform.git
 
-Step into project dir:
+Change dir:
 
     cd dockmaster-platform
 
-Build backend (note that it download ~370MiB dependencies to '~/.m2/repository'):
+Build backend (note that it downloads ~370MiB dependencies to '~/.m2/repository'):
 
-    mvn -Dmaven.test.skip=true clean install
+    mvn -Dmaven.test.skip=true clean package
 
-For embedding frontend into backend, you must run build again but with 'staging' profile, it consume more time 
+For embedding frontend into backend, you must run build again but with 'staging' profile, it consumes more time 
 therefore disabled by default:
 
-    mvn -P staging -Dmaven.test.skip=true clean install
+    mvn -P staging -Dmaven.test.skip=true clean package
 
 ## Run ##
 
-For running you need installed etcd and swarm. Note that if you swarm has different binary name then you 
+For running you need to install etcd and swarm. Note that if your swarm has different binary name then you 
 must specify full path to it as `--dm.swarm-exec.path=$FULL_PATH_TO_SWARM/swarm` argument.
 
 So command line for running cluman: 
 
-    java -jar cluster-manager/target/cluster-manager-*-SNAPSHOT-boot.jar --dm.kv.etcd.urls=http://127.0.0.1:2379
+    java -jar cluster-manager/target/cluster-manager-*-boot.jar --dm.kv.etcd.urls=http://127.0.0.1:2379
 
-Now you can open UI at http://localhost:8761/ as user 'admin' and 'password' credentials. If you see 404 error 
-then you build without 'staging' profile, and you must rebuild project.
+After startup, will be available by browsing:
+* API: http://localhost:8761/swagger-ui.html
+* UI (if staging profile was activated): http://localhost:8761/
+
+for accessing use admin/password credentials
 
