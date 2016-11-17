@@ -16,12 +16,14 @@ Dockmaster is comprised of Master and Agent nodes. The common requirements for b
 For master node:
  
  * etcd >= 2.2.5
+ 
 ## Installation
 
 The following installation instruction has been tested on Debian / Ubuntu.
 
 *Installation for both Master and Agent*
-1. Define common variables for configuration:
+
+ 1 Define common variables for configuration:
  
 ```sh
  
@@ -34,7 +36,7 @@ The following installation instruction has been tested on Debian / Ubuntu.
 
 *Skip steps 2 and 3 if you already use docker with etcd*
 
-2. Configure etcd on master
+ 2 Configure etcd on master
 https://coreos.com/etcd/docs/latest/docker_guide.html
 ```sh
 docker run -d -v /usr/share/ca-certificates/:/etc/ssl/certs -p 4001:4001 -p 2380:2380 -p 2379:2379 \
@@ -45,7 +47,7 @@ docker run -d -v /usr/share/ca-certificates/:/etc/ssl/certs -p 4001:4001 -p 2380
 
 ```
 
-3. Configure Docker on each instance. By default, Docker listens on Unix socket so TCP socket configuration is needed.
+ 3 Configure Docker on each instance. By default, Docker listens on Unix socket so TCP socket configuration is needed.
   
 ```sh
  %cat /etc/default/docker
@@ -53,7 +55,7 @@ docker run -d -v /usr/share/ca-certificates/:/etc/ssl/certs -p 4001:4001 -p 2380
   -H tcp://0.0.0.0:2375"
 ```
  
-4. *installing DockMaster:*
+ 4 *installing DockMaster:*
  
 ```sh
  docker run -d --name=cluman -p 8761:8761 -e "dm_kv_etcd_urls=http://$MASTER_IP:2379" codeabovelab/cluster-manager
