@@ -26,7 +26,7 @@ public class ComposeConfiguration {
     @Value("${dm.compose.monitor.check.interval.sec:2}")
     private int checkInterval;
 
-    @Value("${dm.compose.files.baseDir:/data/compose}")
+    @Value("${dm.compose.files.location}")
     private String baseDir;
 
     @Bean

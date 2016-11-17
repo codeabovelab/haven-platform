@@ -39,6 +39,10 @@
         <appender-ref ref="FILE"/>
     </logger>
 
+    <logger name="com.codeabovelab" level="INFO" additivity="false">
+        <appender-ref ref="STDOUT"/>
+    </logger>
+
     <logger name="org.springframework.cloud.bootstrap.config" level="INFO" additivity="false">
         <appender-ref ref="STDOUT"/>
     </logger>
@@ -47,8 +51,5 @@
         <appender-ref ref="STDOUT"/>
     </logger>
 
-    <logger name="com.codeabovelab" level="INFO" additivity="false">
-        <appender-ref ref="STDOUT"/>
-    </logger>
 
 </included>

@@ -29,7 +29,7 @@ import org.springframework.context.annotation.Configuration;
 @ComponentScan(basePackageClasses = PersistentBusFactory.class)
 public class FbConfiguration {
     @Bean
-    FbStorage fileBackedStorage(@Value("${dm.file.fbstorage}") String storagePath) {
+    FbStorage fileBackedStorage(@Value("${dm.fbstorage.location}") String storagePath) {
         return FbStorage.builder()
           .maxFileSize(1024 * 1024 * 512)
           .path(storagePath)
