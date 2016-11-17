@@ -118,5 +118,3 @@ For additional technical detail, see:
 
 * [Documentation](/doc/)
 * [Common application properties](https://github.com/codeabovelab/dockmaster-example-configuration/blob/master/cluster-manager.properties)
-
-## TODO ##
