@@ -38,6 +38,9 @@ public class EtcdConfiguration {
     @Value("${dm.kv.etcd.urls}")
     private String[] etcdUrls;
 
+    @Value("${dm.kv.prefix:/cluman}")
+    private String prefix;
+
     @Bean
     public EtcdClientWrapper client() {
         List<URI> uris = new ArrayList<>();
@@ -46,7 +49,7 @@ public class EtcdConfiguration {
         }
         log.info("About to connect to etcd: {}", (Object)etcdUrls);
         EtcdClient etcd = new EtcdClient(uris.toArray(new URI[uris.size()]));
-        EtcdClientWrapper etcdClientWrapper = new EtcdClientWrapper(etcd);
+        EtcdClientWrapper etcdClientWrapper = new EtcdClientWrapper(etcd, prefix.trim());
         return etcdClientWrapper;
     }
 

@@ -30,7 +30,6 @@ import mousio.etcd4j.responses.EtcdException;
 import mousio.etcd4j.responses.EtcdKeysResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Value;
 
 import java.util.List;
 import java.util.Map;
@@ -45,13 +44,13 @@ public class EtcdClientWrapper implements KeyValueStorage {
     private static final int KEY_ALREADY_EXISTS = 105;
     private final Logger logger = LoggerFactory.getLogger(getClass());
     private final EtcdClient etcd;
-    @Value("${dm.kv.prefix:/cluman}")
-    private String dockMasterPrefix;
+    private final String prefix;
     private final MessageBus<KvStorageEvent> bus;
     private final ExecutorService executor;
 
-    public EtcdClientWrapper(EtcdClient etcd) {
+    public EtcdClientWrapper(EtcdClient etcd, String prefix) {
         this.etcd = etcd;
+        this.prefix = prefix;
         //possibly we need to create better id ob bus
         this.bus = MessageBusImpl.builder(KvStorageEvent.class, (s) -> new ConditionalMessageBusWrapper<>(s, KvStorageEvent::getKey, KvUtils::predicate))
           .id(getClass().getName())
@@ -288,6 +287,6 @@ public class EtcdClientWrapper implements KeyValueStorage {
 
     @Override
     public String getDockMasterPrefix() {
-        return dockMasterPrefix.trim();
+        return prefix;
     }
 }
