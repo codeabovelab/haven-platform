@@ -80,7 +80,14 @@ public class UserRegistration {
     public void update(Consumer<UserRegistration> consumer) {
         synchronized (lock) {
             consumer.accept(this);
+            validate();
             mapper.save(name, this);
+        }
+    }
+
+    private void validate() {
+        if(this.details.getTenant() == null) {
+            throw new IllegalArgumentException("tenant is null");
         }
     }
 }
