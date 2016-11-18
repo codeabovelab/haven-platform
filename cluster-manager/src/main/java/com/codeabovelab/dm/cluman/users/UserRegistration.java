@@ -108,8 +108,10 @@ public class UserRegistration {
         if(anotherTenant == null) {
             throw new IllegalArgumentException("tenant is null");
         }
-        if(!Objects.equals(this.details.getTenant(), anotherTenant)) {
-            throw new IllegalArgumentException("Change of tenant (orig:" + this.details.getTenant()
+        String oldTenant = this.details.getTenant();
+        // in some cases user may have null tenant (it user is corrupted), and we must lave way to fix it through ui
+        if(oldTenant != null && !oldTenant.equals(anotherTenant)) {
+            throw new IllegalArgumentException("Change of tenant (orig:" + oldTenant
               + ", new:" + anotherTenant + ") is not allowed.");
         }
     }
