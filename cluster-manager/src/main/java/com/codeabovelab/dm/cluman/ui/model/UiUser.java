@@ -50,6 +50,10 @@ public class UiUser extends UiUserBase {
         roles.sort(null);
         user.setRoles(roles);
         user.setTenant(MultiTenancySupport.getTenant(details));
+        user.setAccountNonExpired(details.isAccountNonExpired());
+        user.setAccountNonLocked(details.isAccountNonLocked());
+        user.setCredentialsNonExpired(details.isCredentialsNonExpired());
+        user.setEnabled(details.isEnabled());
         return user;
     }
 }
