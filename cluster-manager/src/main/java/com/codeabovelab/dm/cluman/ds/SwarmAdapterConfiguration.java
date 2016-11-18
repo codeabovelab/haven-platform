@@ -18,9 +18,8 @@ package com.codeabovelab.dm.cluman.ds;
 
 import com.codeabovelab.dm.cluman.cluster.docker.ClusterConfigImpl;
 import com.codeabovelab.dm.cluman.ds.clusters.DiscoveryStorageImpl;
-import com.codeabovelab.dm.cluman.ds.clusters.RealCluster;
 import com.codeabovelab.dm.cluman.ds.clusters.SwarmNodesGroupConfig;
-import com.codeabovelab.dm.cluman.ds.nodes.TokenDiscoveryServer;
+import com.codeabovelab.dm.cluman.ds.nodes.DiscoveryNodeController;
 import com.codeabovelab.dm.cluman.ds.swarm.DockerServices;
 import com.codeabovelab.dm.cluman.ds.swarm.DockerServicesConfig;
 import com.codeabovelab.dm.cluman.ds.swarm.SwarmProcessesConfig;
@@ -46,7 +45,7 @@ import java.util.Map;
  */
 @Configuration
 @EnableConfigurationProperties({SwarmsConfig.class, DockerServicesConfig.class, SwarmProcessesConfig.class})
-@ComponentScan(basePackageClasses = {TokenDiscoveryServer.class})
+@ComponentScan(basePackageClasses = {DiscoveryNodeController.class})
 public class SwarmAdapterConfiguration implements ApplicationListener<ContextRefreshedEvent> {
 
     @Autowired

@@ -3,13 +3,11 @@ package com.codeabovelab.dm.cluman.ds.swarm;
 import com.codeabovelab.dm.cluman.ds.nodes.NodeAgentData;
 import com.codeabovelab.dm.cluman.ds.nodes.NodeStorage;
 import com.codeabovelab.dm.cluman.model.*;
-import com.codeabovelab.dm.cluman.ds.nodes.TokenDiscoveryServer;
+import com.codeabovelab.dm.cluman.ds.nodes.DiscoveryNodeController;
 
 import static org.hamcrest.Matchers.*;
 
-import com.codeabovelab.dm.common.utils.StringUtils;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.hamcrest.Matchers;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -20,9 +18,11 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import org.springframework.util.MimeTypeUtils;
 import org.springframework.web.client.RestTemplate;
+import org.springframework.web.util.NestedServletException;
 
 import java.util.Collection;
 import java.util.HashMap;
@@ -37,10 +37,11 @@ import static org.springframework.test.web.servlet.setup.MockMvcBuilders.standal
  * Test for swarm token discovery service implementation
  */
 @RunWith(SpringJUnit4ClassRunner.class)
-@ContextConfiguration(classes = SwarmTokenDiscoveryTest.TestConfiguration.class)
-public class SwarmTokenDiscoveryTest {
+@ContextConfiguration(classes = DiscoveryNodeControllerTest.TestConfiguration.class)
+public class DiscoveryNodeControllerTest {
     private static final String CLUSTER_ID = "cluster_id";
-    private static final String URL = "/swarm_token_discovery/nodes";
+    private static final String URL = "/discovery/nodes";
+    private static final String SECRET = "secr3t";
 
     @Configuration
     public static class TestConfiguration {
@@ -81,7 +82,7 @@ public class SwarmTokenDiscoveryTest {
 
     @Before
     public void before() {
-        mvc = standaloneSetup(new TokenDiscoveryServer(nodeStorage))
+        mvc = standaloneSetup(new DiscoveryNodeController(nodeStorage, SECRET))
           .build();
     }
 
@@ -100,27 +101,36 @@ public class SwarmTokenDiscoveryTest {
 
         final String hostPort = "on.e:1234";
         final String secondHostPort = "two.e:134";
-        addNode(clusterId, hostPort);
-        addNode(clusterId, secondHostPort);
+        addNode(hostPort, true);
+        addNode(secondHostPort, true);
+        try {
+            addNode("unauthorized:876", false);
+            fail("It unauthorized and must failed");
+        } catch (NestedServletException e) {
+            //fail as axpected
+        }
 
         {
             Collection<Node> nodes = cluster.getNodes();
-            assertThat(nodes, not(empty()));
+            assertThat(nodes, hasSize(2));
             System.out.println(nodes);
             assertThat(nodes, hasItems(hasProperty("address", is(hostPort)), hasProperty("address", is(secondHostPort))));
         }
     }
 
     @SuppressWarnings("deprecation")
-    private void addNode(String clusterId, String hostPort) throws Exception {
+    private void addNode(String hostPort, boolean auth) throws Exception {
         NodeAgentData data = new NodeAgentData();
         data.setName(hostPort);
         data.setAddress(hostPort);
-        mvc.perform(MockMvcRequestBuilders.post(getClusterUrl(data.getName()))
+        MockHttpServletRequestBuilder b = MockMvcRequestBuilders.post(getClusterUrl(data.getName()))
           .param("ttl", "234")
           .contentType(MimeTypeUtils.APPLICATION_JSON_VALUE)
-          .content(objectMapper.writeValueAsString(data)))
-          .andExpect(status().isOk());
+          .content(objectMapper.writeValueAsString(data));
+        if(auth) {
+            b.header("X-Auth-Node", SECRET);
+        }
+        mvc.perform(b).andExpect(status().isOk());
     }
 
     private String getClusterUrl(String clusterId) {

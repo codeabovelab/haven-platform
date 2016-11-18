@@ -17,8 +17,11 @@
 package com.codeabovelab.dm.cluman.ds.nodes;
 
 import com.codeabovelab.dm.cluman.model.*;
+import com.codeabovelab.dm.cluman.ui.HttpException;
+import com.google.common.base.Strings;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -36,19 +39,26 @@ import static org.springframework.web.bind.annotation.RequestMethod.POST;
 @RestController
 @RequestMapping({"/swarm_token_discovery" /*deprecated*/, "/discovery"})
 @Slf4j
-public class TokenDiscoveryServer {
+public class DiscoveryNodeController {
 
+    private final String HEADER = "X-Auth-Node";
     private final NodeStorage storage;
+    private final String nodeSecret;
 
     @Autowired
-    public TokenDiscoveryServer(NodeStorage storage) {
+    public DiscoveryNodeController(NodeStorage storage, @Value("${dm.nodesDiscovery.secret:}") String nodeSecret) {
         this.storage = storage;
+        this.nodeSecret = Strings.emptyToNull(nodeSecret);
     }
 
     @RequestMapping(value = "/nodes/{name}", method = POST, consumes = {TEXT_PLAIN_VALUE, APPLICATION_JSON_VALUE})
     public ResponseEntity<String> registerNodeFromAgent(@RequestBody NodeAgentData data,
                              @PathVariable("name") String name,
+                             @RequestHeader(name = HEADER, required = false) String nodeSecret,
                              @RequestParam("ttl") int ttl) {
+        if(this.nodeSecret != null && !this.nodeSecret.equals(nodeSecret)) {
+            return new ResponseEntity<>("Server required node auth, need correct value of '" + HEADER + "' header.", HttpStatus.UNAUTHORIZED);
+        }
         NodeInfoImpl.Builder builder = NodeInfoImpl.builder()
           .from(data)
           .name(name);

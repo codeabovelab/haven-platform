@@ -82,10 +82,11 @@ class Docker:
 
 class DockerMaster:
 
-    def __init__(self, address, docker, timeout):
+    def __init__(self, address, docker, timeout, secret):
         self.host, self.port = address.split(':')
         self.docker = docker
         self.timeout = timeout
+        self.secret = secret
         self.conn = None
         self.open()
 
@@ -178,15 +179,22 @@ class DockerMaster:
                     headers = {
                         'Content-Type': 'application/json'
                     }
+                    if self.secret is not None:
+                        headers['X-Auth-Node'] = self.secret
                     self.conn.request('POST', path, json_data, headers)
                     r = self.conn.getresponse()
                     rd = r.read()
                     if r.status != http.client.OK:
-                        raise Exception("Invalid response: {} {} from http://{}:{}{} \n\n {}"
-                                        .format(r.status,
-                                                r.reason,
-                                                self.host, self.port, path,
-                                                rd))
+                        if r.status == http.client.UNAUTHORIZED:
+                            raise Exception("Server http://{}:{}{}, require authorization, specify correct 'secret'. \n\n {}"
+                                            .format(self.host, self.port, path,
+                                                    rd))
+                        else:
+                            raise Exception("Invalid response: {} {} from http://{}:{}{} \n\n {}"
+                                            .format(r.status,
+                                                    r.reason,
+                                                    self.host, self.port, path,
+                                                    rd))
                     r.close()
                     logging.debug("update registration success")
                 except:
@@ -228,6 +236,7 @@ Sample config:
   docker = 172.31.0.12:2375
   master = 172.31.0.3:8762
   timeout = 10
+  secret = secr3t
   log_level = 2
 By default find config in:
 \t''' + '\n\t'.join(config_files))
@@ -235,6 +244,8 @@ By default find config in:
                             help='ip and port of docker service')
         parser.add_argument('-m', '--master', dest='master', action='store',
                             help='ip and port of dockmaster service')
+        parser.add_argument('-s', '--secret', dest='secret', action='store',
+                            help='secret for auth on master server')
         parser.add_argument('-t', '--timeout', dest='timeout', action='store',
                             type=int,
                             help='timeout in sec between node registration updates')
@@ -263,6 +274,7 @@ By default find config in:
         self.check_address(self.docker)
         self.timeout = get('timeout', int)
         self.master = get('master')
+        self.secret = get('secret')
         self.check_address(self.master)
 
 
@@ -286,7 +298,7 @@ def main():
     docker = Docker(bs.docker)
 
     ttl = bs.timeout * 2  # ttl is a least two of update interval in seconds
-    master = DockerMaster(bs.master, docker, timeout=ttl)
+    master = DockerMaster(bs.master, docker, timeout=ttl, secret=bs.secret)
     while True:
         master.update()
         time.sleep(bs.timeout)
