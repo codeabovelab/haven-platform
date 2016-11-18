@@ -18,22 +18,30 @@ package com.codeabovelab.dm.cluman.users;
 
 import com.codeabovelab.dm.common.kv.mapping.KvClassMapper;
 import com.codeabovelab.dm.common.kv.mapping.KvMapping;
+import com.codeabovelab.dm.common.security.Authorities;
 import com.codeabovelab.dm.common.security.ExtendedUserDetails;
 import com.codeabovelab.dm.common.security.ExtendedUserDetailsImpl;
 import com.codeabovelab.dm.common.security.UserIdentifiers;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Objects;
 import java.util.function.Consumer;
 
 /**
  */
 public class UserRegistration {
     private final Object lock = new Object();
+    private final UsersStorage storage;
     @KvMapping
     private ExtendedUserDetailsImpl details;
     private final KvClassMapper<UserRegistration> mapper;
     private final String name;
 
     UserRegistration(UsersStorage storage, String name) {
+        this.storage = storage;
         this.mapper = storage.getMapper();
         this.name = name;
         normalizeDetails();
@@ -47,7 +55,14 @@ public class UserRegistration {
 
     public void setDetails(ExtendedUserDetails details) {
         synchronized (lock) {
-            this.details = ExtendedUserDetailsImpl.from(details);
+            ExtendedUserDetailsImpl changed = ExtendedUserDetailsImpl.from(details);
+            validate(changed);
+            if(!details.getAuthorities().equals(changed.getAuthorities())) {
+                // change authorities of user can do only global or tenant admin
+                Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+                this.storage.getAdm().decide(auth, this.details, Collections.singletonList(Authorities.fromName(Authorities.ADMIN_ROLE, this.details.getTenant())));
+            }
+            this.details = changed;
         }
     }
 
@@ -80,14 +95,22 @@ public class UserRegistration {
     public void update(Consumer<UserRegistration> consumer) {
         synchronized (lock) {
             consumer.accept(this);
-            validate();
             mapper.save(name, this);
         }
     }
 
-    private void validate() {
-        if(this.details.getTenant() == null) {
+    private void validate(ExtendedUserDetails another) {
+        if(!this.name.equals(another.getUsername())) {
+            throw new IllegalArgumentException("Changing of name (orig:" + this.name
+              + ", new:" + another.getUsername() + ") is not allowed.");
+        }
+        String anotherTenant = another.getTenant();
+        if(anotherTenant == null) {
             throw new IllegalArgumentException("tenant is null");
+        }
+        if(!Objects.equals(this.details.getTenant(), anotherTenant)) {
+            throw new IllegalArgumentException("Change of tenant (orig:" + this.details.getTenant()
+              + ", new:" + anotherTenant + ") is not allowed.");
         }
     }
 }

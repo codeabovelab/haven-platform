@@ -36,6 +36,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.annotation.Secured;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.acls.model.ObjectIdentity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
@@ -90,6 +91,7 @@ public class SecurityApi {
         return user;
     }
 
+    @PreAuthorize("#username == authentication.name || hasRole('ADMIN')")
     @RequestMapping(value = "/users/{user}", method = RequestMethod.POST)
     public UiUser setUser(@PathVariable("user") String username, @RequestBody UiUserUpdate user) {
         user.setUser(username);

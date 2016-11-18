@@ -37,15 +37,15 @@ public final class Authorities {
     public static final String ADMIN_ROLE = "ROLE_ADMIN";
     public static final String USER_ROLE = "ROLE_USER";
 
-    public static final GrantedAuthority ADMIN = new SimpleGrantedAuthority(ADMIN_ROLE);
-    public static final GrantedAuthority USER = new SimpleGrantedAuthority(USER_ROLE);
+    public static final TenantGrantedAuthority ADMIN = fromName(ADMIN_ROLE);
+    public static final TenantGrantedAuthority USER = fromName(USER_ROLE);
 
     /**
      * Make authority from its name.
      * @param name
      * @return
      */
-    public static GrantedAuthority fromName(String name) {
+    public static TenantGrantedAuthority fromName(String name) {
         return fromName(name, MultiTenancySupport.NO_TENANT);
     }
 
@@ -55,7 +55,7 @@ public final class Authorities {
      * @param tenant
      * @return
      */
-    public static GrantedAuthority fromName(String name, String tenant) {
+    public static TenantGrantedAuthority fromName(String name, String tenant) {
         name = name.toUpperCase();
         if(!name.startsWith("ROLE_")) {
             name = "ROLE_" + name;

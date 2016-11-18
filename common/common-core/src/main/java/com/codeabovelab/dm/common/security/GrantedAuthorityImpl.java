@@ -17,7 +17,9 @@
 package com.codeabovelab.dm.common.security;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import org.springframework.security.access.ConfigAttribute;
 import org.springframework.security.core.GrantedAuthority;
 
 import java.beans.ConstructorProperties;
@@ -27,7 +29,7 @@ import java.util.Objects;
  * implementation of granted authority with tenant support
  *
  */
-public class GrantedAuthorityImpl implements GrantedAuthority, OwnedByTenant {
+public class GrantedAuthorityImpl implements TenantGrantedAuthority {
     private final String tenantId;
     private final String authority;
 
@@ -46,6 +48,12 @@ public class GrantedAuthorityImpl implements GrantedAuthority, OwnedByTenant {
 
     @Override
     public String getAuthority() {
+        return authority;
+    }
+
+    @JsonIgnore
+    @Override
+    public String getAttribute() {
         return authority;
     }
 

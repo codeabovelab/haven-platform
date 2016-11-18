@@ -21,12 +21,13 @@ import com.codeabovelab.dm.common.kv.KvUtils;
 import com.codeabovelab.dm.common.kv.mapping.KvClassMapper;
 import com.codeabovelab.dm.common.kv.mapping.KvMapperFactory;
 import com.codeabovelab.dm.common.security.ExtendedUserDetails;
-import com.codeabovelab.dm.common.security.ExtendedUserDetailsImpl;
 import com.codeabovelab.dm.common.security.UserIdentifiers;
 import com.codeabovelab.dm.common.security.UserIdentifiersDetailsService;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
+import org.springframework.security.access.AccessDecisionManager;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Component;
 
@@ -49,9 +50,12 @@ public class UsersStorage implements UserIdentifiersDetailsService {
     private final KvClassMapper<UserRegistration> mapper;
     private final ConcurrentMap<String, UserRegistration> map = new ConcurrentHashMap<>();
     private final String prefix;
+    private final AccessDecisionManager adm;
 
-    public UsersStorage(KvMapperFactory mapperFactory) {
+    @Autowired
+    public UsersStorage(KvMapperFactory mapperFactory, AccessDecisionManager accessDecisionManager) {
         this.mapperFactory = mapperFactory;
+        this.adm = accessDecisionManager;
         this.prefix = KvUtils.join(this.mapperFactory.getStorage().getDockMasterPrefix(), "users");
         this.mapper = mapperFactory.createClassMapper(prefix, UserRegistration.class);
     }
@@ -140,5 +144,9 @@ public class UsersStorage implements UserIdentifiersDetailsService {
 
     public void delete(String username) {
         this.mapper.delete(username);
+    }
+
+    AccessDecisionManager getAdm() {
+        return adm;
     }
 }

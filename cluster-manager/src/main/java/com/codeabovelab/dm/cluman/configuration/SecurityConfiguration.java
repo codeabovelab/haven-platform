@@ -21,13 +21,17 @@ import com.codeabovelab.dm.common.security.*;
 import com.codeabovelab.dm.common.security.acl.*;
 import com.codeabovelab.dm.gateway.auth.ConfigurableUserDetailService;
 import com.codeabovelab.dm.platform.security.Base64Encryptor;
+import com.google.common.collect.ImmutableList;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
+import org.springframework.security.access.AccessDecisionManager;
+import org.springframework.security.access.AccessDecisionVoter;
 import org.springframework.security.access.hierarchicalroles.RoleHierarchy;
+import org.springframework.security.access.vote.AffirmativeBased;
 import org.springframework.security.acls.domain.*;
 import org.springframework.security.acls.model.AclService;
 import org.springframework.security.acls.model.PermissionGrantingStrategy;
@@ -105,6 +109,13 @@ public class SecurityConfiguration {
     ExtPermissionGrantingStrategy createPermissionGrantingStrategy(TenantsService tenantsService) {
         PermissionGrantingJudgeDefaultBehavior behavior = new PermissionGrantingJudgeDefaultBehavior(tenantsService);
         return new TenantBasedPermissionGrantedStrategy(behavior);
+    }
+
+    @Bean
+    AccessDecisionManager accessDecisionManager() {
+        ImmutableList.Builder<AccessDecisionVoter<?>> lb = ImmutableList.builder();
+        lb.add(new AdminRoleVoter());
+        return new AffirmativeBased(lb.build());
     }
 
     @EnableConfigurationProperties(PropertyAclServiceConfigurer.class)
