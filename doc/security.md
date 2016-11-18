@@ -37,6 +37,9 @@ small piece of it methods set.
 If you has 'ROLE_ADMIN' then obviously you can access to all methods, 
 otherwise you can invoke only '/ui/api/users-current' and '/ui/api/roles/' to see own roles.
 
+Also you can access to 'POST /ui/api/users/{user}' only when `{user}` - equals with name of current user, ant then 
+you may change all properties except roles (it may change only admin), name and tenant (it nobody can change).  
+
 '/ui/api/users-current' and '/ui/api/users/{user}' give response like:
 
     {
