@@ -265,6 +265,9 @@ public class ExtendedUserDetailsImpl implements ExtendedUserDetails, Comparable<
         if(details instanceof ExtendedUserDetailsImpl) {
             return (ExtendedUserDetailsImpl) details;
         }
+        if(details instanceof ExtendedUserDetailsImpl.Builder) {
+            return ((ExtendedUserDetailsImpl.Builder) details).build();
+        }
         return ExtendedUserDetailsImpl.builder(details).build();
     }
 
