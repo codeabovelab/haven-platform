@@ -92,7 +92,11 @@ class EventSources {
         }
         DockerLogEvent de = (DockerLogEvent) e;
         ContainerBase container = de.getContainer();
-        return de.getType().getValue() + ":" + de.getCluster() + ":" + container.getName();
+        if (container != null) {
+            // container is null for images
+            return de.getType().getValue() + ":" + de.getCluster() + ":" + container.getName();
+        }
+        return de.getType().getValue() + ":" + de.getCluster();
     }
 
     private <T> void addStats(Subscriptions<T> subscriptions, String busId, Function<T, Object> keyFactory) {
