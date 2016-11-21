@@ -44,17 +44,14 @@ public class ClusterAclProvider implements AclProvider {
 
     @Override
     public AclSource provide(Serializable id) {
-        DiscoveryStorage ds = discoveryStorage.getObject();
-        NodesGroup cluster = ds.getCluster((String) id);
-        checkExistence(cluster, id);
+        NodesGroup cluster = getNg(id);
         return cluster.getAcl();
     }
 
+
     @Override
     public void update(Serializable id, AclModifier operator) {
-        DiscoveryStorage ds = discoveryStorage.getObject();
-        NodesGroup cluster = ds.getCluster((String) id);
-        checkExistence(cluster, id);
+        NodesGroup cluster = getNg(id);
         cluster.updateAcl(operator);
     }
 
@@ -66,13 +63,23 @@ public class ClusterAclProvider implements AclProvider {
 
     @Override
     public void list(Consumer<AclSource> consumer) {
-        DiscoveryStorage ds = discoveryStorage.getObject();
-        List<NodesGroup> clusters = ds.getClusters();
-        clusters.forEach(ng -> {
+        DiscoveryStorageImpl ds = getDs();
+        ds.getClustersBypass(ng -> {
             AclSource acl = ng.getAcl();
             if(acl != null) {
                 consumer.accept(acl);
             }
         });
+    }
+
+    private NodesGroup getNg(Serializable id) {
+        DiscoveryStorageImpl ds = getDs();
+        NodesGroup cluster = ds.getClusterBypass((String) id);
+        checkExistence(cluster, id);
+        return cluster;
+    }
+
+    private DiscoveryStorageImpl getDs() {
+        return (DiscoveryStorageImpl) discoveryStorage.getObject();
     }
 }

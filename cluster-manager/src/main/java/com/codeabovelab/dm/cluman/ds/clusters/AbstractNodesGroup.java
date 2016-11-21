@@ -150,6 +150,11 @@ abstract class AbstractNodesGroup<T extends AbstractNodesGroup<T, C>, C extends 
     }
 
     @Override
+    public ObjectIdentityData getOid() {
+        return oid;
+    }
+
+    @Override
     public AclSource getAcl() {
         synchronized (lock) {
             AclSource acl = this.config.getAcl();

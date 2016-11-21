@@ -196,6 +196,7 @@ public class MailNotificationsService {
      */
     private MailSubscription registerInternal(MailSubscription newSub) {
         String eventSource = newSub.getEventSource();
+        ExtendedAssert.matchId(eventSource, "event source");
         MailSubscription oldSub = subs.putIfAbsent(eventSource, newSub);
         if(oldSub == null) {
             onUpdate(newSub);

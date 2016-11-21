@@ -19,7 +19,9 @@ package com.codeabovelab.dm.cluman.validate;
 import com.codeabovelab.dm.cluman.model.NotFoundException;
 import com.codeabovelab.dm.cluman.ui.HttpException;
 import com.codeabovelab.dm.common.utils.ArrayUtils;
+import com.codeabovelab.dm.common.utils.StringUtils;
 import org.springframework.http.HttpStatus;
+import org.springframework.util.Assert;
 
 import java.text.MessageFormat;
 
@@ -76,5 +78,25 @@ public abstract class ExtendedAssert {
             msg = message;
         }
         return msg;
+    }
+
+    /**
+     * @see StringUtils#matchAz09Hyp(String)
+     * @param str string
+     * @param thatIt that it string represent
+     */
+    public static void matchAz09Hyp(String str, String thatIt) {
+        badRequest(str != null && StringUtils.matchAz09Hyp(str),
+          "The \"{0}\" is not match with '[A-Za-z0-9-]+': \"{1}\"", thatIt, str);
+    }
+
+    /**
+     * @see StringUtils#matchId(String)
+     * @param str string
+     * @param thatIt that it string represent
+     */
+    public static void matchId(String str, String thatIt) {
+        badRequest(str != null && StringUtils.matchId(str),
+          "The \"{0}\" is not match with '[A-Za-z0-9-_:.]+': \"{1}\"", thatIt, str);
     }
 }

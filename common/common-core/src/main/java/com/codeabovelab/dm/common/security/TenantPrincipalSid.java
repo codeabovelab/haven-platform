@@ -23,6 +23,7 @@ import com.fasterxml.jackson.annotation.JsonTypeName;
 import org.springframework.security.acls.domain.PrincipalSid;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.util.Assert;
 
 /**
  * {@link PrincipalSid} extension which implement {@link com.codeabovelab.dm.common.security.OwnedByTenant }
@@ -36,11 +37,17 @@ public class TenantPrincipalSid extends PrincipalSid implements TenantSid {
                               @JsonProperty("tenant") String tenant) {
         super(principal);
         this.tenantId = tenant;
+        validate();
     }
 
     public TenantPrincipalSid(Authentication authentication) {
         super(authentication);
         this.tenantId = MultiTenancySupport.getTenant(authentication.getPrincipal());
+        validate();
+    }
+
+    private void validate() {
+        Assert.notNull(this.tenantId, "tenant of principal is null");
     }
 
     @Override

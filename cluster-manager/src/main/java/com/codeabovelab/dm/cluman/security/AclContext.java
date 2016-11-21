@@ -16,13 +16,12 @@
 
 package com.codeabovelab.dm.cluman.security;
 
-import com.codeabovelab.dm.cluman.model.NodesGroup;
 import com.codeabovelab.dm.common.security.Authorities;
 import com.codeabovelab.dm.common.security.MultiTenancySupport;
 import com.codeabovelab.dm.common.security.TenantGrantedAuthoritySid;
-import com.codeabovelab.dm.common.security.acl.AclSource;
 import com.codeabovelab.dm.common.security.acl.ExtPermissionGrantingStrategy;
 import com.codeabovelab.dm.common.security.dto.PermissionData;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.acls.model.*;
 import org.springframework.util.Assert;
 
@@ -58,6 +57,13 @@ public class AclContext {
             return acl.isGranted(Arrays.asList(perms), sids, false);
         } catch (NotFoundException e) {
             return false;
+        }
+    }
+
+    public void assertGranted(ObjectIdentity oid, Permission ... perms) {
+        boolean granted = isGranted(oid, perms);
+        if(!granted) {
+            throw new AccessDeniedException("Access to " + oid + " with " + Arrays.toString(perms)  + " is denied.");
         }
     }
 

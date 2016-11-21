@@ -16,6 +16,7 @@
 
 package com.codeabovelab.dm.cluman.users;
 
+import com.codeabovelab.dm.cluman.validate.ExtendedAssert;
 import com.codeabovelab.dm.common.kv.KvStorageEvent;
 import com.codeabovelab.dm.common.kv.KvUtils;
 import com.codeabovelab.dm.common.kv.mapping.KvClassMapper;
@@ -91,6 +92,7 @@ public class UsersStorage implements UserIdentifiersDetailsService {
     }
 
     private UserRegistration internalLoadUser(String name) {
+        ExtendedAssert.matchAz09Hyp(name, "user name");
         UserRegistration ur = map.computeIfAbsent(name, s -> new UserRegistration(this, name));
         ur.load();
         return ur;
