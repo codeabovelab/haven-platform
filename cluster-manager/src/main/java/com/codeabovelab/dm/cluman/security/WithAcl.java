@@ -17,10 +17,13 @@
 package com.codeabovelab.dm.cluman.security;
 
 import com.codeabovelab.dm.common.security.acl.AclSource;
+import org.springframework.security.acls.model.ObjectIdentity;
 
 /**
  */
 public interface WithAcl {
+    ObjectIdentity getOid();
+
     AclSource getAcl();
 
     /**

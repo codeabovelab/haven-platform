@@ -16,7 +16,6 @@
 
 package com.codeabovelab.dm.common.security.acl;
 
-import com.codeabovelab.dm.common.security.MultiTenancySupport;
 import com.codeabovelab.dm.common.security.dto.PermissionData;
 import com.codeabovelab.dm.common.utils.StringUtils;
 import com.fasterxml.jackson.annotation.JsonCreator;
@@ -129,8 +128,9 @@ public class AceSource implements AuditableAccessControlEntry {
         Assert.notNull(b.sid, "Sid required");
         Assert.notNull(b.permission, "Permission required");
         this.id = b.id;
+        // we must not check for null tenant, because it does not allow
+        // create object accessible for all tenants
         this.sid = b.sid;
-        Assert.notNull(MultiTenancySupport.getTenant(this.sid), "Tenant of sid is null");
         this.permission = b.permission;
         this.granting = b.granting;
         this.auditSuccess = b.auditSuccess;

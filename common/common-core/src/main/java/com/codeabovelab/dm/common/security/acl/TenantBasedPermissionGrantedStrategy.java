@@ -21,17 +21,19 @@ import com.codeabovelab.dm.common.security.OwnedByTenant;
 import com.codeabovelab.dm.common.security.dto.PermissionData;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.acls.domain.AuditLogger;
+import org.springframework.security.acls.domain.GrantedAuthoritySid;
 import org.springframework.security.acls.domain.PrincipalSid;
 import org.springframework.security.acls.model.*;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.util.Assert;
 
 import java.util.List;
+import java.util.Objects;
 
 /**
  * the strategy which implement permission granted mechanism with considering 
- * of tenant user attribute
- *
+ * of tenant user attribute <p/>
+ * TODO need refactoring (isGranted & getPermission)
  */
 public final class TenantBasedPermissionGrantedStrategy implements ExtPermissionGrantingStrategy {
 
@@ -92,13 +94,14 @@ public final class TenantBasedPermissionGrantedStrategy implements ExtPermission
                 
                 for(int aceIndex = 0; aceIndex < aces.size(); ++ aceIndex) {
                     AccessControlEntry ace = aces.get(aceIndex);
-                    final String aceTenant = getTenantFromSid(ace.getSid());
-                    Assert.notNull(aceTenant, "Tenant of " + ace + " is null.");
+                    Sid aceSid = ace.getSid();
+                    final String aceTenant = getTenantFromSid(aceSid);
+                    // we allow null tenants because it way to grant access to any tenant (it rare need)
                     //root SIDs consume all ACE
-                    if(!pgc.getCurrentTenants().contains(aceTenant)) {
+                    if(aceTenant != null && !pgc.getCurrentTenants().contains(aceTenant)) {
                         continue;
                     }
-                    if(!ace.getSid().equals(sid)) {
+                    if(!compareSids(sid, aceSid)) {
                         continue;
                     }
                     boolean maskCompared = comparePermissions(p, ace);
@@ -241,13 +244,13 @@ public final class TenantBasedPermissionGrantedStrategy implements ExtPermission
 
             for(int aceIndex = 0; aceIndex < aces.size(); ++ aceIndex) {
                 AccessControlEntry ace = aces.get(aceIndex);
-                final String aceTenant = getTenantFromSid(ace.getSid());
-                Assert.notNull(aceTenant, "Tenant of " + ace + " is null.");
+                Sid aceSid = ace.getSid();
+                final String aceTenant = getTenantFromSid(aceSid);
                 //root SIDs consume all ACE
-                if(!pgc.getCurrentTenants().contains(aceTenant)) {
+                if(aceTenant != null && !pgc.getCurrentTenants().contains(aceTenant)) {
                     continue;
                 }
-                if(!ace.getSid().equals(sid)) {
+                if(!compareSids(sid, aceSid)) {
                     continue;
                 }
 
@@ -262,4 +265,34 @@ public final class TenantBasedPermissionGrantedStrategy implements ExtPermission
         //TODO handle ACL inheriting
         return pb.build();
     }
+
+
+
+    /**
+     * Note that position of SIDs is important
+     * @param authSid
+     * @param aclSid
+     * @return
+     */
+    private boolean compareSids(Sid authSid, Sid aclSid) {
+        if(MultiTenancySupport.isNoTenant(aclSid)) {
+            // acl sid can has no tenant, we must consider this
+            // not that null tenant mean that it common rule for any GrantedAuthorities of tenants
+            if(authSid instanceof GrantedAuthoritySid) {
+                return (aclSid instanceof GrantedAuthoritySid) && Objects.equals(
+                  ((GrantedAuthoritySid) authSid).getGrantedAuthority(),
+                  ((GrantedAuthoritySid) aclSid).getGrantedAuthority()
+                );
+            }
+            if(authSid instanceof PrincipalSid) {
+                return (aclSid instanceof PrincipalSid) && Objects.equals(
+                  ((PrincipalSid) authSid).getPrincipal(),
+                  ((PrincipalSid) aclSid).getPrincipal()
+                );
+            }
+        }
+        // there a unsupported sids or its has tenant, compare its as usual objects
+        return aclSid.equals(authSid);
+    }
+
 }

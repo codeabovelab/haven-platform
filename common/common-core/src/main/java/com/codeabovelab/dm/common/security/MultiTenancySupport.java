@@ -20,7 +20,6 @@ import com.codeabovelab.dm.common.security.acl.TenantSid;
 import org.springframework.security.acls.domain.GrantedAuthoritySid;
 import org.springframework.security.acls.domain.PrincipalSid;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 
 /**
@@ -29,6 +28,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 public class MultiTenancySupport {
     /**
      * uses in cases where tenantId retrieved from null or incorrect objects
+     * @see #isNoTenant(Object)
      */
     public static final String NO_TENANT = null;
     public static final String ANONYMOUS_TENANT = "anonymous_tenant";
@@ -75,5 +75,15 @@ public class MultiTenancySupport {
             throw new IllegalArgumentException("Sid " + sid + " has incorrect tenant: " + tenant + " it allow only for root tenant.");
         }
         return sid;
+    }
+
+    /**
+     * Test that specified object does not has any tenant.
+     * @see #NO_TENANT
+     * @param o object with tenant
+     * @return true if tenant is null
+     */
+    public static boolean isNoTenant(Object o) {
+        return getTenant(o) == NO_TENANT;
     }
 }
