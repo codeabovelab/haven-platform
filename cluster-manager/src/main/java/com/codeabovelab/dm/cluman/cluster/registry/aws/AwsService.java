@@ -58,15 +58,13 @@ public class AwsService {
                     });
                     amazonECR.setRegion(RegionUtils.getRegion(awsCredentials.getRegion()));
                     GetAuthorizationTokenResult authorizationToken = amazonECR.getAuthorizationToken(new GetAuthorizationTokenRequest());
-                    log.info("authorizationToken: {}", authorizationToken);
                     List<AuthorizationData> authorizationData = authorizationToken.getAuthorizationData();
                     Assert.isTrue(!CollectionUtils.isEmpty(authorizationData));
                     AuthorizationData data = authorizationData.get(0);
                     byte[] decode = Base64.getDecoder().decode(data.getAuthorizationToken());
                     String token = new String(decode);
                     String[] split = token.split(":");
-                    log.info("token: {}", token);
-                    log.info("endpoint: {}", data.getProxyEndpoint());
+                    log.info("about to connect to AWS endpoint: {}", data.getProxyEndpoint());
                     return AwsToken.builder().username(split[0]).password(split[1])
                             .expiresAt(data.getExpiresAt()).proxyEndpoint(data.getProxyEndpoint()).build();
                 }
