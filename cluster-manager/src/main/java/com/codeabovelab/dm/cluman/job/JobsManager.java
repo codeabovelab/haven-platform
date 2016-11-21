@@ -32,6 +32,8 @@ public interface JobsManager extends JobFactory {
 
     Collection<JobInstance> getJobs();
 
+    JobInstance deleteJob(String id);
+
     /**
      * Retrieve job by id.
      * @param id

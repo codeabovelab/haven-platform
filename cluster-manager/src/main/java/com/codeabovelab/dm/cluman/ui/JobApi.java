@@ -19,6 +19,7 @@ package com.codeabovelab.dm.cluman.ui;
 import com.codeabovelab.dm.cluman.job.*;
 import com.codeabovelab.dm.cluman.ui.model.UiJob;
 import com.codeabovelab.dm.cluman.ui.model.UiJobEvent;
+import com.codeabovelab.dm.cluman.validate.ExtendedAssert;
 import com.codeabovelab.dm.common.mb.Subscription;
 import com.codeabovelab.dm.common.utils.ExecutorUtils;
 import com.codeabovelab.dm.common.utils.Throwables;
@@ -39,6 +40,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
+import static org.springframework.web.bind.annotation.RequestMethod.DELETE;
 import static org.springframework.web.bind.annotation.RequestMethod.GET;
 
 /**
@@ -74,9 +76,7 @@ public class JobApi {
     @RequestMapping(value = "/jobs/{job:.*}/", method = GET)
     public UiJob getJob(@PathVariable("job") String job) {
         JobInstance ji = jobsManager.getJob(job);
-        if(ji == null) {
-            throw new HttpException(HttpStatus.NOT_FOUND, "Not found job with id: " + job);
-        }
+        ExtendedAssert.notFound(ji, "Job was not found by id: " + job);
         return UiJob.toUiBuilder(ji)
                 .parameters(ji.getJobContext().getParameters())
                 .build();
@@ -85,18 +85,23 @@ public class JobApi {
     @RequestMapping(value = "/jobs/{job:.*}/log", method = GET)
     public List<UiJobEvent> getJobLog(@PathVariable("job") String job) {
         JobInstance ji = jobsManager.getJob(job);
-        if(ji == null) {
-            throw new HttpException(HttpStatus.NOT_FOUND, "Not found job with id: " + job);
-        }
+        ExtendedAssert.notFound(ji, "Job was not found by id: " + job);
         return ji.getLog().stream().map(JobApi::toUi).collect(Collectors.toList());
+    }
+
+    @RequestMapping(value = "/jobs/{job:.*}/", method = DELETE)
+    public UiJob deleteJob(@PathVariable("job") String job) {
+        JobInstance ji = jobsManager.getJob(job);
+        ExtendedAssert.notFound(ji, "Job was not found by id: " + job);
+        ji.cancel();
+        jobsManager.deleteJob(job);
+        return UiJob.toUi(ji);
     }
 
     @RequestMapping(value = "/jobs/{job:.*}/logStream", method = GET, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseBodyEmitter getJobLogStream(@PathVariable("job") String job) throws IOException {
         JobInstance ji = jobsManager.getJob(job);
-        if(ji == null) {
-            throw new HttpException(HttpStatus.NOT_FOUND, "Not found job with id: " + job);
-        }
+        ExtendedAssert.notFound(ji, "Job was not found by id: " + job);
         ResponseBodyEmitter emitter = new ResponseBodyEmitter(TimeUnit.MINUTES.toMillis(10L));
         JobEventConsumer consumer = new JobEventConsumer(this.jobsManager, emitter, ji);
         ji.atEnd().addListener(() -> {

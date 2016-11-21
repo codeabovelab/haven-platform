@@ -155,6 +155,12 @@ public class JobsManagerImpl implements JobsManager, SmartLifecycle {
     }
 
     @Override
+    public JobInstance deleteJob(String id) {
+        JobInstance job = getJob(id);
+        return jobs.remove(job.getJobContext().getParameters());
+    }
+
+    @Override
     public JobInstance create(JobParameters parameters) {
         return jobs.computeIfAbsent(parameters, (params) -> {
             String type = parameters.getType();
