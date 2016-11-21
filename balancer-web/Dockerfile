@@ -5,7 +5,6 @@ MAINTAINER docker@codeabovelab.com
 RUN apt-get update && apt-get install -y --no-install-recommends curl git procps golang openjdk-8-jdk-headless && apt-get clean
 
 LABEL service-type=platform
-LABEL selfdiscovered=true
 
 LABEL arg.memory=300m
 LABEL arg.restart=always
