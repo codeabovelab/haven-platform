@@ -33,7 +33,6 @@ import java.util.Objects;
 /**
  * the strategy which implement permission granted mechanism with considering 
  * of tenant user attribute <p/>
- * TODO need refactoring (isGranted & getPermission)
  */
 public final class TenantBasedPermissionGrantedStrategy implements ExtPermissionGrantingStrategy {
 
@@ -53,117 +52,21 @@ public final class TenantBasedPermissionGrantedStrategy implements ExtPermission
     }
 
     @Override
-    public boolean isGranted(Acl acl, List<Permission> permission, List<Sid> sids, boolean administrativeMode) {
-        Assert.notNull(tenantsService, "tenantsService is null");
-        Assert.notNull(userDetailsService, "userDetailsService is null");
-
-        final Sid ownerSid = acl.getOwner();
-        final String ownerTenantId = getTenantFromSid(ownerSid);
-        if(ownerTenantId == MultiTenancySupport.NO_TENANT) {
-            throw new RuntimeException("Can not retrieve tenant from acl owner: acl.objectIdentity=" + acl.getObjectIdentity().getIdentifier());
-        }
-
-        final String currentPrincipalTenant = getPrincipalSidTenant(sids);
-        
-        PermissionGrantingContext pgc = new PermissionGrantingContext(this, ownerSid, currentPrincipalTenant);
-        // below code based on DefaultPermissionGrantingStrategy
-        final List<AccessControlEntry> aces = acl.getEntries();
-
-        
-        //when allow we need set this flag to true and optionally set aceWhichBreak
+    public boolean isGranted(Acl acl, List<Permission> requests, List<Sid> sids, boolean administrativeMode) {
+        PermissionData granted = getPermission(acl, sids);
+        final int grantedMask = granted.getMask();
         boolean allow = false;
-        AccessControlEntry aceWhichBreak = null;
-
-        //we use for with indexes for in order to avoid creating iterators
-        //  which will be adding some memory overhead in 3 nested loops
-        mainLoop:
-        for(int permIndex = 0; permIndex < permission.size(); ++permIndex) {
-            final Permission p = permission.get(permIndex);
-            for(int sidIndex = 0; sidIndex < sids.size(); ++sidIndex) {
-                final Sid sid = sids.get(sidIndex);
-                
-                pgc.setHasAces(!aces.isEmpty());
-                pgc.setCurrentSid(sid);
-
-                //default behaviour
-                PermissionData defaultPerm = defaultBehavior.getPermission(pgc);
-                if((p.getMask() & defaultPerm.getMask()) == p.getMask()) {
-                    allow = true;
-                    break mainLoop;
-                }
-                
-                for(int aceIndex = 0; aceIndex < aces.size(); ++ aceIndex) {
-                    AccessControlEntry ace = aces.get(aceIndex);
-                    Sid aceSid = ace.getSid();
-                    final String aceTenant = getTenantFromSid(aceSid);
-                    // we allow null tenants because it way to grant access to any tenant (it rare need)
-                    //root SIDs consume all ACE
-                    if(aceTenant != null && !pgc.getCurrentTenants().contains(aceTenant)) {
-                        continue;
-                    }
-                    if(!compareSids(sid, aceSid)) {
-                        continue;
-                    }
-                    boolean maskCompared = comparePermissions(p, ace);
-                    if(!maskCompared) {
-                        continue;
-                    }
-                    // Found a matching ACE, so its authorization decision will prevail
-                    if(aceWhichBreak == null) {
-                        // Store for auditing reasons
-                        aceWhichBreak = ace;
-                    }
-
-                    allow = ace.isGranting();
-                    break mainLoop; // exit aces loop
-                }
+        for(Permission request: requests) {
+            int reqMask = request.getMask();
+            if((reqMask & grantedMask) == reqMask) {
+                allow = true;
+            }
+            if(!allow) {
+                // each false is mean disallow
+                break;
             }
         }
-        if(allow) {
-            // Success
-            
-            // audit logger is not allow null ACE, but if access allowed by 
-            //   default behaviour then we don't have an ACE
-            if(!administrativeMode && aceWhichBreak != null) {
-                auditLogger.logIfNeeded(true, aceWhichBreak);
-            }
-
-            return true;
-        } else if(aceWhichBreak != null) {
-            // We found an ACE to reject the request at this point, as no
-            // other ACEs were found that granted a different permission
-            if(!administrativeMode) {
-                auditLogger.logIfNeeded(false, aceWhichBreak);
-            }
-
-            return false;
-        }
-
-        // No matches have been found so far
-        if(acl.isEntriesInheriting() && (acl.getParentAcl() != null)) {
-            // We have a parent, so let them try to find a matching ACE
-            return acl.getParentAcl().isGranted(permission, sids, false);
-        } else {
-            // We either have no parent, or we're the uppermost parent
-            throw new NotFoundException("Unable to locate a matching ACE for passed permissions: " + permission + " and SIDs: " + sids);
-        }
-    }
-
-    private boolean comparePermissions(final Permission p, final AccessControlEntry ace) {
-        // in original behavior see https://jira.spring.io/browse/SEC-1140 masks compared by '==', 
-        // but we can use mask bitwise comparsion for allow-ACEs and its inversion for deny-ACEs
-        
-        final boolean maskCompared;
-        final int requestedMask = p.getMask();
-        final int aceMask = ace.getPermission().getMask();
-        if(ace.isGranting()) {
-            //if all requisted bits coincided then allow
-            maskCompared = (aceMask & requestedMask) == requestedMask;
-        } else {
-            //if at least one bit is coincided then deny
-            maskCompared = (aceMask & requestedMask) != 0;
-        }
-        return maskCompared;
+        return allow;
     }
 
     private String getPrincipalSidTenant(List<Sid> sids) throws IllegalStateException {
@@ -230,22 +133,20 @@ public final class TenantBasedPermissionGrantedStrategy implements ExtPermission
         PermissionGrantingContext pgc = new PermissionGrantingContext(this, ownerSid, currentPrincipalTenant);
         // below code based on DefaultPermissionGrantingStrategy
         final List<AccessControlEntry> aces = acl.getEntries();
-
+        pgc.setHasAces(!aces.isEmpty());
 
         PermissionData.Builder pb = PermissionData.builder();
+        pb.add(defaultBehavior.getPermission(pgc));
+
         // !! not use foreach here
-        for(int sidIndex = 0; sidIndex < sids.size(); ++sidIndex) {
-            final Sid sid = sids.get(sidIndex);
+        for(int aceIndex = 0; aceIndex < aces.size(); ++ aceIndex) {
+            AccessControlEntry ace = aces.get(aceIndex);
+            Sid aceSid = ace.getSid();
+            final String aceTenant = getTenantFromSid(aceSid);
+            for(int sidIndex = 0; sidIndex < sids.size(); ++sidIndex) {
+                final Sid sid = sids.get(sidIndex);
+                pgc.setCurrentSid(sid);
 
-            pgc.setHasAces(!aces.isEmpty());
-            pgc.setCurrentSid(sid);
-
-            pb.add(defaultBehavior.getPermission(pgc));
-
-            for(int aceIndex = 0; aceIndex < aces.size(); ++ aceIndex) {
-                AccessControlEntry ace = aces.get(aceIndex);
-                Sid aceSid = ace.getSid();
-                final String aceTenant = getTenantFromSid(aceSid);
                 //root SIDs consume all ACE
                 if(aceTenant != null && !pgc.getCurrentTenants().contains(aceTenant)) {
                     continue;
