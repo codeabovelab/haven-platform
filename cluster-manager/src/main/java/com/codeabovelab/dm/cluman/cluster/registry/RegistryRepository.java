@@ -139,7 +139,7 @@ public class RegistryRepository implements SupportSearch {
 
     private void internalRegister(RegistryService service) {
         String name = service.getConfig().getName();
-        ExtendedAssert.matchAz09Hyp(name, "registry name");
+        ExtendedAssert.matchId(name, "registry name");
         RegistryService old = registryServiceMap.put(name, service);
         if(old != service) {
             if(service instanceof AbstractV2RegistryService) {
