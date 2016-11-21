@@ -17,6 +17,7 @@
 package com.codeabovelab.dm.cluman.ds.nodes;
 
 import com.codeabovelab.dm.cluman.cluster.docker.management.DockerServiceEvent;
+import com.codeabovelab.dm.cluman.validate.ExtendedAssert;
 import com.codeabovelab.dm.common.kv.*;
 import com.codeabovelab.dm.common.kv.mapping.KvClassMapper;
 import com.codeabovelab.dm.common.kv.mapping.KvMapperFactory;
@@ -212,7 +213,7 @@ public class NodeStorage implements NodeInfoProvider {
     }
 
     private NodeRegistrationImpl getOrCreateNodeRegistration(String name) {
-        Assert.hasText(name, "name is null or empty");
+        ExtendedAssert.matchAz09Hyp(name, "node name");
         try {
             return nodes.get(name, () -> {
                 NodeRegistrationImpl nr;

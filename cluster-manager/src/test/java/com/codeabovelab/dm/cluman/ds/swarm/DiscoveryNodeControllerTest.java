@@ -7,6 +7,7 @@ import com.codeabovelab.dm.cluman.ds.nodes.DiscoveryNodeController;
 
 import static org.hamcrest.Matchers.*;
 
+import com.codeabovelab.dm.common.utils.StringUtils;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.Before;
 import org.junit.Test;
@@ -99,16 +100,11 @@ public class DiscoveryNodeControllerTest {
             assertThat(nodes, empty());
         }
 
-        final String hostPort = "on.e:1234";
-        final String secondHostPort = "two.e:134";
+        final String hostPort = "node-one:1234";
+        final String secondHostPort = "node-two:134";
         addNode(hostPort, true);
         addNode(secondHostPort, true);
-        try {
-            addNode("unauthorized:876", false);
-            fail("It unauthorized and must failed");
-        } catch (NestedServletException e) {
-            //fail as axpected
-        }
+        addNode("unauthorized:876", false);
 
         {
             Collection<Node> nodes = cluster.getNodes();
@@ -121,7 +117,7 @@ public class DiscoveryNodeControllerTest {
     @SuppressWarnings("deprecation")
     private void addNode(String hostPort, boolean auth) throws Exception {
         NodeAgentData data = new NodeAgentData();
-        data.setName(hostPort);
+        data.setName(StringUtils.before(hostPort, ':'));
         data.setAddress(hostPort);
         MockHttpServletRequestBuilder b = MockMvcRequestBuilders.post(getClusterUrl(data.getName()))
           .param("ttl", "234")
@@ -130,7 +126,7 @@ public class DiscoveryNodeControllerTest {
         if(auth) {
             b.header("X-Auth-Node", SECRET);
         }
-        mvc.perform(b).andExpect(status().isOk());
+        mvc.perform(b).andExpect(auth ? status().isOk() : status().isUnauthorized());
     }
 
     private String getClusterUrl(String clusterId) {

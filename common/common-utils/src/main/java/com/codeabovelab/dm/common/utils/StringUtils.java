@@ -129,6 +129,16 @@ public class StringUtils {
     }
 
     /**
+     * Test that specified codePoint is an ASCII letter, digit or hyphen '-'.
+     * @param cp codePoint
+     * @return true for specified chars
+     */
+    public static boolean isAz09Hyp(int cp) {
+        return isAz09(cp) || cp == '-';
+    }
+
+
+    /**
      * Chars which is acceptable as file name or part of url on most operation systems. <p/>
      * It: <code>'A'-'z', '0'-'9', '_', '-', '.'</code>
      * @param cp codePoint
@@ -145,5 +155,40 @@ public class StringUtils {
      */
     public static String valueOf(Object o) {
         return o == null? null : o.toString();
+    }
+
+    /**
+     * Test that each char of specified string match for predicate. <p/>
+     * Note that it method does not support unicode, because it usual applicable only for match letters that placed under 128 code.
+     * @param str string
+     * @param predicate char matcher
+     * @return true if all chars match
+     */
+    public static boolean match(String str, IntPredicate predicate) {
+        final int len = str.length();
+        for(int i = 0; i < len; i++) {
+            if(!predicate.test(str.charAt(i))) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    /**
+     * Is a <code>match(str, StringUtils::isAz09);</code>.
+     * @param str string
+     * @return true if string match [A-Za-z0-9]*
+     */
+    public static boolean matchAz09(String str) {
+        return match(str, StringUtils::isAz09);
+    }
+
+    /**
+     * Is a <code>match(str, StringUtils::isAz09Hyp);</code>.
+     * @param str string
+     * @return true if string match [A-Za-z0-9-]*
+     */
+    public static boolean matchAz09Hyp(String str) {
+        return match(str, StringUtils::isAz09Hyp);
     }
 }

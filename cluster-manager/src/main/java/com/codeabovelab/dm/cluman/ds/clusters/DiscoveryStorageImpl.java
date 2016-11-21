@@ -170,13 +170,14 @@ public class DiscoveryStorageImpl implements DiscoveryStorage {
      */
     @Override
     public NodesGroup getOrCreateCluster(String clusterId, Consumer<ClusterCreationContext> consumer) {
-        ClusterUtils.checkRealClusterName(clusterId);
+        ExtendedAssert.matchAz09Hyp(clusterId, "clusterId");
         return clusters.computeIfAbsent(clusterId, RealCluster.factory(this, null, consumer));
     }
 
     @Override
     public NodesGroup getOrCreateGroup(AbstractNodesGroupConfig<?> config) {
         final String clusterId = config.getName();
+        ExtendedAssert.matchAz09Hyp(clusterId, "clusterId");
         return clusters.computeIfAbsent(clusterId, (cid) -> {
             NodesGroup cluster;
             if(config instanceof DefaultNodesGroupConfig) {
