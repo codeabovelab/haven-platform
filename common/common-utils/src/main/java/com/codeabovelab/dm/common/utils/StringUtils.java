@@ -137,6 +137,15 @@ public class StringUtils {
         return isAz09(cp) || cp == '-';
     }
 
+    /**
+     * Test that specified codePoint is an ASCII letter, digit or hyphen '-', '_', ':', '.'. <p/>
+     * It common matcher that limit alphabet acceptable for our system IDs.
+     * @param cp codePoint
+     * @return true for specified chars
+     */
+    public static boolean isId(int cp) {
+        return isAz09(cp) || cp == '-' || cp == '_' || cp == ':' || cp == '.';
+    }
 
     /**
      * Chars which is acceptable as file name or part of url on most operation systems. <p/>
@@ -190,5 +199,14 @@ public class StringUtils {
      */
     public static boolean matchAz09Hyp(String str) {
         return match(str, StringUtils::isAz09Hyp);
+    }
+
+    /**
+     * Is a <code>match(str, StringUtils::isId);</code>.
+     * @param str string
+     * @return true if string match [A-Za-z0-9-_:.]*
+     */
+    public static boolean matchId(String str) {
+        return match(str, StringUtils::isId);
     }
 }

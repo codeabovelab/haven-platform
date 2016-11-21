@@ -202,7 +202,8 @@ public class ApplicationServiceImpl implements ApplicationService {
     @Override
     public void addApplication(Application application) throws Exception {
         Assert.notNull(application, "application can't be null");
-        Assert.notNull(application.getName(), "application name can't be null");
+        String appName = application.getName();
+        ExtendedAssert.matchId(appName, "application name");
 
         DockerService service = dockerServiceRegistry.getService(application.getCluster());
         List<String> containers = application.getContainers();
@@ -210,7 +211,7 @@ public class ApplicationServiceImpl implements ApplicationService {
         Assert.isTrue(!CollectionUtils.isEmpty(existedContainers), "Application doesn't have containers " + application);
 //        Assert.isTrue(existedContainers.size() == containers.size());
         String value = objectMapper.writeValueAsString(application);
-        keyValueStorage.set(buildKey(application.getCluster(), application.getName()), value, WriteOptions.builder()
+        keyValueStorage.set(buildKey(application.getCluster(), appName), value, WriteOptions.builder()
                 .failIfExists(false).failIfAbsent(false).build());
     }
 

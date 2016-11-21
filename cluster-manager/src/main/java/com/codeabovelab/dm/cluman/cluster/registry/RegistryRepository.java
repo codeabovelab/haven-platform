@@ -22,6 +22,7 @@ import com.codeabovelab.dm.cluman.cluster.registry.data.SearchResult;
 import com.codeabovelab.dm.cluman.cluster.registry.data.Tags;
 import com.codeabovelab.dm.cluman.cluster.registry.model.RegistriesConfig;
 import com.codeabovelab.dm.cluman.cluster.registry.model.RegistryConfig;
+import com.codeabovelab.dm.cluman.validate.ExtendedAssert;
 import com.codeabovelab.dm.common.kv.mapping.KvClassMapper;
 import com.codeabovelab.dm.common.kv.mapping.KvMapperFactory;
 import com.codeabovelab.dm.cluman.model.ImageDescriptor;
@@ -138,7 +139,7 @@ public class RegistryRepository implements SupportSearch {
 
     private void internalRegister(RegistryService service) {
         String name = service.getConfig().getName();
-        Assert.notNull(name, "Config should have non empty name." +  service.getConfig());
+        ExtendedAssert.matchAz09Hyp(name, "registry name");
         RegistryService old = registryServiceMap.put(name, service);
         if(old != service) {
             if(service instanceof AbstractV2RegistryService) {
