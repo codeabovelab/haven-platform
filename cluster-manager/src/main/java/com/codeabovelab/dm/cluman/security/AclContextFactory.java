@@ -21,10 +21,15 @@ import org.springframework.security.acls.model.AclService;
 import org.springframework.security.acls.model.SidRetrievalStrategy;
 import org.springframework.util.Assert;
 
+import javax.annotation.PostConstruct;
+import javax.annotation.PreDestroy;
+
 /**
  */
 public class AclContextFactory {
     private static final ThreadLocal<AclContext> TL = new ThreadLocal<>();
+    private static final Object lock = new Object();
+    private static volatile AclContextFactory instance;
 
     final AclService aclService;
     final ExtPermissionGrantingStrategy pgs;
@@ -82,5 +87,38 @@ public class AclContextFactory {
             Assert.isTrue(ac == curr, "Invalid current context: " + curr + " expect: " + ac);
             TL.set(old);
         });
+    }
+
+    /**
+     * It must not be public
+     * @return current factory
+     */
+    static AclContextFactory getInstance() {
+        synchronized (lock) {
+            if(instance == null) {
+                throw new IllegalStateException("No instance.");
+            }
+            return instance;
+        }
+    }
+
+    @PostConstruct
+    public void postConstruct() {
+        synchronized (lock) {
+            if(instance != null) {
+                throw new IllegalStateException("Factory already has instance.");
+            }
+            instance = this;
+        }
+    }
+
+    @PreDestroy
+    public void preDestroy() {
+        synchronized (lock) {
+            if(instance != this) {
+                throw new IllegalStateException("Factory has different instance.");
+            }
+            instance = null;
+        }
     }
 }
