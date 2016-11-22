@@ -21,6 +21,7 @@ import com.codeabovelab.dm.cluman.cluster.filter.FilterFactory;
 import com.codeabovelab.dm.cluman.ds.nodes.NodeRegistration;
 import com.codeabovelab.dm.cluman.model.DiscoveryStorage;
 import com.codeabovelab.dm.cluman.model.NodesGroup;
+import com.codeabovelab.dm.common.security.TempAuth;
 import org.springframework.util.StringUtils;
 
 /**
@@ -44,8 +45,10 @@ class OrphansNodeFilterFactory implements FilterFactory.Factory {
                 return true;
             }
             //also we want see nodes which cluster has been deleted
-            NodesGroup group = ds.getCluster(cluster);
-            return group == null || !group.getFeatures().contains(NodesGroup.Feature.SWARM);
+            try(TempAuth ta = TempAuth.asSystem()) {
+                NodesGroup group = ds.getCluster(cluster);
+                return group == null || !group.getFeatures().contains(NodesGroup.Feature.SWARM);
+            }
         };
     }
 
