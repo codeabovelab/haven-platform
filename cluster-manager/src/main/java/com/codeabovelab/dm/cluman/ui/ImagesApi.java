@@ -49,6 +49,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.util.Assert;
+import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.*;
 
@@ -80,10 +81,19 @@ public class ImagesApi {
     @ApiOperation("search by image substring, if you specify repository then you can use expression like '*word*' ")
     @RequestMapping(value = "/search", method = RequestMethod.GET)
     public UiSearchResult search(@RequestParam(value = "registry", required = false) String registryParam,
+                                 @RequestParam(value = "cluster", required = false) String cluster,
                                  @RequestParam(value = "query", required = false) String query,
                                  @RequestParam(value = "page") int page,
                                  @RequestParam(value = "size") int size) {
-        SearchResult result;
+
+        List<String> registries = new ArrayList<>();
+
+        if (StringUtils.hasText(cluster)) {
+            DockerService dockerService = dockerServices.getService(cluster);
+            ExtendedAssert.notFound(cluster, "Cluster not found " + cluster);
+            registries.addAll(dockerService.getClusterConfig().getRegistries());
+        }
+
         //possibly we must place below code into 'registryRepository'
         if (!StringUtils.hasText(registryParam)) {
             // we may get registry name from query
@@ -93,12 +103,16 @@ public class ImagesApi {
                 if (registryParam != null && registryParam.contains("*")) {
                     registryParam = "";
                 }
+                if (StringUtils.hasText(registryParam)) {
+                    registries.retainAll(SPLITTER.splitToList(registryParam));
+                }
             } catch (Exception e) {
                 //nothing
             }
         }
-        if (StringUtils.hasText(registryParam)) {
-            List<String> registries = SPLITTER.splitToList(registryParam);
+
+        SearchResult result;
+        if (!CollectionUtils.isEmpty(registries)) {
             RegistrySearchHelper rsh = new RegistrySearchHelper(query, page, size);
             for(String registry: registries) {
                 RegistryService service = registryRepository.getByName(registry);
