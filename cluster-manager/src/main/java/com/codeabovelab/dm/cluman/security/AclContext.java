@@ -23,6 +23,8 @@ import com.codeabovelab.dm.common.security.acl.ExtPermissionGrantingStrategy;
 import com.codeabovelab.dm.common.security.dto.PermissionData;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.acls.model.*;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.util.Assert;
 
 import java.util.Arrays;
@@ -34,10 +36,18 @@ public class AclContext {
     private final AclService aclService;
     private final ExtPermissionGrantingStrategy pgs;
     private final List<Sid> sids;
+    private final Authentication authentication;
 
-    AclContext(AclService aclService, ExtPermissionGrantingStrategy pgs, List<Sid> sids) {
-        this.aclService = aclService;
-        this.pgs = pgs;
+    AclContext(AclContextFactory factory) {
+        this.authentication = SecurityContextHolder.getContext().getAuthentication();
+        List<Sid> sids;
+        if(this.authentication == null) {
+            throw new AccessDeniedException("No credentials in context.");
+        } else {
+            sids = factory.sidStrategy.getSids(authentication);
+        }
+        this.aclService = factory.aclService;
+        this.pgs = factory.pgs;
         this.sids = sids;
     }
 
@@ -104,5 +114,10 @@ public class AclContext {
         } catch (NotFoundException e) {
             return PermissionData.NONE;
         }
+    }
+
+    boolean isActual() {
+        Authentication currAuth = SecurityContextHolder.getContext().getAuthentication();
+        return this.authentication == currAuth;
     }
 }

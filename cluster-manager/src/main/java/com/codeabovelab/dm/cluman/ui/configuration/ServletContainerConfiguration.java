@@ -17,15 +17,14 @@
 package com.codeabovelab.dm.cluman.ui.configuration;
 
 import com.codeabovelab.dm.cluman.ds.SwarmAdapterConfiguration;
+import com.codeabovelab.dm.cluman.security.AclContextFactory;
+import com.codeabovelab.dm.cluman.security.AclContextFilter;
 import com.codeabovelab.dm.common.security.SecurityUtils;
 import com.codeabovelab.dm.common.security.SuccessAuthProcessor;
 import com.codeabovelab.dm.common.security.token.TokenValidator;
 import com.codeabovelab.dm.common.security.token.TokenValidatorConfiguration;
 import com.codeabovelab.dm.gateway.auth.UserCompositeAuthProvider;
-import com.codeabovelab.dm.gateway.token.RequestTokenHeaderRequestMatcher;
-import com.codeabovelab.dm.gateway.token.TokenAuthFilterConfigurer;
-import com.codeabovelab.dm.gateway.token.TokenAuthProvider;
-import com.codeabovelab.dm.gateway.token.TokenServiceConfiguration;
+import com.codeabovelab.dm.gateway.token.*;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.catalina.connector.Connector;
 import org.apache.coyote.http11.Http11NioProtocol;
@@ -43,6 +42,7 @@ import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
 import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.web.authentication.switchuser.SwitchUserFilter;
 import org.springframework.util.StringUtils;
 
 import java.io.File;
@@ -64,43 +64,8 @@ public class ServletContainerConfiguration {
      */
     @Bean
     @Autowired
-    WebSecurityConfigurerAdapter webSecurityConfigurerAdapter(final AuthenticationProvider provider,
-                                                              UserDetailsService userDetailsService,
-                                                              TokenValidator tokenValidator,
-                                                              SuccessAuthProcessor authProcessor) {
-        return new WebSecurityConfigurerAdapter() {
-            @Override
-            protected void configure(HttpSecurity http) throws Exception {
-                final String uiPrefix = "/ui/";
-                final String loginUrl = uiPrefix + "login/";
-
-                TokenAuthFilterConfigurer<HttpSecurity> tokenFilterConfigurer =
-                        new TokenAuthFilterConfigurer<>(new RequestTokenHeaderRequestMatcher(),
-                                new TokenAuthProvider(tokenValidator, userDetailsService, authProcessor));
-                http.csrf().disable()
-                        .authenticationProvider(provider).userDetailsService(userDetailsService)
-                        .anonymous().principal(SecurityUtils.USER_ANONYMOUS).and()
-                        .authorizeRequests().antMatchers(uiPrefix + "/token/login").permitAll()
-                        .antMatchers(HttpMethod.OPTIONS, "/**").permitAll()//allow CORS option calls
-                        .antMatchers(uiPrefix + "**").authenticated()
-                        .and().formLogin().loginPage(loginUrl).permitAll().defaultSuccessUrl(uiPrefix)
-                        .and().logout().logoutUrl(uiPrefix + "logout").logoutSuccessUrl(loginUrl)
-                        .and().apply(tokenFilterConfigurer);
-//                enable after testing
-//                        .and().sessionManagement()
-//                        .sessionCreationPolicy(SessionCreationPolicy.STATELESS);
-
-                // X-Frame-Options
-                http.headers()
-                  .frameOptions().sameOrigin();
-
-                //we use basic in testing and scripts
-                if (basicAuthEnable) {
-                    http.httpBasic();
-                }
-
-            }
-        };
+    WebSecurityConfigurerAdapter webSecurityConfigurerAdapter() {
+        return new WebSecurityConfigurerAdapterImpl();
     }
 
     @Value("${dm.https.keystore:}")
@@ -151,4 +116,51 @@ public class ServletContainerConfiguration {
         return connector;
     }
 
+    class WebSecurityConfigurerAdapterImpl extends WebSecurityConfigurerAdapter {
+
+        @Autowired
+        private TokenValidator tokenValidator;
+        @Autowired
+        private UserDetailsService userDetailsService;
+        @Autowired
+        private SuccessAuthProcessor authProcessor;
+        @Autowired
+        private AuthenticationProvider provider;
+        @Autowired
+        private AclContextFactory aclContextFactory;
+
+        @Override
+        protected void configure(HttpSecurity http) throws Exception {
+            final String uiPrefix = "/ui/";
+            final String loginUrl = uiPrefix + "login/";
+
+            TokenAuthFilterConfigurer<HttpSecurity> tokenFilterConfigurer =
+                    new TokenAuthFilterConfigurer<>(new RequestTokenHeaderRequestMatcher(),
+                            new TokenAuthProvider(tokenValidator, userDetailsService, authProcessor));
+            http.csrf().disable()
+                    .authenticationProvider(provider).userDetailsService(userDetailsService)
+                    .anonymous().principal(SecurityUtils.USER_ANONYMOUS).and()
+                    .authorizeRequests().antMatchers(uiPrefix + "/token/login").permitAll()
+                    .antMatchers(HttpMethod.OPTIONS, "/**").permitAll()//allow CORS option calls
+                    .antMatchers(uiPrefix + "**").authenticated()
+                    .and().formLogin().loginPage(loginUrl).permitAll().defaultSuccessUrl(uiPrefix)
+                    .and().logout().logoutUrl(uiPrefix + "logout").logoutSuccessUrl(loginUrl)
+                    .and().apply(tokenFilterConfigurer);
+//                enable after testing
+//                        .and().sessionManagement()
+//                        .sessionCreationPolicy(SessionCreationPolicy.STATELESS);
+
+            // X-Frame-Options
+            http.headers()
+              .frameOptions().sameOrigin();
+
+            http.addFilterAfter(new AclContextFilter(aclContextFactory), SwitchUserFilter.class);
+
+            //we use basic in testing and scripts
+            if (basicAuthEnable) {
+                http.httpBasic();
+            }
+
+        }
+    }
 }

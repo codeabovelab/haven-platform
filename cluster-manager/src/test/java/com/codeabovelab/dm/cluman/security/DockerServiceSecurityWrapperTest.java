@@ -58,7 +58,7 @@ public class DockerServiceSecurityWrapperTest {
         @Primary
         @Bean
         AclContextFactory aclContextFactory(ConfigurableAclService aclService, ExtPermissionGrantingStrategy pgs, SidRetrievalStrategy sidRetrievalStrategy) {
-            return new StandardAclContextFactory(aclService, pgs, sidRetrievalStrategy);
+            return new AclContextFactory(aclService, pgs, sidRetrievalStrategy);
         }
     }
 
