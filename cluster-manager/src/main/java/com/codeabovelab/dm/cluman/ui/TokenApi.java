@@ -52,18 +52,11 @@ public class TokenApi {
 
     @ApiOperation("Use header name: " + AuthenticationTokenFilter.X_AUTH_TOKEN)
     @RequestMapping(value = "login", method = RequestMethod.POST)
-    public UITokenData getToken(@RequestParam(value = "username", required = false) String username,
-                                @RequestParam(value = "password", required = false) String password,
-                                @RequestBody(required = false) UiUserCredentials credentials) {
-        // due to legacy we allow to use request parameters, but it deprecated
-        if(credentials != null) {
-            username = credentials.getUsername();
-            password = credentials.getPassword();
-        }
-        Authentication authentication = new UsernamePasswordAuthenticationToken(username, password);
+    public UITokenData getToken(@RequestBody UiUserCredentials credentials) {
+        Authentication authentication = new UsernamePasswordAuthenticationToken(credentials.getUsername(), credentials.getPassword());
         final Authentication authenticate = authenticationProvider.authenticate(authentication);
         if (authenticate != null && authenticate.isAuthenticated()) {
-            return createToken(username);
+            return createToken(credentials.getUsername());
         } else {
             throw new BadCredentialsException("Invalid login and password");
         }
