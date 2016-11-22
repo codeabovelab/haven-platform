@@ -17,6 +17,9 @@
 package com.codeabovelab.dm.cluman.ds.nodes;
 
 import com.codeabovelab.dm.cluman.cluster.docker.management.DockerServiceEvent;
+import com.codeabovelab.dm.cluman.security.AclContext;
+import com.codeabovelab.dm.cluman.security.AclContextFactory;
+import com.codeabovelab.dm.cluman.security.SecuredType;
 import com.codeabovelab.dm.cluman.validate.ExtendedAssert;
 import com.codeabovelab.dm.common.kv.*;
 import com.codeabovelab.dm.common.kv.mapping.KvClassMapper;
@@ -26,6 +29,7 @@ import com.codeabovelab.dm.cluman.persistent.PersistentBusFactory;
 import com.codeabovelab.dm.cluman.reconfig.ReConfigObject;
 import com.codeabovelab.dm.cluman.reconfig.ReConfigurable;
 import com.codeabovelab.dm.cluman.ui.HttpException;
+import com.codeabovelab.dm.common.security.Action;
 import com.codeabovelab.dm.common.validate.ValidityException;
 import com.codeabovelab.dm.common.mb.MessageBus;
 import com.codeabovelab.dm.common.security.TempAuth;
@@ -323,11 +327,12 @@ public class NodeStorage implements NodeInfoProvider {
      */
     public Collection<NodeInfo> getNodes(Predicate<? super NodeRegistration> predicate) {
         List<String> keys = listNodeNames();
+        AclContext ac = AclContextFactory.getLocalContext();
         List<NodeInfo> nodeList = new ArrayList<>(keys.size());
         for (String key : keys) {
             NodeRegistrationImpl nr = getNodeRegistrationInternal(key);
             // when node invalid we may receive null
-            if (nr == null || !predicate.test(nr)) {
+            if (nr == null || !predicate.test(nr) || !ac.isGranted(nr.getOid(), Action.READ)) {
                 continue;
             }
             nodeList.add(nr.getNodeInfo());

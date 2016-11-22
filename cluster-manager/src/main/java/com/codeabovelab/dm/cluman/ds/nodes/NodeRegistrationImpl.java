@@ -18,7 +18,9 @@ package com.codeabovelab.dm.cluman.ds.nodes;
 
 import com.codeabovelab.dm.cluman.model.*;
 import com.codeabovelab.dm.cluman.persistent.PersistentBusFactory;
+import com.codeabovelab.dm.cluman.security.SecuredType;
 import com.codeabovelab.dm.common.mb.*;
+import org.springframework.security.acls.model.ObjectIdentity;
 
 import java.util.*;
 import java.util.function.Consumer;
@@ -40,12 +42,14 @@ class NodeRegistrationImpl implements NodeRegistration {
     private final MessageBus<NodeHealthEvent> healthBus;
     private volatile int ttl;
     private final NodeUpdateHandler nuh;
+    private final ObjectIdentity oid;
 
     NodeRegistrationImpl(PersistentBusFactory pbf, NodeInfo nodeInfo, NodeUpdateHandler nuh) {
         String name = nodeInfo.getName();
         NodeUtils.checkName(name);
         this.name = name;
         this.nuh = nuh;
+        this.oid = SecuredType.NODE.id(name);
         // name may contain dots
         this.healthBus = pbf.create(NodeHealthEvent.class, "node[" + name + "].metrics", 2000/* TODO in config */);
         synchronized (lock) {
@@ -167,5 +171,9 @@ class NodeRegistrationImpl implements NodeRegistration {
 
     public String getName() {
         return name;
+    }
+
+    public ObjectIdentity getOid() {
+        return oid;
     }
 }
