@@ -89,6 +89,14 @@ public class ClusterApi {
         return ucs;
     }
 
+    @RequestMapping(value = "/cluster/{cluster}", method = GET)
+    public UiCluster getCluster(@PathVariable("cluster") String cluster) {
+        AclContext ac = aclContextFactory.getContext();
+        NodesGroup nodesGroup = discoveryStorage.getCluster(cluster);
+        ExtendedAssert.notFound(nodesGroup, "Cluster was not found by " + cluster);
+        return toUi(ac, nodesGroup);
+    }
+
     private UiCluster toUi(AclContext ac, NodesGroup cluster) {
         UiCluster uc = new UiCluster();
         final String name = cluster.getName();
@@ -97,6 +105,10 @@ public class ClusterApi {
         uc.getDescription().accept(cluster.getDescription());
         uc.getFilter().accept(cluster.getImageFilter());
         uc.setFeatures(cluster.getFeatures());
+        if (cluster.getConfig() instanceof SwarmNodesGroupConfig) {
+            SwarmNodesGroupConfig swarmNodesGroupConfig = (SwarmNodesGroupConfig) cluster;
+            uc.setConfig(ClusterConfigImpl.builder(swarmNodesGroupConfig.getConfig()));
+        }
         try {
             DockerServiceInfo info = cluster.getDocker().getInfo();
             uc.setContainers(new UiCluster.Entry(info.getContainers(), info.getOffContainers()));
@@ -123,9 +135,7 @@ public class ClusterApi {
         List<UiContainer> list = new ArrayList<>();
         GetContainersArg arg = new GetContainersArg(true);
         NodesGroup nodesGroup = discoveryStorage.getCluster(cluster);
-        if (nodesGroup == null) {
-            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
-        }
+        ExtendedAssert.notFound(nodesGroup, "Cluster was not found by " + cluster);
         DockerService service = nodesGroup.getDocker();
         Map<String, String> apps = UiUtils.mapAppContainer(applicationService, nodesGroup);
         ExtendedAssert.notFound(service, "Service for " + cluster + " is null.");
@@ -246,10 +256,10 @@ public class ClusterApi {
 
     private UiJob setRootSrc(String cluster, DeployOptions.Builder options, RootSource rootSource) {
         List<ClusterSource> clusters = rootSource.getClusters();
-        if(clusters.isEmpty()) {
+        if (clusters.isEmpty()) {
             throw new IllegalArgumentException("No clusters in source");
         }
-        if(clusters.size() > 1) {
+        if (clusters.size() > 1) {
             throw new IllegalArgumentException("Too many clusters in source, accept only one.");
         }
         // update name of cluster, because name from path more priority than from source
@@ -264,7 +274,6 @@ public class ClusterApi {
     }
 
     /**
-     *
      * @param clusterName
      * @param clusterData
      */
