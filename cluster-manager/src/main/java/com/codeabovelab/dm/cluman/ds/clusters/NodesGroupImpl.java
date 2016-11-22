@@ -78,8 +78,8 @@ class NodesGroupImpl extends AbstractNodesGroup<NodesGroupImpl, DefaultNodesGrou
 
     @Override
     @SuppressWarnings("unchecked")
-    public Collection<Node> getNodes() {
-        return (Collection) getNodesInternal();
+    public Collection<NodeInfo> getNodes() {
+        return getNodesInternal();
     }
 
     private Collection<NodeInfo> getNodesInternal() {

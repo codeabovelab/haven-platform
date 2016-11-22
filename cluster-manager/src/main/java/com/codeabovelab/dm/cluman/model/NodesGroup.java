@@ -70,7 +70,7 @@ public interface NodesGroup extends Named, WithAcl {
      * Return all current nodes
      * @return
      */
-    Collection<Node> getNodes();
+    Collection<NodeInfo> getNodes();
 
     /**
      * Collections with names of other intersected NodesGroups. Note that it

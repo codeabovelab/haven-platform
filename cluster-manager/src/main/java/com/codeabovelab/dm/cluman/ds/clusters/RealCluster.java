@@ -59,8 +59,8 @@ public final class RealCluster extends AbstractNodesGroup<RealCluster, SwarmNode
 
     @Override
     @SuppressWarnings("unchecked")
-    public Collection<Node> getNodes() {
-        return (Collection) getNodesInfo();
+    public Collection<NodeInfo> getNodes() {
+        return getNodesInfo();
     }
 
     @Override

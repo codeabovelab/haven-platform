@@ -46,7 +46,7 @@ public class DiscoveryNodeControllerTest {
 
     @Configuration
     public static class TestConfiguration {
-        final Map<String, Node> nodes = new HashMap<>();
+        final Map<String, NodeInfo> nodes = new HashMap<>();
 
         @Bean
         NodeStorage nodeStorage() {
@@ -96,7 +96,7 @@ public class DiscoveryNodeControllerTest {
         NodesGroup cluster = discoveryStorage.getCluster(clusterId);
 
         {
-            Collection<Node> nodes = cluster.getNodes();
+            Collection<NodeInfo> nodes = cluster.getNodes();
             assertThat(nodes, empty());
         }
 
@@ -107,7 +107,7 @@ public class DiscoveryNodeControllerTest {
         addNode("unauthorized:876", false);
 
         {
-            Collection<Node> nodes = cluster.getNodes();
+            Collection<NodeInfo> nodes = cluster.getNodes();
             assertThat(nodes, hasSize(2));
             System.out.println(nodes);
             assertThat(nodes, hasItems(hasProperty("address", is(hostPort)), hasProperty("address", is(secondHostPort))));

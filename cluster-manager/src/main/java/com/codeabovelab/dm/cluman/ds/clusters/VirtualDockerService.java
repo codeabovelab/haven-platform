@@ -153,17 +153,11 @@ class VirtualDockerService implements DockerService {
         int containers = 0;
         int offContainers = 0;
         int offNodes = 0;
-        for(Node node: cluster.getNodes()) {
-            NodeInfo nodeInfo;
-            if(node instanceof NodeInfo) {
-                nodeInfo = (NodeInfo) node;
-            } else {
-                nodeInfo = this.cluster.getNodeStorage().getNodeInfo(node.getName());
-            }
+        for(NodeInfo nodeInfo: cluster.getNodes()) {
             if(nodeInfo != null) {
                 nodeList.add(nodeInfo);
             }
-            DockerService service = getServiceByNode(node);
+            DockerService service = getServiceByNode(nodeInfo);
             if(isOffline(service)) {
                 offNodes++;
                 // due to different causes service can be null
@@ -180,7 +174,7 @@ class VirtualDockerService implements DockerService {
             } catch (AccessDeniedException e) {
                 //nothing
             } catch (Exception e) {
-                log.warn("Can not list containers on {}, due to error {}", node.getName(), e.toString());
+                log.warn("Can not list containers on {}, due to error {}", nodeInfo.getName(), e.toString());
             }
         }
         return DockerServiceInfo.builder()
