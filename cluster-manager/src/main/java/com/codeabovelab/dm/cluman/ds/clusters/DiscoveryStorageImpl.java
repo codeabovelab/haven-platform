@@ -230,6 +230,7 @@ public class DiscoveryStorageImpl implements DiscoveryStorage {
             }
             return cluster;
         });
+        ng.setConfig(config);
         // we place it after creation, because check it for not created cluster is not good
         checkThatCanRead(ng);
         return ng;
