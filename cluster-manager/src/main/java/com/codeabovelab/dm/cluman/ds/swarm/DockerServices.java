@@ -71,7 +71,6 @@ public class DockerServices implements DockerServiceRegistry, NodeRegistry {
     private final ExecutorService executor;
     private final SwarmProcesses swarmProcesses;
     private final NodeInfoProvider nodeInfoProvider;
-    private final MessageBus<NodeEvent> nodeInfoMessageBus;
     private final MessageBus<DockerLogEvent> dockerEventMessageBus;
     private final DockerEventsConfig dockerMonitoringConfig;
     private final ContainerStorage containerStorage;
@@ -94,12 +93,11 @@ public class DockerServices implements DockerServiceRegistry, NodeRegistry {
         this.registryRepository = registryRepository;
         this.swarmProcesses = swarmProcesses;
         this.nodeInfoProvider = nodeInfoProvider;
-        this.nodeInfoMessageBus = nodeInfoMessageBus;
         this.dockerEventMessageBus = dockerEventMessageBus;
         this.dockerMonitoringConfig = dockerMonitoringConfig;
         this.dockerServiceEventMessageBus = dockerServiceEventMessageBus;
         this.aclContextFactory = aclContextFactory;
-        this.nodeInfoMessageBus.subscribe((e) -> {
+        nodeInfoMessageBus.subscribe((e) -> {
             switch (e.getAction()) {
                 case StandardActions.UPDATE:
                 case StandardActions.CREATE: {

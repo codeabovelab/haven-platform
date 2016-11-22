@@ -84,7 +84,7 @@ public class PropertiesParser extends AbstractParser {
                     }
                 } else {
                     try {
-                        Object value = null;
+                        Object value;
                         if (val.contains(":")) {
                             value = parseMap(val);
                         } else if (val.contains(",")) {

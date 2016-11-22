@@ -47,9 +47,6 @@ class ContainerInfoUpdater implements SmartLifecycle {
     private boolean started;
     private final DockerServices dockerServices;
     private final ContainerStorageImpl containerStorage;
-    private final Subscriptions<NodeEvent> nodeSubs;
-    private final Subscriptions<DockerServiceEvent> dockerSubs;
-    private final Subscriptions<DockerLogEvent> dockerLogSubs;
     private final ConcurrentMap<String, RescheduledTask> scheduledNodes;
     private final ScheduledExecutorService scheduledService;
 
@@ -58,16 +55,12 @@ class ContainerInfoUpdater implements SmartLifecycle {
                                 ContainerStorageImpl containerStorage,
                                 @Qualifier(NodeEvent.BUS) Subscriptions<NodeEvent> nodeSubs,
                                 @Qualifier(DockerServiceEvent.BUS) Subscriptions<DockerServiceEvent> dockerSubs,
-                                @Qualifier(DockerLogEvent.BUS) Subscriptions<DockerLogEvent> dockerLogSubs
-                                ) {
+                                @Qualifier(DockerLogEvent.BUS) Subscriptions<DockerLogEvent> dockerLogSubs) {
         this.dockerServices = dockerServices;
         this.containerStorage = containerStorage;
-        this.nodeSubs = nodeSubs;
-        this.dockerSubs = dockerSubs;
-        this.dockerLogSubs = dockerLogSubs;
-        this.nodeSubs.subscribe(this::onNodeEvent);
-        this.dockerSubs.subscribe(this::onDockerEvent);
-        this.dockerLogSubs.subscribe(this::onDockerLogEvent);
+        nodeSubs.subscribe(this::onNodeEvent);
+        dockerSubs.subscribe(this::onDockerEvent);
+        dockerLogSubs.subscribe(this::onDockerLogEvent);
         this.scheduledService = Executors.newSingleThreadScheduledExecutor(new ThreadFactoryBuilder()
           .setDaemon(true)
           .setNameFormat(getClass().getSimpleName() + "-%d")
