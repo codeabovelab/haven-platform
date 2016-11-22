@@ -106,7 +106,7 @@ public class ClusterApi {
         uc.getFilter().accept(cluster.getImageFilter());
         uc.setFeatures(cluster.getFeatures());
         if (cluster.getConfig() instanceof SwarmNodesGroupConfig) {
-            SwarmNodesGroupConfig swarmNodesGroupConfig = (SwarmNodesGroupConfig) cluster;
+            SwarmNodesGroupConfig swarmNodesGroupConfig = (SwarmNodesGroupConfig) cluster.getConfig();
             uc.setConfig(ClusterConfigImpl.builder(swarmNodesGroupConfig.getConfig()));
         }
         try {
