@@ -85,7 +85,7 @@ public class EventController {
 
     @MessageMapping("/subscriptions/del")
     public void delSub(List<String> ids) {
-        ids.stream().forEach(subscriptions::unsubscribe);
+        ids.forEach(subscriptions::unsubscribe);
     }
 
 

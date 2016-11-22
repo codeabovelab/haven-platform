@@ -35,7 +35,7 @@ public interface ApplicationService {
 
     CreateApplicationResult deployCompose(ComposeArg composeArg) throws Exception;
 
-    void stopApplication(String cluster, String id) throws Exception;
+    void stopApplication(String cluster, String id);
 
     Application getApplication(String cluster, String id) ;
 

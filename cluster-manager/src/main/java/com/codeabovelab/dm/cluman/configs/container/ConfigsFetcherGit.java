@@ -16,6 +16,7 @@
 
 package com.codeabovelab.dm.cluman.configs.container;
 
+import com.codeabovelab.dm.cluman.configuration.DataLocatinConfiguration;
 import com.codeabovelab.dm.cluman.utils.ContainerUtils;
 import com.codeabovelab.dm.common.utils.Throwables;
 import org.apache.commons.io.FileUtils;
@@ -56,7 +57,7 @@ public class ConfigsFetcherGit implements ConfigsFetcher {
     private static final Logger LOG = LoggerFactory.getLogger(ConfigsFetcherGit.class);
     private final static String HEAD = "refs/heads/";
 
-    private final Path gitDirPath = Files.createTempDirectory("imageGit-");
+    private final Path gitDirPath;
     private final GitSettings gitSettings;
     private final List<Parser> parser;
     private final List<Function<String, String>> functions = new ArrayList<>(Arrays.asList(new NameFunction(), new NameVersionFunction()));
@@ -64,9 +65,11 @@ public class ConfigsFetcherGit implements ConfigsFetcher {
     private CredentialsProvider cp;
 
     @Autowired
-    public ConfigsFetcherGit(GitSettings gitSettings, List<Parser> parser) throws Exception {
+    public ConfigsFetcherGit(GitSettings gitSettings, DataLocatinConfiguration locatinConfiguration, List<Parser> parser) {
         this.gitSettings = gitSettings;
         this.parser = parser;
+        this.gitDirPath = new File(locatinConfiguration.getLocation(), "git-container-configs").toPath();
+
     }
 
     @Override
@@ -121,9 +124,7 @@ public class ConfigsFetcherGit implements ConfigsFetcher {
             try {
                 LOG.info("try to init repo {}", gitSettings.getUrl());
                 File gitDir = gitDirPath.toFile();
-                if (gitDir.exists()) {
-                    FileUtils.deleteDirectory(gitDir);
-                }
+                FileUtils.deleteQuietly(gitDir);
                 gitDir.mkdirs();
                 cp = new UsernamePasswordCredentialsProvider(gitSettings.getUsername(), gitSettings.getPassword());
                 git = Git.cloneRepository()

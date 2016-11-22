@@ -114,7 +114,7 @@ public class UpdateToTagScheduledJob implements Runnable {
             String imageName = ContainerUtils.getImageName(i);
             Tags tags = registry.getTags(imageName);
             List<String> tagsList = new ArrayList<>(tags.getTags());
-            Collections.sort(tagsList, comparator);
+            tagsList.sort(comparator);
             String tag = tagsList.get(tagsList.size() - 1);
             ImageDescriptor image = registry.getImage(imageName, tag);
             if (image == null) {

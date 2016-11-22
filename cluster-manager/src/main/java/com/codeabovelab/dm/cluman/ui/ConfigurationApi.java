@@ -52,7 +52,7 @@ public class ConfigurationApi {
     private final JobsManager jobsManager;
 
     @RequestMapping(path = "config", method = RequestMethod.GET)
-    public ResponseEntity<StreamingResponseBody> getConfig() throws IOException {
+    public ResponseEntity<StreamingResponseBody> getConfig() {
         HttpHeaders headers = new HttpHeaders();
         // 'produces' in annotation does not work with stream
         headers.setContentType(MediaType.APPLICATION_JSON);
@@ -68,7 +68,7 @@ public class ConfigurationApi {
     }
 
     @RequestMapping(path = "source", method = RequestMethod.GET, produces = YamlUtils.MIME_TYPE_VALUE)
-    public ResponseEntity<RootSource> getSource() throws IOException {
+    public ResponseEntity<RootSource> getSource() {
         RootSource source = sourceService.getRootSource();
         HttpHeaders headers = new HttpHeaders();
         headers.set(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"cluman_source.yaml\"");
@@ -77,14 +77,14 @@ public class ConfigurationApi {
 
     @RequestMapping(path = "source", method = RequestMethod.POST, consumes = YamlUtils.MIME_TYPE_VALUE)
     public UiJob setSource(@RequestBody RootSource root,
-                           DeployOptions.Builder options) throws Exception {
+                           DeployOptions.Builder options) {
         JobInstance jobInstance = sourceService.setRootSource(root, options.build());
         return UiJob.toUi(jobInstance);
     }
 
     @RequestMapping(path = "source-upload", method = RequestMethod.POST, consumes = MimeTypeUtils.MULTIPART_FORM_DATA_VALUE)
     public UiJob uploadSource(@RequestPart("file") RootSource root,
-                              DeployOptions.Builder options) throws Exception {
+                              DeployOptions.Builder options) {
         JobInstance jobInstance = sourceService.setRootSource(root, options.build());
         return UiJob.toUi(jobInstance);
     }

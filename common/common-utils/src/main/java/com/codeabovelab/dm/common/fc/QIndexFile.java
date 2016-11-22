@@ -58,16 +58,13 @@ class QIndexFile implements AutoCloseable, IndexFile {
         }
         Path path = file.toPath();
         ByteBuffer buff;
-        FileChannel fc = FileChannel.open(path, StandardOpenOption.CREATE, StandardOpenOption.READ);
-        try {
+        try (FileChannel fc = FileChannel.open(path, StandardOpenOption.CREATE, StandardOpenOption.READ)) {
             long size = fc.size();
-            if(size > MAX_SIZE) {
-                throw new FbException("Index file: " +  path + " has too large size: " + size);
+            if (size > MAX_SIZE) {
+                throw new FbException("Index file: " + path + " has too large size: " + size);
             }
             buff = ByteBuffer.allocate((int) size).order(ByteOrder.BIG_ENDIAN);
             fc.read(buff);
-        } finally {
-            fc.close();
         }
 
         buff.flip();
@@ -126,11 +123,8 @@ class QIndexFile implements AutoCloseable, IndexFile {
         buff.flip();
 
         Path path = file.toPath();
-        FileChannel fc = FileChannel.open(path, StandardOpenOption.CREATE, StandardOpenOption.WRITE);
-        try {
+        try (FileChannel fc = FileChannel.open(path, StandardOpenOption.CREATE, StandardOpenOption.WRITE)) {
             fc.write(buff);
-        } finally {
-            fc.close();
         }
     }
 

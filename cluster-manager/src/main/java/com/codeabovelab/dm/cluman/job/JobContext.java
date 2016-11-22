@@ -147,11 +147,7 @@ public final class JobContext /* we cannot use AutoCloseable on this bean, so it
         // we cannot use computeIfAbsent because it does not support recursion
         Object bean;
         synchronized (this.beans) {
-            bean = this.beans.get(name);
-            if(bean == null) {
-                bean = objectFactory.getObject();
-                beans.put(name, bean);
-            }
+            bean = this.beans.computeIfAbsent(name, k -> objectFactory.getObject());
         }
         return bean;
     }

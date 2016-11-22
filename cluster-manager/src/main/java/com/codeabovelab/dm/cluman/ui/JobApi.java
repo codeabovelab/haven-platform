@@ -34,6 +34,7 @@ import org.springframework.web.servlet.mvc.method.annotation.ResponseBodyEmitter
 
 import java.io.IOException;
 import java.time.LocalDateTime;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
@@ -57,7 +58,7 @@ public class JobApi {
         LocalDateTime time = LocalDateTime.now().minusDays(1L);
         return jobsManager.getJobs().stream()
           .filter(ji -> ji.getInfo().getEndTime().isAfter(time))
-          .sorted((jil, jir) -> jil.getInfo().getStartTime().compareTo(jir.getInfo().getStartTime()))
+          .sorted(Comparator.comparing(jil -> jil.getInfo().getStartTime()))
           .map(UiJob::toUi)
           .collect(Collectors.toList());
     }
@@ -99,7 +100,7 @@ public class JobApi {
     }
 
     @RequestMapping(value = "/jobs/{job:.*}/logStream", method = GET, produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseBodyEmitter getJobLogStream(@PathVariable("job") String job) throws IOException {
+    public ResponseBodyEmitter getJobLogStream(@PathVariable("job") String job) {
         JobInstance ji = jobsManager.getJob(job);
         ExtendedAssert.notFound(ji, "Job was not found by id: " + job);
         ResponseBodyEmitter emitter = new ResponseBodyEmitter(TimeUnit.MINUTES.toMillis(10L));

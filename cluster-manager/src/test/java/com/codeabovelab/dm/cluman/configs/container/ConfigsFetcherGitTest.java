@@ -2,7 +2,9 @@ package com.codeabovelab.dm.cluman.configs.container;
 
 import com.codeabovelab.dm.cluman.cluster.docker.model.ContainerConfig;
 import com.codeabovelab.dm.cluman.cluster.docker.model.Image;
+import com.codeabovelab.dm.cluman.configuration.DataLocatinConfiguration;
 import com.codeabovelab.dm.cluman.model.ContainerSource;
+import com.google.common.io.Files;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -40,7 +42,9 @@ public class ConfigsFetcherGitTest {
             add(new YamlParser());
             add(new PropertiesParser());
         }};
-        ConfigsFetcherGit configsFetcherGit = new ConfigsFetcherGit(gitSettings, parsers);
+        DataLocatinConfiguration dataLocatinConfiguration = new DataLocatinConfiguration();
+        dataLocatinConfiguration.setLocation(Files.createTempDir().getPath());
+        ConfigsFetcherGit configsFetcherGit = new ConfigsFetcherGit(gitSettings, dataLocatinConfiguration, parsers);
 
         List<ConfigsFetcher> fetchers = new ArrayList<>();
         fetchers.add(configsFetcherGit);

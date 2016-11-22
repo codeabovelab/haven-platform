@@ -72,11 +72,7 @@ public final class PojoUtils {
                 //it`s maybe if name = "is", "get", "set"
                 continue;
             }
-            MethodsProperty.Builder property = map.get(propertyName);
-            if(property == null) {
-                property = MethodsProperty.build(propertyName);
-                map.put(propertyName, property);
-            }
+            MethodsProperty.Builder property = map.computeIfAbsent(propertyName, k -> MethodsProperty.build(propertyName));
             if(getter) {
                 property.setGetter(method);
             } else {

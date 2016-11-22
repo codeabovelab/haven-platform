@@ -180,7 +180,7 @@ public class ApplicationServiceImpl implements ApplicationService {
     }
 
     @Override
-    public void stopApplication(String cluster, String id) throws Exception {
+    public void stopApplication(String cluster, String id) {
         Application application = getApplication(cluster, id);
 
         DockerService service = dockerServiceRegistry.getService(application.getCluster());

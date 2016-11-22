@@ -20,6 +20,7 @@ import com.codeabovelab.dm.common.utils.pojo.PojoClass;
 import com.codeabovelab.dm.common.utils.pojo.Property;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 
 /**
@@ -67,7 +68,7 @@ class LazyObjectPrinter implements CharSequence {
         StringBuilder sb = new StringBuilder();
         PojoClass pojoClass = new PojoClass(obj.getClass());
         List<Property> props = new ArrayList<>(pojoClass.getProperties().values());
-        props.sort((l, r) -> l.getName().compareTo(r.getName()));
+        props.sort(Comparator.comparing(Property::getName));
         for(Property prop: props) {
             if(prop.getDeclaringClass() == Object.class) {
                 continue;

@@ -190,7 +190,7 @@ public class ContainerManager {
                 break;
             }
         }
-        if (response == null || ResultCode.OK != response.getCode()) {
+        if (ResultCode.OK != response.getCode()) {
             throw new IllegalStateException("Can't create container, due: " + response.getCode() + " " + response.getMessage());
         }
         return response;

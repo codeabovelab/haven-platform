@@ -97,9 +97,6 @@ public class LoadContainersOfImageTasklet {
                 }
             }
             ProcessedContainer processedContainer = convert(container);
-            if(processedContainer == null) {
-                continue;
-            }
             if(ContainerUtils.isOurContainer(processedContainer)) {
                 log.debug("Our container: {}", processedContainer.getName());
                 continue;

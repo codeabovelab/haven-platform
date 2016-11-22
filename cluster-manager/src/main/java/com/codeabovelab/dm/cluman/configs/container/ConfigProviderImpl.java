@@ -45,7 +45,7 @@ public class ConfigProviderImpl implements ConfigProvider {
     @Autowired
     public ConfigProviderImpl(List<ConfigsFetcher> fetchers) {
         fetcherList = fetchers;
-        Collections.sort(fetcherList, AnnotationAwareOrderComparator.INSTANCE);
+        fetcherList.sort(AnnotationAwareOrderComparator.INSTANCE);
     }
 
     public ContainerSource resolveProperties(String cluster, ImageDescriptor image, String imageName, ContainerSource original) {

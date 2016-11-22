@@ -231,7 +231,7 @@ public final class MessageBusImpl<M, S extends Subscriptions<M>> implements Mess
     @Override
     public void close() throws Exception {
         List<Consumer<M>> old = listenersRef.getAndSet(Collections.emptyList());
-        old.stream().forEach(Closeables::closeIfCloseable);
+        old.forEach(Closeables::closeIfCloseable);
         this.extensions.values().forEach(Closeables::closeIfCloseable);
         this.extensions.clear();
     }

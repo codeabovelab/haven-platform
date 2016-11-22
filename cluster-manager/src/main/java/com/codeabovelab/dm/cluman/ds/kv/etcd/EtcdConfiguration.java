@@ -55,8 +55,7 @@ public class EtcdConfiguration {
 
     @Bean
     SwarmDiscoveryUrlFunction swarmDiscoveryUrlFunction(EtcdConfiguration etcdConfiguration) {
-        return new SwarmDiscoveryUrlFunction.Etcd(Arrays.asList(etcdUrls)
-          .stream()
+        return new SwarmDiscoveryUrlFunction.Etcd(Arrays.stream(etcdUrls)
           .map((s) -> s.substring(s.lastIndexOf('/') + 1))
           .collect(Collectors.toList()));
     }

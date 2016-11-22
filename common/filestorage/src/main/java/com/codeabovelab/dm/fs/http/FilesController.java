@@ -139,7 +139,7 @@ public class FilesController {
         }
     }
 
-    private void setHeaders(FileHandle handle, HttpHeaders headers, Map<String, String> requestParams) throws Exception {
+    private void setHeaders(FileHandle handle, HttpHeaders headers, Map<String, String> requestParams) {
         HashMap<String, String> attributes = new  HashMap<>(handle.getAttributes());
 
         for (Map.Entry<String, String> entry : requestParams.entrySet()) {

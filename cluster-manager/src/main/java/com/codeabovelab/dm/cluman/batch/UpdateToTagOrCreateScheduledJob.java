@@ -149,10 +149,11 @@ public class UpdateToTagOrCreateScheduledJob implements Runnable {
         return versions.computeIfAbsent(ContainerUtils.getRegistryAndImageName(img), (i) -> {
             RegistryService registry = registryRepository.getRegistry(ContainerUtils.getRegistryName(i));
             String imageName = ContainerUtils.getImageName(i);
+            log.warn("can't find tags for {}", img);
             Tags tags = registry.getTags(imageName);
             Assert.notNull(tags, "can't find tags for " + img);
             List<String> tagsList = new ArrayList<>(tags.getTags());
-            Collections.sort(tagsList, comparator);
+            tagsList.sort(comparator);
             String tag = tagsList.get(tagsList.size() - 1);
             ImageDescriptor image = registry.getImage(imageName, tag);
             if (image == null) {
