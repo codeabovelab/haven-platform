@@ -10,7 +10,6 @@ import com.codeabovelab.dm.cluman.model.DockerServiceInfo;
 import com.codeabovelab.dm.common.security.Authorities;
 import com.codeabovelab.dm.common.security.GrantedAuthorityImpl;
 import com.codeabovelab.dm.common.security.MultiTenancySupport;
-import com.codeabovelab.dm.common.security.TempAuth;
 import com.codeabovelab.dm.common.security.acl.ExtPermissionGrantingStrategy;
 import com.codeabovelab.dm.common.security.dto.AuthenticationData;
 import lombok.extern.slf4j.Slf4j;

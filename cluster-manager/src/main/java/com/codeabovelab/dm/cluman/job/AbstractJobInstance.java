@@ -16,7 +16,7 @@
 
 package com.codeabovelab.dm.cluman.job;
 
-import com.codeabovelab.dm.common.security.TempAuth;
+import com.codeabovelab.dm.cluman.security.TempAuth;
 import com.codeabovelab.dm.common.utils.SafeCloseable;
 import com.google.common.base.MoreObjects;
 import com.google.common.util.concurrent.ListenableFuture;

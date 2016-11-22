@@ -35,7 +35,7 @@ import com.codeabovelab.dm.cluman.security.AclContextFactory;
 import com.codeabovelab.dm.cluman.security.DockerServiceSecurityWrapper;
 import com.codeabovelab.dm.cluman.validate.ExtendedAssert;
 import com.codeabovelab.dm.common.mb.MessageBus;
-import com.codeabovelab.dm.common.security.TempAuth;
+import com.codeabovelab.dm.cluman.security.TempAuth;
 import com.codeabovelab.dm.platform.http.async.NettyRequestFactory;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;

@@ -16,7 +16,7 @@
 
 package com.codeabovelab.dm.cluman.ui.configuration;
 
-import com.codeabovelab.dm.common.security.TempAuth;
+import com.codeabovelab.dm.cluman.security.TempAuth;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.messaging.Message;

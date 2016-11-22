@@ -17,7 +17,6 @@
 package com.codeabovelab.dm.cluman.ui.msg;
 
 import com.codeabovelab.dm.cluman.cluster.docker.management.DockerService;
-import com.codeabovelab.dm.cluman.cluster.docker.management.DockerServiceEvent;
 import com.codeabovelab.dm.cluman.cluster.docker.management.argument.GetContainersArg;
 import com.codeabovelab.dm.cluman.cluster.docker.management.argument.GetEventsArg;
 import com.codeabovelab.dm.cluman.cluster.docker.management.argument.GetLogContainerArg;
@@ -31,11 +30,9 @@ import com.codeabovelab.dm.cluman.events.EventsUtils;
 import com.codeabovelab.dm.cluman.model.*;
 import com.codeabovelab.dm.cluman.security.DockerServiceSecurityWrapper;
 import com.codeabovelab.dm.cluman.ui.model.UIStatistics;
-import com.codeabovelab.dm.common.mb.MessageBus;
-import com.codeabovelab.dm.common.mb.MessageBuses;
 import com.codeabovelab.dm.common.mb.Subscriptions;
 import com.codeabovelab.dm.common.security.Action;
-import com.codeabovelab.dm.common.security.TempAuth;
+import com.codeabovelab.dm.cluman.security.TempAuth;
 import com.codeabovelab.dm.common.utils.Closeables;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import lombok.extern.slf4j.Slf4j;

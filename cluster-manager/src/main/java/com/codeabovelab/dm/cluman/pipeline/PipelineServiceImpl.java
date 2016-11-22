@@ -47,7 +47,7 @@ import com.codeabovelab.dm.cluman.pipeline.schema.PipelineSchema;
 import com.codeabovelab.dm.cluman.pipeline.schema.PipelineStageSchema;
 import com.codeabovelab.dm.cluman.ui.model.PipeLineAction;
 import com.codeabovelab.dm.common.mb.MessageBus;
-import com.codeabovelab.dm.common.security.TempAuth;
+import com.codeabovelab.dm.cluman.security.TempAuth;
 import com.codeabovelab.dm.common.utils.Throwables;
 import com.codeabovelab.dm.common.utils.Uuids;
 import com.google.common.base.MoreObjects;

@@ -20,10 +20,7 @@ import com.codeabovelab.dm.cluman.cluster.docker.management.DockerService;
 import com.codeabovelab.dm.cluman.cluster.docker.management.argument.WithInterrupter;
 import com.codeabovelab.dm.cluman.cluster.docker.management.result.ResultCode;
 import com.codeabovelab.dm.cluman.cluster.docker.management.result.ServiceCallResult;
-import com.codeabovelab.dm.cluman.model.DockerContainer;
-import com.codeabovelab.dm.cluman.security.DockerServiceSecurityWrapper;
-import com.codeabovelab.dm.common.security.Action;
-import com.codeabovelab.dm.common.security.TempAuth;
+import com.codeabovelab.dm.cluman.security.TempAuth;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 

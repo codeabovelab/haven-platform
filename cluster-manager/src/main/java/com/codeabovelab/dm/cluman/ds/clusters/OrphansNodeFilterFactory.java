@@ -21,7 +21,7 @@ import com.codeabovelab.dm.cluman.cluster.filter.FilterFactory;
 import com.codeabovelab.dm.cluman.ds.nodes.NodeRegistration;
 import com.codeabovelab.dm.cluman.model.DiscoveryStorage;
 import com.codeabovelab.dm.cluman.model.NodesGroup;
-import com.codeabovelab.dm.common.security.TempAuth;
+import com.codeabovelab.dm.cluman.security.TempAuth;
 import org.springframework.util.StringUtils;
 
 /**

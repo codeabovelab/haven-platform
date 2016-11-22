@@ -23,7 +23,7 @@ import com.codeabovelab.dm.cluman.cluster.docker.model.EventType;
 import com.codeabovelab.dm.cluman.ds.swarm.DockerServices;
 import com.codeabovelab.dm.cluman.model.*;
 import com.codeabovelab.dm.common.mb.Subscriptions;
-import com.codeabovelab.dm.common.security.TempAuth;
+import com.codeabovelab.dm.cluman.security.TempAuth;
 import com.codeabovelab.dm.common.utils.RescheduledTask;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import lombok.extern.slf4j.Slf4j;
