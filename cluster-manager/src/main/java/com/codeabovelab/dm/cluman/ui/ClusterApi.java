@@ -271,6 +271,7 @@ public class ClusterApi {
     @Secured({Authorities.ADMIN_ROLE, SecuredType.CLUSTER_ADMIN})
     @RequestMapping(value = "/clusters/{cluster}", method = PUT)
     public void createCluster(@PathVariable("cluster") String clusterName, @RequestBody(required = false) UiClusterEditablePart clusterData) {
+        log.info("about to create cluster: [{}], {}", clusterName, clusterData);
         SwarmNodesGroupConfig sgnc = new SwarmNodesGroupConfig();
         sgnc.setName(clusterName);
         ClusterConfigImpl.Builder ccib = ClusterConfigImpl.builder(RealCluster.getDefaultConfig(clusterName));
@@ -286,6 +287,7 @@ public class ClusterApi {
             // we cannot change strategy for created cluster, maybe we need restart swarm for it?
             // cluster.setStrategy(clusterData.getStrategy());
         }
+        log.info("Cluster created: {}", cluster);
         cluster.flush();
     }
 
