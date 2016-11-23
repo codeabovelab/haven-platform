@@ -22,18 +22,18 @@ import com.codeabovelab.dm.cluman.cluster.docker.management.DockerService;
 import com.codeabovelab.dm.cluman.cluster.docker.management.DockerUtils;
 import com.codeabovelab.dm.cluman.cluster.docker.management.argument.GetContainersArg;
 import com.codeabovelab.dm.cluman.cluster.registry.RegistryRepository;
-import com.codeabovelab.dm.cluman.job.JobInstance;
-import com.codeabovelab.dm.cluman.security.AclContext;
-import com.codeabovelab.dm.cluman.security.AclContextFactory;
-import com.codeabovelab.dm.cluman.security.SecuredType;
-import com.codeabovelab.dm.cluman.source.DeployOptions;
-import com.codeabovelab.dm.cluman.source.SourceService;
 import com.codeabovelab.dm.cluman.ds.DockerServiceRegistry;
 import com.codeabovelab.dm.cluman.ds.clusters.RealCluster;
 import com.codeabovelab.dm.cluman.ds.clusters.SwarmNodesGroupConfig;
 import com.codeabovelab.dm.cluman.ds.container.ContainerStorage;
 import com.codeabovelab.dm.cluman.ds.nodes.NodeStorage;
+import com.codeabovelab.dm.cluman.job.JobInstance;
 import com.codeabovelab.dm.cluman.model.*;
+import com.codeabovelab.dm.cluman.security.AclContext;
+import com.codeabovelab.dm.cluman.security.AclContextFactory;
+import com.codeabovelab.dm.cluman.security.SecuredType;
+import com.codeabovelab.dm.cluman.source.DeployOptions;
+import com.codeabovelab.dm.cluman.source.SourceService;
 import com.codeabovelab.dm.cluman.ui.model.*;
 import com.codeabovelab.dm.cluman.validate.ExtendedAssert;
 import com.codeabovelab.dm.cluman.yaml.YamlUtils;
@@ -217,14 +217,15 @@ public class ClusterApi {
     @RequestMapping(value = "/clusters/{cluster}/registries", method = GET)
     public List<String> getRegistriesForCluster(@PathVariable("cluster") String cluster) {
         Collection<String> availableRegistries = registryRepository.getAvailableRegistries();
-        DockerService service = dockerServiceRegistry.getService(cluster);
-        List<String> registries = service.getClusterConfig().getRegistries();
-        if (registries == null || registries.isEmpty()) {
-            return Collections.emptyList();
+        NodesGroup nodesGroup = discoveryStorage.getCluster(cluster);
+        List<String> registries = new ArrayList<>();
+        ExtendedAssert.notFound(nodesGroup, "Cluster was not found by " + cluster);
+        if (nodesGroup.getConfig() instanceof SwarmNodesGroupConfig) {
+            SwarmNodesGroupConfig swarmNodesGroupConfig = (SwarmNodesGroupConfig) nodesGroup.getConfig();
+            registries.addAll(swarmNodesGroupConfig.getConfig().getRegistries());
         }
-        List<String> intersection = new ArrayList<>(availableRegistries);
-        intersection.retainAll(registries);
-        return intersection;
+        registries.retainAll(availableRegistries);
+        return registries;
     }
 
     @RequestMapping(value = "/clusters/{cluster}/source", method = GET, produces = YamlUtils.MIME_TYPE_VALUE)
