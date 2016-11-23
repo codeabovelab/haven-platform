@@ -102,9 +102,9 @@ public final class RealCluster extends AbstractNodesGroup<RealCluster, SwarmNode
         dib.setName(getName());
         Map<String, NodeInfo> map = new HashMap<>();
         int offNodes = 0;
-        for(NodeInfo nodeInfo: dib.getNodeList()) {
+        for (NodeInfo nodeInfo : dib.getNodeList()) {
             map.put(nodeInfo.getName(), nodeInfo);
-            if(!nodeInfo.isOn()) {
+            if (!nodeInfo.isOn()) {
                 offNodes++;
             }
         }
@@ -143,17 +143,14 @@ public final class RealCluster extends AbstractNodesGroup<RealCluster, SwarmNode
                                                 Consumer<ClusterCreationContext> consumer) {
         return (clusterId) -> {
             SwarmNodesGroupConfig localConfig = config;
-            if(localConfig == null) {
+            if (localConfig == null) {
                 localConfig = new SwarmNodesGroupConfig();
                 localConfig.setName(clusterId);
-                // set default if config is null
-                if (localConfig.getConfig() == null) {
-                    localConfig.setConfig(getDefaultConfig(clusterId));
-                }
+                localConfig.setConfig(getDefaultConfig(clusterId));
             }
             RealCluster cluster = RealCluster.builder().storage(discoveryStorage).config(localConfig).build();
 
-            if(consumer != null) {
+            if (consumer != null) {
                 ClusterCreationContext ccc = new ClusterCreationContext(cluster);
                 consumer.accept(ccc);
             }
