@@ -294,6 +294,8 @@ public class ClusterApi {
             Sugar.setIfChanged(cluster::setTitle, clusterData.getTitle());
             Sugar.setIfChanged(cluster::setDescription, clusterData.getDescription());
             Sugar.setIfChanged(cluster::setImageFilter, clusterData.getFilter());
+            // update config
+            cluster.setConfig(sgnc);
             // we cannot change strategy for created cluster, maybe we need restart swarm for it?
             // cluster.setStrategy(clusterData.getStrategy());
         }

@@ -146,7 +146,10 @@ public final class RealCluster extends AbstractNodesGroup<RealCluster, SwarmNode
             if(localConfig == null) {
                 localConfig = new SwarmNodesGroupConfig();
                 localConfig.setName(clusterId);
-                localConfig.setConfig(getDefaultConfig(clusterId));
+                // set default if config is null
+                if (localConfig.getConfig() == null) {
+                    localConfig.setConfig(getDefaultConfig(clusterId));
+                }
             }
             RealCluster cluster = RealCluster.builder().storage(discoveryStorage).config(localConfig).build();
 

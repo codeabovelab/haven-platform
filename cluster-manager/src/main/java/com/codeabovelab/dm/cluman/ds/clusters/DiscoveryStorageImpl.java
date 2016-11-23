@@ -18,20 +18,22 @@ package com.codeabovelab.dm.cluman.ds.clusters;
 
 import com.codeabovelab.dm.cluman.cluster.docker.management.DockerService;
 import com.codeabovelab.dm.cluman.cluster.filter.FilterFactory;
-import com.codeabovelab.dm.cluman.security.*;
-import com.codeabovelab.dm.common.kv.DeleteDirOptions;
-import com.codeabovelab.dm.common.kv.KeyValueStorage;
-import com.codeabovelab.dm.common.kv.KvUtils;
-import com.codeabovelab.dm.common.kv.WriteOptions;
-import com.codeabovelab.dm.common.kv.mapping.KvMapperFactory;
 import com.codeabovelab.dm.cluman.ds.nodes.NodeStorage;
 import com.codeabovelab.dm.cluman.ds.swarm.DockerServices;
 import com.codeabovelab.dm.cluman.model.*;
 import com.codeabovelab.dm.cluman.reconfig.ReConfigObject;
 import com.codeabovelab.dm.cluman.reconfig.ReConfigurable;
+import com.codeabovelab.dm.cluman.security.*;
 import com.codeabovelab.dm.cluman.validate.ExtendedAssert;
+import com.codeabovelab.dm.common.kv.DeleteDirOptions;
+import com.codeabovelab.dm.common.kv.KeyValueStorage;
+import com.codeabovelab.dm.common.kv.KvUtils;
+import com.codeabovelab.dm.common.kv.WriteOptions;
+import com.codeabovelab.dm.common.kv.mapping.KvMapperFactory;
 import com.codeabovelab.dm.common.mb.MessageBus;
-import com.codeabovelab.dm.common.security.*;
+import com.codeabovelab.dm.common.security.Action;
+import com.codeabovelab.dm.common.security.Authorities;
+import com.codeabovelab.dm.common.security.TenantGrantedAuthoritySid;
 import com.codeabovelab.dm.common.security.acl.AceSource;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
@@ -230,7 +232,6 @@ public class DiscoveryStorageImpl implements DiscoveryStorage {
             }
             return cluster;
         });
-        ng.setConfig(config);
         // we place it after creation, because check it for not created cluster is not good
         checkThatCanRead(ng);
         return ng;
