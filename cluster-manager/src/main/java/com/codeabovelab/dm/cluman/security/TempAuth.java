@@ -22,6 +22,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.util.Assert;
 
 /**
  * Utility for temporary credentials. Used in cases when non privileged code must run parts with high privileges.
@@ -35,6 +36,7 @@ public final class TempAuth implements AutoCloseable {
     private AccessContextHolder aclHolder;
 
     TempAuth(Authentication newAuth) {
+        Assert.notNull(newAuth, "Authentication is null");
         this.newAuth = newAuth;
         this.context = SecurityContextHolder.getContext();
     }
@@ -57,8 +59,8 @@ public final class TempAuth implements AutoCloseable {
         oldAuth = context.getAuthentication();
         context.setAuthentication(newAuth);
         AccessContextFactory acf = AccessContextFactory.getInstanceOrNull();
-        if(acf != null && AccessContextFactory.getLocalContext() != null) {
-            // we must open new context only when has old context & factory
+        if(acf != null) {
+            // we must open new context only when has factory
             this.aclHolder = acf.open();
         }
     }

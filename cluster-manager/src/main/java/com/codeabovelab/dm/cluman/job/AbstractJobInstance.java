@@ -284,7 +284,11 @@ public abstract class AbstractJobInstance implements JobInstance {
         @Override
         public void run() {
             JobContext.set(jobContext);
-            try (TempAuth auth = TempAuth.open(authentication)) {
+            TempAuth auth = null;
+            try {
+                if(authentication != null) {
+                    auth = TempAuth.open(authentication);
+                }
                 setStatus(JobStatus.STARTED);
                 loadAttributesFromResult();
                 // we must reset rollback, for cases when job does not change it,
@@ -300,6 +304,9 @@ public abstract class AbstractJobInstance implements JobInstance {
                 LOG.error("On {} job.", getInfo().getId(), e);
                 atEndFuture.setException(e);
             } finally {
+                if(auth != null) {
+                    auth.close();;
+                }
                 JobContext.remove();
                 clearAfterIteration();
             }
