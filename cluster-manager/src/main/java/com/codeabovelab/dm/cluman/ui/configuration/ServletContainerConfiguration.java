@@ -17,7 +17,7 @@
 package com.codeabovelab.dm.cluman.ui.configuration;
 
 import com.codeabovelab.dm.cluman.ds.SwarmAdapterConfiguration;
-import com.codeabovelab.dm.cluman.security.AclContextFactory;
+import com.codeabovelab.dm.cluman.security.AccessContextFactory;
 import com.codeabovelab.dm.cluman.security.AclContextFilter;
 import com.codeabovelab.dm.common.security.SecurityUtils;
 import com.codeabovelab.dm.common.security.SuccessAuthProcessor;
@@ -127,7 +127,7 @@ public class ServletContainerConfiguration {
         @Autowired
         private AuthenticationProvider provider;
         @Autowired
-        private AclContextFactory aclContextFactory;
+        private AccessContextFactory aclContextFactory;
 
         @Override
         protected void configure(HttpSecurity http) throws Exception {

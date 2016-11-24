@@ -28,15 +28,15 @@ import java.io.IOException;
  */
 public class AclContextFilter extends GenericFilterBean {
 
-    private AclContextFactory aclContextFactory;
+    private AccessContextFactory aclContextFactory;
 
-    public AclContextFilter(AclContextFactory aclContextFactory) {
+    public AclContextFilter(AccessContextFactory aclContextFactory) {
         this.aclContextFactory = aclContextFactory;
     }
 
     @Override
     public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain) throws IOException, ServletException {
-        try (AclContextHolder ch = aclContextFactory.open()) {
+        try (AccessContextHolder ch = aclContextFactory.open()) {
             chain.doFilter(request, response);
         }
     }

@@ -73,8 +73,8 @@ public class SecurityConfiguration {
     }
 
     @Bean
-    AclContextFactory aclContextFactory(AclService aclService, ExtPermissionGrantingStrategy pgs, SidRetrievalStrategy sidRetrievalStrategy) {
-        return new AclContextFactory(aclService, pgs, sidRetrievalStrategy);
+    AccessContextFactory aclContextFactory(AclService aclService, ExtPermissionGrantingStrategy pgs, SidRetrievalStrategy sidRetrievalStrategy) {
+        return new AccessContextFactory(aclService, pgs, sidRetrievalStrategy);
     }
 
     @Bean

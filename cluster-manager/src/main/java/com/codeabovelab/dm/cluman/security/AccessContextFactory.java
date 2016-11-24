@@ -26,16 +26,16 @@ import javax.annotation.PreDestroy;
 
 /**
  */
-public class AclContextFactory {
-    private static final ThreadLocal<AclContext> TL = new ThreadLocal<>();
+public class AccessContextFactory {
+    private static final ThreadLocal<AccessContext> TL = new ThreadLocal<>();
     private static final Object lock = new Object();
-    private static volatile AclContextFactory instance;
+    private static volatile AccessContextFactory instance;
 
     final AclService aclService;
     final ExtPermissionGrantingStrategy pgs;
     final SidRetrievalStrategy sidStrategy;
 
-    public AclContextFactory(AclService aclService, ExtPermissionGrantingStrategy pgs, SidRetrievalStrategy sidStrategy) {
+    public AccessContextFactory(AclService aclService, ExtPermissionGrantingStrategy pgs, SidRetrievalStrategy sidStrategy) {
         this.aclService = aclService;
         this.pgs = pgs;
         this.sidStrategy = sidStrategy;
@@ -46,10 +46,10 @@ public class AclContextFactory {
      * @see #open()
      * @return not null context
      */
-    public AclContext getContext() {
-        AclContext ac = getLocalContext();
+    public AccessContext getContext() {
+        AccessContext ac = getLocalContext();
         if(ac == null) {
-            ac = new AclContext(this);
+            ac = new AccessContext(this);
         }
         return ac;
     }
@@ -58,8 +58,8 @@ public class AclContextFactory {
      * Obtain context from thread local.
      * @return context or null
      */
-    public static AclContext getLocalContext() {
-        AclContext ac = TL.get();
+    public static AccessContext getLocalContext() {
+        AccessContext ac = TL.get();
         if(ac != null) {
             if(!ac.isActual()) {
                 // auth is changed, we can not return default acl
@@ -74,16 +74,16 @@ public class AclContextFactory {
      * @see #getContext()
      * @return
      */
-    public AclContextHolder open() {
-        AclContext old = TL.get();
+    public AccessContextHolder open() {
+        AccessContext old = TL.get();
         if(old != null && old.isActual()) {
             // context is not our, and is actual
-            return new AclContextHolder(old, () -> {});
+            return new AccessContextHolder(old, () -> {});
         }
-        AclContext ac = new AclContext(this);
+        AccessContext ac = new AccessContext(this);
         TL.set(ac);
-        return new AclContextHolder(ac, () -> {
-            AclContext curr = TL.get();
+        return new AccessContextHolder(ac, () -> {
+            AccessContext curr = TL.get();
             Assert.isTrue(ac == curr, "Invalid current context: " + curr + " expect: " + ac);
             TL.set(old);
         });
@@ -93,11 +93,16 @@ public class AclContextFactory {
      * It must not be public
      * @return current factory
      */
-    static AclContextFactory getInstance() {
+    static AccessContextFactory getInstance() {
+        AccessContextFactory acf = getInstanceOrNull();
+        if(acf == null) {
+            throw new IllegalStateException("No instance.");
+        }
+        return acf;
+    }
+
+    static AccessContextFactory getInstanceOrNull() {
         synchronized (lock) {
-            if(instance == null) {
-                throw new IllegalStateException("No instance.");
-            }
             return instance;
         }
     }

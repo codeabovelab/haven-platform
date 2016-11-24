@@ -38,20 +38,20 @@ import java.util.stream.Collectors;
  */
 public class DockerServiceSecurityWrapper implements DockerService {
 
-    private final AclContextFactory aclContextFactory;
+    private final AccessContextFactory aclContextFactory;
     private final DockerService service;
 
-    public DockerServiceSecurityWrapper(AclContextFactory aclContextFactory, DockerService service) {
+    public DockerServiceSecurityWrapper(AccessContextFactory aclContextFactory, DockerService service) {
         this.aclContextFactory = aclContextFactory;
         this.service = service;
     }
 
     public void checkServiceAccess(Action action) {
-        AclContext context = aclContextFactory.getContext();
+        AccessContext context = aclContextFactory.getContext();
         checkServiceAccessInternal(context, action);
     }
 
-    private void checkServiceAccessInternal(AclContext context, Action action) {
+    private void checkServiceAccessInternal(AccessContext context, Action action) {
         Assert.notNull(action, "Action is null");
         String cluster = getCluster();
         if(cluster != null) {
@@ -71,7 +71,7 @@ public class DockerServiceSecurityWrapper implements DockerService {
 
     public void checkContainerAccess(String id, Action action) {
         Assert.notNull(action, "Action is null");
-        AclContext context = aclContextFactory.getContext();
+        AccessContext context = aclContextFactory.getContext();
         checkServiceAccessInternal(context, action == Action.READ? Action.READ : Action.ALTER_INSIDE);
         boolean granted = context.isGranted(SecuredType.CONTAINER.id(id), action);
         if(!granted) {
@@ -79,7 +79,7 @@ public class DockerServiceSecurityWrapper implements DockerService {
         }
     }
 
-    public void checkImageAccess(AclContext context, String id, Action action) {
+    public void checkImageAccess(AccessContext context, String id, Action action) {
         Assert.notNull(action, "Action is null");
         checkServiceAccessInternal(context, action == Action.READ? Action.READ : Action.ALTER_INSIDE);
         boolean granted = context.isGranted(SecuredType.LOCAL_IMAGE.id(id), action);
@@ -90,7 +90,7 @@ public class DockerServiceSecurityWrapper implements DockerService {
 
     public void checkNetworkAccess(String name, Action action) {
         Assert.notNull(action, "Action is null");
-        AclContext context = aclContextFactory.getContext();
+        AccessContext context = aclContextFactory.getContext();
         checkServiceAccessInternal(context, action == Action.READ? Action.READ : Action.ALTER_INSIDE);
         boolean granted = context.isGranted(SecuredType.NETWORK.id(name), action);
         if(!granted) {
@@ -115,7 +115,7 @@ public class DockerServiceSecurityWrapper implements DockerService {
 
     @Override
     public List<DockerContainer> getContainers(GetContainersArg arg) {
-        AclContext context = aclContextFactory.getContext();
+        AccessContext context = aclContextFactory.getContext();
         checkServiceAccessInternal(context, Action.READ);
         return service.getContainers(arg).stream().filter((img) -> {
             return context.isGranted(SecuredType.CONTAINER.id(img.getId()), Action.READ);
@@ -215,7 +215,7 @@ public class DockerServiceSecurityWrapper implements DockerService {
 
     @Override
     public List<Network> getNetworks() {
-        AclContext context = aclContextFactory.getContext();
+        AccessContext context = aclContextFactory.getContext();
         checkServiceAccessInternal(context, Action.READ);
         return service.getNetworks().stream().filter((net) -> {
             return context.isGranted(SecuredType.NETWORK.id(net.getId()), Action.READ);
@@ -224,7 +224,7 @@ public class DockerServiceSecurityWrapper implements DockerService {
 
     @Override
     public List<ImageItem> getImages(GetImagesArg arg) {
-        AclContext context = aclContextFactory.getContext();
+        AccessContext context = aclContextFactory.getContext();
         checkServiceAccessInternal(context, Action.READ);
         return  service.getImages(arg).stream().filter((img) -> {
             return context.isGranted(SecuredType.LOCAL_IMAGE.id(img.getId()), Action.READ);
@@ -234,7 +234,7 @@ public class DockerServiceSecurityWrapper implements DockerService {
     @Override
     public ImageDescriptor pullImage(String name, Consumer<ProcessEvent> watcher) {
         // here service can load image, but we cannot check access by name, and need check it by id after loading
-        AclContext context = aclContextFactory.getContext();
+        AccessContext context = aclContextFactory.getContext();
         checkServiceAccessInternal(context, Action.READ);
         ImageDescriptor image = service.pullImage(name, watcher);
         checkImageAccess(context, name, Action.READ);
@@ -244,7 +244,7 @@ public class DockerServiceSecurityWrapper implements DockerService {
     @Override
     public ImageDescriptor getImage(String name) {
         // here service can load image, but we cannot check access by name, and need check it by id after loading
-        AclContext context = aclContextFactory.getContext();
+        AccessContext context = aclContextFactory.getContext();
         checkServiceAccessInternal(context, Action.READ);
         ImageDescriptor image = service.getImage(name);
         checkImageAccess(context, name, Action.READ);

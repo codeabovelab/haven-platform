@@ -32,7 +32,7 @@ public final class TempAuth implements AutoCloseable {
     private final Authentication newAuth;
     private final SecurityContext context;
     private Authentication oldAuth;
-    private AclContextHolder aclHolder;
+    private AccessContextHolder aclHolder;
 
     TempAuth(Authentication newAuth) {
         this.newAuth = newAuth;
@@ -56,8 +56,11 @@ public final class TempAuth implements AutoCloseable {
     private void init() {
         oldAuth = context.getAuthentication();
         context.setAuthentication(newAuth);
-        AclContextFactory acf = AclContextFactory.getInstance();
-        this.aclHolder = acf.open();
+        AccessContextFactory acf = AccessContextFactory.getInstanceOrNull();
+        if(acf != null && AccessContextFactory.getLocalContext() != null) {
+            // we must open new context only when has old context & factory
+            this.aclHolder = acf.open();
+        }
     }
 
     @Override
@@ -67,6 +70,8 @@ public final class TempAuth implements AutoCloseable {
             LOG.warn("Current auth \"{}\" not equal with expected: \"{}\"", currAuth, newAuth);
         }
         context.setAuthentication(oldAuth);
-        aclHolder.close();
+        if(aclHolder != null) {
+            aclHolder.close();
+        }
     }
 }

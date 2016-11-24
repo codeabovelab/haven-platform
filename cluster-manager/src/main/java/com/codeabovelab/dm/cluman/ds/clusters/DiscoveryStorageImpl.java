@@ -67,7 +67,7 @@ public class DiscoveryStorageImpl implements DiscoveryStorage {
     private final KvMapperFactory kvmf;
     private final String prefix;
     private final FilterFactory filterFactory;
-    private final AclContextFactory aclContextFactory;
+    private final AccessContextFactory aclContextFactory;
     private final MessageBus<NodesGroupEvent> messageBus;
 
     @Autowired
@@ -75,7 +75,7 @@ public class DiscoveryStorageImpl implements DiscoveryStorage {
                                 FilterFactory filterFactory,
                                 DockerServices dockerServices,
                                 NodeStorage nodeStorage,
-                                AclContextFactory aclContextFactory,
+                                AccessContextFactory aclContextFactory,
                                 @Qualifier(NodesGroupEvent.BUS) MessageBus<NodesGroupEvent> messageBus) {
         this.kvmf = kvmf;
         this.services = dockerServices;
@@ -317,7 +317,7 @@ public class DiscoveryStorageImpl implements DiscoveryStorage {
     @Override
     public Set<String> getServices() {
         ImmutableSet.Builder<String> isb = ImmutableSet.builder();
-        AclContext ac = aclContextFactory.getContext();
+        AccessContext ac = aclContextFactory.getContext();
         this.clusters.forEach((k, v) -> {
             if(ac.isGranted(v.getOid(), Action.READ)) {
                 isb.add(k);
@@ -351,7 +351,7 @@ public class DiscoveryStorageImpl implements DiscoveryStorage {
     @Override
     public List<NodesGroup> getClusters() {
         ImmutableList.Builder<NodesGroup> ilb = ImmutableList.builder();
-        AclContext ac = aclContextFactory.getContext();
+        AccessContext ac = aclContextFactory.getContext();
         this.clusters.forEach((k, v) -> {
             if(ac.isGranted(v.getOid(), Action.READ)) {
                 ilb.add(v);

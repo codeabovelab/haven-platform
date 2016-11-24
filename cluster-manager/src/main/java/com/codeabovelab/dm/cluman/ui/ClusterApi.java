@@ -29,8 +29,8 @@ import com.codeabovelab.dm.cluman.ds.container.ContainerStorage;
 import com.codeabovelab.dm.cluman.ds.nodes.NodeStorage;
 import com.codeabovelab.dm.cluman.job.JobInstance;
 import com.codeabovelab.dm.cluman.model.*;
-import com.codeabovelab.dm.cluman.security.AclContext;
-import com.codeabovelab.dm.cluman.security.AclContextFactory;
+import com.codeabovelab.dm.cluman.security.AccessContext;
+import com.codeabovelab.dm.cluman.security.AccessContextFactory;
 import com.codeabovelab.dm.cluman.security.SecuredType;
 import com.codeabovelab.dm.cluman.source.DeployOptions;
 import com.codeabovelab.dm.cluman.source.SourceService;
@@ -78,11 +78,11 @@ public class ClusterApi {
     private final ApplicationService applicationService;
     private final ContainerStorage containerStorage;
     private final FilterApi filterApi;
-    private final AclContextFactory aclContextFactory;
+    private final AccessContextFactory aclContextFactory;
 
     @RequestMapping(value = "/clusters/", method = GET)
     public List<UiCluster> listClusters() {
-        AclContext ac = aclContextFactory.getContext();
+        AccessContext ac = aclContextFactory.getContext();
         Collection<NodesGroup> clusters = this.discoveryStorage.getClusters();
         List<UiCluster> ucs = clusters.stream().map(c -> this.toUi(ac, c)).collect(Collectors.toList());
         ucs.sort(Comparator.naturalOrder());
@@ -91,13 +91,13 @@ public class ClusterApi {
 
     @RequestMapping(value = "/cluster/{cluster}", method = GET)
     public UiCluster getCluster(@PathVariable("cluster") String cluster) {
-        AclContext ac = aclContextFactory.getContext();
+        AccessContext ac = aclContextFactory.getContext();
         NodesGroup nodesGroup = discoveryStorage.getCluster(cluster);
         ExtendedAssert.notFound(nodesGroup, "Cluster was not found by " + cluster);
         return toUi(ac, nodesGroup);
     }
 
-    private UiCluster toUi(AclContext ac, NodesGroup cluster) {
+    private UiCluster toUi(AccessContext ac, NodesGroup cluster) {
         UiCluster uc = new UiCluster();
         final String name = cluster.getName();
         uc.setName(name);
@@ -131,7 +131,7 @@ public class ClusterApi {
 
     @RequestMapping(value = "/clusters/{cluster}/containers", method = GET)
     public ResponseEntity<Collection<UiContainer>> listContainers(@PathVariable("cluster") String cluster) {
-        AclContext ac = aclContextFactory.getContext();
+        AccessContext ac = aclContextFactory.getContext();
         List<UiContainer> list = new ArrayList<>();
         GetContainersArg arg = new GetContainersArg(true);
         NodesGroup nodesGroup = discoveryStorage.getCluster(cluster);

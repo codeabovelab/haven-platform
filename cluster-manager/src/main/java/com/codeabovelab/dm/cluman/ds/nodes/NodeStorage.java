@@ -17,8 +17,8 @@
 package com.codeabovelab.dm.cluman.ds.nodes;
 
 import com.codeabovelab.dm.cluman.cluster.docker.management.DockerServiceEvent;
-import com.codeabovelab.dm.cluman.security.AclContext;
-import com.codeabovelab.dm.cluman.security.AclContextFactory;
+import com.codeabovelab.dm.cluman.security.AccessContext;
+import com.codeabovelab.dm.cluman.security.AccessContextFactory;
 import com.codeabovelab.dm.cluman.validate.ExtendedAssert;
 import com.codeabovelab.dm.common.kv.*;
 import com.codeabovelab.dm.common.kv.mapping.KvClassMapper;
@@ -326,7 +326,7 @@ public class NodeStorage implements NodeInfoProvider {
      */
     public Collection<NodeInfo> getNodes(Predicate<? super NodeRegistration> predicate) {
         List<String> keys = listNodeNames();
-        AclContext ac = AclContextFactory.getLocalContext();
+        AccessContext ac = AccessContextFactory.getLocalContext();
         List<NodeInfo> nodeList = new ArrayList<>(keys.size());
         for (String key : keys) {
             NodeRegistrationImpl nr = getNodeRegistrationInternal(key);

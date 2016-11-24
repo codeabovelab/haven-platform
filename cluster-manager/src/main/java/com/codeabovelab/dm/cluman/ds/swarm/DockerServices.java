@@ -31,7 +31,7 @@ import com.codeabovelab.dm.cluman.ds.DockerServiceRegistry;
 import com.codeabovelab.dm.cluman.ds.container.ContainerRegistration;
 import com.codeabovelab.dm.cluman.ds.container.ContainerStorage;
 import com.codeabovelab.dm.cluman.model.*;
-import com.codeabovelab.dm.cluman.security.AclContextFactory;
+import com.codeabovelab.dm.cluman.security.AccessContextFactory;
 import com.codeabovelab.dm.cluman.security.DockerServiceSecurityWrapper;
 import com.codeabovelab.dm.cluman.validate.ExtendedAssert;
 import com.codeabovelab.dm.common.mb.MessageBus;
@@ -75,7 +75,7 @@ public class DockerServices implements DockerServiceRegistry, NodeRegistry {
     private final DockerEventsConfig dockerMonitoringConfig;
     private final ContainerStorage containerStorage;
     private final MessageBus<DockerServiceEvent> dockerServiceEventMessageBus;
-    private final AclContextFactory aclContextFactory;
+    private final AccessContextFactory aclContextFactory;
     private final Map<String, ScheduledFuture> watchingFutures = new ConcurrentHashMap<>();
 
     @Autowired
@@ -85,7 +85,7 @@ public class DockerServices implements DockerServiceRegistry, NodeRegistry {
                           RegistryRepository registryRepository,
                           NodeInfoProvider nodeInfoProvider,
                           DockerEventsConfig dockerMonitoringConfig,
-                          AclContextFactory aclContextFactory,
+                          AccessContextFactory aclContextFactory,
                           @Qualifier(NodeEvent.BUS) MessageBus<NodeEvent> nodeInfoMessageBus,
                           @Qualifier(DockerLogEvent.BUS) MessageBus<DockerLogEvent> dockerEventMessageBus,
                           @Qualifier(DockerServiceEvent.BUS) MessageBus<DockerServiceEvent> dockerServiceEventMessageBus) {

@@ -33,7 +33,6 @@ public class JobTest {
     @Import(JobConfiguration.class)
     @ComponentScan(basePackageClasses = JobTest.class)
     public static class JobTestConfiguration {
-
     }
 
     @Autowired

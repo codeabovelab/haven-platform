@@ -18,17 +18,17 @@ package com.codeabovelab.dm.cluman.security;
 
 /**
  */
-public final class AclContextHolder implements AutoCloseable {
+public final class AccessContextHolder implements AutoCloseable {
 
-    private final AclContext context;
+    private final AccessContext context;
     private final Runnable onClose;
 
-    AclContextHolder(AclContext context, Runnable onClose) {
+    AccessContextHolder(AccessContext context, Runnable onClose) {
         this.context = context;
         this.onClose = onClose;
     }
 
-    public AclContext getContext() {
+    public AccessContext getContext() {
         return context;
     }
 

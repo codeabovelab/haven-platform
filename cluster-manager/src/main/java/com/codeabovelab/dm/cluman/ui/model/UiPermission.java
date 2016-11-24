@@ -16,8 +16,7 @@
 
 package com.codeabovelab.dm.cluman.ui.model;
 
-import com.codeabovelab.dm.cluman.security.AclContext;
-import com.codeabovelab.dm.cluman.security.SecuredType;
+import com.codeabovelab.dm.cluman.security.AccessContext;
 import com.codeabovelab.dm.common.security.acl.AclUtils;
 import com.codeabovelab.dm.common.security.dto.ObjectIdentityData;
 import com.codeabovelab.dm.common.security.dto.PermissionData;
@@ -44,7 +43,7 @@ public class UiPermission {
         return new UiPermission();
     }
 
-    public static UiPermission create(AclContext ac, ObjectIdentityData oid) {
+    public static UiPermission create(AccessContext ac, ObjectIdentityData oid) {
         UiPermission up = new UiPermission();
         up.oid(oid);
         up.permission(ac.getPermission(oid));
@@ -62,7 +61,7 @@ public class UiPermission {
         return this;
     }
 
-    public static void inject(WithUiPermission target, AclContext ac, ObjectIdentityData oid) {
+    public static void inject(WithUiPermission target, AccessContext ac, ObjectIdentityData oid) {
         target.setPermission(UiPermission.create(ac, oid));
     }
 }

@@ -32,13 +32,13 @@ import java.util.List;
 
 /**
  */
-public class AclContext {
+public class AccessContext {
     private final AclService aclService;
     private final ExtPermissionGrantingStrategy pgs;
     private final List<Sid> sids;
     private final Authentication authentication;
 
-    AclContext(AclContextFactory factory) {
+    AccessContext(AccessContextFactory factory) {
         this.authentication = SecurityContextHolder.getContext().getAuthentication();
         List<Sid> sids;
         if(this.authentication == null) {

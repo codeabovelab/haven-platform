@@ -56,13 +56,13 @@ public class DockerServiceSecurityWrapperTest {
     public static class AppConfiguration {
         @Primary
         @Bean
-        AclContextFactory aclContextFactory(ConfigurableAclService aclService, ExtPermissionGrantingStrategy pgs, SidRetrievalStrategy sidRetrievalStrategy) {
-            return new AclContextFactory(aclService, pgs, sidRetrievalStrategy);
+        AccessContextFactory aclContextFactory(ConfigurableAclService aclService, ExtPermissionGrantingStrategy pgs, SidRetrievalStrategy sidRetrievalStrategy) {
+            return new AccessContextFactory(aclService, pgs, sidRetrievalStrategy);
         }
     }
 
     @Autowired
-    private AclContextFactory acf;
+    private AccessContextFactory acf;
 
     private DockerService makeDockerService(String name) {
         return new DockerServiceSecurityWrapper(acf, new DockerServiceMock(DockerServiceInfo.builder()
