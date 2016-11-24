@@ -287,6 +287,9 @@ public abstract class AbstractJobInstance implements JobInstance {
             try (TempAuth auth = TempAuth.open(authentication)) {
                 setStatus(JobStatus.STARTED);
                 loadAttributesFromResult();
+                // we must reset rollback, for cases when job does not change it,
+                // otherwise user may rollback previous execution of this job
+                jobContext.setRollback(null);
                 job.run();
                 Boolean res = compareAndSetStatus(JobStatus.STARTED, completedStatus(), () -> true);
                 if(res != null && res) {

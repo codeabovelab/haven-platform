@@ -16,12 +16,10 @@
 
 package com.codeabovelab.dm.cluman.job;
 
-import com.codeabovelab.dm.common.utils.ArrayUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.ObjectFactory;
 
-import java.text.FieldPosition;
 import java.text.MessageFormat;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -29,7 +27,7 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
- * Context of job. Note tah context is hold in {@link ThreadLocal} but can be used simultaneously from different threads.
+ * Context of job. Note that context is hold in {@link ThreadLocal} but can be used simultaneously from different threads.
  */
 public final class JobContext /* we cannot use AutoCloseable on this bean, so it cause recursion */{
 
@@ -46,6 +44,7 @@ public final class JobContext /* we cannot use AutoCloseable on this bean, so it
     private final Logger log = LoggerFactory.getLogger(getClass());
     private final JobParameters parameters;
     private final AbstractJobInstance instance;
+    private volatile RollbackHandle rollbackHandle;
 
     JobContext(AbstractJobInstance instance, JobParameters parameters) {
         this.instance = instance;
@@ -154,5 +153,24 @@ public final class JobContext /* we cannot use AutoCloseable on this bean, so it
 
     public Map<String, Object> getAttributes() {
         return attrs;
+    }
+
+    /**
+     * Set rollback handle. When job support schedule on single context (see {@link JobBean#repeatable()} )
+     * it MUST be reset to null before job start by {@link JobInstance } implementation.
+     * @param rollbackHandle any value include null is accepted.
+     */
+    public void setRollback(RollbackHandle rollbackHandle) {
+        // Yes we can user results, but its a transfer data to job user, and conceptually must be set only at job success
+        // but rollback also need when job is fail, and must part of job api
+        this.rollbackHandle = rollbackHandle;
+    }
+
+    /**
+     * Gives job rollback handle. Return null when job does not support rollback.
+     * @return handle or null
+     */
+    public RollbackHandle getRollback() {
+        return rollbackHandle;
     }
 }
