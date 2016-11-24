@@ -32,12 +32,17 @@ public interface JobsManager extends JobFactory {
 
     Collection<JobInstance> getJobs();
 
+    /**
+     * Delete job.
+     * @param id job instance id
+     * @return deleted job instance, or null when it not found.
+     */
     JobInstance deleteJob(String id);
 
     /**
      * Retrieve job by id.
      * @param id
-     * @return
+     * @return job instance or null
      */
     JobInstance getJob(String id);
 }
