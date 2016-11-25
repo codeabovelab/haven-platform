@@ -89,7 +89,10 @@ public class ClusterApi {
         return ucs;
     }
 
-    @RequestMapping(value = "/cluster/{cluster}", method = GET)
+    @RequestMapping(value = {
+      "/cluster/{cluster}", // deprecated path
+      "/clusters/{cluster}"
+    }, method = GET)
     public UiCluster getCluster(@PathVariable("cluster") String cluster) {
         AccessContext ac = aclContextFactory.getContext();
         NodesGroup nodesGroup = discoveryStorage.getCluster(cluster);
@@ -194,6 +197,7 @@ public class ClusterApi {
         return DockerUtils.listNodes(info);
     }
 
+    @Secured(Authorities.ADMIN_ROLE)
     @ApiOperation("Add node to specified cluster. Node must be present in same environment wit cluster.")
     @RequestMapping(value = "/clusters/{cluster}/nodes/{node}", method = POST)
     public ResponseEntity<?> addNode(@PathVariable("cluster") String clusterId, @PathVariable("node") String node) {
@@ -241,6 +245,7 @@ public class ClusterApi {
         return new ResponseEntity<>(root, headers, HttpStatus.OK);
     }
 
+    @Secured(Authorities.ADMIN_ROLE)
     @RequestMapping(value = "/clusters/{cluster}/source", method = POST, consumes = YamlUtils.MIME_TYPE_VALUE)
     public UiJob setClusterSource(@PathVariable("cluster") String cluster,
                                   DeployOptions.Builder options,
@@ -248,6 +253,7 @@ public class ClusterApi {
         return setRootSrc(cluster, options, rootSource);
     }
 
+    @Secured(Authorities.ADMIN_ROLE)
     @RequestMapping(value = "/clusters/{cluster}/source-upload", method = POST, consumes = MimeTypeUtils.MULTIPART_FORM_DATA_VALUE)
     public UiJob uploadClusterSource(@PathVariable("cluster") String cluster,
                                   DeployOptions.Builder options,
