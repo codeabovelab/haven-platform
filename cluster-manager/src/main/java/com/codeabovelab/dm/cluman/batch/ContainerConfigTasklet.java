@@ -41,6 +41,6 @@ public class ContainerConfigTasklet {
         ContainerSource arg = new ContainerSource();
         containerSourceFactory.toSource(container, arg);
         arg.setCluster(pc.getCluster());
-        return pc.makeNew().args(arg).build();
+        return pc.makeNew().src(arg).build();
     }
 }

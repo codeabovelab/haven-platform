@@ -200,11 +200,13 @@ public class UpdateTest {
 
     @Test
     public void testStopThenStartEach() throws Exception {
-        doStrategy("stopThenStartEach");
+        JobInstance ji = doStrategy("stopThenStartEach");
         checkContainers(this::checkNames);
+        JobInstance rollbackJob = jobsManager.create(RollbackHandle.rollbackParams(ji.getInfo().getId()).build());
+        executeJobInstance(rollbackJob);
     }
 
-    private void doStrategy(String strategy) throws Exception {
+    private JobInstance doStrategy(String strategy) throws Exception {
         JobParameters.Builder b = JobParameters.builder();
         b.type(UpdateContainersUtil.JOB_PREFIX + strategy);
         //b.parameter(LoadContainersOfImageTasklet.JP_PERCENTAGE, percentage);
@@ -216,11 +218,16 @@ public class UpdateTest {
         b.parameter("id", Uuids.liteRandom());
         JobParameters params = b.build();
         JobInstance jobInstance = jobsManager.create(params);
+        executeJobInstance(jobInstance);
+        return jobInstance;
+    }
+
+    private void executeJobInstance(JobInstance jobInstance) throws InterruptedException, java.util.concurrent.ExecutionException {
         jobsManager.getSubscriptions().subscribeOnKey((e) -> {
             LOG.info("TEST JOB {}", e);
 
-        }, jobInstance.getInfo());
-        LOG.info("Try start job: {}", params);
+        },  jobInstance.getInfo());
+        LOG.info("Try start job: {}", jobInstance.getInfo().getId());
         jobInstance.start();
         //wait end
         jobInstance.atEnd().get();

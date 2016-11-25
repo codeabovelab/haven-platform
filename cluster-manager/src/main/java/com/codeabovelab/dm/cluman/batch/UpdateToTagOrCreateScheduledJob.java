@@ -35,7 +35,6 @@ import org.springframework.util.Assert;
 import org.springframework.util.CollectionUtils;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -93,7 +92,7 @@ public class UpdateToTagOrCreateScheduledJob implements Runnable {
                 ImageInfo latest = getLatest(imagePattern);
                 String image = ContainerUtils.setImageVersion(imagePattern, latest.getTag());
                 log.info("About to create container {}", image);
-                ProcessedContainer build = ProcessedContainer.builder().image(image).cluster(cluster).args(new ContainerSource()).build();
+                ProcessedContainer build = ProcessedContainer.builder().image(image).cluster(cluster).src(new ContainerSource()).build();
                 containerCreator.execute(build);
                 return;
             } else {

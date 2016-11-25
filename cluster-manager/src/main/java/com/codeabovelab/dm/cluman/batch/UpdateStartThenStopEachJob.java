@@ -83,7 +83,7 @@ public class UpdateStartThenStopEachJob implements Runnable {
                 ProcessedContainer createdContainer = containerCreator.execute(newContainer);
                 if(healthchecker.execute(createdContainer)) {
                     containerStopper.execute(container);
-                    containerRemover.execute(container);
+                    containerRemover.execute(withConfig);
                 } else if(needRollback = this.rollbackEnable) {
                     break;
                 }

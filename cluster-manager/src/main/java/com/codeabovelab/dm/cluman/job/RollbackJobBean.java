@@ -16,13 +16,14 @@
 
 package com.codeabovelab.dm.cluman.job;
 
+import org.springframework.beans.factory.BeanFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 
 /**
  * Rollback any job which is support it.
  * @see RollbackHandle
  */
-@JobBean("job.rollback")
+@JobBean(RollbackHandle.ROLLBACK_JOB)
 public class RollbackJobBean implements Runnable {
 
     /**
@@ -33,6 +34,9 @@ public class RollbackJobBean implements Runnable {
 
     @Autowired
     private JobContext jobContext;
+
+    @Autowired
+    private BeanFactory beanFactory;
 
     @Autowired
     private JobsManager jobsManager;
@@ -48,6 +52,7 @@ public class RollbackJobBean implements Runnable {
         if(rh == null) {
             throw new IllegalArgumentException("Job (" + jobId + ") does not support rollback.");
         }
-        rh.rollback(this.jobContext);
+        RollbackContext rc = new RollbackContext(this.beanFactory, this.jobsManager, this.jobContext);
+        rh.rollback(rc);
     }
 }

@@ -16,16 +16,58 @@
 
 package com.codeabovelab.dm.cluman.batch;
 
-import com.codeabovelab.dm.cluman.job.JobComponent;
+import com.codeabovelab.dm.cluman.cluster.docker.management.DockerService;
+import com.codeabovelab.dm.cluman.job.*;
+import com.codeabovelab.dm.cluman.model.DiscoveryStorage;
+import com.codeabovelab.dm.cluman.model.NodesGroup;
+import com.fasterxml.jackson.annotation.JsonCreator;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.util.Assert;
 
+import javax.annotation.PostConstruct;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
- * Data for rollback
+ * Data for rollback. <p/>
+ * We MUST NOT use here references to any beans, because it object must be serializable to JSON.
  */
 @JobComponent
 public class RollbackData {
+
+    private static final String ROLLBACK_DATA = "rollbackData";
+
+    @Data
+    @AllArgsConstructor(onConstructor = @_(@JsonCreator))
+    private static class RollbackHandleImpl implements RollbackHandle {
+        private final RollbackData data;
+
+        @Override
+        public void rollback(RollbackContext rc) {
+            // note that it doing in another jobContext
+            // and we must again transfer rollback data to new context
+            Map<String, Object> attrs = rc.getJobContext().getAttributes();
+            attrs.put(ROLLBACK_DATA, data);
+            DockerService ds = rc.getBean(DiscoveryStorage.class).getService(data.cluster);
+            Assert.notNull(ds, "Can not find cluster: " + data.cluster);
+            attrs.put("dockerService", ds);
+            RollbackTasklet tasklet = rc.getBean(RollbackTasklet.class);
+            tasklet.rollback();
+        }
+    }
+
+    @Autowired
+    private void init(JobContext jobContext) {
+        if(jobContext.getAttributes().values().contains(this)) {
+            // we in rollback job
+            return;
+        }
+        Assert.isNull(jobContext.getRollback(), "Context already has rollback");
+        jobContext.setRollback(new RollbackHandleImpl(this));
+    }
 
     public enum Action {
         CREATE, STOP, DELETE
@@ -49,7 +91,8 @@ public class RollbackData {
         }
     }
 
-
+    @JobParam(value = BatchUtils.JP_CLUSTER, required = true)
+    private String cluster;
     private final List<Record> records = new CopyOnWriteArrayList<>();
 
     /**
@@ -57,6 +100,9 @@ public class RollbackData {
      * @param container
      */
     public void record(ProcessedContainer container, Action action) {
+        if(action == Action.DELETE) {
+            Assert.notNull(container.getSrc(), "Container source is null: we can not rollback it");
+        }
         records.add(new Record(container, action));
     }
 

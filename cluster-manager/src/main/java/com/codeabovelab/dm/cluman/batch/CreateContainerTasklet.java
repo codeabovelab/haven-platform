@@ -60,7 +60,7 @@ public class CreateContainerTasklet {
     private Map<String, Object> containersConfigs;
 
     public ProcessedContainer execute(ProcessedContainer item) {
-        ContainerSource cs = item.getArg();
+        ContainerSource cs = item.getSrc();
         createEnrichConfiguration(cs, item.getImage());
         cs.setName(item.getName());
         cs.setNode(item.getNode());

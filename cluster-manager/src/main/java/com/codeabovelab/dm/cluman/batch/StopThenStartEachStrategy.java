@@ -18,7 +18,6 @@ package com.codeabovelab.dm.cluman.batch;
 
 import com.codeabovelab.dm.cluman.job.JobComponent;
 import com.codeabovelab.dm.cluman.job.JobContext;
-import com.codeabovelab.dm.cluman.job.JobParam;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -51,16 +50,10 @@ class StopThenStartEachStrategy {
     private HealthCheckContainerTasklet healthchecker;
 
     @Autowired
-    private RollbackTasklet rollbacker;
-
-    @Autowired
     private JobContext jobContext;
 
     @Autowired
     private ContainerConfigTasklet containerConfig;
-
-    @JobParam(BatchUtils.JP_ROLLBACK_ENABLE)
-    private boolean rollbackEnable;
 
     /**
      *
@@ -73,31 +66,19 @@ class StopThenStartEachStrategy {
     }
 
     protected void updateContainer(List<ProcessedContainer> containers, ContainerProcessor processor) {
-        boolean needRollback = this.rollbackEnable;
         ProcessedContainer curr = null;
         try {
             for(ProcessedContainer container: containers) {
                 ProcessedContainer withConfig = containerConfig.process(container);
-                containerStopper.execute(container);
-                containerRemover.execute(container);
+                containerStopper.execute(withConfig);
+                containerRemover.execute(withConfig);
                 ProcessedContainer newVersion = processor.apply(withConfig);
                 ProcessedContainer newContainer = containerCreator.execute(newVersion);
-                if(!healthchecker.execute(newContainer) && (needRollback = this.rollbackEnable)) {
-                    break;
-                }
+                healthchecker.execute(newContainer);
             }
         } catch (Exception e) {
-            needRollback = this.rollbackEnable;
-            if(needRollback) {
-                jobContext.fire("Error on container {0}, try rollback", curr);
-                LOG.error("Error on container {}, try rollback", curr, e);
-            } else {
-                jobContext.fire("Error on container {0}", curr);
-                throw e;
-            }
-        }
-        if(needRollback) {
-            rollbacker.rollback();
+            jobContext.fire("Error on container {0}", curr);
+            throw e;
         }
     }
 }

@@ -20,6 +20,7 @@ import com.codeabovelab.dm.cluman.model.ContainerBaseIface;
 import com.codeabovelab.dm.cluman.model.ContainerSource;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.google.common.collect.ImmutableMap;
+import org.springframework.util.Assert;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -43,7 +44,7 @@ public class ProcessedContainer implements ContainerBaseIface {
         private String node;
         private State state;
         private String cluster;
-        private ContainerSource arg;
+        private ContainerSource src;
         private final Map<String, String> labels = new HashMap<>();
 
         @JsonCreator
@@ -60,7 +61,7 @@ public class ProcessedContainer implements ContainerBaseIface {
             this.old = pc.old;
             this.state = pc.state;
             this.cluster = pc.cluster;
-            this.arg = pc.arg;
+            this.src = pc.src;
             this.setLabels(pc.labels);
         }
 
@@ -189,16 +190,16 @@ public class ProcessedContainer implements ContainerBaseIface {
             }
         }
 
-        public ContainerSource getArg() {
-            return arg;
+        public ContainerSource getSrc() {
+            return src;
         }
 
-        public void setArg(ContainerSource arg) {
-            this.arg = arg;
+        public void setSrc(ContainerSource src) {
+            this.src = src;
         }
 
-        public Builder args(ContainerSource arg) {
-            this.setArg(arg);
+        public Builder src(ContainerSource arg) {
+            this.setSrc(arg);
             return this;
         }
 
@@ -216,7 +217,7 @@ public class ProcessedContainer implements ContainerBaseIface {
     private final State state;
     private final String cluster;
     private final Map<String, String> labels;
-    private final ContainerSource arg;
+    private final ContainerSource src;
 
     @JsonCreator
     public ProcessedContainer(Builder b) {
@@ -229,7 +230,7 @@ public class ProcessedContainer implements ContainerBaseIface {
         this.state = b.state;
         this.cluster = b.cluster;
         this.labels = ImmutableMap.copyOf(b.labels);
-        this.arg = b.arg;
+        this.src = b.src;
     }
 
     public static Builder builder() {
@@ -306,8 +307,8 @@ public class ProcessedContainer implements ContainerBaseIface {
         return new Builder(this).old(this);
     }
 
-    public ContainerSource getArg() {
-        return arg;
+    public ContainerSource getSrc() {
+        return src;
     }
 
     @Override
