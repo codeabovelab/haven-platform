@@ -17,7 +17,10 @@
 package com.codeabovelab.dm.cluman.ui.model;
 
 import com.codeabovelab.dm.cluman.cluster.docker.ClusterConfigImpl;
+import com.codeabovelab.dm.cluman.ds.clusters.RealCluster;
+import com.codeabovelab.dm.cluman.model.NodesGroup;
 import com.codeabovelab.dm.common.utils.Keeper;
+import com.codeabovelab.dm.common.utils.Sugar;
 import io.swagger.annotations.ApiModelProperty;
 import lombok.Data;
 
@@ -37,4 +40,10 @@ public class UiClusterEditablePart {
     private final Keeper<String> filter = new Keeper<>();
 
     private ClusterConfigImpl.Builder config;
+
+    public void toCluster(NodesGroup ng) {
+        Sugar.setIfChanged(ng::setDescription, getDescription());
+        Sugar.setIfChanged(ng::setTitle, getTitle());
+        Sugar.setIfChanged(ng::setImageFilter, getFilter());
+    }
 }

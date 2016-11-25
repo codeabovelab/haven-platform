@@ -40,7 +40,6 @@ import com.codeabovelab.dm.cluman.yaml.YamlUtils;
 import com.codeabovelab.dm.common.cache.DefineCache;
 import com.codeabovelab.dm.common.cache.MessageBusCacheInvalidator;
 import com.codeabovelab.dm.common.security.Authorities;
-import com.codeabovelab.dm.common.utils.Sugar;
 import io.swagger.annotations.ApiOperation;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -55,6 +54,7 @@ import org.springframework.util.MimeTypeUtils;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.*;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
@@ -281,32 +281,47 @@ public class ClusterApi {
     }
 
     /**
-     * @param clusterName
-     * @param clusterData
+     * @param name
+     * @param data
      */
     @Secured({Authorities.ADMIN_ROLE, SecuredType.CLUSTER_ADMIN})
     @RequestMapping(value = "/clusters/{cluster}", method = PUT)
-    public void createCluster(@PathVariable("cluster") String clusterName, @RequestBody(required = false) UiClusterEditablePart clusterData) {
-        log.info("about to create cluster: [{}], {}", clusterName, clusterData);
-        SwarmNodesGroupConfig sgnc = new SwarmNodesGroupConfig();
-        sgnc.setName(clusterName);
-        ClusterConfigImpl.Builder ccib = ClusterConfigImpl.builder(RealCluster.getDefaultConfig(clusterName));
-        if (clusterData != null) {
-            ccib.merge(clusterData.getConfig());
-        }
-        sgnc.setConfig(ccib.build());
-        NodesGroup cluster = discoveryStorage.getOrCreateGroup(sgnc);
-        if (clusterData != null) {
-            Sugar.setIfChanged(cluster::setTitle, clusterData.getTitle());
-            Sugar.setIfChanged(cluster::setDescription, clusterData.getDescription());
-            Sugar.setIfChanged(cluster::setImageFilter, clusterData.getFilter());
-            // update config
-            cluster.setConfig(sgnc);
-            // we cannot change strategy for created cluster, maybe we need restart swarm for it?
-            // cluster.setStrategy(clusterData.getStrategy());
+    public void createCluster(@PathVariable("cluster") String name, @RequestBody(required = false) UiClusterEditablePart data) {
+        log.info("about to create cluster: [{}], {}", name, data);
+        AtomicBoolean flag = new AtomicBoolean(false);// we can not use primitives in closure
+        NodesGroup cluster = discoveryStorage.getOrCreateCluster(name, (ccc) -> {
+            if(data != null) {
+                RealCluster rc = ccc.getCluster();
+                ClusterConfigImpl.Builder config = data.getConfig();
+                if(config != null) {
+                    rc.setClusterConfig(config);
+                }
+                data.toCluster(rc);
+            }
+            flag.set(true);
+        });
+        if(!flag.get()) {
+            throw new HttpException(HttpStatus.NOT_MODIFIED, "Cluster '" + name + "' is already exists.");
         }
         log.info("Cluster created: {}", cluster);
         cluster.flush();
     }
 
+    @Secured({Authorities.ADMIN_ROLE, SecuredType.CLUSTER_ADMIN})
+    @RequestMapping(value = "/clusters/{cluster}", method = PATCH)
+    public void updateCluster(@PathVariable("cluster") String name, @RequestBody UiClusterEditablePart data) {
+        log.info("Begin update cluster: [{}], {}", name, data);
+        NodesGroup cluster = discoveryStorage.getCluster(name);
+        ExtendedAssert.notFound(cluster, "can not find cluster: " + name);
+        if (cluster instanceof RealCluster) {
+            RealCluster rc = (RealCluster) cluster;
+            ClusterConfigImpl.Builder ccib = ClusterConfigImpl.builder(rc.getClusterConfig());
+            ccib.merge(data.getConfig());
+            // update config
+            rc.setClusterConfig(ccib);
+        }
+        data.toCluster(cluster);
+        cluster.flush();
+        log.info("Cluster updated: {}", cluster);
+    }
 }
