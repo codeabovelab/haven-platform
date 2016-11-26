@@ -16,7 +16,6 @@
 
 package com.codeabovelab.dm.cluman.ui;
 
-import com.codeabovelab.dm.cluman.utils.ContainerUtils;
 import com.codeabovelab.dm.cluman.cluster.docker.management.DockerService;
 import com.codeabovelab.dm.cluman.cluster.docker.management.argument.GetImagesArg;
 import com.codeabovelab.dm.cluman.cluster.docker.management.argument.RemoveImageArg;
@@ -32,11 +31,13 @@ import com.codeabovelab.dm.cluman.cluster.registry.RegistryService;
 import com.codeabovelab.dm.cluman.cluster.registry.data.ImageCatalog;
 import com.codeabovelab.dm.cluman.cluster.registry.data.SearchResult;
 import com.codeabovelab.dm.cluman.ds.DockerServiceRegistry;
+import com.codeabovelab.dm.cluman.ds.clusters.SwarmNodesGroupConfig;
 import com.codeabovelab.dm.cluman.model.*;
+import com.codeabovelab.dm.cluman.ui.model.UiImageCatalog;
 import com.codeabovelab.dm.cluman.ui.model.UiImageData;
 import com.codeabovelab.dm.cluman.ui.model.UiSearchResult;
-import com.codeabovelab.dm.cluman.ui.model.UiImageCatalog;
 import com.codeabovelab.dm.cluman.ui.model.UiTagCatalog;
+import com.codeabovelab.dm.cluman.utils.ContainerUtils;
 import com.codeabovelab.dm.cluman.validate.ExtendedAssert;
 import com.codeabovelab.dm.common.cache.DefineCache;
 import com.google.common.base.Splitter;
@@ -89,9 +90,12 @@ public class ImagesApi {
         List<String> registries = new ArrayList<>();
 
         if (StringUtils.hasText(cluster)) {
-            DockerService dockerService = dockerServices.getService(cluster);
-            ExtendedAssert.notFound(cluster, "Cluster not found " + cluster);
-            registries.addAll(dockerService.getClusterConfig().getRegistries());
+            NodesGroup nodesGroup = discoveryStorage.getCluster(cluster);
+            ExtendedAssert.notFound(nodesGroup, "Cluster not found " + cluster);
+            if (nodesGroup.getConfig() instanceof SwarmNodesGroupConfig) {
+                SwarmNodesGroupConfig swarmNodesGroupConfig = (SwarmNodesGroupConfig) nodesGroup.getConfig();
+                registries.addAll(swarmNodesGroupConfig.getConfig().getRegistries());
+            }
         }
 
         //possibly we must place below code into 'registryRepository'
