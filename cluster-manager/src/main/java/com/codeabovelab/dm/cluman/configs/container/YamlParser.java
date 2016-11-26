@@ -25,6 +25,7 @@ import org.springframework.stereotype.Component;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -45,6 +46,11 @@ public class YamlParser extends AbstractParser {
     public void parse(File file, ContainerCreationContext context) {
         try {
             ContainerSource configuration = mapper.readValue(file, ContainerSource.class);
+            List<String> include = configuration.getInclude();
+            include.forEach(a -> {
+                File inner = new File(file.getParent(), a);
+                parse(inner, context);
+            });
             context.addCreateContainerArg(configuration);
             LOG.info("Result of parsing {}", configuration);
         } catch (IOException e) {

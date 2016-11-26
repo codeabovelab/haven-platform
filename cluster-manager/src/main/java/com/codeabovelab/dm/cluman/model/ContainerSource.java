@@ -58,6 +58,11 @@ public class ContainerSource extends EditableContainerSource implements Cloneabl
     @Setter(AccessLevel.NONE)
     private List<String> environment = new ArrayList<>();
     /**
+     * include external files with common env variables for example
+     */
+    @Setter(AccessLevel.NONE)
+    private List<String> include = new ArrayList<>();
+    /**
      * List for define container volumes, in future. <p/>
      * The format is `container-dest[:<options>]`.
      * The comma-delimited `options` are [rw|ro], [z|Z], [[r]shared|[r]slave|[r]private], and [nocopy]. <p/>
