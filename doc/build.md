@@ -18,7 +18,7 @@ For running:
 
 Get source code from git:
 
-    git clone https://github.com/codeabovelab/dockmaster-platform.git
+    git clone https://github.com/codeabovelab/haven-platform.git
 
 Change dir:
 

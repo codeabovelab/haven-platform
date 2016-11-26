@@ -3,7 +3,7 @@ dm:
   config:
     git:
       enabled: false
-      uri: https://github.com/codeabovelab/dockmaster-example-configuration.git
+      uri: https://github.com/codeabovelab/haven-example-configuration.git
 spring:
   application:
     name: cluster-manager

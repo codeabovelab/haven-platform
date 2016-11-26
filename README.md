@@ -68,7 +68,7 @@ Any settings can be passed via environment variables or via git repository.  For
 you must specify the URL, username, and password:
 
 ```properties
- -e "dm_config_git_uri=https://github.com/codeabovelab/dockmaster-example-configuration.git"
+ -e "dm_config_git_uri=https://github.com/codeabovelab/haven-example-configuration.git"
  -e "dm_config_git_username=username"
  -e "dm_config_git_password=password"
 ```
@@ -119,4 +119,4 @@ with the following content:
 For additional technical detail, see:
 
 * [Documentation](/doc/)
-* [Common application properties](https://github.com/codeabovelab/dockmaster-example-configuration/blob/master/cluster-manager.properties)
+* [Common application properties](https://github.com/codeabovelab/haven-example-configuration/blob/master/cluster-manager.properties)
