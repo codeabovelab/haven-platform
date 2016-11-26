@@ -32,6 +32,7 @@ import java.util.*;
  * Parser for properties like configs
  * TODO: migrate from CLI to compose API
  */
+@Deprecated
 @Component
 public class PropertiesParser extends AbstractParser {
 

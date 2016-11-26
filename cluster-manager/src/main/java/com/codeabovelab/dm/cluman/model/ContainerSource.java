@@ -20,6 +20,7 @@ import com.codeabovelab.dm.cluman.cluster.docker.management.argument.Reschedule;
 import com.codeabovelab.dm.common.utils.Cloneables;
 import com.codeabovelab.dm.common.utils.Comparables;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
+import com.google.common.base.MoreObjects;
 import lombok.AccessLevel;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -170,5 +171,44 @@ public class ContainerSource extends EditableContainerSource implements Cloneabl
     @Override
     public int compareTo(ContainerSource o) {
         return Comparables.compare(this.name, o.name);
+    }
+
+    /**
+     * toString with omitting nulls for simplifying reading
+     * @return
+     */
+    @Override
+    public String toString() {
+        return MoreObjects.toStringHelper(this)
+                .add("id", id)
+                .add("image", image)
+                .add("imageId", imageId)
+                .add("cluster", cluster)
+                .add("node", node)
+                .add("application", application)
+                .add("environment", environment)
+                .add("include", include)
+                .add("volumes", volumes)
+                .add("volumeBinds", volumeBinds)
+                .add("volumeDriver", volumeDriver)
+                .add("volumesFrom", volumesFrom)
+                .add("name", name)
+                .add("hostname", hostname)
+                .add("domainname", domainname)
+                .add("ports", ports)
+                .add("labels", labels)
+                .add("reschedule", reschedule)
+                .add("publishAllPorts", publishAllPorts)
+                .add("links", links)
+                .add("command", command)
+                .add("dns", dns)
+                .add("dnsSearch", dnsSearch)
+                .add("network", network)
+                .add("networks", networks)
+                .add("extraHosts", extraHosts)
+                .add("securityOpt", securityOpt)
+                .add("", super.toString())
+                .omitNullValues()
+                .toString();
     }
 }

@@ -31,6 +31,7 @@ import java.util.Map;
 /**
  * Parser for compose yaml configs
  */
+@Deprecated
 @Component
 public class YamlParser extends AbstractParser {
 
@@ -47,11 +48,8 @@ public class YamlParser extends AbstractParser {
         try {
             ContainerSource configuration = mapper.readValue(file, ContainerSource.class);
             List<String> include = configuration.getInclude();
-            include.forEach(a -> {
-                File inner = new File(file.getParent(), a);
-                parse(inner, context);
-            });
             context.addCreateContainerArg(configuration);
+            include.forEach(a -> parse(new File(file.getParent(), a), context));
             LOG.info("Result of parsing {}", configuration);
         } catch (IOException e) {
             LOG.error("can't parse configuration", e);

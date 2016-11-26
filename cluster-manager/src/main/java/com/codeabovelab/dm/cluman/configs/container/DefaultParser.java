@@ -54,6 +54,7 @@ public class DefaultParser extends AbstractParser {
             factory.setPropertySources(loaded);
             factory.setConversionService(defaultConversionService);
             factory.bindPropertiesToTarget();
+            arg.getInclude().forEach(a -> parse(new File(file.getParent(), a), context));
         } catch (Exception e) {
             log.error("", e);
         }

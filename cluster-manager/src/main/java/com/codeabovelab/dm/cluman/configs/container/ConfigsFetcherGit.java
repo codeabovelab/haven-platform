@@ -32,10 +32,10 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 import org.springframework.util.Assert;
+import org.springframework.util.StringUtils;
 
 import javax.annotation.PostConstruct;
 import java.io.File;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -126,7 +126,9 @@ public class ConfigsFetcherGit implements ConfigsFetcher {
                 File gitDir = gitDirPath.toFile();
                 FileUtils.deleteQuietly(gitDir);
                 gitDir.mkdirs();
-                cp = new UsernamePasswordCredentialsProvider(gitSettings.getUsername(), gitSettings.getPassword());
+                if (StringUtils.hasText(gitSettings.getPassword())) {
+                    cp = new UsernamePasswordCredentialsProvider(gitSettings.getUsername(), gitSettings.getPassword());
+                }
                 git = Git.cloneRepository()
                         .setURI(gitSettings.getUrl())
                         .setCredentialsProvider(cp)
