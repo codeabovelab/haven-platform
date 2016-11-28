@@ -275,6 +275,7 @@ public class ClusterApi {
         return UiJob.toUi(jobInstance);
     }
 
+    @Secured({Authorities.ADMIN_ROLE, SecuredType.CLUSTER_ADMIN})
     @RequestMapping(value = "/clusters/{cluster}", method = DELETE)
     public void deleteCluster(@PathVariable("cluster") String cluster) {
         discoveryStorage.deleteCluster(cluster);
