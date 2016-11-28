@@ -41,6 +41,7 @@ import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
+import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.web.authentication.switchuser.SwitchUserFilter;
 import org.springframework.util.StringUtils;
@@ -132,7 +133,7 @@ public class ServletContainerConfiguration {
         @Override
         protected void configure(HttpSecurity http) throws Exception {
             final String uiPrefix = "/ui/";
-            final String loginUrl = uiPrefix + "login/";
+            final String loginUrl = uiPrefix + "login.html";
 
             TokenAuthFilterConfigurer<HttpSecurity> tokenFilterConfigurer =
                     new TokenAuthFilterConfigurer<>(new RequestTokenHeaderRequestMatcher(),
