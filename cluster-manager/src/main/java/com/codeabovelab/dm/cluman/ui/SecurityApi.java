@@ -101,8 +101,26 @@ public class SecurityApi {
             String encodedPwd = passwordEncoder.encode(password);
             user.setPassword(encodedPwd);
         }
+        final ExtendedUserDetails source;
+        {
+            // we load user because it can be defined in different sources,
+            // but must stored into userStorage
+            ExtendedUserDetails eud = null;
+            try {
+                eud = usersService.loadUserByUsername(username);
+            } catch (UsernameNotFoundException e) {
+                //is a usual case
+            }
+            source = eud;
+        }
         UserRegistration reg = usersStorage.update(username, (ur) -> {
-            ExtendedUserDetailsImpl.Builder builder = ExtendedUserDetailsImpl.builder(ur.getDetails());
+            ExtendedUserDetails details = ur.getDetails();
+            if(details == null && source != null) {
+                // if details is null than user Storage does not have this user before
+                // and we can transfer our user into it
+                details = source;
+            }
+            ExtendedUserDetailsImpl.Builder builder = ExtendedUserDetailsImpl.builder(details);
             user.toBuilder(builder);
             ur.setDetails(builder);
         });
