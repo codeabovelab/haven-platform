@@ -165,6 +165,7 @@ public class ContainerSource extends EditableContainerSource implements Cloneabl
         clone.networks = Cloneables.clone(clone.networks);
         clone.extraHosts = Cloneables.clone(clone.extraHosts);
         clone.securityOpt = Cloneables.clone(clone.securityOpt);
+        clone.include = Cloneables.clone(clone.include);
         return clone;
     }
 
