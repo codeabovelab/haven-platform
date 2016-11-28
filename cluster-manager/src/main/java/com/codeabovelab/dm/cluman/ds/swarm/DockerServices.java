@@ -138,7 +138,7 @@ public class DockerServices implements DockerServiceRegistry, NodeRegistry {
                 try {
                     service.getInfo();
                 } catch (Exception e) {
-                    log.error("While getInfo on {} ", service, e);
+                    log.error("While getInfo on {} ", service.getId(), e);
                 }
             }
         }
