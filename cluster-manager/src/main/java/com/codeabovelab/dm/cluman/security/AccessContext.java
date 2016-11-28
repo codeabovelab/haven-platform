@@ -120,4 +120,15 @@ public class AccessContext {
         Authentication currAuth = SecurityContextHolder.getContext().getAuthentication();
         return this.authentication == currAuth;
     }
+
+    /**
+     * Check that current authentication is complies for context authentication.
+     */
+    void assertActual() {
+        Authentication currAuth = SecurityContextHolder.getContext().getAuthentication();
+        if(this.authentication != currAuth) {
+            throw new IllegalStateException("AccessContext is for " + this.authentication
+              + " but current is " + currAuth);
+        }
+    }
 }
