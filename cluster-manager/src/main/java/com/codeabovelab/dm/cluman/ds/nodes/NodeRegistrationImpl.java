@@ -18,8 +18,10 @@ package com.codeabovelab.dm.cluman.ds.nodes;
 
 import com.codeabovelab.dm.cluman.model.*;
 import com.codeabovelab.dm.cluman.persistent.PersistentBusFactory;
+import com.codeabovelab.dm.cluman.security.AccessContextFactory;
 import com.codeabovelab.dm.cluman.security.SecuredType;
 import com.codeabovelab.dm.common.mb.*;
+import com.codeabovelab.dm.common.security.Action;
 import org.springframework.security.acls.model.ObjectIdentity;
 
 import java.util.*;
@@ -109,6 +111,7 @@ class NodeRegistrationImpl implements NodeRegistration {
     }
 
     NodeMetrics updateHealth(NodeMetrics metrics) {
+        checkAccessUpdate();
         NodeMetrics nmnew;
         String cluster;
         synchronized (lock) {
@@ -121,10 +124,15 @@ class NodeRegistrationImpl implements NodeRegistration {
         return nmnew;
     }
 
+    private void checkAccessUpdate() {
+        AccessContextFactory.getLocalContext().assertGranted(oid, Action.UPDATE);
+    }
+
     /**
      * Update internal node info.
      */
     void updateNodeInfo(Consumer<NodeInfoImpl.Builder> modifier) {
+        checkAccessUpdate();
         //
         // do not send node events from this method!
         //
@@ -173,6 +181,7 @@ class NodeRegistrationImpl implements NodeRegistration {
         return name;
     }
 
+    @Override
     public ObjectIdentity getOid() {
         return oid;
     }

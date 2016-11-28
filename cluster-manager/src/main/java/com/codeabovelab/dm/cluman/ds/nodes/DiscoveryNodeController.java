@@ -17,6 +17,7 @@
 package com.codeabovelab.dm.cluman.ds.nodes;
 
 import com.codeabovelab.dm.cluman.model.*;
+import com.codeabovelab.dm.cluman.security.TempAuth;
 import com.codeabovelab.dm.cluman.ui.HttpException;
 import com.google.common.base.Strings;
 import lombok.extern.slf4j.Slf4j;
@@ -64,7 +65,9 @@ public class DiscoveryNodeController {
           .name(name);
         builder.health(createNodeHealth(data));
         NodeInfo node = builder.build();
-        storage.updateNode(NodeUpdate.builder().node(node).build(), ttl);
+        try (TempAuth ta = TempAuth.asSystem()) {
+            storage.updateNode(NodeUpdate.builder().node(node).build(), ttl);
+        }
         log.info("Update node {}", node.getName());
         return new ResponseEntity<>(HttpStatus.OK);
     }

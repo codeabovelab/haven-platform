@@ -18,6 +18,7 @@ package com.codeabovelab.dm.cluman.ds.nodes;
 
 import com.codeabovelab.dm.cluman.model.NodeInfo;
 import com.codeabovelab.dm.common.mb.Subscriptions;
+import org.springframework.security.acls.model.ObjectIdentity;
 
 /**
  * Node registration in key value store, default implementation act as proxy, therefore may be changed in another thread.
@@ -25,4 +26,6 @@ import com.codeabovelab.dm.common.mb.Subscriptions;
 public interface NodeRegistration {
     NodeInfo getNodeInfo();
     Subscriptions<NodeHealthEvent> getHealthSubscriptions();
+
+    ObjectIdentity getOid();
 }
