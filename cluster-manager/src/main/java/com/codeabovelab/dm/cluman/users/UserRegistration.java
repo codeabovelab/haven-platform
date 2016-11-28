@@ -69,9 +69,11 @@ public class UserRegistration {
 
     private void checkAccess(ExtendedUserDetailsImpl changed) {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        if(!details.getAuthorities().equals(changed.getAuthorities()) || !auth.getName().equals(this.name)) {
+        if(details == null ||
+          !details.getAuthorities().equals(changed.getAuthorities()) ||
+          !auth.getName().equals(this.name)) {
             // change authorities of user can do only global or tenant admin
-            List<ConfigAttribute> authorities = Collections.singletonList(Authorities.fromName(Authorities.ADMIN_ROLE, this.details.getTenant()));
+            List<ConfigAttribute> authorities = Collections.singletonList(Authorities.fromName(Authorities.ADMIN_ROLE, this.details == null? null : this.details.getTenant()));
             this.storage.getAdm().decide(auth, this.details, authorities);
         }
     }
@@ -118,11 +120,13 @@ public class UserRegistration {
         if(anotherTenant == null) {
             throw new IllegalArgumentException("tenant is null");
         }
-        String oldTenant = this.details.getTenant();
-        // in some cases user may have null tenant (it user is corrupted), and we must lave way to fix it through ui
-        if(oldTenant != null && !oldTenant.equals(anotherTenant)) {
-            throw new IllegalArgumentException("Change of tenant (orig:" + oldTenant
-              + ", new:" + anotherTenant + ") is not allowed.");
+        if(this.details != null) {
+            // in some cases user may have null tenant (it user is corrupted), and we must lave way to fix it through ui
+            String oldTenant = this.details.getTenant();
+            if(oldTenant != null && !oldTenant.equals(anotherTenant)) {
+                throw new IllegalArgumentException("Change of tenant (orig:" + oldTenant
+                  + ", new:" + anotherTenant + ") is not allowed.");
+            }
         }
     }
 }
