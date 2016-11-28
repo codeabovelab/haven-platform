@@ -86,9 +86,17 @@ public class UsersStorage implements UserIdentifiersDetailsService {
                 internalLoadUser(name);
                 break;
             case DELETE:
-                map.remove(name);
+                remove(name);
                 break;
         }
+    }
+
+    public UserRegistration remove(String name) {
+        return map.remove(name);
+    }
+
+    void remove(String name, UserRegistration reg) {
+        map.remove(name, reg);
     }
 
     private UserRegistration internalLoadUser(String name) {
@@ -99,13 +107,22 @@ public class UsersStorage implements UserIdentifiersDetailsService {
     }
 
     /**
-     * Create if user absent
+     * Create if user absent, if user update end with null userDetails, then registration will be removed.
      * @param name
      * @param consumer
+     * @return updated registration
      */
-    public void update(String name, Consumer<UserRegistration> consumer) {
+    public UserRegistration update(String name, Consumer<UserRegistration> consumer) {
         UserRegistration ur = internalLoadUser(name);
-        ur.update(consumer);
+        try {
+            ur.update(consumer);
+        } finally {
+            //when update is end without details
+            if(ur.getDetails() == null) {
+                remove(name, ur);
+            }
+        }
+        return ur;
     }
 
     public UserRegistration get(String name) {

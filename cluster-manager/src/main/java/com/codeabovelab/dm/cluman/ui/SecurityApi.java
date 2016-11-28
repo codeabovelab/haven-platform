@@ -101,8 +101,7 @@ public class SecurityApi {
             String encodedPwd = passwordEncoder.encode(password);
             user.setPassword(encodedPwd);
         }
-        UserRegistration reg = usersStorage.getOrCreate(username);
-        reg.update((ur) -> {
+        UserRegistration reg = usersStorage.update(username, (ur) -> {
             ExtendedUserDetailsImpl.Builder builder = ExtendedUserDetailsImpl.builder(ur.getDetails());
             user.toBuilder(builder);
             ur.setDetails(builder);

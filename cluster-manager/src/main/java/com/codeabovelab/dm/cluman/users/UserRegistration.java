@@ -22,15 +22,17 @@ import com.codeabovelab.dm.common.security.Authorities;
 import com.codeabovelab.dm.common.security.ExtendedUserDetails;
 import com.codeabovelab.dm.common.security.ExtendedUserDetailsImpl;
 import com.codeabovelab.dm.common.security.UserIdentifiers;
+import org.springframework.security.access.ConfigAttribute;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 
-import java.util.Arrays;
 import java.util.Collections;
-import java.util.Objects;
+import java.util.List;
 import java.util.function.Consumer;
 
 /**
+ * Hold user details and persist its into KV-storage. <p/>
+ * By default does not has any details (it prevent publication of invalid details).
  */
 public class UserRegistration {
     private final Object lock = new Object();
@@ -44,9 +46,12 @@ public class UserRegistration {
         this.storage = storage;
         this.mapper = storage.getMapper();
         this.name = name;
-        normalizeDetails();
     }
 
+    /**
+     *
+     * @return detail or null
+     */
     public ExtendedUserDetails getDetails() {
         synchronized (lock) {
             return details;
@@ -57,12 +62,17 @@ public class UserRegistration {
         synchronized (lock) {
             ExtendedUserDetailsImpl changed = ExtendedUserDetailsImpl.from(details);
             validate(changed);
-            if(!details.getAuthorities().equals(changed.getAuthorities())) {
-                // change authorities of user can do only global or tenant admin
-                Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-                this.storage.getAdm().decide(auth, this.details, Collections.singletonList(Authorities.fromName(Authorities.ADMIN_ROLE, this.details.getTenant())));
-            }
+            checkAccess(changed);
             this.details = changed;
+        }
+    }
+
+    private void checkAccess(ExtendedUserDetailsImpl changed) {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if(!details.getAuthorities().equals(changed.getAuthorities()) || !auth.getName().equals(this.name)) {
+            // change authorities of user can do only global or tenant admin
+            List<ConfigAttribute> authorities = Collections.singletonList(Authorities.fromName(Authorities.ADMIN_ROLE, this.details.getTenant()));
+            this.storage.getAdm().decide(auth, this.details, authorities);
         }
     }
 
@@ -78,7 +88,7 @@ public class UserRegistration {
     void load() {
         synchronized (lock) {
             this.mapper.load(name, this);
-            if(details == null || !this.name.equals(this.details.getUsername())) {
+            if(details != null && !this.name.equals(this.details.getUsername())) {
                 normalizeDetails();
             }
         }
