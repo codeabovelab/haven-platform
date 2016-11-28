@@ -18,7 +18,7 @@ package com.codeabovelab.dm.cluman.ui.configuration;
 
 import com.codeabovelab.dm.cluman.ds.SwarmAdapterConfiguration;
 import com.codeabovelab.dm.cluman.security.AccessContextFactory;
-import com.codeabovelab.dm.cluman.security.AclContextFilter;
+import com.codeabovelab.dm.cluman.security.AccessContextFilter;
 import com.codeabovelab.dm.common.security.SecurityUtils;
 import com.codeabovelab.dm.common.security.SuccessAuthProcessor;
 import com.codeabovelab.dm.common.security.token.TokenValidator;
@@ -41,7 +41,6 @@ import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
-import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.web.authentication.switchuser.SwitchUserFilter;
 import org.springframework.util.StringUtils;
@@ -155,7 +154,7 @@ public class ServletContainerConfiguration {
             http.headers()
               .frameOptions().sameOrigin();
 
-            http.addFilterAfter(new AclContextFilter(aclContextFactory), SwitchUserFilter.class);
+            http.addFilterAfter(new AccessContextFilter(aclContextFactory), SwitchUserFilter.class);
 
             //we use basic in testing and scripts
             if (basicAuthEnable) {
