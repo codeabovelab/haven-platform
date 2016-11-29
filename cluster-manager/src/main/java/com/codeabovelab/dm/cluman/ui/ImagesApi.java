@@ -151,61 +151,6 @@ public class ImagesApi {
         return image;
     }
 
-    // we must use job instead of it
-    @Deprecated
-    @ApiOperation("Can be passed image w/o tag then will be deleted all tags, returns list of deleted tags")
-    @RequestMapping(value = "/", method = RequestMethod.DELETE)
-    public List<String> removeImageFromRegistry(@RequestParam("fullImageName") String fullImageName,
-                                                @RequestParam(value = "filter", required = false) String filter) {
-
-        String name = ContainerUtils.getImageName(fullImageName);
-        String registry = ContainerUtils.getRegistryName(fullImageName);
-        String tag = ContainerUtils.getImageVersion(fullImageName);
-        if (StringUtils.hasText(tag)) {
-            ImageDescriptor image = registryRepository.getImage(name, tag, registry);
-            Assert.notNull("can't find image " + name + "/" + tag);
-            registryRepository.deleteTag(name, image.getId(), registry);
-            return Collections.singletonList(tag);
-        } else {
-            return removeImagesFromRegistry(registry, name, filter);
-        }
-    }
-
-    private List<String> removeImagesFromRegistry(String registry,
-                                                  String name,
-                                                  String filter) {
-        List<String> tags = registryRepository.getTags(name, registry, getFilter(filter));
-        return tags.stream().map(tag -> {
-            try {
-                registryRepository.deleteTag(name, tag, registry);
-                return tag;
-            } catch (Exception e) {
-                return null;
-            }
-        }).filter(s -> s != null).collect(Collectors.toList());
-    }
-
-    @RequestMapping(value = "/{registry}/{name}/digest/{reference}", method = RequestMethod.DELETE)
-    public void removeImageFromRegistryByReference(@PathVariable("registry") String registry,
-                                                   @PathVariable("name") String name,
-                                                   @PathVariable("reference") String reference) {
-        registryRepository.deleteTag(name, reference, registry);
-    }
-
-    // we must use job instead of it
-    @Deprecated
-    @RequestMapping(value = "/clusters/{cluster}/all", method = RequestMethod.DELETE)
-    @ApiResponse(message = "Returns list of deleted images", code = 200)
-    public List<String> removeAllImages(@PathVariable("cluster") String cluster) {
-        List<ImageItem> images = dockerServices.getService(cluster).getImages(GetImagesArg.ALL);
-
-        List<String> collect = images.stream().map(i -> dockerServices.getService(cluster).removeImage(RemoveImageArg.builder()
-                .cluster(cluster)
-                .imageId(i.getId())
-                .build())).filter(r -> r.getCode() != ResultCode.ERROR).map(s -> s.getImage()).collect(Collectors.toList());
-        return collect;
-    }
-
     /**
      * Tag an image into a repository
      *
