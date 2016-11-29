@@ -161,7 +161,12 @@ public final class RealCluster extends AbstractNodesGroup<RealCluster, SwarmNode
 
     public void setClusterConfig(ClusterConfig cc) {
         synchronized (lock) {
-            ClusterConfigImpl newConf = ClusterConfigImpl.of(cc);
+            ClusterConfigImpl newConf;
+            if(getName().equals(cc.getCluster())) {
+                newConf = ClusterConfigImpl.of(cc);
+            } else {
+                newConf = ClusterConfigImpl.builder(cc).cluster(getName()).build();
+            }
             onSet("config", this.config.getConfig(), newConf);
             this.config.setConfig(newConf);
         }
