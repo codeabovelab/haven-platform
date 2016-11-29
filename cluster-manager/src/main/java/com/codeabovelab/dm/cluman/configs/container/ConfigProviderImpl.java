@@ -26,10 +26,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.annotation.AnnotationAwareOrderComparator;
 import org.springframework.stereotype.Component;
 
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 
 /**
@@ -92,7 +89,9 @@ public class ConfigProviderImpl implements ConfigProvider {
                     Object r = prop.get(dest);
                     if (r != null && r instanceof Collection) {
                         Collection<Object> destCol = (Collection<Object>) r;
-                        destCol.addAll((Collection<Object>) o);
+                        Collection<Object> coll = new LinkedHashSet<>((Collection<Object>) o);
+                        coll.removeAll(destCol);
+                        destCol.addAll(coll);
                         continue;
                     }
                 }
