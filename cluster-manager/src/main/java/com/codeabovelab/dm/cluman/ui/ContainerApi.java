@@ -209,7 +209,7 @@ public class ContainerApi {
     }
 
 
-    @RequestMapping(value = "/{cluster}/defaultparams", method = GET)
+    @RequestMapping(value = "/clusters/{cluster}/defaultparams", method = GET)
     public ContainerSource defaultParams(@PathVariable("cluster") String cluster,
                                          @RequestParam("image") String image,
                                          @RequestParam("tag") String tag) throws Exception {

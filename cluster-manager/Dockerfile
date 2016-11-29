@@ -33,5 +33,5 @@ WORKDIR /data
 VOLUME  /data
 
 ADD ./cluster-manager-*-boot.jar /${artifactId}.jar
-ENTRYPOINT java -server $JAVA_OPTS -Djava.security.egd=file:/dev/./urandom -Dspring.profiles.active=staging -jar /${artifactId}.jar \
+ENTRYPOINT java -server $JAVA_OPTS -Djava.security.egd=file:/dev/./urandom  --spring.profiles.active=staging -jar /${artifactId}.jar \
   --dm.swarm-exec.path=/gocode/bin/swarm \
