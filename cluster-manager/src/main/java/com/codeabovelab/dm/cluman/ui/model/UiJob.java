@@ -42,6 +42,7 @@ public class UiJob {
     private final LocalDateTime startTime;
     private final LocalDateTime endTime;
     private final boolean running;
+    private final boolean canRollback;
     private final JobParameters parameters;
 
     public static UiJobBuilder toUiBuilder(JobInstance ji) {
@@ -58,6 +59,7 @@ public class UiJob {
                 .startTime(jh.getStartTime())
                 .endTime(jh.getEndTime())
                 .status(status)
+                .canRollback(ji.getJobContext().getRollback() != null)
                 .running(status == JobStatus.STARTED);
     }
 
