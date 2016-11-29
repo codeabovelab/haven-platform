@@ -295,6 +295,7 @@ public class ClusterApi {
                 RealCluster rc = ccc.getCluster();
                 ClusterConfigImpl.Builder config = data.getConfig();
                 if(config != null) {
+                    config.setCluster(name);
                     rc.setClusterConfig(config);
                 }
                 data.toCluster(rc);
