@@ -22,6 +22,7 @@ import com.codeabovelab.dm.cluman.source.ContainerSourceFactory;
 import com.codeabovelab.dm.cluman.ui.health.HealthCheckService;
 import com.codeabovelab.dm.cluman.ui.update.UpdateContainersConfiguration;
 import com.codeabovelab.dm.cluman.ui.update.UpdateContainersUtil;
+import com.codeabovelab.dm.cluman.utils.ContainerUtils;
 import com.codeabovelab.dm.common.healthcheck.ServiceHealthCheckResultImpl;
 import com.codeabovelab.dm.common.utils.Consumers;
 import com.codeabovelab.dm.common.utils.Uuids;
@@ -172,7 +173,7 @@ public class UpdateTest {
         }
     }
 
-    private void checkContainers(Consumer<DockerContainer> consumer) {
+    private void checkContainers(String expectedVersion, Consumer<DockerContainer> consumer) {
         DockerService ds = discoveryStorage.getService(TESTCLUSTER);
         List<DockerContainer> containers = ds.getContainers(new GetContainersArg(true));
         for(DockerContainer dc: containers) {
@@ -181,27 +182,37 @@ public class UpdateTest {
             if(IMAGE_ID.equals(image)) {
                 continue;
             }
-            assertEquals(IMAGE_TARGET, image);
+            String currVersion = ContainerUtils.getImageVersion(image);
+            assertEquals(expectedVersion, currVersion);
         }
         assertEquals(names.size(), containers.size());
     }
 
     @Test
     public void testStopThenStartAll() throws Exception {
-        doStrategy("stopThenStartAll");
-        checkContainers(this::checkNames);
+        JobInstance ji = doStrategy("stopThenStartAll");
+        checkContainers(TARGET_VERSION, this::checkNames);
+        testRollback(ji);
+        checkContainers(SRC_VERSION, this::checkNames);
     }
 
     @Test
     public void testStartThenStopEach() throws Exception {
-        doStrategy("startThenStopEach");
-        checkContainers(Consumers.nop());
+        JobInstance ji = doStrategy("startThenStopEach");
+        checkContainers(TARGET_VERSION, Consumers.nop());
+        testRollback(ji);
+        checkContainers(SRC_VERSION, Consumers.nop());
     }
 
     @Test
     public void testStopThenStartEach() throws Exception {
         JobInstance ji = doStrategy("stopThenStartEach");
-        checkContainers(this::checkNames);
+        checkContainers(TARGET_VERSION, this::checkNames);
+        testRollback(ji);
+        checkContainers(SRC_VERSION, this::checkNames);
+    }
+
+    private void testRollback(JobInstance ji) throws InterruptedException, java.util.concurrent.ExecutionException {
         JobInstance rollbackJob = jobsManager.create(RollbackHandle.rollbackParams(ji.getInfo().getId()).build());
         executeJobInstance(rollbackJob);
     }

@@ -47,24 +47,24 @@ public class AccessContextFactory {
      * @return not null context
      */
     public AccessContext getContext() {
-        AccessContext ac = getLocalContext();
-        if(ac == null) {
+        AccessContext ac = TL.get();
+        if(ac == null || !ac.isActual()) {
             ac = new AccessContext(this);
         }
         return ac;
     }
 
     /**
-     * Obtain context from thread local.
-     * @return context or null
+     * Obtain context from thread local. <p/>
+     * Throw exception when existed local context not complies with current authentication.
+     * @return context
      */
     public static AccessContext getLocalContext() {
         AccessContext ac = TL.get();
         if(ac != null) {
-            if(!ac.isActual()) {
-                // auth is changed, we can not return default acl
-                ac = null;
-            }
+            ac.assertActual();
+        } else {
+            throw new IllegalStateException("No local context");
         }
         return ac;
     }

@@ -18,10 +18,12 @@ package com.codeabovelab.dm.cluman.ui;
 
 import com.codeabovelab.dm.cluman.mail.MailNotificationsService;
 import com.codeabovelab.dm.cluman.mail.MailSubscription;
+import com.codeabovelab.dm.common.security.Authorities;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
+import org.springframework.security.access.annotation.Secured;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -50,6 +52,7 @@ public class EmailApi {
         return mailNotificationsService.get(eventSource);
     }
 
+    @Secured(Authorities.ADMIN_ROLE)
     @RequestMapping(value = "/notices/", method = POST)
     public void add(@RequestBody @Valid MailSubscription subscription) {
         mailNotificationsService.put(subscription);

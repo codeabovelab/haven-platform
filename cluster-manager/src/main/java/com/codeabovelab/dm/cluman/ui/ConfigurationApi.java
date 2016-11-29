@@ -25,6 +25,7 @@ import com.codeabovelab.dm.cluman.source.SourceService;
 import com.codeabovelab.dm.cluman.ui.model.UiApplicationInfo;
 import com.codeabovelab.dm.cluman.ui.model.UiJob;
 import com.codeabovelab.dm.cluman.yaml.YamlUtils;
+import com.codeabovelab.dm.common.security.Authorities;
 import com.codeabovelab.dm.common.utils.AppInfo;
 import lombok.AllArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -32,6 +33,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.annotation.Secured;
 import org.springframework.util.MimeTypeUtils;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
@@ -62,6 +64,7 @@ public class ConfigurationApi {
         }, headers, HttpStatus.OK);
     }
 
+    @Secured(Authorities.ADMIN_ROLE)
     @RequestMapping(path = "config", method = RequestMethod.POST, consumes = MimeTypeUtils.APPLICATION_JSON_VALUE)
     public void setConfig(InputStream is) throws IOException {
         appConfigService.read(MimeTypeUtils.APPLICATION_JSON_VALUE, is);
@@ -75,6 +78,7 @@ public class ConfigurationApi {
         return new ResponseEntity<>(source, headers, HttpStatus.OK);
     }
 
+    @Secured(Authorities.ADMIN_ROLE)
     @RequestMapping(path = "source", method = RequestMethod.POST, consumes = YamlUtils.MIME_TYPE_VALUE)
     public UiJob setSource(@RequestBody RootSource root,
                            DeployOptions.Builder options) {
@@ -82,6 +86,7 @@ public class ConfigurationApi {
         return UiJob.toUi(jobInstance);
     }
 
+    @Secured(Authorities.ADMIN_ROLE)
     @RequestMapping(path = "source-upload", method = RequestMethod.POST, consumes = MimeTypeUtils.MULTIPART_FORM_DATA_VALUE)
     public UiJob uploadSource(@RequestPart("file") RootSource root,
                               DeployOptions.Builder options) {

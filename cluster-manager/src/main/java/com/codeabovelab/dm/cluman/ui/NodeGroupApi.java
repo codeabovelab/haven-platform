@@ -22,8 +22,10 @@ import com.codeabovelab.dm.cluman.model.DiscoveryStorage;
 import com.codeabovelab.dm.cluman.model.NodeInfo;
 import com.codeabovelab.dm.cluman.model.NodesGroup;
 import com.codeabovelab.dm.cluman.ui.model.UiNodeGroup;
+import com.codeabovelab.dm.common.security.Authorities;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.access.annotation.Secured;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -57,16 +59,19 @@ public class NodeGroupApi {
         return envs;
     }
 
+    @Secured(Authorities.ADMIN_ROLE)
     @RequestMapping(value = "/{groupId}/nodes", method = POST)
     public void createGroupByNodeList(@PathVariable("groupId") String groupId, @RequestParam(value = "nodes") List<String> nodes) {
         this.discoveryStorage.getOrCreateGroup(new DefaultNodesGroupConfig(groupId, "list:" + String.join(", ", nodes)));
     }
 
+    @Secured(Authorities.ADMIN_ROLE)
     @RequestMapping(value = "/{groupId}/filter", method = POST)
     public void createGroupByFilter(@PathVariable("groupId") String groupId, @RequestParam(value = "filter") String filter) {
         this.discoveryStorage.getOrCreateGroup(new DefaultNodesGroupConfig(groupId, filter));
     }
 
+    @Secured(Authorities.ADMIN_ROLE)
     @RequestMapping(value = "/{groupId}", method = DELETE)
     public void deleteGroup(@PathVariable("groupId") String groupId) {
         this.discoveryStorage.deleteNodeGroup(groupId);

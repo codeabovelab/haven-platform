@@ -19,6 +19,7 @@ package com.codeabovelab.dm.cluman.ds.nodes;
 import com.codeabovelab.dm.cluman.cluster.docker.management.DockerServiceEvent;
 import com.codeabovelab.dm.cluman.security.AccessContext;
 import com.codeabovelab.dm.cluman.security.AccessContextFactory;
+import com.codeabovelab.dm.cluman.security.SecuredType;
 import com.codeabovelab.dm.cluman.validate.ExtendedAssert;
 import com.codeabovelab.dm.common.kv.*;
 import com.codeabovelab.dm.common.kv.mapping.KvClassMapper;
@@ -41,6 +42,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.HttpStatus;
 import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.security.acls.model.ObjectIdentity;
 import org.springframework.stereotype.Component;
 import org.springframework.util.Assert;
 import org.springframework.util.StringUtils;
@@ -88,15 +90,20 @@ public class NodeStorage implements NodeInfoProvider {
         KeyValueStorage storage = kvmf.getStorage();
         nodesPrefix = storage.getDockMasterPrefix() + "/nodes/";
         this.nodeMapper = kvmf.createClassMapper(nodesPrefix, NodeInfoImpl.Builder.class);
-        storage.subscriptions().subscribeOnKey(e -> {
-            String key = getNodeName(e.getKey());
-            KvStorageEvent.Crud action = e.getAction();
-            if(key == null) {
-                if(nodesPrefix.startsWith(e.getKey()) && action == KvStorageEvent.Crud.DELETE) {
-                    nodes.invalidateAll();
-                }
-                return;
+        storage.subscriptions().subscribeOnKey(this::onKVEvent, nodesPrefix + "*");
+        dockerBus.asSubscriptions().subscribe(this::onDockerServiceEvent);
+    }
+
+    private void onKVEvent(KvStorageEvent e) {
+        String key = getNodeName(e.getKey());
+        KvStorageEvent.Crud action = e.getAction();
+        if(key == null) {
+            if(nodesPrefix.startsWith(e.getKey()) && action == KvStorageEvent.Crud.DELETE) {
+                nodes.invalidateAll();
             }
+            return;
+        }
+        try (TempAuth ta = TempAuth.asSystem()) {
             switch (action) {
                 case DELETE: {
                     NodeRegistrationImpl nr = getNodeRegistrationInternal(key);
@@ -122,8 +129,7 @@ public class NodeStorage implements NodeInfoProvider {
                     }
                 }
             }
-        }, nodesPrefix + "*");
-        dockerBus.asSubscriptions().subscribe(this::onDockerServiceEvent);
+        }
     }
 
     private void fireNodeModification(NodeRegistrationImpl nr, String action, NodeInfoImpl ni) {
@@ -190,10 +196,24 @@ public class NodeStorage implements NodeInfoProvider {
     }
 
     public NodeRegistration getNodeRegistration(String nodeId) {
-        return getNodeRegistrationInternal(nodeId);
+        NodeRegistrationImpl nr = getNodeRegistrationInternal(nodeId);
+        checkAccess(nr, Action.READ);
+        return nr;
     }
 
-    private NodeRegistrationImpl getNodeRegistrationInternal(String nodeId) {
+    private void checkAccess(NodeRegistrationImpl nr, Action read) {
+        if(nr == null) {
+            return;
+        }
+        AccessContextFactory.getLocalContext().assertGranted(nr.getOid(), read);
+    }
+
+    /**
+     * This method newer been covered by security, because used for security checks.
+     * @param nodeId name of node
+     * @return registration or null
+     */
+    NodeRegistrationImpl getNodeRegistrationInternal(String nodeId) {
         try {
             return nodes.get(nodeId);
         } catch (Exception e) {
@@ -210,6 +230,8 @@ public class NodeStorage implements NodeInfoProvider {
     public void removeNode(String name) {
         //we check name for prevent names like '../'
         NodeUtils.checkName(name);
+        NodeRegistrationImpl nr = getNodeRegistrationInternal(name);
+        checkAccess(nr, Action.DELETE);
         String path = (nodesPrefix + name);
         kvmf.getStorage().deletedir(path, DeleteDirOptions.builder().recursive(true).build());
         //do not clear nodes cache here!
@@ -219,6 +241,7 @@ public class NodeStorage implements NodeInfoProvider {
         ExtendedAssert.matchAz09Hyp(name, "node name");
         try {
             return nodes.get(name, () -> {
+                AccessContextFactory.getLocalContext().assertGranted(SecuredType.NODE.id(name), Action.CREATE);
                 NodeRegistrationImpl nr;
                 NodeInfoImpl.Builder exists = load(name);
                 if(exists == null) {
@@ -271,6 +294,7 @@ public class NodeStorage implements NodeInfoProvider {
         if(nr == null) {
             throw new HttpException(HttpStatus.NOT_FOUND, "Node '" + nodeName + "' is not found");
         }
+        checkAccess(nr, Action.UPDATE);
         NodeInfo ni = nr.getNodeInfo();
         String oldCluster = ni.getCluster();
         if(!Objects.equals(oldCluster, cluster)) {
@@ -296,6 +320,7 @@ public class NodeStorage implements NodeInfoProvider {
             return;
         }
         Assert.doesNotContain(cluster, "/", "Bad cluster name: " + cluster);
+        checkAccess(nr, Action.UPDATE);
         String address = ni.getAddress();
         try {
             kvmf.getStorage().set(getDiscoveryKey(cluster, address),
@@ -316,6 +341,7 @@ public class NodeStorage implements NodeInfoProvider {
         if(instance == null) {
             return null;
         }
+        checkAccess(instance, Action.READ);
         return instance.getNodeInfo();
     }
 

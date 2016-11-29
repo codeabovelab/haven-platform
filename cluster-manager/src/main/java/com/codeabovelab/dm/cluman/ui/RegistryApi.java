@@ -20,9 +20,11 @@ import com.codeabovelab.dm.cluman.cluster.registry.RegistryFactory;
 import com.codeabovelab.dm.cluman.cluster.registry.RegistryRepository;
 import com.codeabovelab.dm.cluman.cluster.registry.RegistryService;
 import com.codeabovelab.dm.cluman.cluster.registry.model.*;
+import com.codeabovelab.dm.common.security.Authorities;
 import io.swagger.annotations.ApiOperation;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.access.annotation.Secured;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -60,6 +62,7 @@ public class RegistryApi {
         return config;
     }
 
+    @Secured(Authorities.ADMIN_ROLE)
     @RequestMapping(value = "", method = {PUT, POST})
     public RegistryConfig addRegistry(@RequestBody @Validated RegistryConfig config) {
         final String oldName = config.getName();
@@ -73,6 +76,7 @@ public class RegistryApi {
         return map(registryService.getConfig().getName());
     }
 
+    @Secured(Authorities.ADMIN_ROLE)
     @RequestMapping(value = "", method = DELETE)
     public void deleteRegistry(@RequestParam(value = "name") String name) {
         registryRepository.unRegister(name);
