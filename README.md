@@ -131,7 +131,7 @@ with the following content:
 ```ini
  [main]
  docker = $SELF_IP:2375
- master = $MASTER_IP:8762
+ master = $MASTER_IP:8761
  # timeout between node update requests
  timeout = 10 
  # 2 - Debug, 1 - Info, 0 - Warning
