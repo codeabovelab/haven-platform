@@ -1,9 +1,9 @@
 # Haven: Container Management Simplified
  
 ## Introduction
-Haven is a Docker cluster management system. The user controls the entire platform via user-friendly yet powerful UI and command
-line tools. Built on top of Docker, Swarm, and Compose, it offers multiple clusters and image registries management and while 
-built on top of Docker, Swarm, and Compose.
+Haven is a Docker cluster management system. The user controls the entire platform via user-friendly yet powerful UI and 
+commandline tools. Built on top of Docker, Swarm, and Compose, it offers multiple clusters and image registries management 
+and while built on top of Docker, Swarm, and Compose.
 
 ### Requirements
 
@@ -32,7 +32,7 @@ The following installation instruction has been tested on Debian / Ubuntu.
 
 *Installation for both Master and Agent*
 
- Step 1: Define the common variables for configuration needed in the scripts and configuration files.  Feel free to set them as 
+**Step 1:** Define the common variables for configuration needed in the scripts and configuration files.  Feel free to set them as 
  environment variables or replace them in the script:
  
 ```sh
@@ -44,9 +44,9 @@ The following installation instruction has been tested on Debian / Ubuntu.
  SELF_IP=172.31.0.12
 ```
 
-*Skip steps 2 and 3 if you already use Docker with etcd*
+*Skip steps 2 and 3 if you already have Docker with etcd installed on Master and Agent nodes* 
 
- Step 2: Configure etcd on Master node by following this instruction:
+**Step 2:** Configure etcd on Master node by following this instruction:
  
 https://coreos.com/etcd/docs/latest/docker_guide.html
 
@@ -60,13 +60,13 @@ docker run -d -v /usr/share/ca-certificates/:/etc/ssl/certs -p 4001:4001 -p 2380
 
 ```
 
- Step 3: Configure Docker on each instance. Use the following instruction to install Docker on the different Linux/Cloud, Windows, and MacOS
- instruction:
+**Step 3:** Configure Docker on each node. Use the following instruction to install Docker on the different Linux/Cloud, Windows, 
+and MacOS instruction:
  
  https://docs.docker.com/engine/installation/
  
- By default, Docker listens on Unix socket so TCP socket configuration is needed. See the config file in /etc/default/docker and make sure the 
- DOCKER_OPTS argument matches the one listed below (with the IP variables replaced with real value):
+ By default, Docker listens on Unix socket so TCP socket configuration is needed. See the config file in /etc/default/docker 
+ and make sure the DOCKER_OPTS argument matches the one listed below (with the IP variables replaced with real value):
   
 ```sh
  %cat /etc/default/docker
@@ -74,20 +74,23 @@ docker run -d -v /usr/share/ca-certificates/:/etc/ssl/certs -p 4001:4001 -p 2380
   -H tcp://0.0.0.0:2375"
 ```
  
-Step 4: Install Haven container by executing the following command:
+**Step 4:** Install the Haven container by executing the following command:
  
 ```sh
  docker run -d --name=cluman -p 8761:8761 -e "dm_kv_etcd_urls=http://$MASTER_IP:2379" codeabovelab/cluster-manager
 
 ```
  
-The Haven container can be started only with etcd's URL as its environment variable. It can have other optional parameters passed in
-as environment variables to enable other features. 
+The Haven container can be started only with etcd's URL as its environment variable. It can have other optional parameters 
+passed in as environment variables to enable other features. 
+
+**At this point you should be able to login to the UI via http://<MASTER_IP>:8761/.**  The default admin credential is 
+admin/password.
 
 **Configuration**
 
-Haven's Master settings can also be passed directly via environment variables or alternatively, as mentioned before, they can also be 
-stored in a Git repository and credentials passed in via enviroment variable. For reading cluster-manager.properties or 
+Haven's Master settings can also be passed directly via environment variables or alternatively, as mentioned before, they can 
+also be stored in a Git repository and credentials passed in via enviroment variable. For reading cluster-manager.properties or 
 cluster-manager.yml from a Git repository, you must specify the Git URL, username, and password:
 
 ```properties
@@ -143,9 +146,18 @@ To start the Agent, execute the script command:
  ./dockmaster-agent.py
 ```
 
-You should wrap the Agent script in the platform's appropriate autostart system (init.d , systemd, etc.) to make sure it starts after 
-reboot.
+You should wrap the Agent script in the platform's appropriate autostart system (init.d , systemd, etc.) to make sure it starts 
+after each reboot.
   
+## Troubleshooting ##
+If you are running on the latest Linux distros where systemd is used, you will need to manually modify the Docker daemon 
+options in the systemd drop-in file (See https://docs.docker.com/engine/admin/systemd/ for details). The docker.service file's 
+ExecStart parameter will need to be modified to something like:
+
+```sh
+ExecStart=/usr/bin/dockerd  -H unix:///var/run/docker.sock --cluster-store=etcd://<MASTER_IP>:2379/dn --cluster-advertise=eth0:2375 -H tcp://0.0.0.0:2375
+```
+
 ## Index ##
 
 For additional technical detail, see:
