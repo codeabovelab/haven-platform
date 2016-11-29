@@ -45,7 +45,8 @@ class ScheduledJobInstanceImpl extends AbstractJobInstance {
                 cancel(this.scheduleHandle);
                 cancel(this.executeHandle);
                 // context not cleaned for if repeatable == true, therefore we need clean it there
-                jobContext.close();
+                JobScopeIteration.getBeans().close();
+                JobScope.getBeans().close();
                 return true;
             });
             if(res != null) {
@@ -82,8 +83,9 @@ class ScheduledJobInstanceImpl extends AbstractJobInstance {
 
     @Override
     protected void clearAfterIteration() {
+        JobScopeIteration.getBeans().close();
         if(!repeatable) {
-            jobContext.close();
+            JobScope.getBeans().close();
         }
     }
 

@@ -25,7 +25,6 @@ import com.google.common.collect.ImmutableMap;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.core.annotation.AnnotatedElementUtils;
-import org.springframework.core.annotation.AnnotationAttributes;
 import org.springframework.util.ReflectionUtils;
 import org.springframework.util.StringUtils;
 
@@ -135,7 +134,9 @@ final class JobBeanIntrospector {
     }
 
     static Metadata getMetadata(Class<?> clazz) {
-        boolean hasJobMetadata = clazz.isAnnotationPresent(JobBean.class) || clazz.isAnnotationPresent(JobComponent.class);
+        boolean hasJobMetadata = clazz.isAnnotationPresent(JobBean.class) ||
+          clazz.isAnnotationPresent(JobComponent.class) ||
+          clazz.isAnnotationPresent(JobIterationComponent.class);
         if(!hasJobMetadata) {
             return null;
         }

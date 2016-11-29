@@ -60,6 +60,7 @@ class JobInstanceImpl extends AbstractJobInstance {
 
     @Override
     protected void clearAfterIteration() {
-        jobContext.close();
+        JobScope.getBeans().close();
+        JobScopeIteration.getBeans().close();
     }
 }

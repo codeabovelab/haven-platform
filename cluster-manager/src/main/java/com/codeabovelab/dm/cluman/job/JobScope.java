@@ -16,20 +16,27 @@
 
 package com.codeabovelab.dm.cluman.job;
 
-import org.springframework.context.annotation.Scope;
+import org.springframework.beans.BeansException;
+import org.springframework.beans.factory.config.*;
 import org.springframework.stereotype.Component;
 
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
-
 /**
- * Component of job scope.
  */
-@Retention(RetentionPolicy.RUNTIME)
-@Target(ElementType.TYPE)
 @Component
-@Scope(value = JobScope.SCOPE_NAME)
-public @interface JobComponent {
+public class JobScope extends AbstractJobScope {
+    public static final String SCOPE_NAME = "dmJobScope";
+
+    @Override
+    ScopeBeans getContextOrNull() {
+        return getBeans();
+    }
+
+    static ScopeBeans getBeans() {
+        return JobContext.getCurrent().getScopeBeans();
+    }
+
+    @Override
+    public void postProcessBeanFactory(ConfigurableListableBeanFactory beanFactory) throws BeansException {
+        beanFactory.registerScope(SCOPE_NAME, this);
+    }
 }

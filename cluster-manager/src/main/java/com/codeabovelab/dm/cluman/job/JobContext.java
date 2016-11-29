@@ -16,14 +16,11 @@
 
 package com.codeabovelab.dm.cluman.job;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.ObjectFactory;
-
 import java.text.MessageFormat;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
@@ -37,20 +34,21 @@ public final class JobContext /* we cannot use AutoCloseable on this bean, so it
      * attr hold between iterations and cannot contains beans
      */
     private final ConcurrentMap<String, Object> attrs = new ConcurrentHashMap<>();
-    private final Map<String, Object> beans = new HashMap<>();
-    private final ConcurrentMap<String, Set<Runnable>> callbacks = new ConcurrentHashMap<>();
     private final ConcurrentMap<String, Object> result = new ConcurrentHashMap<>();
     private final String id;
-    private final Logger log = LoggerFactory.getLogger(getClass());
     private final JobParameters parameters;
     private final AbstractJobInstance instance;
     private volatile RollbackHandle rollbackHandle;
+    private final ScopeBeans scopeBeans;
+    private volatile ScopeBeans scopeIterationBeans;
+    private final AtomicInteger iteration = new AtomicInteger(0);
 
     JobContext(AbstractJobInstance instance, JobParameters parameters) {
         this.instance = instance;
         this.parameters = parameters;
         this.attrs.putAll(this.parameters.getParameters());
         this.id = this.getParameters().getType() + ".context#" + COUNTER.getAndIncrement();
+        this.scopeBeans = new ScopeBeans(this, this.id);
     }
 
     /**
@@ -65,14 +63,6 @@ public final class JobContext /* we cannot use AutoCloseable on this bean, so it
 
     public static JobContext getCurrent() {
         return TL.get();
-    }
-
-    Map<String, Object> getBeans() {
-        return beans;
-    }
-
-    void registerDestructionCallback(String name, Runnable callback) {
-        callbacks.computeIfAbsent(name, (n) -> Collections.synchronizedSet(new HashSet<>())).add(callback);
     }
 
     public String getId() {
@@ -92,28 +82,6 @@ public final class JobContext /* we cannot use AutoCloseable on this bean, so it
         TL.remove();
     }
 
-    void close() {
-        try {
-            for(Map.Entry<String, Set<Runnable>> entry: callbacks.entrySet()) {
-                String key = entry.getKey();
-                for(Runnable runnable: entry.getValue()) {
-                    try {
-                        runnable.run();
-                    } catch (Exception e) {
-                        log.error("On bean {} callback: {}", key, runnable, e);
-                    }
-                }
-            }
-        } catch (Exception e) {
-            log.error("On close ", e);
-        } finally {
-            callbacks.clear();
-        }
-        //we clear beans but not attributes, because it can be need on next iteration
-        synchronized (beans) {
-            beans.clear();
-        }
-    }
 
     public JobParameters getParameters() {
         return parameters;
@@ -134,21 +102,6 @@ public final class JobContext /* we cannot use AutoCloseable on this bean, so it
      */
     public Object getResult(String name) {
         return result.get(name);
-    }
-
-    Object removeBean(String name) {
-        synchronized (this.beans) {
-            return this.beans.remove(name);
-        }
-    }
-
-    Object getBean(String name, ObjectFactory<?> objectFactory) {
-        // we cannot use computeIfAbsent because it does not support recursion
-        Object bean;
-        synchronized (this.beans) {
-            bean = this.beans.computeIfAbsent(name, k -> objectFactory.getObject());
-        }
-        return bean;
     }
 
     public Map<String, Object> getAttributes() {
@@ -172,5 +125,25 @@ public final class JobContext /* we cannot use AutoCloseable on this bean, so it
      */
     public RollbackHandle getRollback() {
         return rollbackHandle;
+    }
+
+    public int getIteration() {
+        return iteration.get();
+    }
+
+    int nextIteration() {
+        return iteration.incrementAndGet();
+    }
+
+    ScopeBeans getScopeBeans() {
+        return this.scopeBeans;
+    }
+
+    ScopeBeans getScopeIterationBeans() {
+        return this.scopeIterationBeans;
+    }
+
+    void setScopeIterationBeans(ScopeBeans scopeBeans) {
+        this.scopeIterationBeans = scopeBeans;
     }
 }

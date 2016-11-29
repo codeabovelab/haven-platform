@@ -18,7 +18,7 @@ package com.codeabovelab.dm.cluman.ui.update;
 
 import com.codeabovelab.dm.cluman.cluster.docker.management.DockerService;
 import com.codeabovelab.dm.cluman.job.JobContext;
-import com.codeabovelab.dm.cluman.job.JobScopeSupport;
+import com.codeabovelab.dm.cluman.job.JobScope;
 import com.codeabovelab.dm.cluman.model.DiscoveryStorage;
 import com.codeabovelab.dm.cluman.batch.BatchUtils;
 import com.codeabovelab.dm.cluman.batch.UpdateStopThenStartEachJob;
@@ -36,7 +36,7 @@ import org.springframework.util.Assert;
 public class UpdateContainersConfiguration {
 
     @Bean
-    @Scope(JobScopeSupport.SCOPE_NAME)
+    @Scope(JobScope.SCOPE_NAME)
     DockerService dockerService(JobContext jobContext, DiscoveryStorage storage) {
         String clusterName = (String) jobContext.getParameters().getParameters().get(BatchUtils.JP_CLUSTER);
         if(clusterName == null) {

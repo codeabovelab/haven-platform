@@ -283,7 +283,9 @@ public abstract class AbstractJobInstance implements JobInstance {
 
         @Override
         public void run() {
+            jobContext.nextIteration();
             JobContext.set(jobContext);
+            SafeCloseable scopeIterationLocal = JobScopeIteration.open(jobContext);
             TempAuth auth = null;
             try {
                 if(authentication != null) {
@@ -305,10 +307,11 @@ public abstract class AbstractJobInstance implements JobInstance {
                 atEndFuture.setException(e);
             } finally {
                 if(auth != null) {
-                    auth.close();;
+                    auth.close();
                 }
-                JobContext.remove();
                 clearAfterIteration();
+                scopeIterationLocal.close();
+                JobContext.remove();
             }
         }
 

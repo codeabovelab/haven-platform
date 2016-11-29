@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *      http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -17,20 +17,14 @@
 package com.codeabovelab.dm.cluman.job;
 
 import org.springframework.beans.BeanWrapperImpl;
-import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.ObjectFactory;
-import org.springframework.beans.factory.config.*;
+import org.springframework.beans.factory.config.BeanFactoryPostProcessor;
+import org.springframework.beans.factory.config.Scope;
 import org.springframework.core.Ordered;
-import org.springframework.stereotype.Component;
-
-import java.util.Map;
 
 /**
  */
-@Component
-public class JobScopeSupport implements BeanFactoryPostProcessor, Scope, Ordered {
-
-    public static final String SCOPE_NAME = "dmJobScope";
+public abstract class AbstractJobScope implements BeanFactoryPostProcessor, Scope, Ordered {
 
     @Override
     public int getOrder() {
@@ -38,21 +32,15 @@ public class JobScopeSupport implements BeanFactoryPostProcessor, Scope, Ordered
     }
 
     @Override
-    public void postProcessBeanFactory(ConfigurableListableBeanFactory beanFactory) throws BeansException {
-
-        beanFactory.registerScope(SCOPE_NAME, this);
-    }
-
-    @Override
     public Object resolveContextualObject(String key) {
-        JobContext context = getContext();
+        ScopeBeans context = getContext();
         return new BeanWrapperImpl(context).getPropertyValue(key);
     }
 
     @Override
     public Object get(String name, ObjectFactory<?> objectFactory) {
-        JobContext context = getContext();
-        Object scopedObject = context.getAttributes().get(name);
+        ScopeBeans context = getContext();
+        Object scopedObject = context.context.getAttributes().get(name);
         if(scopedObject == null) {
             scopedObject = context.getBean(name, objectFactory);
         }
@@ -83,12 +71,13 @@ public class JobScopeSupport implements BeanFactoryPostProcessor, Scope, Ordered
         return getContext().removeBean(name);
     }
 
-    JobContext getContext() {
-        JobContext context = JobContext.getCurrent();
+    ScopeBeans getContext() {
+        ScopeBeans context = getContextOrNull();
         if (context == null) {
-            throw new IllegalStateException("No context available for " + SCOPE_NAME);
+            throw new IllegalStateException("No context available for " + JobScope.SCOPE_NAME);
         }
         return context;
     }
 
+    abstract ScopeBeans getContextOrNull();
 }

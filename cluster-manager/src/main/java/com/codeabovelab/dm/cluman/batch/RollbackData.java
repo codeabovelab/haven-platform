@@ -19,14 +19,12 @@ package com.codeabovelab.dm.cluman.batch;
 import com.codeabovelab.dm.cluman.cluster.docker.management.DockerService;
 import com.codeabovelab.dm.cluman.job.*;
 import com.codeabovelab.dm.cluman.model.DiscoveryStorage;
-import com.codeabovelab.dm.cluman.model.NodesGroup;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.util.Assert;
 
-import javax.annotation.PostConstruct;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -35,7 +33,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
  * Data for rollback. <p/>
  * We MUST NOT use here references to any beans, because it object must be serializable to JSON.
  */
-@JobComponent
+@JobIterationComponent
 public class RollbackData {
 
     private static final String ROLLBACK_DATA = "rollbackData";

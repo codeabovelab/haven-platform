@@ -64,9 +64,9 @@ public class JobConfiguration {
     }
 
     @Bean
-    @Scope(JobScopeSupport.SCOPE_NAME)
-    JobContext jobContext(JobScopeSupport jobScopeSupport) {
-        return jobScopeSupport.getContext();
+    @Scope(JobScope.SCOPE_NAME)
+    JobContext jobContext() {
+        return JobContext.getCurrent();
     }
 
     @Configuration
