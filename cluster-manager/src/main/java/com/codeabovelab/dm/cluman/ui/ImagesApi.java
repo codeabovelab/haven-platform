@@ -18,18 +18,18 @@ package com.codeabovelab.dm.cluman.ui;
 
 import com.codeabovelab.dm.cluman.cluster.docker.management.DockerService;
 import com.codeabovelab.dm.cluman.cluster.docker.management.argument.GetImagesArg;
-import com.codeabovelab.dm.cluman.cluster.docker.management.argument.RemoveImageArg;
 import com.codeabovelab.dm.cluman.cluster.docker.management.argument.TagImageArg;
-import com.codeabovelab.dm.cluman.cluster.docker.management.result.ResultCode;
 import com.codeabovelab.dm.cluman.cluster.docker.management.result.ServiceCallResult;
 import com.codeabovelab.dm.cluman.cluster.docker.model.ImageItem;
 import com.codeabovelab.dm.cluman.cluster.filter.Filter;
 import com.codeabovelab.dm.cluman.cluster.filter.FilterFactory;
+import com.codeabovelab.dm.cluman.cluster.registry.ImageFilterContext;
 import com.codeabovelab.dm.cluman.cluster.registry.RegistryRepository;
 import com.codeabovelab.dm.cluman.cluster.registry.RegistrySearchHelper;
 import com.codeabovelab.dm.cluman.cluster.registry.RegistryService;
 import com.codeabovelab.dm.cluman.cluster.registry.data.ImageCatalog;
 import com.codeabovelab.dm.cluman.cluster.registry.data.SearchResult;
+import com.codeabovelab.dm.cluman.cluster.registry.data.Tags;
 import com.codeabovelab.dm.cluman.ds.DockerServiceRegistry;
 import com.codeabovelab.dm.cluman.ds.clusters.SwarmNodesGroupConfig;
 import com.codeabovelab.dm.cluman.model.*;
@@ -42,14 +42,12 @@ import com.codeabovelab.dm.cluman.validate.ExtendedAssert;
 import com.codeabovelab.dm.common.cache.DefineCache;
 import com.google.common.base.Splitter;
 import io.swagger.annotations.ApiOperation;
-import io.swagger.annotations.ApiResponse;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.http.ResponseEntity;
-import org.springframework.util.Assert;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.*;
@@ -66,7 +64,7 @@ import static org.springframework.web.bind.annotation.RequestMethod.GET;
 @RequiredArgsConstructor(onConstructor = @__(@Autowired))
 public class ImagesApi {
 
-    public static final Splitter SPLITTER = Splitter.on(",").omitEmptyStrings().trimResults();
+    private static final Splitter SPLITTER = Splitter.on(",").omitEmptyStrings().trimResults();
     private final DockerServiceRegistry dockerServices;
     private final DiscoveryStorage discoveryStorage;
     private final RegistryRepository registryRepository;
@@ -101,7 +99,7 @@ public class ImagesApi {
         try {
             // we may get registry name from query
             if (!StringUtils.hasText(registryParam)) {
-                registryParam = ContainerUtils.getRegistryName(query);
+                registryParam = ContainerUtils.getRegistryPrefix(query);
             }
             // registry may be a mask
             if (registryParam != null && registryParam.contains("*")) {
@@ -142,10 +140,8 @@ public class ImagesApi {
             //  not that it simply iterate over all nodes until image is appeared
             image = docker.getImage(fullImageName);
         } else {
-            String name = ContainerUtils.getImageName(fullImageName);
-            String registry = ContainerUtils.getRegistryName(fullImageName);
-            String tag = ContainerUtils.getImageVersion(fullImageName);
-            image = registryRepository.getImage(name, tag, registry);
+            RegistryService registry = registryRepository.getRegistryByImageName(fullImageName);
+            image = registry.getImage(fullImageName);
         }
         ExtendedAssert.notFound(image, "Can not find image: " + fullImageName);
         return image;
@@ -183,12 +179,28 @@ public class ImagesApi {
     public List<String> listTags(@RequestParam("imageName") String imageName,
                                  @RequestParam(value = "filter", required = false) String filter) {
         Filter imageFilter = getFilter(filter);
-        String name = ContainerUtils.getImageName(imageName);
-        String registry = ContainerUtils.getRegistryName(imageName);
-        List<String> tags = registryRepository.getTags(name, registry, imageFilter);
-        return tags;
+        String name = ContainerUtils.getImageNameWithoutPrefix(imageName);
+        RegistryService registry = registryRepository.getRegistryByImageName(imageName);
+        Tags tgs = registry.getTags(name);
+        return filter(tgs, name, registry, imageFilter);
     }
 
+    private List<String> filter(Tags tags, String name, RegistryService registry, Filter filterSet) {
+        if (tags == null) {
+            return Collections.emptyList();
+        }
+        ImageFilterContext ifc = new ImageFilterContext(registry);
+        ifc.setName(name);
+        List<String> list = new ArrayList<>();
+        for (String tag : tags.getTags()) {
+            ifc.setTag(tag);
+            boolean test = filterSet.test(ifc);
+            if (test) {
+                list.add(tag);
+            }
+        }
+        return list;
+    }
     private Filter getFilter(String filter) {
         if (filter == null) {
             return Filter.any();
@@ -204,14 +216,15 @@ public class ImagesApi {
                                                @RequestParam(value = "filter", required = false) String filter) {
 
         Filter imageFilter = getFilter(filter);
-        String name = ContainerUtils.getImageName(imageName);
-        String registry = ContainerUtils.getRegistryName(imageName);
+        String name = ContainerUtils.getImageNameWithoutPrefix(imageName);
 
-        List<String> tags = registryRepository.getTags(name, registry, imageFilter);
+        RegistryService registry = registryRepository.getRegistryByImageName(imageName);
+        Tags tgs = registry.getTags(name);
+        List<String> tags = filter(tgs, name, registry, imageFilter);
         return tags.stream().map(t -> {
             try {
-                ImageDescriptor image = registryRepository.getImage(name, t, registry);
-                return new UiTagCatalog(registry, name, null, t, image != null ? image.getId() : null,
+                ImageDescriptor image = registry.getImage(name, t);
+                return new UiTagCatalog(registry.getConfig().getName(), name, null, t, image != null ? image.getId() : null,
                         image != null ? image.getCreated() : null,
                         image != null ? image.getContainerConfig().getLabels() : null);
             } catch (Exception e) {
@@ -234,7 +247,7 @@ public class ImagesApi {
         ImageObject io = new ImageObject();
 
         for (String registry : registries) {
-            RegistryService registryService = registryRepository.getRegistry(registry);
+            RegistryService registryService = registryRepository.getByName(registry);
             if (!registryService.getConfig().isDisabled()) {
                 String registryName = registryService.getConfig().getName();
                 ImageCatalog ic = registryService.getCatalog();
@@ -249,7 +262,7 @@ public class ImagesApi {
                             continue;
                         }
                         //we simply create uic if it absent
-                        UiImageCatalog uic = catalogs.computeIfAbsent(fullName, UiImageCatalog::new);
+                        UiImageCatalog uic = catalogs.putIfAbsent(fullName, new UiImageCatalog(fullName, registryService.getConfig().getName()));
                     }
                 }
             }
@@ -300,7 +313,9 @@ public class ImagesApi {
                 if (!filter.test(io)) {
                     continue;
                 }
-                UiImageCatalog uic = catalogs.computeIfAbsent(imageName, UiImageCatalog::new);
+                String registry = registryRepository.resolveRegistryNameByImageName(imageName);
+                io.setRegistry(registry);
+                UiImageCatalog uic = catalogs.putIfAbsent(imageName, new UiImageCatalog(imageName, registry));
                 if(!DiscoveryStorage.GROUP_ID_ORPHANS.equals(clusterName)) {
                     // we set name of real clusters only
                     uic.getClusters().add(clusterName);
@@ -330,11 +345,6 @@ public class ImagesApi {
             if (nodes != null) {
                 this.nodes.addAll(nodes);
             }
-        }
-
-        void setFullName(String name) {
-            setName(ContainerUtils.getImageName(name));
-            setRegistry(ContainerUtils.getRegistryName(name));
         }
 
         @Override

@@ -37,9 +37,9 @@ public class UiImageCatalog implements Comparable<UiImageCatalog> {
     private final Map<String, UiImageData> ids = new TreeMap<>();
     private final Set<String> clusters = new TreeSet<>();
 
-    public UiImageCatalog(String name) {
+    public UiImageCatalog(String name, String registry) {
         this.name = name;
-        this.registry = ContainerUtils.isImageId(this.name)? null : ContainerUtils.getRegistryName(this.name);
+        this.registry = registry;
     }
 
     @JsonProperty

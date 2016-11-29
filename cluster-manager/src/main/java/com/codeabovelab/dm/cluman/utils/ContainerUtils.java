@@ -17,7 +17,6 @@
 package com.codeabovelab.dm.cluman.utils;
 
 import com.codeabovelab.dm.cluman.model.ContainerBaseIface;
-import com.codeabovelab.dm.cluman.model.ImageName;
 import com.codeabovelab.dm.common.utils.ContainerDetector;
 import com.codeabovelab.dm.common.utils.OSUtils;
 import org.springframework.util.StringUtils;
@@ -33,11 +32,11 @@ public final class ContainerUtils {
         return image.regionMatches(true, 0, SHA256, 0, length);
     }
 
-    public static void assertImageName(String image) {
-        if(!StringUtils.hasText(image)) {
+    private static void assertImageName(String image) {
+        if (!StringUtils.hasText(image)) {
             throw new IllegalArgumentException("Image name is null or empty");
         }
-        if(isImageId(image)) {
+        if (isImageId(image)) {
             throw new IllegalArgumentException("is image id, but we expect name");
         }
     }
@@ -47,12 +46,12 @@ public final class ContainerUtils {
      * example: example.com/com.example.core:172 -> com.example.core
      *
      * @param appName
-     * @return
+     * @return calculated name
      */
     public static String getApplicationName(String appName) {
         // slash in name is not allowed, because it used in uri
         // also, internally  app name in upper case
-        String imageName = getImageName(appName);
+        String imageName = getImageNameWithoutPrefix(appName);
         int start = imageName.lastIndexOf('.') + 1;
         if (start < 0) {
             start = 0;
@@ -65,8 +64,8 @@ public final class ContainerUtils {
      * Returns image name without Registry
      * example: example.com/com.example.core:172 -> com.example.core:172
      *
-     * @param imageName
-     * @return
+     * @param imageName full image name
+     * @return tag
      */
     public static String getImageVersionName(String imageName) {
         assertImageName(imageName);
@@ -77,34 +76,32 @@ public final class ContainerUtils {
         return imageName.substring(start);
     }
 
+
     /**
-     * Returns Registry url
+     * Returns Registry prefix for dockerhub images and registry for private
      * example: example.com/com.example.core:172 -> example.com
      *
-     * @param imageName
+     * @param imageName full image name
      * @return name or empty string when image does not have registry part
      */
-    public static String getRegistryName(String imageName) {
+    public static String getRegistryPrefix(String imageName) {
         assertImageName(imageName);
         int end = imageName.lastIndexOf('/');
         if (end < 0) {
             return "";
         }
         String registry = imageName.substring(0, end);
-        if (ImageName.isRegistry(registry)) {
-            return registry;
-        }
-        return "";
+        return registry;
     }
 
     /**
-     * Returns image name without Registry name and version
+     * Returns image name without Registry _prefix_ and version
      * example: example.com/com.example.core:172 -> com.example.core
      *
-     * @param imageName
-     * @return
+     * @param imageName full image name
+     * @return image name without any '/'
      */
-    public static String getImageName(String imageName) {
+    public static String getImageNameWithoutPrefix(String imageName) {
         String name = getImageVersionName(imageName);
         int lastIndex = name.lastIndexOf(':');
         if (lastIndex < 0) {
@@ -150,6 +147,7 @@ public final class ContainerUtils {
 
     /**
      * Make full image name from components
+     *
      * @param registry
      * @param image
      * @param tag
@@ -157,7 +155,7 @@ public final class ContainerUtils {
      */
     public static String buildImageName(String registry, String image, String tag) {
         String regAndName = registry + "/" + image;
-        if(tag == null) {
+        if (tag == null) {
             return regAndName;
         }
         return setImageVersion(regAndName, tag);
@@ -224,7 +222,7 @@ public final class ContainerUtils {
     }
 
     public static String fixContainerName(String name) {
-        if(name.startsWith("/")) {
+        if (name.startsWith("/")) {
             // yes, there may appear other slashes,
             // but we can do not known this cases and ignore its
             name = name.substring(1);
@@ -234,12 +232,12 @@ public final class ContainerUtils {
 
     public static boolean isContainerId(String id) {
         // id like f75dea595d92ae635125ba37300c076682e80a311149782707a8c43893582236
-        if(id == null || id.length() != 64) {
+        if (id == null || id.length() != 64) {
             return false;
         }
-        for(int i = 0; i < id.length(); ++i) {
+        for (int i = 0; i < id.length(); ++i) {
             char c = id.charAt(i);
-            if(!isHex(c)) {
+            if (!isHex(c)) {
                 return false;
             }
         }

@@ -9,7 +9,7 @@ public class ContainerUtilsTest {
 
     @Test
     public void testGetRegistryName() throws Exception {
-        String registryName = ContainerUtils.getRegistryName("registry.com:8080/stub-core:172");
+        String registryName = ContainerUtils.getRegistryPrefix("registry.com:8080/stub-core:172");
         assertEquals("registry.com:8080", registryName);
 
     }

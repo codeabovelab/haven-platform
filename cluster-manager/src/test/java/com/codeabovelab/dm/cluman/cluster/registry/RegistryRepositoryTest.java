@@ -4,6 +4,7 @@ import com.codeabovelab.dm.cluman.cluster.filter.Filter;
 import com.codeabovelab.dm.cluman.cluster.registry.aws.AwsService;
 import com.codeabovelab.dm.cluman.cluster.registry.data.ImageCatalog;
 import com.codeabovelab.dm.cluman.cluster.registry.data.SearchResult;
+import com.codeabovelab.dm.cluman.cluster.registry.data.Tags;
 import com.codeabovelab.dm.cluman.ds.SwarmsConfig;
 import com.codeabovelab.dm.common.kv.KeyValueStorage;
 import com.codeabovelab.dm.common.kv.mapping.KvClassMapper;
@@ -62,19 +63,24 @@ public class RegistryRepositoryTest {
 
     @Test
     public void checkHeath() throws Exception {
-        Assert.isTrue(registryRepository.checkHealth(null));
+        RegistryService dhub = registryRepository.getByName(null);
+        Assert.isTrue(dhub.checkHealth());
 
-        Assert.isTrue(registryRepository.checkHealth("codeabovelab"));
-        Assert.isTrue(registryRepository.checkHealth(AWS_REGISTRY));
+        RegistryService pdhub = registryRepository.getByName("codeabovelab");
+        Assert.isTrue(pdhub.checkHealth());
 
-        Assert.isTrue(registryRepository.checkHealth(PRIVATE_REGISTRY));
+        RegistryService awshub = registryRepository.getByName(AWS_REGISTRY);
+        Assert.isTrue(awshub.checkHealth());
+
+        RegistryService privHub = registryRepository.getByName(PRIVATE_REGISTRY);
+        Assert.isTrue(privHub.checkHealth());
     }
 
     @Test
     public void getCatalog() throws Exception {
         List<ImageCatalog> catalog = registryRepository.getCatalog(Collections.singletonList(AWS_REGISTRY));
         Assert.notNull(catalog);
-//
+
         List<ImageCatalog> catalogni1Full = registryRepository.getCatalog(Collections.singletonList(PRIVATE_REGISTRY));
         Assert.notNull(catalogni1Full);
     }
@@ -82,21 +88,60 @@ public class RegistryRepositoryTest {
     @Test
     public void getTags() throws Exception {
 
-        List<String> tagsAmazone = registryRepository.getTags("cluster-manager", AWS_REGISTRY, Filter.any());
+        RegistryService privHub = registryRepository.getByName(PRIVATE_REGISTRY);
+        Tags ni1Tags = privHub.getTags("cluster-manager");
+        Assert.notNull(ni1Tags);
+        Assert.isTrue(ni1Tags.getTags().size() > 0);
+
+        RegistryService awshub = registryRepository.getByName(AWS_REGISTRY);
+        Tags tagsAmazone = awshub.getTags("cluster-manager");
         Assert.notNull(tagsAmazone);
-        Assert.isTrue(tagsAmazone.size() > 0);
+        Assert.isTrue(tagsAmazone.getTags().size() > 0);
 
-        List<String> tags = registryRepository.getTags("cluster-manager", PRIVATE_REGISTRY, Filter.any());
+        RegistryService pdhub = registryRepository.getByName("codeabovelab");
+        Tags tags = pdhub.getTags("cluster-manager");
         Assert.notNull(tags);
-        Assert.isTrue(tags.size() > 0);
+        Assert.isTrue(tags.getTags().size() > 0);
 
-        List<String> tagsTutum = registryRepository.getTags("ubuntu", "tutum", Filter.any());
+        RegistryService dhub = registryRepository.getByName(null);
+        Tags tagsTutum = dhub.getTags("tutum/ubuntu");
         Assert.notNull(tagsTutum);
-        Assert.isTrue(tagsTutum.size() > 0);
+        Assert.isTrue(tagsTutum.getTags().size() > 0);
 
-        List<String> tagsUbuntu = registryRepository.getTags("ubuntu", null, Filter.any());
+        dhub = registryRepository.getByName(null);
+        Tags tagsUbuntu = dhub.getTags("ubuntu");
         Assert.notNull(tagsUbuntu);
-        Assert.isTrue(tagsUbuntu.size() > 0);
+        Assert.isTrue(tagsUbuntu.getTags().size() > 0);
+
+    }
+
+    @Test
+    public void getTagsViaImageName() throws Exception {
+
+        RegistryService privHub = registryRepository.getRegistryByImageName(PRIVATE_REGISTRY + "/cluster-manager");
+        Tags ni1Tags = privHub.getTags("cluster-manager");
+        Assert.notNull(ni1Tags);
+        Assert.isTrue(ni1Tags.getTags().size() > 0);
+
+        RegistryService awshub = registryRepository.getRegistryByImageName(AWS_REGISTRY+ "/cluster-manager");
+        Tags tagsAmazone = awshub.getTags("cluster-manager");
+        Assert.notNull(tagsAmazone);
+        Assert.isTrue(tagsAmazone.getTags().size() > 0);
+
+        RegistryService pdhub = registryRepository.getRegistryByImageName("codeabovelab"+ "/cluster-manager");
+        Tags tags = pdhub.getTags("cluster-manager");
+        Assert.notNull(tags);
+        Assert.isTrue(tags.getTags().size() > 0);
+
+        RegistryService dhub = registryRepository.getRegistryByImageName("tutum/ubuntu");
+        Tags tagsTutum = dhub.getTags("ubuntu");
+        Assert.notNull(tagsTutum);
+        Assert.isTrue(tagsTutum.getTags().size() > 0);
+
+        dhub = registryRepository.getRegistryByImageName("ubuntu");
+        Tags tagsUbuntu = dhub.getTags("ubuntu");
+        Assert.notNull(tagsUbuntu);
+        Assert.isTrue(tagsUbuntu.getTags().size() > 0);
 
     }
 //
@@ -107,10 +152,10 @@ public class RegistryRepositoryTest {
 
     @Test
     public void getImage() throws Exception {
-        ImageDescriptor image = registryRepository.getImage("cluster-manager", "latest", PRIVATE_REGISTRY);
+        ImageDescriptor image = registryRepository.getByName(PRIVATE_REGISTRY).getImage("cluster-manager", "latest");
         Assert.notNull(image);
 
-        ImageDescriptor imageUbuntu = registryRepository.getImage("ubuntu", "latest", null);
+        ImageDescriptor imageUbuntu = registryRepository.getByName(null).getImage("ubuntu", "latest");
         Assert.notNull(imageUbuntu);
 
 //        ImageDescriptor tutumUbuntu = registryRepository.getImage("ubuntu", "latest", "tutum");
@@ -135,12 +180,13 @@ public class RegistryRepositoryTest {
     @Test
     @Ignore
     public void deleteTag() throws Exception {
-        List<String> tags = registryRepository.getTags("balancer-web", PRIVATE_REGISTRY, Filter.any());
+        RegistryService privHub = registryRepository.getByName(PRIVATE_REGISTRY);
+        List<String> tags = privHub.getTags("balancer-web").getTags();
         Assert.isTrue(!CollectionUtils.isEmpty(tags));
         String tag = tags.get(0);
-        ImageDescriptor ni1 = registryRepository.getImage("balancer-web", tag, "ni1");
+        ImageDescriptor ni1 = privHub.getImage("balancer-web", tag);
         Assert.notNull(ni1);
-        registryRepository.deleteTag("balancer-web", ni1.getId(), "ni1");
+        privHub.deleteTag("balancer-web", ni1.getId());
 
     }
 

@@ -62,6 +62,12 @@ public class DisabledRegistryServiceWrapper implements RegistryService {
     }
 
     @Override
+    public ImageDescriptor getImage(String fullImageName) {
+        logWarn();
+        return null;
+    }
+
+    @Override
     public void deleteTag(String name, String reference) {
         logWarn();
         throw new IllegalStateException("Registry is disabled");

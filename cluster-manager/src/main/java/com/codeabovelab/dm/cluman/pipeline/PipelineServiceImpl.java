@@ -16,6 +16,7 @@
 
 package com.codeabovelab.dm.cluman.pipeline;
 
+import com.codeabovelab.dm.cluman.cluster.registry.RegistryService;
 import com.codeabovelab.dm.cluman.utils.ContainerUtils;
 import com.codeabovelab.dm.cluman.batch.LoadContainersOfImageTasklet;
 import com.codeabovelab.dm.cluman.cluster.docker.management.DockerService;
@@ -344,7 +345,8 @@ public class PipelineServiceImpl implements PipelineService {
     }
 
     private void deleteTag(PipelineInstance instance, PipelineInstanceHistory lastHistory) {
-        registryRepository.deleteTag(instance.getRegistry(), instance.getName(), lastHistory.getTag());
+        RegistryService registry = registryRepository.getByName(instance.getRegistry());
+        registry.deleteTag(instance.getName(), lastHistory.getTag());
     }
 
     @Override
@@ -492,8 +494,8 @@ public class PipelineServiceImpl implements PipelineService {
             imageVersion = "latest";
         }
         TagImageArg tagImageArg = TagImageArg.builder()
-                .imageName(ContainerUtils.getImageName(fullImage))
-                .repository(ContainerUtils.getRegistryName(fullImage))
+                .imageName(ContainerUtils.getImageNameWithoutPrefix(fullImage))
+                .repository(ContainerUtils.getRegistryPrefix(fullImage))
                 .currentTag(imageVersion)
                 .newTag(nextTag).build();
         log.info("pushing image {}", tagImageArg);

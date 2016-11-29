@@ -47,7 +47,6 @@ public class DockerServiceImplTest {
                 .addHost("localhost:2375").build();
         AsyncRestTemplate restTemplate = new AsyncRestTemplate();
         RegistryRepository registryRepository = mock(RegistryRepository.class);
-        when(registryRepository.getConfig(anyString())).thenReturn(new PrivateRegistryConfig());
         restTemplate.setInterceptors(
                 Collections.singletonList(
                         new HttpAuthInterceptor(registryRepository)));

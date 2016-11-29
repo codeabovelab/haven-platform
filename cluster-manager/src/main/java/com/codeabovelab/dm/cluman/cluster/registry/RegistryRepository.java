@@ -16,24 +16,23 @@
 
 package com.codeabovelab.dm.cluman.cluster.registry;
 
-import com.codeabovelab.dm.cluman.cluster.filter.Filter;
 import com.codeabovelab.dm.cluman.cluster.registry.data.ImageCatalog;
 import com.codeabovelab.dm.cluman.cluster.registry.data.SearchResult;
-import com.codeabovelab.dm.cluman.cluster.registry.data.Tags;
 import com.codeabovelab.dm.cluman.cluster.registry.model.RegistriesConfig;
 import com.codeabovelab.dm.cluman.cluster.registry.model.RegistryConfig;
-import com.codeabovelab.dm.cluman.validate.ExtendedAssert;
-import com.codeabovelab.dm.common.kv.mapping.KvClassMapper;
-import com.codeabovelab.dm.common.kv.mapping.KvMapperFactory;
-import com.codeabovelab.dm.cluman.model.ImageDescriptor;
+import com.codeabovelab.dm.cluman.model.ImageName;
+import com.codeabovelab.dm.cluman.model.NotFoundException;
 import com.codeabovelab.dm.cluman.model.Severity;
 import com.codeabovelab.dm.cluman.model.StandardActions;
 import com.codeabovelab.dm.cluman.reconfig.ReConfigObject;
 import com.codeabovelab.dm.cluman.reconfig.ReConfigurable;
-import com.codeabovelab.dm.common.validate.ValidityException;
+import com.codeabovelab.dm.cluman.utils.ContainerUtils;
+import com.codeabovelab.dm.cluman.validate.ExtendedAssert;
+import com.codeabovelab.dm.common.kv.mapping.KvClassMapper;
+import com.codeabovelab.dm.common.kv.mapping.KvMapperFactory;
 import com.codeabovelab.dm.common.mb.MessageBus;
 import com.codeabovelab.dm.common.utils.Closeables;
-import com.google.common.base.MoreObjects;
+import com.codeabovelab.dm.common.validate.ValidityException;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import lombok.extern.slf4j.Slf4j;
@@ -71,9 +70,9 @@ public class RegistryRepository implements SupportSearch {
         this.classMapper = classMapper.createClassMapper(prefix, RegistryConfig.class);
         this.eventBus = eventBus;
         this.executorService = Executors.newSingleThreadExecutor(new ThreadFactoryBuilder()
-          .setDaemon(true)
-          .setNameFormat(getClass().getSimpleName() + "-eventDispatcher-%d")
-          .build());
+                .setDaemon(true)
+                .setNameFormat(getClass().getSimpleName() + "-eventDispatcher-%d")
+                .build());
     }
 
     public void init(List<RegistryConfig> configs) {
@@ -114,13 +113,13 @@ public class RegistryRepository implements SupportSearch {
                     log.error("Can not load repository: \"{}\" from storage", repoName, e);
                 }
             }
-        } catch(Exception e) {
+        } catch (Exception e) {
             log.error("Can not list repositories in storage, due to error.", e);
         }
         //save newly added registries
-        for(String name: unpersisted) {
+        for (String name : unpersisted) {
             RegistryService service = registryServiceMap.get(name);
-            if(service == null) {
+            if (service == null) {
                 continue;
             }
             RegistryConfig config = service.getConfig();
@@ -141,13 +140,13 @@ public class RegistryRepository implements SupportSearch {
         String name = service.getConfig().getName();
         ExtendedAssert.matchId(name, "registry name");
         RegistryService old = registryServiceMap.put(name, service);
-        if(old != service) {
-            if(service instanceof AbstractV2RegistryService) {
-                ((AbstractV2RegistryService)service).setEventConsumer(this::dispatchEvent);
+        if (old != service) {
+            if (service instanceof AbstractV2RegistryService) {
+                ((AbstractV2RegistryService) service).setEventConsumer(this::dispatchEvent);
             }
-            if(service instanceof InitializingBean) {
+            if (service instanceof InitializingBean) {
                 try {
-                    ((InitializingBean)service).afterPropertiesSet();
+                    ((InitializingBean) service).afterPropertiesSet();
                 } catch (Exception e) {
                     log.error("Can not init repository: \"{}\"", name, e);
                 }
@@ -198,76 +197,51 @@ public class RegistryRepository implements SupportSearch {
             names = getAvailableRegistries();
         }
         List<ImageCatalog> collect = names.stream()
-                .filter(f -> !getRegistry(f).getConfig().isDisabled())
-                .filter(f -> !StringUtils.hasText(getRegistry(f).getConfig().getErrorMessage()))
-                .filter(f -> !(getRegistry(f) instanceof DockerHubRegistry))
+                .filter(f -> !getByName(f).getConfig().isDisabled())
+                .filter(f -> !StringUtils.hasText(getByName(f).getConfig().getErrorMessage()))
+                .filter(f -> !(getByName(f) instanceof DockerHubRegistry))
                 .map(n -> {
-            ImageCatalog imageCatalog = getRegistry(n).getCatalog();
-            imageCatalog.setName(n);
-            return imageCatalog;
-        }).collect(Collectors.toList());
+                    ImageCatalog imageCatalog = getByName(n).getCatalog();
+                    imageCatalog.setName(n);
+                    return imageCatalog;
+                }).collect(Collectors.toList());
         return collect;
-    }
-
-    public List<String> getTags(String name, String registryName, Filter filter) {
-        RegistryService registry = getRegistry(registryName);
-        Tags tags = registry.getTags(name);
-        List<String> filtered = filter(tags, name, registry, filter);
-        return filtered;
-    }
-
-    public ImageDescriptor getImage(String name, String tag, String registryName) {
-        RegistryService registry = getRegistry(registryName);
-        ImageDescriptor image = registry.getImage(name, tag);
-        return image;
-    }
-
-    public boolean checkHealth(String registryName) {
-        RegistryService registry = getRegistry(registryName);
-        return registry.checkHealth();
-    }
-
-    private List<String> filter(Tags tags, String name, RegistryService registry, Filter filterSet) {
-        if (tags == null) {
-            return Collections.emptyList();
-        }
-        ImageFilterContext ifc = new ImageFilterContext(registry);
-        ifc.setName(name);
-        List<String> list = new ArrayList<>();
-        for (String tag : tags.getTags()) {
-            ifc.setTag(tag);
-            boolean test = filterSet.test(ifc);
-            if (test) {
-                list.add(tag);
-            }
-        }
-        return list;
     }
 
     public Collection<String> getAvailableRegistries() {
         return ImmutableSet.copyOf(registryServiceMap.keySet());
     }
 
-    public void deleteTag(String name, String reference, String registryName) {
-        RegistryService registry = getRegistry(registryName);
-        registry.deleteTag(name, reference);
-
-    }
-
-    public RegistryConfig getConfig(String registry) {
-        return getRegistry(registry).getConfig();
-    }
-
     /**
-     * Return registry or wrapper, never return null.
-     * @param registry
-     * @return
+     * Returns registry name even we can't operate with it (for downloaded images for example)
+     *
+     * @param imageName
+     * @return never returns null
      */
-    public RegistryService getRegistry(String registry) {
-        if (!StringUtils.hasText(registry)) {
-            return wrapDefault(registry);
+    public String resolveRegistryNameByImageName(String imageName) {
+        RegistryService registryByImageName = getRegistryByImageName(imageName);
+        if (registryByImageName != null) {
+            return registryByImageName.getConfig().getName();
+        } else {
+            return ContainerUtils.getRegistryPrefix(imageName);
         }
-        RegistryService registryService = MoreObjects.firstNonNull(getByName(registry), wrapDefault(registry));
+    }
+
+    public RegistryService getRegistryByImageName(String imageName) {
+        RegistryService registryService;
+        if (!StringUtils.hasText(imageName)) {
+            return wrapDefault(imageName);
+        }
+        String registryPrefix = ContainerUtils.getRegistryPrefix(imageName);
+        RegistryService byName = getByName(registryPrefix);
+        if (byName != null) {
+            registryService = byName;
+        } else if (!ImageName.isRegistry(registryPrefix)) {
+            registryService = wrapDefault(registryPrefix);
+        } else {
+            //we don't have such registry
+            throw new NotFoundException("registry was not found by " + imageName);
+        }
 
         if (registryService.getConfig().isDisabled() || StringUtils.hasText(registryService.getConfig().getErrorMessage())) {
             return new DisabledRegistryServiceWrapper(registryService);
@@ -279,18 +253,19 @@ public class RegistryRepository implements SupportSearch {
         return new DockerHubRegistryServiceWrapper(defaultRegistry, registry);
     }
 
-    public RegistryService getDefaultRegistry() {
+    RegistryService getDefaultRegistry() {
         return defaultRegistry;
     }
 
     /**
      * Get registry by name
+     *
      * @param registryName
      * @return
      */
     public RegistryService getByName(String registryName) {
         RegistryService service = registryServiceMap.get(registryName);
-        if(service == null && Objects.equals(defaultRegistry.getConfig().getName(), registryName)) {
+        if (service == null && (registryName == null || Objects.equals(defaultRegistry.getConfig().getName(), registryName))) {
             service = defaultRegistry;
         }
         return service;
@@ -299,7 +274,7 @@ public class RegistryRepository implements SupportSearch {
     @Override
     public SearchResult search(String query, final int page, final int size) {
         RegistrySearchHelper rsh = new RegistrySearchHelper(query, page, size);
-        for(RegistryService service: registryServiceMap.values()) {
+        for (RegistryService service : registryServiceMap.values()) {
             rsh.search(service);
         }
         rsh.search(defaultRegistry);
@@ -322,7 +297,7 @@ public class RegistryRepository implements SupportSearch {
     @ReConfigObject
     private void setConfig(RegistriesConfig rc) {
         List<RegistryConfig> registries = rc.getRegistries();
-        for(RegistryConfig config: registries) {
+        for (RegistryConfig config : registries) {
             RegistryService registryService = factory.createRegistryService(config);
             register(registryService);
         }

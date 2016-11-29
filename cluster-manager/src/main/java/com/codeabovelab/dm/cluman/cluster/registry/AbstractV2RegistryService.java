@@ -21,10 +21,7 @@ import com.codeabovelab.dm.cluman.cluster.registry.data.*;
 import com.codeabovelab.dm.cluman.cluster.registry.model.RegistryAdapter;
 import com.codeabovelab.dm.cluman.cluster.registry.model.RegistryConfig;
 import com.codeabovelab.dm.cluman.cluster.registry.model.RegistryCredentials;
-import com.codeabovelab.dm.cluman.model.ImageDescriptor;
-import com.codeabovelab.dm.cluman.model.ImageDescriptorImpl;
-import com.codeabovelab.dm.cluman.model.Severity;
-import com.codeabovelab.dm.cluman.model.StandardActions;
+import com.codeabovelab.dm.cluman.model.*;
 import com.codeabovelab.dm.common.utils.Throwables;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
@@ -213,6 +210,10 @@ abstract class AbstractV2RegistryService implements RegistryService {
         return getRestTemplate().getForObject(forName(name).path("/blobs/").path(digest).build().toUri(), type);
     }
 
+    public ImageDescriptor getImage(String fullImageName) {
+        ImageName parsed = ImageName.parse(fullImageName);
+        return getImage(parsed.getName(), parsed.getTag());
+    }
     @Override
     public ImageDescriptor getImage(String name, String reference) {
         String imageId = getImageId(name, reference);
@@ -262,7 +263,7 @@ abstract class AbstractV2RegistryService implements RegistryService {
         return adapter.getConfig();
     }
 
-    public RestTemplate getRestTemplate() {
+    RestTemplate getRestTemplate() {
         return adapter.getRestTemplate();
     }
 

@@ -32,9 +32,9 @@ public class UiImage extends UiImageData {
     private final String registry;
     private final List<String> clusters = new ArrayList<>();
 
-    public UiImage(String id, String name) {
+    public UiImage(String id, String name, String registry) {
         super(id);
         this.name = name;
-        this.registry = ContainerUtils.getRegistryName(this.name);
+        this.registry = registry;
     }
 }

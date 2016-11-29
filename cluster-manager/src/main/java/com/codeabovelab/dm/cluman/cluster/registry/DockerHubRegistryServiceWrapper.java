@@ -51,6 +51,11 @@ class DockerHubRegistryServiceWrapper implements RegistryService, DockerHubRegis
     }
 
     @Override
+    public ImageDescriptor getImage(String fullImageName) {
+        return dockerHubRegistry.getImage(fullImageName);
+    }
+
+    @Override
     public void deleteTag(String name, String reference) {
         dockerHubRegistry.deleteTag(merge(registryName, name), reference);
     }
@@ -76,6 +81,9 @@ class DockerHubRegistryServiceWrapper implements RegistryService, DockerHubRegis
     }
 
     private static String merge(String registryName, String name) {
+        if (name.contains("/")) {
+            return name;
+        }
         return (hasText(registryName) ? registryName : "library") + "/" + name;
     }
 }

@@ -146,8 +146,8 @@ public class UpdateToTagOrCreateScheduledJob implements Runnable {
 
     private ImageInfo getLatest(String img) {
         return versions.computeIfAbsent(ContainerUtils.getRegistryAndImageName(img), (i) -> {
-            RegistryService registry = registryRepository.getRegistry(ContainerUtils.getRegistryName(i));
-            String imageName = ContainerUtils.getImageName(i);
+            RegistryService registry = registryRepository.getRegistryByImageName(i);
+            String imageName = ContainerUtils.getImageNameWithoutPrefix(i);
             log.warn("can't find tags for {}", img);
             Tags tags = registry.getTags(imageName);
             Assert.notNull(tags, "can't find tags for " + img);

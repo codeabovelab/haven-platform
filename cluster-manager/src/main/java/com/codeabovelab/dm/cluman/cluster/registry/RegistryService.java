@@ -59,6 +59,14 @@ public interface RegistryService extends SupportSearch {
     ImageDescriptor getImage(String name, String reference);
 
     /**
+     * simplified method
+     * @param fullImageName
+     * @return
+     */
+    @Cacheable("ImageDescriptor")
+    @DefineCache(expireAfterWrite = 60_000)
+    ImageDescriptor getImage(String fullImageName);
+    /**
      * Delete the manifest identified by name and reference where reference can be a tag or digest.
      * @param name
      * @param reference

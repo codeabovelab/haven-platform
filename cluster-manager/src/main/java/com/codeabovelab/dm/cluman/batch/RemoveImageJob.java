@@ -91,13 +91,13 @@ public class RemoveImageJob implements Runnable {
             name = null;
             tag = null;
         } else {
-            name = ContainerUtils.getImageName(fullImageName);
+            name = ContainerUtils.getImageNameWithoutPrefix(fullImageName);
             tag = ContainerUtils.getImageVersion(fullImageName);
             singleImage = StringUtils.hasText(tag);
         }
         RegistryService registry = null;
         if (fromRegistry) {
-            String registryName = ContainerUtils.getRegistryName(fullImageName);
+            String registryName = ContainerUtils.getRegistryPrefix(fullImageName);
             registry = registryRepository.getByName(registryName);
             ExtendedAssert.notFound(registry, "Registry: " + registryName);
         }

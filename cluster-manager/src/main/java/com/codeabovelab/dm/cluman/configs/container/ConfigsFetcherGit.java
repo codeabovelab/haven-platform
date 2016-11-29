@@ -156,7 +156,7 @@ public class ConfigsFetcherGit implements ConfigsFetcher {
 
         @Override
         public String apply(String s) {
-            return ContainerUtils.getImageName(s);
+            return ContainerUtils.getImageNameWithoutPrefix(s);
         }
     }
 }

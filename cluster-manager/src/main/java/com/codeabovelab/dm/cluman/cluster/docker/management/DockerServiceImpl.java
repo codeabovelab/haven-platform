@@ -765,7 +765,7 @@ public class DockerServiceImpl implements DockerService {
     @Override
     public ImageDescriptor pullImage(String name, final Consumer<ProcessEvent> watcher) {
         ProcessEvent.watch(watcher, "puling image {0}", name);
-        HttpAuthInterceptor.setCurrentName(ContainerUtils.getRegistryName(name));
+        HttpAuthInterceptor.setCurrentName(ContainerUtils.getRegistryPrefix(name));
         URI uri = makeUrl("images/create").queryParam("fromImage", name).build().toUri();
         Supplier<Future<Object>> puller = () -> restTemplate.execute(uri, HttpMethod.POST, null, response -> {
             try (Reader r = new InputStreamReader(response.getBody(), StandardCharsets.UTF_8)) {

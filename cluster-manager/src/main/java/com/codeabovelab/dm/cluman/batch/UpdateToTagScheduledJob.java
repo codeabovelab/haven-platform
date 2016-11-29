@@ -34,7 +34,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.util.Assert;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -110,8 +109,8 @@ public class UpdateToTagScheduledJob implements Runnable {
 
     private ImageInfo getLatest(String img) {
         return versions.computeIfAbsent(ContainerUtils.getRegistryAndImageName(img), (i) -> {
-            RegistryService registry = registryRepository.getRegistry(ContainerUtils.getRegistryName(i));
-            String imageName = ContainerUtils.getImageName(i);
+            RegistryService registry = registryRepository.getRegistryByImageName(i);
+            String imageName = ContainerUtils.getImageNameWithoutPrefix(i);
             Tags tags = registry.getTags(imageName);
             List<String> tagsList = new ArrayList<>(tags.getTags());
             tagsList.sort(comparator);

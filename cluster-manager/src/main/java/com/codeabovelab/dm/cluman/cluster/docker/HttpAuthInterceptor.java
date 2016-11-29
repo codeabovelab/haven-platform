@@ -60,7 +60,7 @@ public class HttpAuthInterceptor implements ClientHttpRequestInterceptor, AsyncC
         String url = host + (port == -1 ? "" : ":" + port);
         String name = registryName.get();
         log.debug("try to auth request to registry: {}", name);
-        RegistryService registry = registryRepository.getRegistry(name);
+        RegistryService registry = registryRepository.getByName(name);
         if (registry == null) {
             log.debug("auth : none due to unknown registry \"{}\"", name);
             return;

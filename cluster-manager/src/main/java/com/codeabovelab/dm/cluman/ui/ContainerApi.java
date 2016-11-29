@@ -44,7 +44,6 @@ import com.codeabovelab.dm.cluman.model.NodeInfo;
 import com.codeabovelab.dm.cluman.model.ContainerSource;
 import com.codeabovelab.dm.cluman.source.ContainerSourceFactory;
 import com.codeabovelab.dm.cluman.ui.model.*;
-import com.codeabovelab.dm.cluman.utils.ContainerUtils;
 import com.codeabovelab.dm.cluman.validate.ExtendedAssert;
 import com.codeabovelab.dm.common.cache.DefineCache;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -66,7 +65,8 @@ import java.io.IOException;
 import java.util.*;
 import java.util.stream.Collectors;
 
-import static com.codeabovelab.dm.cluman.utils.ContainerUtils.buildImageName;
+import static com.codeabovelab.dm.cluman.utils.ContainerUtils.getImageNameWithoutPrefix;
+import static com.codeabovelab.dm.cluman.utils.ContainerUtils.setImageVersion;
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 import static org.springframework.web.bind.annotation.RequestMethod.GET;
 
@@ -213,19 +213,18 @@ public class ContainerApi {
     public ContainerSource defaultParams(@PathVariable("cluster") String cluster,
                                          @RequestParam("image") String image,
                                          @RequestParam("tag") String tag) throws Exception {
-        String registry = ContainerUtils.getRegistryName(image);
-        String imageName = ContainerUtils.getImageName(image);
-        RegistryService regisrty = registryRepository.getRegistry(registry);
-        ImageDescriptor img = regisrty.getImage(imageName, tag);
+        String fullImageName = setImageVersion(image, tag);
+        RegistryService regisrty = registryRepository.getRegistryByImageName(fullImageName);
+        ImageDescriptor img = regisrty.getImage(fullImageName);
         log.info("image info {}", img);
-        ContainerSource res = configProvider.resolveProperties(cluster, img, buildImageName(registry, imageName, tag),
+        ContainerSource res = configProvider.resolveProperties(cluster, img, getImageNameWithoutPrefix(image),
                 new ContainerSource());
         DockerService dockerService = dockerServiceRegistry.getService(cluster);
 
         res.setName(containersNameService.calculateName(CalcNameArg.builder()
                 .allocate(false)
                 .containerName(res.getName())
-                .imageName(imageName)
+                .imageName(getImageNameWithoutPrefix(image))
                 .dockerService(dockerService)
                 .build()));
 

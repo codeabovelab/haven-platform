@@ -51,11 +51,10 @@ public class RegistryApi {
     @ApiOperation("list of available registries")
     public Collection<RegistryConfig> availableRegistries() {
         Collection<String> availableRegistries = registryRepository.getAvailableRegistries();
-        return availableRegistries.stream().map(this::map).collect(Collectors.toList());
+        return availableRegistries.stream().map(r -> registryRepository.getByName(r)).map(this::map).collect(Collectors.toList());
     }
 
-    private RegistryConfig map(String s) {
-        RegistryService registry = registryRepository.getRegistry(s);
+    private RegistryConfig map(RegistryService registry) {
         // see that we explicitly clone config
         RegistryConfig config = registry.getConfig().clone();
         config.cleanCredentials();
@@ -73,7 +72,7 @@ public class RegistryApi {
         registryFactory.complete(config);
         RegistryService registryService = registryFactory.createRegistryService(config);
         registryRepository.register(registryService);
-        return map(registryService.getConfig().getName());
+        return map(registryService);
     }
 
     @Secured(Authorities.ADMIN_ROLE)
@@ -85,8 +84,9 @@ public class RegistryApi {
     @RequestMapping(value = "/refresh", method = PUT)
     @ApiOperation("Refresh registry")
     public RegistryConfig refreshRegistry(@RequestParam(value = "name") String name) {
-        registryRepository.checkHealth(name);
-        return map(name);
+        RegistryService registry = registryRepository.getByName(name);
+        registry.checkHealth();
+        return map(registry);
     }
 
 }
