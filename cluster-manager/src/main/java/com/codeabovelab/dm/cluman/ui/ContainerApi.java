@@ -44,6 +44,7 @@ import com.codeabovelab.dm.cluman.model.NodeInfo;
 import com.codeabovelab.dm.cluman.model.ContainerSource;
 import com.codeabovelab.dm.cluman.source.ContainerSourceFactory;
 import com.codeabovelab.dm.cluman.ui.model.*;
+import com.codeabovelab.dm.cluman.utils.ContainerUtils;
 import com.codeabovelab.dm.cluman.validate.ExtendedAssert;
 import com.codeabovelab.dm.common.cache.DefineCache;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -65,6 +66,7 @@ import java.io.IOException;
 import java.util.*;
 import java.util.stream.Collectors;
 
+import static com.codeabovelab.dm.cluman.utils.ContainerUtils.buildImageName;
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 import static org.springframework.web.bind.annotation.RequestMethod.GET;
 
@@ -72,7 +74,7 @@ import static org.springframework.web.bind.annotation.RequestMethod.GET;
  * Container pPart of cluster API.
  */
 @RestController
-@RequestMapping(value = "/ui/api", produces = APPLICATION_JSON_VALUE)
+@RequestMapping(value = "/ui/api/containers", produces = APPLICATION_JSON_VALUE)
 @RequiredArgsConstructor(onConstructor = @__(@Autowired))
 @Slf4j
 public class ContainerApi {
@@ -89,7 +91,7 @@ public class ContainerApi {
     private final ApplicationService applicationService;
     private final ContainerSourceFactory containerSourceFactory;
 
-    @RequestMapping(value = "/containers/{id}/stop", method = RequestMethod.POST)
+    @RequestMapping(value = "/{id}/stop", method = RequestMethod.POST)
     public ResponseEntity<?> stopContainer(@PathVariable("id") String id) {
         StopContainerArg arg = StopContainerArg.builder().id(id).build();
         DockerService service = getService(id);
@@ -98,7 +100,7 @@ public class ContainerApi {
     }
 
     @Deprecated
-    @RequestMapping(value = "/containers/{id}/refresh", method = RequestMethod.POST)
+    @RequestMapping(value = "/{id}/refresh", method = RequestMethod.POST)
     public ResponseEntity<?> refreshContainer(@PathVariable("id") String id) {
         StopContainerArg arg = StopContainerArg.builder().id(id).build();
         DockerService service = getService(id);
@@ -108,7 +110,7 @@ public class ContainerApi {
         return UiUtils.createResponse(resStart);
     }
 
-    @RequestMapping(value = "/containers/{id}/remove", method = RequestMethod.POST)
+    @RequestMapping(value = "/{id}/remove", method = RequestMethod.POST)
     public ResponseEntity<?> removeContainer(@PathVariable("id") String id) {
         DockerService service = getService(id);
         service.stopContainer(StopContainerArg.builder().id(id).build());
@@ -117,14 +119,14 @@ public class ContainerApi {
         return UiUtils.createResponse(res);
     }
 
-    @RequestMapping(value = "/containers/{id}/start", method = RequestMethod.POST)
+    @RequestMapping(value = "/{id}/start", method = RequestMethod.POST)
     public ResponseEntity<?> startContainer(@PathVariable("id") String id) {
         DockerService service = getService(id);
         ServiceCallResult res = service.startContainer(id);
         return UiUtils.createResponse(res);
     }
 
-    @RequestMapping(value = "/containers/", method = RequestMethod.GET)
+    @RequestMapping(value = "/", method = RequestMethod.GET)
     public List<UiContainer> getAll() {
         List<ContainerRegistration> crs = containerStorage.getContainers();
         Map<String, String> app2cont = UiUtils.mapAppContainer(applicationService, null);
@@ -142,7 +144,7 @@ public class ContainerApi {
 
 
 
-    @RequestMapping(value = "/containers/{id}/details", method = RequestMethod.GET)
+    @RequestMapping(value = "/{id}/details", method = RequestMethod.GET)
     @DefineCache(expireAfterWrite = Integer.MAX_VALUE)
     public UIContainerDetails getDetails(@PathVariable("id") String id) {
         log.info("got getDetails request id: {}", id);
@@ -177,7 +179,7 @@ public class ContainerApi {
         return res;
     }
 
-    @RequestMapping(value = "/containers/{id}/statistics", method = RequestMethod.GET)
+    @RequestMapping(value = "/{id}/statistics", method = RequestMethod.GET)
     @Cacheable("UIStatistics")
     @SuppressWarnings("unchecked")
     public UIStatistics getStatistics(@PathVariable("id") String id) throws Exception {
@@ -199,7 +201,7 @@ public class ContainerApi {
         return service;
     }
 
-    @RequestMapping(value = "/containers/{id}/restart", method = RequestMethod.POST)
+    @RequestMapping(value = "/{id}/restart", method = RequestMethod.POST)
     public ResponseEntity<?> restartContainer(@PathVariable("id") String id) {
         ServiceCallResult res = getService(id)
                 .restartContainer(StopContainerArg.builder().id(id).build());
@@ -207,22 +209,23 @@ public class ContainerApi {
     }
 
 
-    @RequestMapping(value = "/clusters/{cluster}/defaultparams/{image}/{tag}/", method = GET)
+    @RequestMapping(value = "/{cluster}/defaultparams", method = GET)
     public ContainerSource defaultParams(@PathVariable("cluster") String cluster,
-                                         @PathVariable("image") String image,
-                                         @PathVariable("tag") String tag,
-                                         @RequestParam(value = "registry", required = false) String registry) throws Exception {
+                                         @RequestParam("image") String image,
+                                         @RequestParam("tag") String tag) throws Exception {
+        String registry = ContainerUtils.getRegistryName(image);
+        String imageName = ContainerUtils.getImageName(image);
         RegistryService regisrty = registryRepository.getRegistry(registry);
-        String id = regisrty.getConfig().getName() + "/" + image + ":" + tag;
-        DockerService dockerService = dockerServiceRegistry.getService(cluster);
-        ImageDescriptor img = regisrty.getImage(image, tag);
+        ImageDescriptor img = regisrty.getImage(imageName, tag);
         log.info("image info {}", img);
-        ContainerSource res = configProvider.resolveProperties(cluster, img, id, new ContainerSource());
+        ContainerSource res = configProvider.resolveProperties(cluster, img, buildImageName(registry, imageName, tag),
+                new ContainerSource());
+        DockerService dockerService = dockerServiceRegistry.getService(cluster);
 
         res.setName(containersNameService.calculateName(CalcNameArg.builder()
                 .allocate(false)
                 .containerName(res.getName())
-                .imageName(image)
+                .imageName(imageName)
                 .dockerService(dockerService)
                 .build()));
 
@@ -235,7 +238,7 @@ public class ContainerApi {
     }
 
 
-    @RequestMapping(value = "/containers/{id}/logs", method = RequestMethod.GET)
+    @RequestMapping(value = "/{id}/logs", method = RequestMethod.GET)
     public void getContainerLog(@PathVariable("id") String id,
                                 @RequestParam(value = "stdout", defaultValue = "true", required = false) boolean stdout,
                                 @RequestParam(value = "stderr", defaultValue = "true", required = false) boolean stderr,
@@ -269,7 +272,7 @@ public class ContainerApi {
         }
     }
 
-    @RequestMapping(value = "/containers/create", method = RequestMethod.POST)
+    @RequestMapping(value = "/create", method = RequestMethod.POST)
     @ResponseStatus(HttpStatus.ACCEPTED)
     public void createContainer(@RequestBody ContainerSource container, final HttpServletResponse response) throws Exception {
         String node = container.getNode();
@@ -314,7 +317,7 @@ public class ContainerApi {
         }
     }
 
-    @RequestMapping(value = "/containers/{id}/updateLabels", method = RequestMethod.PUT)
+    @RequestMapping(value = "/{id}/updateLabels", method = RequestMethod.PUT)
     public void updateLabels(@PathVariable("id") String containerId,
                              Map<String, String> additionalLabels) throws Exception {
 
@@ -325,7 +328,7 @@ public class ContainerApi {
     }
 
     @ApiOperation("this method allows to get container's id by name and cluster")
-    @RequestMapping(value = "/containers/{cluster}/{name}", method = RequestMethod.GET)
+    @RequestMapping(value = "/{cluster}/{name}", method = RequestMethod.GET)
     public UIContainerDetails getContainerDetailsByName(@PathVariable("cluster") String cluster, @PathVariable("name") String name)
             throws Exception {
         ContainerRegistration cr = containerStorage.findContainer(name);
@@ -337,7 +340,7 @@ public class ContainerApi {
         return toContainerDetails(cr, container);
     }
 
-    @RequestMapping(value = "/containers/{id}/update", method = RequestMethod.PUT)
+    @RequestMapping(value = "/{id}/update", method = RequestMethod.PUT)
     public ResponseEntity<?> updateContainer(@PathVariable("id") String containerId,
                                              @RequestBody UiUpdateContainer container) throws Exception {
         String cluster = getClusterForContainer(containerId);
@@ -383,7 +386,7 @@ public class ContainerApi {
         return cluster;
     }
 
-    @RequestMapping(value = "/containers/{id}/rename", method = RequestMethod.PUT)
+    @RequestMapping(value = "/{id}/rename", method = RequestMethod.PUT)
     public ResponseEntity<?> rename(@PathVariable("id") String id,
                                     @RequestParam(value = "newName") String newName) {
         log.info("got rename request id: {}, name: {}", id, newName);
@@ -392,7 +395,7 @@ public class ContainerApi {
         return UiUtils.createResponse(res);
     }
 
-    @RequestMapping(value = "/containers/{id}/scale", method = RequestMethod.POST)
+    @RequestMapping(value = "/{id}/scale", method = RequestMethod.POST)
     public ResponseEntity<?> scale(@PathVariable("id") String id,
                                    @RequestParam(value = "scaleFactor", required = false, defaultValue = "1") Integer scaleFactor) {
         log.info("got scale request id: {}, count {}", id, scaleFactor);

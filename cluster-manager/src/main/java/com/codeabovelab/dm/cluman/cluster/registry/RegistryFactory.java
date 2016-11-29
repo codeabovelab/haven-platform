@@ -136,7 +136,7 @@ public class RegistryFactory implements DisposableBean {
         DockerHubRegistryImpl registryService = DockerHubRegistryImpl.builder()
                 .adapter(new HubRegistryAdapter(config, this::restTemplate, dockerHubUrl))
                 .build();
-        return registryService;
+        return new DockerHubRegistryServiceWrapper(registryService, config.getUsername());
 
     }
 

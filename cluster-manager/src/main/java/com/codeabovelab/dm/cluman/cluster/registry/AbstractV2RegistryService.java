@@ -19,8 +19,8 @@ package com.codeabovelab.dm.cluman.cluster.registry;
 import com.codeabovelab.dm.cluman.cluster.docker.model.ContainerConfig;
 import com.codeabovelab.dm.cluman.cluster.registry.data.*;
 import com.codeabovelab.dm.cluman.cluster.registry.model.RegistryAdapter;
-import com.codeabovelab.dm.cluman.cluster.registry.model.RegistryCredentials;
 import com.codeabovelab.dm.cluman.cluster.registry.model.RegistryConfig;
+import com.codeabovelab.dm.cluman.cluster.registry.model.RegistryCredentials;
 import com.codeabovelab.dm.cluman.model.ImageDescriptor;
 import com.codeabovelab.dm.cluman.model.ImageDescriptorImpl;
 import com.codeabovelab.dm.cluman.model.Severity;
@@ -98,11 +98,12 @@ abstract class AbstractV2RegistryService implements RegistryService {
 
     /**
      * Do analysing of exception for connection errors, which is mean offline status
+     *
      * @param e
      */
     private void checkOnline(Exception e) {
         ConnectException conn = Throwables.find(e, ConnectException.class);
-        if(conn != null) {
+        if (conn != null) {
             toggleOnline(conn.toString());
         }
     }
@@ -125,7 +126,7 @@ abstract class AbstractV2RegistryService implements RegistryService {
         RegistryConfig config = getConfig();
         String oldMessage = config.getErrorMessage();
         boolean online = error == null;
-        if(!Objects.equals(oldMessage, error)) {
+        if (!Objects.equals(oldMessage, error)) {
             //error is changed, so we need to send event
             fireEvent(RegistryEvent.builder()
               .action(online ? StandardActions.ONLINE : StandardActions.OFFLINE)
@@ -136,11 +137,11 @@ abstract class AbstractV2RegistryService implements RegistryService {
     }
 
     void fireEvent(RegistryEvent.Builder reb) {
-        if(eventConsumer == null) {
+        if (eventConsumer == null) {
             return;
         }
         reb.setName(getConfig().getName());
-        if(reb.getSeverity() == null) {
+        if (reb.getSeverity() == null) {
             reb.setSeverity(Severity.INFO);
         }
         eventConsumer.accept(reb.build());
@@ -161,7 +162,7 @@ abstract class AbstractV2RegistryService implements RegistryService {
               Tags.class);
             online();
             List<String> tagList = tags.getTags();
-            if(tagList != null) {
+            if (tagList != null) {
                 tagList.sort(ImageNameComparator.getTagsComparator());
             }
             return tags;
@@ -179,6 +180,7 @@ abstract class AbstractV2RegistryService implements RegistryService {
     }
 
     //DELETE /v2/<name>/manifests/<reference>
+
     /**
      * @param name
      * @param reference must be digest!!!
@@ -193,14 +195,15 @@ abstract class AbstractV2RegistryService implements RegistryService {
         HttpHeaders headers = new HttpHeaders();
         headers.setAccept(Collections.singletonList(new MediaType("application", "vnd.docker.distribution.manifest.v2+json")));
         HttpEntity entity = new HttpEntity<>(headers);
+        URI uri = forName(name).path("/manifests/").path(reference).build().toUri();
         try {
-            ResponseEntity<Manifest> exchange = getRestTemplate().exchange(forName(name).path("/manifests/").path(reference)
-                    .build().toUri(), HttpMethod.GET, entity, Manifest.class);
+            ResponseEntity<Manifest> exchange = getRestTemplate().exchange(uri, HttpMethod.GET, entity, Manifest.class);
             return exchange.getBody();
-        } catch(HttpClientErrorException e) {
-            if(e.getStatusCode() == HttpStatus.NOT_FOUND) {
+        } catch (HttpClientErrorException e) {
+            if (e.getStatusCode() == HttpStatus.NOT_FOUND) {
                 return null;
             }
+            log.error("can't fetch manifest from {} by {}", uri, e.getMessage());
             throw e;
         }
     }
@@ -213,7 +216,7 @@ abstract class AbstractV2RegistryService implements RegistryService {
     @Override
     public ImageDescriptor getImage(String name, String reference) {
         String imageId = getImageId(name, reference);
-        if(imageId == null) {
+        if (imageId == null) {
             return null;
         }
         try {
@@ -244,7 +247,7 @@ abstract class AbstractV2RegistryService implements RegistryService {
     protected String getImageId(String name, String reference) {
         Manifest manifest = getManifest(name, reference);
         // it happen when image with this tag is not found
-        if(manifest == null) {
+        if (manifest == null) {
             return null;
         }
         Manifest.Entry config = manifest.getConfig();
