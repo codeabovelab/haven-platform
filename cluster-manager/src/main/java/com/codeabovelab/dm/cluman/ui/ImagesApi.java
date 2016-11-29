@@ -98,21 +98,20 @@ public class ImagesApi {
             }
         }
 
-        //possibly we must place below code into 'registryRepository'
-        if (!StringUtils.hasText(registryParam)) {
+        try {
             // we may get registry name from query
-            try {
+            if (!StringUtils.hasText(registryParam)) {
                 registryParam = ContainerUtils.getRegistryName(query);
-                // registry may be a mask
-                if (registryParam != null && registryParam.contains("*")) {
-                    registryParam = "";
-                }
-                if (StringUtils.hasText(registryParam)) {
-                    registries.retainAll(SPLITTER.splitToList(registryParam));
-                }
-            } catch (Exception e) {
-                //nothing
             }
+            // registry may be a mask
+            if (registryParam != null && registryParam.contains("*")) {
+                registryParam = "";
+            }
+            if (StringUtils.hasText(registryParam)) {
+                registries.retainAll(SPLITTER.splitToList(registryParam));
+            }
+        } catch (Exception e) {
+            //nothing
         }
 
         SearchResult result;
