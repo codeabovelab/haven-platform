@@ -48,7 +48,7 @@ public class ErrorHandler {
     @ExceptionHandler(BindException.class)
     @ResponseStatus(BAD_REQUEST)
     @ResponseBody
-    public UiError bindErrorHandler(HttpServletRequest req, BindException bindException) {
+    public UiError bindErrorHandler(BindException bindException) {
         log.error("Can't process request", bindException);
         return createResponse(bindException.getMessage(), bindException.getAllErrors().toString(), BAD_REQUEST);
     }
@@ -56,7 +56,7 @@ public class ErrorHandler {
     @ExceptionHandler(MethodArgumentNotValidException.class)
     @ResponseStatus(BAD_REQUEST)
     @ResponseBody
-    public UiError bindErrorHandler(HttpServletRequest req, MethodArgumentNotValidException bindException) {
+    public UiError bindErrorHandler(MethodArgumentNotValidException bindException) {
         log.error("Can't process request", bindException);
         return createResponse(bindException.getMessage(), bindException.getBindingResult().getAllErrors().toString(), BAD_REQUEST);
     }
@@ -64,7 +64,7 @@ public class ErrorHandler {
     @ExceptionHandler({IllegalArgumentException.class})
     @ResponseStatus(BAD_REQUEST)
     @ResponseBody
-    public UiError bindErrorHandler(HttpServletRequest req, IllegalArgumentException e) {
+    public UiError bindErrorHandler(IllegalArgumentException e) {
         log.error("Can't process request", e);
         return createResponse(e.getMessage(), Throwables.printToString(e), BAD_REQUEST);
     }
@@ -72,14 +72,14 @@ public class ErrorHandler {
     @ExceptionHandler({NotFoundException.class})
     @ResponseStatus(NOT_FOUND)
     @ResponseBody
-    public UiError bindErrorHandler(HttpServletRequest req, NotFoundException e) {
+    public UiError bindErrorHandler(NotFoundException e) {
         log.error("Can't process request", e);
         return createResponse(e.getMessage(), Throwables.printToString(e), NOT_FOUND);
     }
 
     @ExceptionHandler({HttpClientErrorException.class})
     @ResponseBody
-    public ResponseEntity<UiError> bindErrorHandler(HttpServletRequest req, HttpClientErrorException e) {
+    public ResponseEntity<UiError> bindErrorHandler(HttpClientErrorException e) {
         log.error("Can't process request", e);
         HttpStatus statusCode = e.getStatusCode();
         UiError response = createResponse(StringUtils.trimWhitespace(e.getResponseBodyAsString()),
@@ -102,18 +102,10 @@ public class ErrorHandler {
         return createResponse(e.getMessage(), Throwables.printToString(e), INTERNAL_SERVER_ERROR);
     }
 
-    @ExceptionHandler(TokenException.class)
+    @ExceptionHandler({TokenException.class, BadCredentialsException.class})
     @ResponseStatus(HttpStatus.UNAUTHORIZED)
     @ResponseBody
-    public UiError badCredentialsException(HttpServletRequest req, TokenException e) {
-        log.error("Can't process request", e);
-        return createResponse(e.getMessage(), e.getMessage(), HttpStatus.UNAUTHORIZED);
-    }
-
-    @ExceptionHandler(BadCredentialsException.class)
-    @ResponseStatus(HttpStatus.UNAUTHORIZED)
-    @ResponseBody
-    public UiError badCredentialsException(HttpServletRequest req, BadCredentialsException e) {
+    public UiError badCredentialsException(TokenException e) {
         log.error("Can't process request", e);
         return createResponse(e.getMessage(), e.getMessage(), HttpStatus.UNAUTHORIZED);
     }

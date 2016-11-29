@@ -58,7 +58,7 @@ public final class UiUtils {
         error.setCode(toStatus(res.getCode()).value());
     }
 
-    static ResponseEntity<Object> createResponse(ServiceCallResult result) {
+    static ResponseEntity<UIResult> createResponse(ServiceCallResult result) {
         ResultCode code = result.getCode();
 
         String message = code + " " + (result.getMessage() == null ? "" : result.getMessage());

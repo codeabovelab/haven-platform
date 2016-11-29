@@ -33,7 +33,7 @@ import static org.springframework.util.StringUtils.hasText;
  */
 @Slf4j
 @Builder
-class DockerHubRegistryServiceWrapper implements RegistryService {
+class DockerHubRegistryServiceWrapper implements RegistryService, DockerHubRegistry {
 
     private final DockerHubRegistry dockerHubRegistry;
     private final String registryName;
