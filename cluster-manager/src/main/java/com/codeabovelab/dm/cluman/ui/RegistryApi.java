@@ -58,6 +58,10 @@ public class RegistryApi {
         // see that we explicitly clone config
         RegistryConfig config = registry.getConfig().clone();
         config.cleanCredentials();
+        String title = config.getTitle();
+        if(title == null) {
+            config.setTitle(config.getName());
+        }
         return config;
     }
 
