@@ -55,7 +55,7 @@ public abstract class RegistryConfig implements Cloneable {
     @KvMapping
     private boolean readOnly;
     //it not has kv mapping because non editable registries must be only in config
-    private boolean editable;
+    private boolean editable = true;
     private String errorMessage;
     @KvMapping
     private RegistryType registryType;
