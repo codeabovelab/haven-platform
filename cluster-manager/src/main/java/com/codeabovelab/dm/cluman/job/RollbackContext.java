@@ -73,14 +73,13 @@ public class RollbackContext {
         String name = resolveName(type);
         Scope scope = beanFactory.findAnnotationOnBean(name, Scope.class);
         String scopeName = (String) AnnotationUtils.getValue(scope);
+        ScopeBeans beans ;
         if(JobScopeIteration.SCOPE_NAME.equals(scopeName)) {
-            ScopeBeans beans = JobScopeIteration.getBeans();
-            // it need for cases when ban already has proxy, ant it will retrieve backend bean
-            beans.putBean(name, bean);
+            beans = JobScopeIteration.getBeans();
         } else {
-            ScopeBeans beans = jobContext.getScopeBeans();
-            beans.putBean(name, bean);
+            beans = jobContext.getScopeBeans();
         }
+        beans.putBean(name, bean);
     }
 
     private String resolveName(Class<?> type) {
