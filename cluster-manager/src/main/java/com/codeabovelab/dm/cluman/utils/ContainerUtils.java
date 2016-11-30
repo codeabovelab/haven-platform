@@ -37,7 +37,7 @@ public final class ContainerUtils {
             throw new IllegalArgumentException("Image name is null or empty");
         }
         if (isImageId(image)) {
-            throw new IllegalArgumentException("is image id, but we expect name");
+            throw new IllegalArgumentException(image + " is image id, but we expect name");
         }
     }
 
