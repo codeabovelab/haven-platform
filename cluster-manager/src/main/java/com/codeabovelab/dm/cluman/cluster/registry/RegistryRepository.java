@@ -227,6 +227,11 @@ public class RegistryRepository implements SupportSearch {
         }
     }
 
+    /**
+     * returns registry by image, can return null
+     * @param imageName
+     * @return
+     */
     public RegistryService getRegistryByImageName(String imageName) {
         RegistryService registryService;
         if (!StringUtils.hasText(imageName)) {
@@ -240,7 +245,7 @@ public class RegistryRepository implements SupportSearch {
             registryService = wrapDefault(registryPrefix);
         } else {
             //we don't have such registry
-            throw new NotFoundException("registry was not found by " + imageName);
+            return null;
         }
 
         if (registryService.getConfig().isDisabled() || StringUtils.hasText(registryService.getConfig().getErrorMessage())) {
