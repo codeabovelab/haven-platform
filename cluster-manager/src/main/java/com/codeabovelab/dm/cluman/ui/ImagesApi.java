@@ -315,7 +315,8 @@ public class ImagesApi {
                 }
                 String registry = registryRepository.resolveRegistryNameByImageName(imageName);
                 io.setRegistry(registry);
-                UiImageCatalog uic = catalogs.putIfAbsent(imageName, new UiImageCatalog(imageName, registry));
+                catalogs.putIfAbsent(imageName, new UiImageCatalog(imageName, registry));
+                UiImageCatalog uic = catalogs.get(imageName);
                 if(!DiscoveryStorage.GROUP_ID_ORPHANS.equals(clusterName)) {
                     // we set name of real clusters only
                     uic.getClusters().add(clusterName);
