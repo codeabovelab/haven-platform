@@ -313,7 +313,8 @@ public class ImagesApi {
                 if (!filter.test(io)) {
                     continue;
                 }
-                String registry = registryRepository.resolveRegistryNameByImageName(imageName);
+                String registry = ContainerUtils.isImageId(imageName)? null :
+                        registryRepository.resolveRegistryNameByImageName(imageName);
                 io.setRegistry(registry);
                 catalogs.putIfAbsent(imageName, new UiImageCatalog(imageName, registry));
                 UiImageCatalog uic = catalogs.get(imageName);
