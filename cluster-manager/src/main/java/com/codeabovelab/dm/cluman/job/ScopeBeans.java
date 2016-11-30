@@ -18,6 +18,7 @@ package com.codeabovelab.dm.cluman.job;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.ObjectFactory;
+import org.springframework.util.Assert;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -85,4 +86,10 @@ class ScopeBeans {
         return bean;
     }
 
+    void putBean(String name, Object bean) {
+        synchronized (this.beans) {
+            Object old = this.beans.putIfAbsent(name, bean);
+            Assert.isNull(old, "Can not rewrite bean: old=" + old + " new=" + bean + "  name=" + name);
+        }
+    }
 }

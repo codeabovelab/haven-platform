@@ -26,7 +26,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.util.Assert;
 
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
@@ -35,8 +34,6 @@ import java.util.concurrent.CopyOnWriteArrayList;
  */
 @JobIterationComponent
 public class RollbackData {
-
-    private static final String ROLLBACK_DATA = "rollbackData";
 
     @Data
     @AllArgsConstructor(onConstructor = @_(@JsonCreator))
@@ -47,11 +44,10 @@ public class RollbackData {
         public void rollback(RollbackContext rc) {
             // note that it doing in another jobContext
             // and we must again transfer rollback data to new context
-            Map<String, Object> attrs = rc.getJobContext().getAttributes();
-            attrs.put(ROLLBACK_DATA, data);
+            rc.setBean(data);
             DockerService ds = rc.getBean(DiscoveryStorage.class).getService(data.cluster);
             Assert.notNull(ds, "Can not find cluster: " + data.cluster);
-            attrs.put("dockerService", ds);
+            rc.setBean(ds, DockerService.class);
             RollbackTasklet tasklet = rc.getBean(RollbackTasklet.class);
             tasklet.rollback();
         }

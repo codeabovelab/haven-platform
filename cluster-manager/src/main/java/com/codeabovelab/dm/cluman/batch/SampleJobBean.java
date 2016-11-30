@@ -43,7 +43,7 @@ public class SampleJobBean implements Runnable {
         context.fire("Job is worked.");
         this.outParam = LocalDateTime.now() + " [" + inParam + "]";
         context.setRollback((nc) -> {
-            nc.getJobContext().fire("Job is rollback.");
+            nc.getContext().fire("Job is rollback.");
         });
     }
 }

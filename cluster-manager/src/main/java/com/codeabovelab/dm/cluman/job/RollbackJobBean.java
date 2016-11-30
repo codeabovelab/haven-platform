@@ -16,7 +16,7 @@
 
 package com.codeabovelab.dm.cluman.job;
 
-import org.springframework.beans.factory.BeanFactory;
+import org.springframework.beans.factory.ListableBeanFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 
 /**
@@ -36,7 +36,7 @@ public class RollbackJobBean implements Runnable {
     private JobContext jobContext;
 
     @Autowired
-    private BeanFactory beanFactory;
+    private ListableBeanFactory beanFactory;
 
     @Autowired
     private JobsManager jobsManager;

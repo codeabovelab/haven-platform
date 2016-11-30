@@ -138,12 +138,4 @@ public final class JobContext /* we cannot use AutoCloseable on this bean, so it
     ScopeBeans getScopeBeans() {
         return this.scopeBeans;
     }
-
-    ScopeBeans getScopeIterationBeans() {
-        return this.scopeIterationBeans;
-    }
-
-    void setScopeIterationBeans(ScopeBeans scopeBeans) {
-        this.scopeIterationBeans = scopeBeans;
-    }
 }
