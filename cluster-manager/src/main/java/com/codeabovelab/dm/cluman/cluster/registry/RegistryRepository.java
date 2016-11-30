@@ -138,6 +138,7 @@ public class RegistryRepository implements SupportSearch {
 
     private void internalRegister(RegistryService service) {
         String name = service.getConfig().getName();
+        checkThatItDefaultName(name);
         ExtendedAssert.matchId(name, "registry name");
         RegistryService old = registryServiceMap.put(name, service);
         if (old != service) {
@@ -155,6 +156,12 @@ public class RegistryRepository implements SupportSearch {
         }
     }
 
+    private void checkThatItDefaultName(String name) {
+        if(defaultRegistry.getConfig().getName().equals(name)) {
+            throw new IllegalArgumentException("Can not override default registry.");
+        }
+    }
+
     private void dispatchEvent(RegistryEvent event) {
         // we execute events in service only when event came from registry
         this.executorService.execute(() -> {
@@ -163,6 +170,7 @@ public class RegistryRepository implements SupportSearch {
     }
 
     public void unRegister(String name) {
+        checkThatItDefaultName(name);
         RegistryService registryService = registryServiceMap.remove(name);
         Assert.notNull(registryService, "registryService must not null");
         Closeables.closeIfCloseable(registryService);
@@ -209,7 +217,10 @@ public class RegistryRepository implements SupportSearch {
     }
 
     public Collection<String> getAvailableRegistries() {
-        return ImmutableSet.copyOf(registryServiceMap.keySet());
+        return ImmutableSet.<String>builder()
+          .addAll(registryServiceMap.keySet())
+          .add(defaultRegistry.getConfig().getName())
+          .build();
     }
 
     /**

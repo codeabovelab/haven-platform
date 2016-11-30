@@ -49,6 +49,8 @@ public abstract class RegistryConfig implements Cloneable {
     @KvMapping
     private String name;
     @KvMapping
+    private String title;
+    @KvMapping
     private boolean disabled;
     @KvMapping
     private boolean readOnly;
@@ -63,6 +65,7 @@ public abstract class RegistryConfig implements Cloneable {
                 .add("registryType", registryType)
                 .add("disabled", disabled)
                 .add("errorMessage", errorMessage)
+                .add("title", title)
                 .add("name", name)
                 .omitNullValues()
                 .toString();

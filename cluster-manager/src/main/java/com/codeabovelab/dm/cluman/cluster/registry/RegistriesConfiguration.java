@@ -60,6 +60,7 @@ public class RegistriesConfiguration {
 
         HubRegistryConfig defaultRegistryConf = new HubRegistryConfig();
         defaultRegistryConf.setName(DockerHubRegistry.DEFAULT_NAME);
+        defaultRegistryConf.setTitle("Docker Hub");
         defaultRegistryConf.setReadOnly(true);
         DockerHubRegistry defaultRegistry = registryFactory.createPublicHubRegistryService(defaultRegistryConf);
         RegistryRepository registryRepository = new RegistryRepository(factory, defaultRegistry, registryFactory, messageBus);
