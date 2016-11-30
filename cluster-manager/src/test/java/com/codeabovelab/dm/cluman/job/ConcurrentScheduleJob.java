@@ -1,6 +1,7 @@
 package com.codeabovelab.dm.cluman.job;
 
 import lombok.ToString;
+import org.springframework.beans.factory.annotation.Autowired;
 
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.Lock;
@@ -17,7 +18,11 @@ public class ConcurrentScheduleJob implements Runnable {
 
     private final Lock lock = new ReentrantLock();
     private static final AtomicInteger conflicts = new AtomicInteger();
+    private static final AtomicInteger iterations = new AtomicInteger();
     private final int instance;
+
+    @Autowired
+    private IterationComponent iterationComponent;
 
     public ConcurrentScheduleJob() {
         instance = instances.incrementAndGet();
@@ -26,6 +31,9 @@ public class ConcurrentScheduleJob implements Runnable {
     @Override
     public void run() {
         int num = counter.getAndIncrement();
+        // we must touch component for instantiate it (if it proxied)
+        iterationComponent.getNumber();
+        iterations.getAndIncrement();
         System.out.println(" *** " + instance + " start iteration " + num);
         boolean locked = lock.tryLock();
         try {
@@ -51,5 +59,9 @@ public class ConcurrentScheduleJob implements Runnable {
 
     public static int getInstances() {
         return instances.get();
+    }
+
+    public static int getIterations() {
+        return iterations.get();
     }
 }

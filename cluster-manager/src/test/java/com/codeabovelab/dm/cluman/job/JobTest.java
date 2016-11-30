@@ -146,6 +146,7 @@ public class JobTest {
         }
         assertEquals("Instances", concurrency, ConcurrentScheduleJob.getInstances());
         assertEquals("Conflicts", 0, ConcurrentScheduleJob.getConflicts());
+        assertEquals("IterationComponentInstances", ConcurrentScheduleJob.getIterations(), IterationComponent.instances.get());
     }
 
     @Test

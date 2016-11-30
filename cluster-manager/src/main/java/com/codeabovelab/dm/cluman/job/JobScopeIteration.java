@@ -44,7 +44,7 @@ public class JobScopeIteration extends AbstractJobScope {
         if(old != null) {
             return () -> {};
         }
-        ScopeBeans beans = new ScopeBeans(jobContext, jobContext.getId() + "-" + jobContext.getIteration());
+        ScopeBeans beans = new ScopeBeans(jobContext, jobContext.getId() + "-iter#" + jobContext.getIteration());
         TL.set(beans);
         return () -> {
             TL.remove();
