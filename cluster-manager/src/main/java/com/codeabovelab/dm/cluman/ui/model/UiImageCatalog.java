@@ -16,7 +16,6 @@
 
 package com.codeabovelab.dm.cluman.ui.model;
 
-import com.codeabovelab.dm.cluman.utils.ContainerUtils;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;

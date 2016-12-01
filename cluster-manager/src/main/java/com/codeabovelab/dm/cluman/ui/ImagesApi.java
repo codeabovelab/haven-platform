@@ -17,6 +17,7 @@
 package com.codeabovelab.dm.cluman.ui;
 
 import com.codeabovelab.dm.cluman.cluster.docker.management.DockerService;
+import com.codeabovelab.dm.cluman.cluster.docker.management.argument.GetContainersArg;
 import com.codeabovelab.dm.cluman.cluster.docker.management.argument.GetImagesArg;
 import com.codeabovelab.dm.cluman.cluster.docker.management.argument.TagImageArg;
 import com.codeabovelab.dm.cluman.cluster.docker.management.result.ServiceCallResult;
@@ -33,10 +34,9 @@ import com.codeabovelab.dm.cluman.cluster.registry.data.Tags;
 import com.codeabovelab.dm.cluman.ds.DockerServiceRegistry;
 import com.codeabovelab.dm.cluman.ds.clusters.SwarmNodesGroupConfig;
 import com.codeabovelab.dm.cluman.model.*;
-import com.codeabovelab.dm.cluman.ui.model.UiImageCatalog;
-import com.codeabovelab.dm.cluman.ui.model.UiImageData;
-import com.codeabovelab.dm.cluman.ui.model.UiSearchResult;
-import com.codeabovelab.dm.cluman.ui.model.UiTagCatalog;
+import com.codeabovelab.dm.cluman.security.AccessContext;
+import com.codeabovelab.dm.cluman.security.AccessContextFactory;
+import com.codeabovelab.dm.cluman.ui.model.*;
 import com.codeabovelab.dm.cluman.utils.ContainerUtils;
 import com.codeabovelab.dm.cluman.validate.ExtendedAssert;
 import com.codeabovelab.dm.common.cache.DefineCache;
@@ -75,6 +75,35 @@ public class ImagesApi {
         //TODO check usage of this method in CLI and if it not used - remove
         List<ImageItem> images = dockerServices.getService(cluster).getImages(GetImagesArg.ALL);
         return images;
+    }
+
+    @RequestMapping(value = "/clusters/{cluster}/deployed-list", method = RequestMethod.GET)
+    public Collection<UiDeployedImage> getDeployedImages(@PathVariable("cluster") String cluster) {
+        NodesGroup nodesGroup = discoveryStorage.getCluster(cluster);
+        ExtendedAssert.notFound(nodesGroup, "Cluster was not found by " + cluster);
+        DockerService service = nodesGroup.getDocker();
+        ExtendedAssert.notFound(service, "Service for " + cluster + " is null.");
+        GetContainersArg arg = new GetContainersArg(true);
+        List<DockerContainer> containers = service.getContainers(arg);
+        Map<String, UiDeployedImage> images = new HashMap<>();
+        for(DockerContainer container: containers) {
+            String imageId = container.getImageId();
+            UiDeployedImage img = images.computeIfAbsent(imageId, (ii) -> {
+                String image = ContainerUtils.getRegistryAndImageName(container.getImage());
+                String registry = registryRepository.resolveRegistryNameByImageName(image);
+                UiDeployedImage depimg = new UiDeployedImage(container, registry);
+                RegistryService registryService = registryRepository.getByName(registry);
+                if(registryService != null) {
+                    Tags tags = registryService.getTags(image);
+                    if(tags != null) {
+                        depimg.getTags().addAll(tags.getTags());
+                    }
+                }
+                return depimg;
+            });
+            img.addContainer(UiDeployedImage.UiContainerShort.toUi(container));
+        }
+        return images.values();
     }
 
     @ApiOperation("search by image substring, if you specify repository then you can use expression like '*word*' ")
