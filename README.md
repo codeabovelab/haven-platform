@@ -119,8 +119,8 @@ https://github.com/codeabovelab/haven-example-configuration
 Step 5: For installing Agent [dockmaster-agent](/doc/agent.md), after setting up Docker (Step 3), run the following command:
  
 ```sh
- wget 'http://$MASTER_IP:8761/res/agent/dockmaster-agent.py'
- chmod +x dockmaster-agent.py
+ wget --content-disposition 'http://$MASTER_IP:8761/discovery/agent/haven-agent.py?node=$SELF_IP:2375'
+ chmod +x haven-agent.py
 ```
  
  Create the config file for Agent in one of following locations or use command line options of agent: 

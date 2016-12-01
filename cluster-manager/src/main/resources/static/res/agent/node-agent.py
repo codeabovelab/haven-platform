@@ -11,6 +11,13 @@ import sys
 import time
 import datetime
 
+# default values which is set by preprocessor on server
+default_value = {
+    "docker": "$DOCKER$",
+    "master": "$MASTER$",
+    "secret": "$SECRET$"
+}
+
 
 class CachedValue:
 
@@ -230,7 +237,7 @@ class Bootstrap:
         parser = argparse.ArgumentParser(formatter_class=argparse.RawTextHelpFormatter,
                                         description='DockMaster node agent.',
                                          epilog='''Example:
-  dockmaster-agent.py -d 172.31.0.11:2375 -m 172.31.0.3:8763 -t 2 -vv
+  dockmaster-agent.py -d 172.31.0.12:2375 -m 172.31.0.3:8763 -t 2 -vv
 Sample config:
   [main]
   docker = 172.31.0.12:2375
@@ -267,6 +274,11 @@ By default find config in:
                 res = cm.get(name)
             if res is not None and callable(converter):
                 res = converter(res)
+            if res is None:
+                res = default_value.get(name)
+                # when default value is not set, we ignore it
+                if res is not None and len(res) > 2 and res[0] == '$' and res[-1] == '$':
+                    res = None
             return res
 
         self.log_level = get('log_level', int)

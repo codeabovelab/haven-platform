@@ -18,16 +18,27 @@ package com.codeabovelab.dm.cluman.ds.nodes;
 
 import com.codeabovelab.dm.cluman.model.*;
 import com.codeabovelab.dm.cluman.security.TempAuth;
-import com.codeabovelab.dm.cluman.ui.HttpException;
+import com.codeabovelab.dm.common.utils.StringUtils;
+import com.codeabovelab.dm.fs.dto.FileStorageUtils;
 import com.google.common.base.Strings;
+import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
+import org.springframework.http.*;
+import org.springframework.util.Assert;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
 
+import javax.servlet.http.HttpServletRequest;
+import javax.websocket.server.PathParam;
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.util.Map;
+import java.util.function.Function;
+import java.util.regex.Pattern;
 
 import static org.springframework.util.MimeTypeUtils.APPLICATION_JSON_VALUE;
 import static org.springframework.util.MimeTypeUtils.TEXT_PLAIN_VALUE;
@@ -35,13 +46,15 @@ import static org.springframework.web.bind.annotation.RequestMethod.POST;
 
 
 /**
- * REST Service for swarm clients (Swarm discovery hub service)
+ * REST Service for swarm clients (Swarm discovery hub service).
+ * Also prepare node agent script for specified node.
  */
 @RestController
-@RequestMapping({"/swarm_token_discovery" /*deprecated*/, "/discovery"})
+@RequestMapping({"/discovery"})
 @Slf4j
 public class DiscoveryNodeController {
 
+    private static final Pattern PATTERN = Pattern.compile("\\$[\\w]+\\$");
     private final String HEADER = "X-Auth-Node";
     private final NodeStorage storage;
     private final String nodeSecret;
@@ -111,5 +124,68 @@ public class DiscoveryNodeController {
         //we can resolve healthy through analysis of disk and mem availability
         nhb.setHealthy(true);
         return nhb.build();
+    }
+
+    @RequestMapping("/agent/{agentName:.*}")
+    public ResponseEntity<StreamingResponseBody> load(HttpServletRequest request,
+                                                      @PathVariable("agentName") String agentName,
+                                                      @RequestParam(value = "node", required = false) String node) {
+        URL url = Thread.currentThread().getContextClassLoader().getResource("static/res/agent/node-agent.py");
+        Assert.notNull(url);//if it happen then it a bug
+        if(agentName == null) {
+            agentName = "node-agent.py";
+        }
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_OCTET_STREAM);
+        headers.set(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=" + FileStorageUtils.encode(agentName));
+        Replacer replacer = new Replacer(request, node);
+        return new ResponseEntity<>((os) -> {
+            try(BufferedReader reader = new BufferedReader(new InputStreamReader(url.openStream(), StandardCharsets.UTF_8))) {
+                String string;
+                while((string = reader.readLine()) != null) {
+                    string = process(string, replacer);
+                    os.write(string.getBytes(StandardCharsets.UTF_8));
+                    // so we support only unix line break
+                    os.write('\n');
+                }
+            }
+        }, headers, HttpStatus.OK);
+    }
+
+    @AllArgsConstructor
+    private class Replacer implements Function<String, String> {
+        private final HttpServletRequest request;
+        private final String node;
+
+        @Override
+        public String apply(String expr) {
+            String res = null;
+            switch (expr) {
+                case "$MASTER$":
+                    res = getServerAddress();
+                    break;
+                case "$SECRET$":
+                    res = nodeSecret;
+                    break;
+                case "$DOCKER$":
+                    res = node;
+                    break;
+            }
+            return res == null? expr : res;
+        }
+
+        private String getServerAddress() {
+            String name = request.getServerName() + ":" + request.getServerPort();
+            if("localhost".equals(name)) {
+                // it mean that server covered by proxy
+                // also we may define server hostname in config
+                name = null;
+            }
+            return name;
+        }
+    }
+
+    private static String process(String string, Function<String, String> handler) {
+        return StringUtils.replace(PATTERN, string, handler);
     }
 }

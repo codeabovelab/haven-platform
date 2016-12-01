@@ -17,7 +17,10 @@
 package com.codeabovelab.dm.common.utils;
 
 import java.io.Serializable;
+import java.util.function.Function;
 import java.util.function.IntPredicate;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  */
@@ -208,5 +211,36 @@ public class StringUtils {
      */
     public static boolean matchId(String str) {
         return match(str, StringUtils::isId);
+    }
+
+    /**
+     * Replace string with pattern obtaining replacement values through handler function. <p/>
+     * Note that it differ from usual Pattern behavior when it process replacement for group references,
+     * this code do nothing with replacement.
+     * @param pattern pattern
+     * @param src source string
+     * @param handler function which take matched part of source string and return replacement value, must never return null
+     * @return result string
+     */
+    public static String replace(Pattern pattern, String src, Function<String, String> handler) {
+        StringBuilder sb = null;
+        Matcher matcher = pattern.matcher(src);
+        int pos = 0;
+        while(matcher.find()) {
+            if(sb == null) {
+                // replacement can be a very rare operation, and we not need excess string buffer
+                sb = new StringBuilder();
+            }
+            String expr = matcher.group();
+            String replacement = handler.apply(expr);
+            sb.append(src, pos, matcher.start());
+            sb.append(replacement);
+            pos = matcher.end();
+        }
+        if(sb == null) {
+            return src;
+        }
+        sb.append(src, pos, src.length());
+        return sb.toString();
     }
 }
