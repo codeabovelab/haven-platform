@@ -2,6 +2,8 @@ package com.codeabovelab.dm.common.utils;
 
 import org.junit.Test;
 
+import java.util.Arrays;
+
 import static org.junit.Assert.*;
 
 /**
@@ -30,7 +32,64 @@ public class VersionComparatorTest {
         compare(-1,  "1.9_rc",     "1.9");
         compare( 1,  "1.9_ga",  "1.9_rc");
         compare( 0,  "1.9_ga",  "1.9_ga");
-        compare(-1,  "1.9_ga",  "1.19_ga");
+        compare(-1,  "1.9_ga", "1.19_ga");
+        compare(-1,    "1.8a",    "1.10");
+        compare(-1,    "1.8a",     "1.8");
+    }
+
+    @Test
+    public void sort() {
+        String[] src = new String[]{
+          "1",
+          "1-alpine",
+          "1.10",
+          "1.10-alpine",
+          "1.8.1",
+          "1.8.1-alpine",
+          "1.10.0-alpine",
+          "1.10.1",
+          "1.10.1-alpine",
+          "1.10.2",
+          "1.10.2-alpine",
+          "1.8",
+          "1.11",
+          "1.11-alpine",
+          "1.11.0-alpine",
+          "1.11.1-alpine",
+          "1.8-alpine",
+          "latest"
+        };
+        String[] exp = new String[]{
+          "1",
+          "1-alpine",
+          "1.8",
+          "1.8-alpine",
+          "1.8.1",
+          "1.8.1-alpine",
+          "1.10",
+          "1.10-alpine",
+          "1.10.0-alpine",
+          "1.10.1",
+          "1.10.1-alpine",
+          "1.10.2",
+          "1.10.2-alpine",
+          "1.11",
+          "1.11-alpine",
+          "1.11.0-alpine",
+          "1.11.1-alpine",
+          "latest"
+        };
+        VersionComparator vc = VersionComparator.builder()
+          .addLatest("latest")
+          .emptySuffixLast(false)
+          .build();
+        Arrays.sort(src, (a, b) -> {
+            int res = vc.compare(a, b);
+            //System.out.println(a + (res == 0? " == " : (res > 0? " > " : " < ")) + b);
+            return res;
+        });
+        System.out.println(Arrays.toString(src));
+        assertArrayEquals(exp, src);
     }
 
     private void compare(int expected,  String left, String right) {

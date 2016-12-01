@@ -159,6 +159,7 @@ public final class VersionComparator implements Comparator<String> {
     public static final VersionComparator INSTANCE = builder().build();
 
     private final char suffixDelimiter;
+    private final boolean emptySuffixLast;
     private final Map<String, Integer> latestMap = new TreeMap<>();
     private final Map<String, Integer> suffixMap = new TreeMap<>();
 
@@ -166,6 +167,7 @@ public final class VersionComparator implements Comparator<String> {
         this.suffixDelimiter = b.suffixDelimiter;
         load(b.latest, this.latestMap);
         load(b.suffix, this.suffixMap);
+        this.emptySuffixLast = b.emptySuffixLast;
         suffixMap.put(NO_SUFFIX, (b.emptySuffixLast)? Integer.MAX_VALUE : Integer.MIN_VALUE);
     }
 
@@ -224,22 +226,60 @@ public final class VersionComparator implements Comparator<String> {
     }
 
     private int compareEnds(final String ltoken, final String rtoken) {
-        final int lsp = ltoken.indexOf(suffixDelimiter);
-        final int rsp = rtoken.indexOf(suffixDelimiter);
+        final int lsp = getNumEnd(ltoken);
+        final int rsp = getNumEnd(rtoken);
         String lp = (lsp < 0)? ltoken : ltoken.substring(0, lsp);
         String rp = (rsp < 0)? rtoken : rtoken.substring(0, rsp);
         int res = compareTokens(lp, rp);
         if(res == 0 && (lsp >= 0 || rsp >= 0)) {
-            String ls = (lsp < 0)? NO_SUFFIX : ltoken.substring(lsp + 1);
-            String rs = (rsp < 0)? NO_SUFFIX : rtoken.substring(rsp + 1);
+            String ls = getSuffix(ltoken, lsp);
+            String rs = getSuffix(rtoken, rsp);
             Integer lo = suffixMap.get(ls);
             Integer ro = suffixMap.get(rs);
             if(lo == null && ro == null) {
                 return compareStrings(ls, rs);
             }
+            if(lo == null || ro == null) {
+                if(ls.isEmpty()) {
+                    return emptySuffixLast? 1 : -1;
+                }
+                if(rs.isEmpty()) {
+                    return emptySuffixLast? -1 : 1;
+                }
+            }
             return compareOrders(lo, ro);
         }
         return res;
+    }
+
+    private String getSuffix(String token, int pos) {
+        if(pos < 0) {
+            return NO_SUFFIX;
+        }
+        if(token.charAt(pos) == suffixDelimiter) {
+            // when delimited exists then we need to remove it, but it no always
+            return token.substring(pos + 1);
+        }
+        return token.substring(pos);
+    }
+
+    /**
+     * Find end of number version part
+     * @param token
+     * @return
+     */
+    private int getNumEnd(String token) {
+        int pos = token.indexOf(suffixDelimiter);
+        if(pos >= 0) {
+            return pos;
+        }
+        for(int i = 0; i < token.length(); ++i) {
+            char c = token.charAt(i);
+            if(c < '0' || c > '9') {
+                return i;
+            }
+        }
+        return -1;
     }
 
     private int compareTokens(String ltoken, String rtoken) {
