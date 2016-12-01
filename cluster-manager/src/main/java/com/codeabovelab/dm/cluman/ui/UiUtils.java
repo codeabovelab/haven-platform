@@ -27,6 +27,7 @@ import com.codeabovelab.dm.cluman.model.NodesGroup;
 import com.codeabovelab.dm.cluman.ui.model.*;
 import com.codeabovelab.dm.common.utils.Booleans;
 import org.joda.time.LocalTime;
+import org.springframework.core.env.Environment;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 
@@ -198,5 +199,18 @@ public final class UiUtils {
             // container belongs to single application
             application.getContainers().forEach(container -> map.put(container, application.getName()));
         }
+    }
+
+    /**
+     * Resolve public address of this app, if it not configured return null.
+     * @param environment env
+     * @return host:port or null
+     */
+    public static String getAppAddress(Environment environment) {
+        String host = environment.getProperty("dm.server.host");
+        if(host == null) {
+            return null;
+        }
+        return host + ":" + environment.getProperty("dm.server.port");
     }
 }

@@ -29,6 +29,7 @@ import com.codeabovelab.dm.common.security.Authorities;
 import com.codeabovelab.dm.common.utils.AppInfo;
 import lombok.AllArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.env.Environment;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -40,7 +41,6 @@ import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBo
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.time.OffsetDateTime;
 
 /**
  */
@@ -49,6 +49,7 @@ import java.time.OffsetDateTime;
 @RestController
 public class ConfigurationApi {
 
+    private final Environment environment;
     private final AppConfigService appConfigService;
     private final SourceService sourceService;
     private final JobsManager jobsManager;
@@ -94,11 +95,14 @@ public class ConfigurationApi {
         return UiJob.toUi(jobInstance);
     }
 
-    @RequestMapping(path = "version", method = RequestMethod.GET)
+    // strange that getAppInfo has 'version' mapping
+    @RequestMapping(path = {"version", "info"}, method = RequestMethod.GET)
     public UiApplicationInfo getAppInfo() {
         return UiApplicationInfo.builder()
                 .version(AppInfo.getApplicationVersion())
-                .buildTime(AppInfo.getBuildTime()).build();
+                .buildTime(AppInfo.getBuildTime())
+                .address(UiUtils.getAppAddress(environment))
+          .build();
 
     }
 }
