@@ -55,6 +55,9 @@ Run job instance:
 // POST /ui/api/jobs/ 
 {
   "type": "job.sample",
+  "title": "A sample job title",
+  /* String cron-like expression. */
+  "schedule" : "*/10 * * * * *", // every ten seconds.
   "parameters":{
       "inParam":"test"
   }
