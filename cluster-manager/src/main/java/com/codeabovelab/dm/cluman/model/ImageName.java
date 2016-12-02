@@ -96,7 +96,12 @@ public class ImageName {
     public static boolean isId(String image) {
         // see https://docs.docker.com/registry/spec/api/#/content-digests
         int length = SHA256.length();
-        return image.regionMatches(true, 0, SHA256, 0, length);
+        if(image.regionMatches(true, 0, SHA256, 0, length)) {
+            return true;
+        }
+        // sometime image name is created from id,
+        // usual it has ImageName.NAME_ID_LEN first symbols from id
+        return com.codeabovelab.dm.common.utils.StringUtils.matchHex(image);
     }
 
     /**

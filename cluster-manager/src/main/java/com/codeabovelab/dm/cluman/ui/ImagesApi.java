@@ -91,14 +91,15 @@ public class ImagesApi {
             UiDeployedImage img = images.computeIfAbsent(imageId, UiDeployedImage::new);
             img.addContainer(container);
             String imageWithTag = container.getImage();
-            if(!ImageName.isId(imageWithTag)) {
-                String image = ContainerUtils.getRegistryAndImageName(imageWithTag);
-                RegistryService registryService = registryRepository.getRegistryByImageName(image);
-                if(registryService != null) {
-                    Tags tags = registryService.getTags(image);
-                    if(tags != null) {
-                        img.getTags().addAll(tags.getTags());
-                    }
+            if(ImageName.isId(imageWithTag)) {
+                continue;
+            }
+            String image = ContainerUtils.getRegistryAndImageName(imageWithTag);
+            RegistryService registryService = registryRepository.getRegistryByImageName(image);
+            if(registryService != null) {
+                Tags tags = registryService.getTags(image);
+                if(tags != null) {
+                    img.getTags().addAll(tags.getTags());
                 }
             }
         }
