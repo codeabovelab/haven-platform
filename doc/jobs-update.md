@@ -1,6 +1,6 @@
 # Update jobs #
 
-System provide list of jobs which do cluster wide batch update. It differs by strategy of replacing containers:
+System provides different job types which do cluster wide batch containers update. there are next strategies of updating containers:
 
 * `ui.updateContainers.startThenStopEach` - start new container with different name, then stop and remove old
 * `ui.updateContainers.stopThenStartAll` - stop and remove all containers, then create new containers with same names
