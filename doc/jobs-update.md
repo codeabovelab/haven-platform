@@ -9,25 +9,13 @@ System provide list of jobs which do cluster wide batch update. It differs by st
 All jobs has common list of parameters:
 
 
-* cluster
+* cluster - name of processed cluster
     * type: string
     * required: true
-* rollbackEnable
-    * type: boolean
-    * required: false
-* HealthCheckContainerProcessor.enabled
-    * type: boolean
-    * required: false
-* HealthCheckContainerProcessor.timeout
-    * type: long
-    * required: false
-* LoadContainersOfImage.percentage
+* LoadContainersOfImage.percentage - 0-100 - float value for partially update  
     * type: float
     * required: false
-* containersConfigs
-    * type: map
-    * required: false
-* images
+* images - list of images which need update
     * type: object
     * required: true
     
