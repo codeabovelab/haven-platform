@@ -200,6 +200,30 @@ public final class VersionComparator implements Comparator<String> {
             llp = left.indexOf('.', llp);
             rlp = right.indexOf('.', rlp);
             if(llp < 0 || rlp  < 0) {
+                if(llp >= 0 || rlp >= 0) {
+                    // when one has dot, then we must try to compare number
+                    // before dot, and other numbers on same level
+                    if(llp < 0) {
+                        llp = getNumEnd(left, lpp);
+                    }
+                    if(rlp < 0) {
+                        rlp = getNumEnd(right, rpp);
+                    }
+                    if(llp >= 0 && rlp >= 0) {
+                        int res = compareTokens(left.substring(lpp, llp), right.substring(rpp, rlp));
+                        if(res != 0) {
+                            return res;
+                        }
+                        lpp = llp;
+                        if(left.length() > lpp && left.charAt(lpp) == '.') {
+                            lpp++;
+                        }
+                        rpp = rlp;
+                        if(right.length() > rpp && right.charAt(rpp) == '.') {
+                            rpp++;
+                        }
+                    }
+                }
                 String ltoken = left.substring(lpp);
                 String rtoken = right.substring(rpp);
                 return compareEnds(ltoken, rtoken);
@@ -253,7 +277,7 @@ public final class VersionComparator implements Comparator<String> {
     }
 
     private String getSuffix(String token, int pos) {
-        if(pos < 0) {
+        if(pos < 0 || pos >= token.length()) {
             return NO_SUFFIX;
         }
         if(token.charAt(pos) == suffixDelimiter) {
@@ -269,20 +293,27 @@ public final class VersionComparator implements Comparator<String> {
      * @return
      */
     private int getNumEnd(String token) {
-        int pos = token.indexOf(suffixDelimiter);
+        return getNumEnd(token, 0);
+    }
+
+    private int getNumEnd(String token, int from) {
+        int pos = token.indexOf(suffixDelimiter, from);
         if(pos >= 0) {
             return pos;
         }
-        for(int i = 0; i < token.length(); ++i) {
+        for(int i = from; i < token.length(); ++i) {
             char c = token.charAt(i);
             if(c < '0' || c > '9') {
                 return i;
             }
         }
-        return -1;
+        return token.length();
     }
 
     private int compareTokens(String ltoken, String rtoken) {
+        if(ltoken.equals(rtoken)) {
+            return 0;
+        }
         try {
             int lti = Integer.parseInt(ltoken);
             int rti = Integer.parseInt(rtoken);
@@ -294,8 +325,8 @@ public final class VersionComparator implements Comparator<String> {
 
     private int compareStrings(String left, String right) {
         int res = left.compareTo(right);
-        //get signum
-        return res < 0? -1 : res & 1;
+        // res can be any number, but we need only -1 0 1
+        return res < 0? -1 : (res == 0? 0 : 1);
     }
 
     public static Builder builder() {
