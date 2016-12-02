@@ -37,8 +37,8 @@ public final class FieldProperty implements Property {
     public void set(Object obj, Object value) {
         try {
             field.set(obj, value);
-        } catch (ReflectiveOperationException e) {
-            throw new RuntimeException(e);
+        } catch (ReflectiveOperationException | IllegalArgumentException e) {
+            throw new RuntimeException("On set field " + field + " on " + obj + " to value " + value, e);
         }
     }
 
@@ -47,7 +47,7 @@ public final class FieldProperty implements Property {
         try {
             return field.get(obj);
         } catch (ReflectiveOperationException e) {
-            throw new RuntimeException(e);
+            throw new RuntimeException("On get field " + field + " on " + obj, e);
         }
     }
 
