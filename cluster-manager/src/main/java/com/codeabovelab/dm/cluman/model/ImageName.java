@@ -17,6 +17,7 @@
 package com.codeabovelab.dm.cluman.model;
 
 import lombok.Data;
+import org.springframework.util.StringUtils;
 
 /**
  * Parsed representation of image name. <p/>
@@ -25,6 +26,8 @@ import lombok.Data;
 @Data
 public class ImageName {
 
+    private static final String SHA256 = "sha256:";
+    public static final String TAG_LATEST = "latest";
     /**
      * Docker use below string constant as tag when can not find any tag or name for image.
      */
@@ -88,5 +91,25 @@ public class ImageName {
     public static String nameFromId(String imageId) {
         int start = imageId.indexOf(':') + 1;
         return imageId.substring(start, start + ImageName.NAME_ID_LEN);
+    }
+
+    public static boolean isId(String image) {
+        // see https://docs.docker.com/registry/spec/api/#/content-digests
+        int length = SHA256.length();
+        return image.regionMatches(true, 0, SHA256, 0, length);
+    }
+
+    /**
+     * Check that argument is not empty and valid image name (not an image id)
+     * @see #isId(String)
+     * @param image
+     */
+    public static void assertName(String image) {
+        if (!StringUtils.hasText(image)) {
+            throw new IllegalArgumentException("Image name is null or empty");
+        }
+        if (isId(image)) {
+            throw new IllegalArgumentException(image + " is image id, but we expect name");
+        }
     }
 }

@@ -46,20 +46,31 @@ public class UiDeployedImage extends UiImageData {
         }
     }
 
-    private final String name;
-    private final String currentTag;
-    private final String registry;
+    private String name;
+    private String currentTag;
+    private String registry;
     private final List<UiContainerShort> containers = new ArrayList<>();
 
-    public UiDeployedImage(DockerContainer dc, String registry) {
-        super(dc.getImageId());
-        ImageName in = ImageName.parse(dc.getImage());
-        this.name = in.getName();
-        this.currentTag = in.getTag();
-        this.registry = registry;
+    public UiDeployedImage(String id) {
+        super(id);
     }
 
-    public void addContainer(UiContainerShort uc) {
+    private void fillFromContainer(DockerContainer dc) {
+        String fullImageName = dc.getImage();
+        if(ImageName.isId(fullImageName)) {
+            return;
+        }
+        ImageName in = ImageName.parse(fullImageName);
+        setName(in.getName());
+        if(currentTag == null || currentTag.equals(ImageName.TAG_LATEST)) {
+            // we want any tag that is differ from 'latest', because it can mark any version
+            setCurrentTag(in.getTag());
+        }
+    }
+
+    public void addContainer(DockerContainer dc) {
+        fillFromContainer(dc);
+        UiContainerShort uc = UiContainerShort.toUi(dc);
         containers.add(uc);
     }
 }
