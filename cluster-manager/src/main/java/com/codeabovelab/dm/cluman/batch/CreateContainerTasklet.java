@@ -16,6 +16,7 @@
 
 package com.codeabovelab.dm.cluman.batch;
 
+import com.codeabovelab.dm.cluman.model.ImageName;
 import com.codeabovelab.dm.cluman.utils.ContainerUtils;
 import com.codeabovelab.dm.cluman.cluster.docker.management.argument.CreateContainerArg;
 import com.codeabovelab.dm.cluman.cluster.docker.management.result.CreateAndStartContainerResult;
@@ -34,6 +35,8 @@ import org.springframework.util.Assert;
 import java.util.Map;
 import java.util.function.Consumer;
 
+import static com.codeabovelab.dm.cluman.batch.LoadContainersOfImageTasklet.JP_IMAGE;
+
 /**
  * Processor which create containers
  */
@@ -43,9 +46,6 @@ public class CreateContainerTasklet {
 
     @Autowired
     private ContainerManager containerManager;
-
-    @JobParam(BatchUtils.JP_IMAGE_TARGET_VERSION)
-    private String version;
 
     @Autowired
     private JobContext context;
@@ -85,7 +85,7 @@ public class CreateContainerTasklet {
     @SuppressWarnings("unchecked")
     protected ContainerSource createEnrichConfiguration(ContainerSource arg, String image) {
         try {
-            String registryAndImageName = ContainerUtils.getRegistryAndImageName(image);
+            String registryAndImageName = ImageName.withoutTag(image);
             if(containersConfigs != null) {
                 Object configs = containersConfigs.get(registryAndImageName);
                 if (configs != null && configs instanceof Map) {

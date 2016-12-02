@@ -110,19 +110,12 @@ public final class ContainerUtils {
     /**
      * Return 'registry/image' name without version
      * example: example.com/com.example.core:172 -> example.com/com.example.core
-     *
+     * @see ImageName#withoutTag(String)
      * @param name
      * @return
      */
     public static String getRegistryAndImageName(String name) {
-        assertImageName(name);
-        int tagStart = name.lastIndexOf(':');
-        int regEnd = name.indexOf('/');
-        // we check that ':' is not part or registry name
-        if (tagStart < 0 || tagStart <= regEnd) {
-            tagStart = name.length();
-        }
-        return name.substring(0, tagStart);
+        return ImageName.withoutTag(name);
     }
 
     /**

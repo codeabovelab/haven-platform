@@ -117,4 +117,38 @@ public class ImageName {
             throw new IllegalArgumentException(image + " is image id, but we expect name");
         }
     }
+
+    /**
+     * Return 'registry/image' name without version
+     * example: example.com/com.example.core:172 -> example.com/com.example.core
+     * @param name
+     * @return name without tag or throw exception
+     */
+    public static String withoutTag(String name) {
+        assertName(name);
+        return removeTagP(name);
+    }
+
+    private static String removeTagP(String name) {
+        int tagStart = name.lastIndexOf(':');
+        int regEnd = name.indexOf('/');
+        // we check that ':' is not part or registry name
+        if (tagStart < 0 || tagStart <= regEnd) {
+            tagStart = name.length();
+        }
+        return name.substring(0, tagStart);
+    }
+
+    /**
+     * Return 'registry/image' name without version
+     * example: example.com/com.example.core:172 -> example.com/com.example.core
+     * @param name
+     * @return name without tag or null
+     */
+    public static String withoutTagOrNull(String name) {
+        if(!StringUtils.hasText(name) || isId(name)) {
+            return null;
+        }
+        return removeTagP(name);
+    }
 }

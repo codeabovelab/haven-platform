@@ -24,7 +24,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 
-import java.util.Iterator;
 import java.util.List;
 import java.util.ListIterator;
 
@@ -65,7 +64,7 @@ public class UpdateStopThenStartAllJob implements Runnable {
     private boolean rollbackEnable;
 
     @Autowired
-    private TargetVersionPredicate predicate;
+    private ContainerNeedUpdatedPredicate predicate;
     @Autowired
     private ContainerConfigTasklet containerConfig;
 

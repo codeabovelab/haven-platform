@@ -20,22 +20,28 @@ import com.codeabovelab.dm.cluman.utils.ContainerUtils;
 import com.codeabovelab.dm.cluman.job.JobComponent;
 import com.codeabovelab.dm.cluman.job.JobParam;
 
+import static com.codeabovelab.dm.cluman.batch.LoadContainersOfImageTasklet.JP_IMAGE;
+
 /**
- * Test that container version is not same as target version.
+ * Test that container version is not same as target version and match source version.
  */
 @JobComponent
-public class TargetVersionPredicate implements ContainerPredicate {
+public class ContainerNeedUpdatedPredicate implements ContainerPredicate {
 
-    @JobParam(value = BatchUtils.JP_IMAGE_TARGET_VERSION, required = true)
-    private String targetVersion;
+    @JobParam(value = JP_IMAGE, required = true)
+    private ImagesForUpdate images;
 
     @Override
     public boolean test(ProcessedContainer processedContainer) {
         String image = processedContainer.getImage();
-        if(ContainerUtils.isImageId(image)) {
-            // TODO strictly speaking we cannot assert that it false, but we not know imageId of target version
-            return false;
+        ImagesForUpdate.Image img = images.findImage(processedContainer.getImage(), processedContainer.getImageId());
+        if(img == null) {
+            // when happens is a bug
+            throw new IllegalStateException(processedContainer + " does not has an appropriate record in images.");
         }
-        return !targetVersion.equals(ContainerUtils.getImageVersion(image));
+        return img.matchFrom(image, processedContainer.getImageId()) &&
+          // when allTo == true, then matchTo - return true anyway, an we need to ignore it and
+          // filter container in other place
+          (img.isAllTo() || !img.matchTo(image, processedContainer.getImageId()));
     }
 }

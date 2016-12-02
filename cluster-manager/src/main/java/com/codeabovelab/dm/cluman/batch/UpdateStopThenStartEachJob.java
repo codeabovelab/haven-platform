@@ -37,7 +37,7 @@ public class UpdateStopThenStartEachJob implements Runnable {
     private UpgradeImageVersionTasklet upgrader;
 
     @Autowired
-    private TargetVersionPredicate predicate;
+    private ContainerNeedUpdatedPredicate predicate;
 
     @Override
     public void run() {

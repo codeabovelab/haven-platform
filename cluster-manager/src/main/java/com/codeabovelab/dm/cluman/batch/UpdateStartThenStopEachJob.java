@@ -60,7 +60,7 @@ public class UpdateStartThenStopEachJob implements Runnable {
     private JobContext jobContext;
 
     @Autowired
-    private TargetVersionPredicate predicate;
+    private ContainerNeedUpdatedPredicate predicate;
 
     @Autowired
     private ContainerConfigTasklet containerConfig;
