@@ -24,6 +24,7 @@ All jobs has common list of parameters:
         images:[
             {
                 /* Name or pattern (like 'registry/image*') of image with registry, but without tag
+                 '*' match all images
                  */
                 name:"ya.ru/search-engine*",
                 /* Comma delimited list of tag patterns from which image will be upgraded. 
