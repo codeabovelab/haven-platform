@@ -52,7 +52,7 @@ https://coreos.com/etcd/docs/latest/docker_guide.html
 
 Use the following command to start the etcd container: 
 ```sh
-docker run -d -v /usr/share/ca-certificates/:/etc/ssl/certs -p 4001:4001 -p 2380:2380 -p 2379:2379 \
+docker run -d -v /usr/share/ca-certificates/:/etc/ssl/certs -p 4001:4001 -p 2380:2380 -p 2379:2379 --restart=always  \
      --name etcd quay.io/coreos/etcd:v2.3.7  -name etcd0  -advertise-client-urls http://$MASTER_IP:2379,http://$MASTER_IP:4001 \
      -listen-client-urls http://0.0.0.0:2379,http://0.0.0.0:4001  -initial-advertise-peer-urls http://$MASTER_IP:2380 \
      -listen-peer-urls http://0.0.0.0:2380  -initial-cluster-token etcd-cluster-1 \
@@ -77,7 +77,7 @@ and MacOS instruction:
 **Step 4:** Install the Haven container by executing the following command:
  
 ```sh
- docker run -d --name=cluman -p 8761:8761 -e "dm_kv_etcd_urls=http://$MASTER_IP:2379" codeabovelab/cluster-manager
+ docker run -d --name=cluman -p 8761:8761 --restart=always -e "dm_kv_etcd_urls=http://$MASTER_IP:2379" codeabovelab/cluster-manager
 
 ```
  
