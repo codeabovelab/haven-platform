@@ -459,8 +459,8 @@
                 <pluginManagement>
                     <plugins>
                         <plugin>
+                            <groupId>org.apache.maven.plugins</groupId>
                             <artifactId>maven-resources-plugin</artifactId>
-                            <version>2.7</version>
                             <executions>
                                 <execution>
                                     <id>copy-resources</id>
@@ -473,7 +473,6 @@
                                         <resources>
                                             <resource>
                                                 <directory>${basedir}</directory>
-                                                <filtering>true</filtering>
                                                 <includes>
                                                     <include>Dockerfile</include>
                                                 </includes>
