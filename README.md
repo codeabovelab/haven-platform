@@ -52,14 +52,19 @@ https://coreos.com/etcd/docs/latest/docker_guide.html
 
 Use the following command to start the etcd container: 
 ```sh
-docker run -d -v /usr/share/ca-certificates/:/etc/ssl/certs -p 4001:4001 -p 2380:2380 -p 2379:2379 --restart=always  \
-     --name etcd quay.io/coreos/etcd:v2.3.7  -name etcd0  -advertise-client-urls http://$MASTER_IP:2379,http://$MASTER_IP:4001 \
+docker run -d -v /usr/share/ca-certificates/:/etc/ssl/certs \
+     -p 4001:4001 -p 2380:2380 -p 2379:2379 --restart=always  \
+     -data-dir=data --name etcd0 quay.io/coreos/etcd:v2.3.7  -name etcd0  \
+     -advertise-client-urls http://$MASTER_IP:2379,http://$MASTER_IP:4001 \
      -listen-client-urls http://0.0.0.0:2379,http://0.0.0.0:4001  -initial-advertise-peer-urls http://$MASTER_IP:2380 \
      -listen-peer-urls http://0.0.0.0:2380  -initial-cluster-token etcd-cluster-1 \
      -initial-cluster etcd0=http://$MASTER_IP:2380  -initial-cluster-state new
 
 ```
-
+In addition you can also mount a directory from your Docker engine’s host into a etcd data.
+```sh
+-v /home/user/data/docker/etcd/:/data/
+```
 **Step 3:** Configure Docker on each node. Use the following instruction to install Docker on the different Linux/Cloud, Windows, 
 and MacOS instruction:
  
