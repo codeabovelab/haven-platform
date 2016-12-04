@@ -17,6 +17,7 @@
 package com.codeabovelab.dm.cluman.model;
 
 import lombok.Data;
+import org.springframework.util.StringUtils;
 
 /**
  * Parsed representation of image name. <p/>
@@ -25,6 +26,8 @@ import lombok.Data;
 @Data
 public class ImageName {
 
+    private static final String SHA256 = "sha256:";
+    public static final String TAG_LATEST = "latest";
     /**
      * Docker use below string constant as tag when can not find any tag or name for image.
      */
@@ -88,5 +91,64 @@ public class ImageName {
     public static String nameFromId(String imageId) {
         int start = imageId.indexOf(':') + 1;
         return imageId.substring(start, start + ImageName.NAME_ID_LEN);
+    }
+
+    public static boolean isId(String image) {
+        // see https://docs.docker.com/registry/spec/api/#/content-digests
+        int length = SHA256.length();
+        if(image.regionMatches(true, 0, SHA256, 0, length)) {
+            return true;
+        }
+        // sometime image name is created from id,
+        // usual it has ImageName.NAME_ID_LEN first symbols from id
+        return com.codeabovelab.dm.common.utils.StringUtils.matchHex(image);
+    }
+
+    /**
+     * Check that argument is not empty and valid image name (not an image id)
+     * @see #isId(String)
+     * @param image
+     */
+    public static void assertName(String image) {
+        if (!StringUtils.hasText(image)) {
+            throw new IllegalArgumentException("Image name is null or empty");
+        }
+        if (isId(image)) {
+            throw new IllegalArgumentException(image + " is image id, but we expect name");
+        }
+    }
+
+    /**
+     * Return 'registry/image' name without version
+     * example: example.com/com.example.core:172 -> example.com/com.example.core
+     * @param name
+     * @return name without tag or throw exception
+     */
+    public static String withoutTag(String name) {
+        assertName(name);
+        return removeTagP(name);
+    }
+
+    private static String removeTagP(String name) {
+        int tagStart = name.lastIndexOf(':');
+        int regEnd = name.indexOf('/');
+        // we check that ':' is not part or registry name
+        if (tagStart < 0 || tagStart <= regEnd) {
+            tagStart = name.length();
+        }
+        return name.substring(0, tagStart);
+    }
+
+    /**
+     * Return 'registry/image' name without version
+     * example: example.com/com.example.core:172 -> example.com/com.example.core
+     * @param name
+     * @return name without tag or null
+     */
+    public static String withoutTagOrNull(String name) {
+        if(!StringUtils.hasText(name) || isId(name)) {
+            return null;
+        }
+        return removeTagP(name);
     }
 }

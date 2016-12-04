@@ -88,20 +88,20 @@ public class ImagesApi {
         Map<String, UiDeployedImage> images = new HashMap<>();
         for(DockerContainer container: containers) {
             String imageId = container.getImageId();
-            UiDeployedImage img = images.computeIfAbsent(imageId, (ii) -> {
-                String image = ContainerUtils.getRegistryAndImageName(container.getImage());
-                String registry = registryRepository.resolveRegistryNameByImageName(image);
-                UiDeployedImage depimg = new UiDeployedImage(container, registry);
-                RegistryService registryService = registryRepository.getByName(registry);
-                if(registryService != null) {
-                    Tags tags = registryService.getTags(image);
-                    if(tags != null) {
-                        depimg.getTags().addAll(tags.getTags());
-                    }
+            UiDeployedImage img = images.computeIfAbsent(imageId, UiDeployedImage::new);
+            img.addContainer(container);
+            String imageWithTag = container.getImage();
+            if(ImageName.isId(imageWithTag)) {
+                continue;
+            }
+            String image = ContainerUtils.getRegistryAndImageName(imageWithTag);
+            RegistryService registryService = registryRepository.getRegistryByImageName(image);
+            if(registryService != null) {
+                Tags tags = registryService.getTags(image);
+                if(tags != null) {
+                    img.getTags().addAll(tags.getTags());
                 }
-                return depimg;
-            });
-            img.addContainer(UiDeployedImage.UiContainerShort.toUi(container));
+            }
         }
         return images.values();
     }

@@ -22,6 +22,8 @@ public class VersionComparatorTest {
         compare( 0,      null,      null);
         compare( 1,       "1",      null);
         compare( 1,       "1",        "");
+        compare(-1,       "1",     "1.1");
+        compare(-1,       "1",    "1.10");
         compare( 1,    "1.10",     "1.9");
         compare(-1,     "1.1",     "1.2");
         compare(-1, "1.1.123", "1.9.123");
@@ -42,6 +44,7 @@ public class VersionComparatorTest {
         String[] src = new String[]{
           "1",
           "1-alpine",
+          "0.10",
           "1.10",
           "1.10-alpine",
           "1.8.1",
@@ -60,32 +63,32 @@ public class VersionComparatorTest {
           "latest"
         };
         String[] exp = new String[]{
-          "1",
+          "0.10",
           "1-alpine",
-          "1.8",
+          "1",
           "1.8-alpine",
-          "1.8.1",
+          "1.8",
           "1.8.1-alpine",
-          "1.10",
+          "1.8.1",
           "1.10-alpine",
+          "1.10",
           "1.10.0-alpine",
-          "1.10.1",
           "1.10.1-alpine",
-          "1.10.2",
+          "1.10.1",
           "1.10.2-alpine",
-          "1.11",
+          "1.10.2",
           "1.11-alpine",
+          "1.11",
           "1.11.0-alpine",
           "1.11.1-alpine",
           "latest"
         };
         VersionComparator vc = VersionComparator.builder()
           .addLatest("latest")
-          .emptySuffixLast(false)
           .build();
         Arrays.sort(src, (a, b) -> {
             int res = vc.compare(a, b);
-            //System.out.println(a + (res == 0? " == " : (res > 0? " > " : " < ")) + b);
+            System.out.println(a + (res == 0? " == " : (res > 0? " > " : " < ")) + b);
             return res;
         });
         System.out.println(Arrays.toString(src));

@@ -115,8 +115,8 @@ public final class MethodsProperty implements Property {
     public void set(Object owner, Object value) {
         try {
             this.setter.invoke(owner, value);
-        } catch(ReflectiveOperationException e) {
-            throw new RuntimeException("call " + this.setter + " on " + owner);
+        } catch(ReflectiveOperationException | IllegalArgumentException e) {
+            throw new RuntimeException("Call " + this.setter + " on " + owner + " with arg " + value);
         }
     }
 

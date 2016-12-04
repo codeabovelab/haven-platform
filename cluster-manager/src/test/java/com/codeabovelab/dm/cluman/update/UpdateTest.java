@@ -1,10 +1,12 @@
 package com.codeabovelab.dm.cluman.update;
 
 import com.codeabovelab.dm.cluman.DockerServiceMock;
+import com.codeabovelab.dm.cluman.batch.ImagesForUpdate;
 import com.codeabovelab.dm.cluman.cluster.docker.management.DockerService;
 import com.codeabovelab.dm.cluman.cluster.docker.management.argument.GetContainersArg;
 import com.codeabovelab.dm.cluman.cluster.docker.model.CreateContainerCmd;
 import com.codeabovelab.dm.cluman.cluster.docker.model.HostConfig;
+import com.codeabovelab.dm.cluman.cluster.registry.RegistryRepository;
 import com.codeabovelab.dm.cluman.configs.container.ConfigProvider;
 import com.codeabovelab.dm.cluman.configs.container.DefaultParser;
 import com.codeabovelab.dm.cluman.configs.container.Parser;
@@ -95,6 +97,11 @@ public class UpdateTest {
         @Bean
         ContainerSourceFactory containerSourceFactory(ObjectMapper objectMapper) {
             return new ContainerSourceFactory(objectMapper);
+        }
+
+        @Bean
+        RegistryRepository registryRepository() {
+            return mock(RegistryRepository.class);
         }
 
         @Bean
@@ -222,10 +229,11 @@ public class UpdateTest {
         b.type(UpdateContainersUtil.JOB_PREFIX + strategy);
         //b.parameter(LoadContainersOfImageTasklet.JP_PERCENTAGE, percentage);
         b.parameter(BatchUtils.JP_CLUSTER, TESTCLUSTER);
-        b.parameter(LoadContainersOfImageTasklet.JP_IMAGE, "*");
-        b.parameter(BatchUtils.JP_IMAGE_TARGET_VERSION, TARGET_VERSION);
+        b.parameter(LoadContainersOfImageTasklet.JP_IMAGE, ImagesForUpdate.builder()
+          .addImage(TESTIMAGE, SRC_VERSION, TARGET_VERSION)
+          .build());
+
         b.parameter(HealthCheckContainerTasklet.JP_HEALTH_CHECK_ENABLED, true);
-        //b.parameter(BatchUtils.JP_ROLLBACK_ENABLE, true);
         b.parameter("id", Uuids.liteRandom());
         JobParameters params = b.build();
         JobInstance jobInstance = jobsManager.create(params);

@@ -16,6 +16,7 @@
 
 package com.codeabovelab.dm.cluman.batch;
 
+import com.codeabovelab.dm.cluman.model.ImageName;
 import com.codeabovelab.dm.cluman.utils.ContainerUtils;
 import com.codeabovelab.dm.cluman.cluster.docker.management.DockerService;
 import com.codeabovelab.dm.cluman.cluster.docker.management.argument.GetContainersArg;
@@ -26,7 +27,6 @@ import com.codeabovelab.dm.cluman.model.DockerContainer;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.util.Assert;
-import org.springframework.util.PatternMatchUtils;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -42,11 +42,11 @@ public class LoadContainersOfImageTasklet {
     /**
      * Job parameter 'image' - pattern of image name which containers will has been loaded.
      */
-    public static final String JP_IMAGE = PREFIX + "image";
+    public static final String JP_IMAGE = "images";
     public static final String JP_PERCENTAGE = PREFIX + "percentage";
     private final DockerService dockerService;
     private final JobContext context;
-    private String imagePattern;
+    private ImagesForUpdate images;
     private float percentage = 1f /* all containers, .5 - half */;
     // param need for correct docker service initialisation
     @JobParam(value = BatchUtils.JP_CLUSTER, required = true)
@@ -58,13 +58,13 @@ public class LoadContainersOfImageTasklet {
         this.context = context;
     }
 
-    public String getImagePattern() {
-        return imagePattern;
+    public ImagesForUpdate getImagePattern() {
+        return images;
     }
 
     @JobParam(value = JP_IMAGE, required = true)
-    public void setImagePattern(String imagePattern) {
-        this.imagePattern = imagePattern;
+    public void setImagePattern(ImagesForUpdate imagePattern) {
+        this.images = imagePattern;
     }
 
     public float getPercentage() {
@@ -77,24 +77,15 @@ public class LoadContainersOfImageTasklet {
     }
 
     public List<ProcessedContainer> getContainers(ContainerPredicate predicate) {
-        Assert.hasText(this.imagePattern, "Need attribute: " + JP_IMAGE);
+        Assert.notNull(this.images, "Need attribute: " + JP_IMAGE);
         GetContainersArg arg = new GetContainersArg(true);
         List<DockerContainer> containers = this.dockerService.getContainers(arg);
         List<ProcessedContainer> processedContainers = new ArrayList<>();
-
         for(DockerContainer container : containers) {
-            String imageName = container.getImage();
-            if(ContainerUtils.isImageId(imageName)) {
-                // only asterisk allow to load containers without image name
-                if(!"*".equals(this.imagePattern)) {
-                    continue;
-                }
-            } else {
-                String appName = ContainerUtils.getRegistryAndImageName(imageName);
-                if(!PatternMatchUtils.simpleMatch(this.imagePattern, appName)) {
-                    log.trace("Container {} rejected by imagePattern: {}", container.getName(), imagePattern);
-                    continue;
-                }
+            ImagesForUpdate.Image img = images.findImage(container.getImage(), container.getImageId());
+            if(img == null) {
+                log.debug("Container does not match any image: {}", container.getName());
+                continue;
             }
             ProcessedContainer processedContainer = convert(container);
             if(ContainerUtils.isOurContainer(processedContainer)) {

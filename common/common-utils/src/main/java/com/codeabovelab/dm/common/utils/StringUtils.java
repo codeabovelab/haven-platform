@@ -150,6 +150,12 @@ public class StringUtils {
         return isAz09(cp) || cp == '-' || cp == '_' || cp == ':' || cp == '.';
     }
 
+    public static boolean isHex(int cp) {
+        return cp >= '0' && cp <= '9' ||
+          cp >= 'a' && cp <= 'f' ||
+          cp >= 'A' && cp <= 'F';
+    }
+
     /**
      * Chars which is acceptable as file name or part of url on most operation systems. <p/>
      * It: <code>'A'-'z', '0'-'9', '_', '-', '.'</code>
@@ -211,6 +217,10 @@ public class StringUtils {
      */
     public static boolean matchId(String str) {
         return match(str, StringUtils::isId);
+    }
+
+    public static boolean matchHex(String str) {
+        return match(str, StringUtils::isHex);
     }
 
     /**

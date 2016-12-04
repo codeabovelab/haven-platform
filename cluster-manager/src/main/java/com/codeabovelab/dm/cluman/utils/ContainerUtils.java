@@ -17,6 +17,7 @@
 package com.codeabovelab.dm.cluman.utils;
 
 import com.codeabovelab.dm.cluman.model.ContainerBaseIface;
+import com.codeabovelab.dm.cluman.model.ImageName;
 import com.codeabovelab.dm.common.utils.ContainerDetector;
 import com.codeabovelab.dm.common.utils.OSUtils;
 import org.springframework.util.StringUtils;
@@ -24,21 +25,17 @@ import org.springframework.util.StringUtils;
 
 public final class ContainerUtils {
 
-    private static final String SHA256 = "sha256:";
-
+    /**
+     * use {@link  ImageName#isId(String)}
+     * @param image
+     * @return
+     */
     public static boolean isImageId(String image) {
-        // see https://docs.docker.com/registry/spec/api/#/content-digests
-        int length = SHA256.length();
-        return image.regionMatches(true, 0, SHA256, 0, length);
+        return ImageName.isId(image);
     }
 
     private static void assertImageName(String image) {
-        if (!StringUtils.hasText(image)) {
-            throw new IllegalArgumentException("Image name is null or empty");
-        }
-        if (isImageId(image)) {
-            throw new IllegalArgumentException(image + " is image id, but we expect name");
-        }
+        ImageName.assertName(image);
     }
 
     /**
@@ -113,19 +110,12 @@ public final class ContainerUtils {
     /**
      * Return 'registry/image' name without version
      * example: example.com/com.example.core:172 -> example.com/com.example.core
-     *
+     * @see ImageName#withoutTag(String)
      * @param name
      * @return
      */
     public static String getRegistryAndImageName(String name) {
-        assertImageName(name);
-        int tagStart = name.lastIndexOf(':');
-        int regEnd = name.indexOf('/');
-        // we check that ':' is not part or registry name
-        if (tagStart < 0 || tagStart <= regEnd) {
-            tagStart = name.length();
-        }
-        return name.substring(0, tagStart);
+        return ImageName.withoutTag(name);
     }
 
     /**
