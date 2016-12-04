@@ -18,7 +18,6 @@ package com.codeabovelab.dm.cluman.ui;
 
 import com.codeabovelab.dm.cluman.ui.model.UISearchQuery;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang.ObjectUtils;
 import org.springframework.expression.spel.standard.SpelExpression;
 import org.springframework.expression.spel.standard.SpelExpressionParser;
 import org.springframework.stereotype.Component;
@@ -51,7 +50,7 @@ public class FilterApi {
 
                 Comparable v1 = value1 instanceof Comparable ? (Comparable) value1 : null;
                 Comparable v2 = value2 instanceof Comparable ? (Comparable) value2 : null;
-                int result = ObjectUtils.compare(v1, v2);
+                int result = compare(v1, v2, false);
                 return order.getOrder() == ASC ? result : -result;
             });
         }
@@ -75,6 +74,17 @@ public class FilterApi {
                 criterions.stream().reduce(c -> c, (c1, c2) -> (s -> c2.apply(c1.apply(s))));
 
         return compositeCriteria.apply(collection.stream()).collect(Collectors.toList());
+    }
+
+    private static int compare(Comparable c1, Comparable c2, boolean nullGreater) {
+        if (c1 == c2) {
+            return 0;
+        } else if (c1 == null) {
+            return (nullGreater ? 1 : -1);
+        } else if (c2 == null) {
+            return (nullGreater ? -1 : 1);
+        }
+        return c1.compareTo(c2);
     }
 
     @FunctionalInterface
