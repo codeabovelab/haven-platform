@@ -469,10 +469,10 @@
                                         <goal>copy-resources</goal>
                                     </goals>
                                     <configuration>
-                                        <outputDirectory>${basedir}/target/</outputDirectory>
+                                        <outputDirectory>${basedir}/target</outputDirectory>
                                         <resources>
                                             <resource>
-                                                <directory>${basedir}/../../../</directory>
+                                                <directory>${basedir}</directory>
                                                 <filtering>true</filtering>
                                                 <includes>
                                                     <include>Dockerfile</include>
@@ -500,7 +500,7 @@
                                 <executable>bash</executable>
                                 <arguments>
                                     <!-- Shell script location -->
-                                    <argument>${project.basedir}/../../../docker.sh</argument>
+                                    <argument>${project.basedir}/../docker.sh</argument>
                                     <argument>${project.groupId}</argument>
                                     <argument>${project.artifactId}</argument>
                                     <argument>${project.version}</argument>
