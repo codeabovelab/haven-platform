@@ -26,6 +26,7 @@ import com.codeabovelab.dm.cluman.ds.swarm.SwarmProcessesConfig;
 import com.codeabovelab.dm.cluman.model.DockerLogEvent;
 import com.codeabovelab.dm.cluman.model.NodesGroupEvent;
 import com.codeabovelab.dm.cluman.model.NodeEvent;
+import com.codeabovelab.dm.cluman.security.TempAuth;
 import com.codeabovelab.dm.common.mb.*;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.ObjectFactory;
@@ -59,22 +60,24 @@ public class SwarmAdapterConfiguration implements ApplicationListener<ContextRef
 
     @Override
     public void onApplicationEvent(ContextRefreshedEvent event) {
-        Map<String, ClusterConfigImpl.Builder> configs = swarmsConfig.getConfigs();
-        DiscoveryStorageImpl storage = storageFactory.getObject();
-        if(CollectionUtils.isEmpty(configs)) {
-            LoggerFactory.getLogger(getClass()).info("No configs in " + swarmsConfig);
-        } else {
-            for(Map.Entry<String, ClusterConfigImpl.Builder> e: configs.entrySet()) {
-                String cluster = e.getKey();
-                ClusterConfigImpl.Builder config = ClusterConfigImpl.builder().from(e.getValue());
-                config.cluster(cluster);
-                SwarmNodesGroupConfig ngc = new SwarmNodesGroupConfig();
-                ngc.setConfig(config.build());
-                ngc.setName(cluster);
-                storage.getOrCreateGroup(ngc);
+        try (TempAuth auth = TempAuth.asSystem()) {
+            Map<String, ClusterConfigImpl.Builder> configs = swarmsConfig.getConfigs();
+            DiscoveryStorageImpl storage = storageFactory.getObject();
+            if(CollectionUtils.isEmpty(configs)) {
+                LoggerFactory.getLogger(getClass()).info("No configs in " + swarmsConfig);
+            } else {
+                for(Map.Entry<String, ClusterConfigImpl.Builder> e: configs.entrySet()) {
+                    String cluster = e.getKey();
+                    ClusterConfigImpl.Builder config = ClusterConfigImpl.builder().from(e.getValue());
+                    config.cluster(cluster);
+                    SwarmNodesGroupConfig ngc = new SwarmNodesGroupConfig();
+                    ngc.setConfig(config.build());
+                    ngc.setName(cluster);
+                    storage.getOrCreateGroup(ngc);
+                }
             }
+            storage.load();
         }
-        storage.load();
     }
 
     @Configuration
