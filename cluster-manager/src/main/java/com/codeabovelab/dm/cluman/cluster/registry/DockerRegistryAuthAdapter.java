@@ -69,10 +69,7 @@ class DockerRegistryAuthAdapter implements RegistryAuthAdapter {
                     ctx.getRequestHeaders().add(AUTHORIZATION, "Bearer " + token);
                     break;
                 case "Basic":
-                    RegistryCredentials registryCredentials = provider.getRegistryCredentials();
-                    ctx.getRequestHeaders().add(AUTHORIZATION, "Basic " +
-                            java.util.Base64.getEncoder().encodeToString(
-                                    ((registryCredentials.getUsername() + ":" + registryCredentials.getPassword()).getBytes())));
+                    ctx.getRequestHeaders().add(AUTHORIZATION, createBasicHeader(provider.getRegistryCredentials()));
                     break;
                 default:
                     throw new IllegalArgumentException("Invalid token string " + tokenReq);
@@ -89,7 +86,7 @@ class DockerRegistryAuthAdapter implements RegistryAuthAdapter {
         try {
             URI path = getPath(authInfo);
             HttpEntity<String> request = new HttpEntity<>(
-                    createHeaders(registryCredentials.getUsername(), registryCredentials.getPassword()));
+                    createHeaders(registryCredentials));
             Map<String, String> token = restTemplate.exchange(path, HttpMethod.GET, request, Map.class).getBody();
 
             if (!token.isEmpty()) {
@@ -109,19 +106,18 @@ class DockerRegistryAuthAdapter implements RegistryAuthAdapter {
                 StringUtils.hasText(registryCredentials.getPassword());
     }
 
-    private HttpHeaders createHeaders(String username, String password) {
-        if (StringUtils.isEmpty(username)) {
-            return new HttpHeaders();
+    private HttpHeaders createHeaders(RegistryCredentials registryCredentials) {
+        HttpHeaders httpHeaders = new HttpHeaders();
+        if (StringUtils.isEmpty(registryCredentials.getUsername())) {
+            return httpHeaders;
         }
-        return new HttpHeaders() {
-            {
-                String auth = username + ":" + password;
-                byte[] encodedAuth = Base64.encodeBase64(
-                        auth.getBytes(Charset.forName("US-ASCII")));
-                String authHeader = "Basic " + new String(encodedAuth);
-                set("Authorization", authHeader);
-            }
-        };
+        httpHeaders.set(AUTHORIZATION, createBasicHeader(registryCredentials));
+        return httpHeaders;
+    }
+
+    private String createBasicHeader(RegistryCredentials registryCredentials) {
+        String auth = registryCredentials.getUsername() + ":" + registryCredentials.getPassword();
+        return "Basic " + new String(Base64.encodeBase64(auth.getBytes()));
     }
 
     private URI getPath(AuthInfo authInfo) throws URISyntaxException {
