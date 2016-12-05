@@ -85,6 +85,11 @@ and MacOS instruction:
  docker run -d --name=cluman -p 8761:8761 --restart=always -e "dm_kv_etcd_urls=http://$MASTER_IP:2379" codeabovelab/cluster-manager
 
 ```
+For storing data use:
+```sh
+-v /home/user/data/docker/haven/:/data
+
+```
  
 The Haven container can be started only with etcd's URL as its environment variable. It can have other optional parameters 
 passed in as environment variables to enable other features. 
