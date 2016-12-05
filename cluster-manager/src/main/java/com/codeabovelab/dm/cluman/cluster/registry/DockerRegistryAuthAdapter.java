@@ -60,7 +60,7 @@ class DockerRegistryAuthAdapter implements RegistryAuthAdapter {
             String type = split[0];
             switch (type) {
                 case "Bearer":
-                    Map<String, String> map = Splitter.on(",").withKeyValueSeparator("=").split(split[1]);
+                    Map<String, String> map = Splitter.on(",").withKeyValueSeparator("=").split(split[1].replace("\"", ""));
                     AuthInfo authInfo = AuthInfo.builder()
                             .realm(map.get("realm"))
                             .service(map.get("service"))
