@@ -42,6 +42,7 @@ import java.util.regex.Pattern;
 
 import static org.springframework.util.MimeTypeUtils.APPLICATION_JSON_VALUE;
 import static org.springframework.util.MimeTypeUtils.TEXT_PLAIN_VALUE;
+import static org.springframework.web.bind.annotation.RequestMethod.GET;
 import static org.springframework.web.bind.annotation.RequestMethod.POST;
 
 
@@ -126,7 +127,7 @@ public class DiscoveryNodeController {
         return nhb.build();
     }
 
-    @RequestMapping("/agent/{agentName:.*}")
+    @RequestMapping(value = "/agent/{agentName:.*}", method = GET)
     public ResponseEntity<StreamingResponseBody> load(HttpServletRequest request,
                                                       @PathVariable("agentName") String agentName,
                                                       @RequestParam(value = "node", required = false) String node) {
