@@ -108,9 +108,6 @@ class DockerRegistryAuthAdapter implements RegistryAuthAdapter {
 
     private HttpHeaders createHeaders(RegistryCredentials registryCredentials) {
         HttpHeaders httpHeaders = new HttpHeaders();
-        if (StringUtils.isEmpty(registryCredentials.getUsername())) {
-            return httpHeaders;
-        }
         httpHeaders.set(AUTHORIZATION, createBasicHeader(registryCredentials));
         return httpHeaders;
     }
