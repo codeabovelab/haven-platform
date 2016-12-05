@@ -19,12 +19,15 @@ package com.codeabovelab.dm.cluman.cluster.registry;
 import com.codeabovelab.dm.cluman.cluster.registry.model.RegistryAuthAdapter;
 import com.codeabovelab.dm.cluman.cluster.registry.model.RegistryCredentials;
 import com.codeabovelab.dm.cluman.cluster.registry.model.RegistryCredentialsProvider;
-import lombok.Data;
+import com.google.common.base.Splitter;
+import lombok.Builder;
+import lombok.Value;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.codec.binary.Base64;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
+import org.springframework.util.Assert;
 import org.springframework.util.StringUtils;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
@@ -35,6 +38,7 @@ import java.net.URISyntaxException;
 import java.nio.charset.Charset;
 import java.util.Map;
 
+import static org.springframework.http.HttpHeaders.AUTHORIZATION;
 import static org.springframework.web.util.UriComponentsBuilder.newInstance;
 
 @Slf4j
@@ -49,31 +53,32 @@ class DockerRegistryAuthAdapter implements RegistryAuthAdapter {
 
     @Override
     public void handle(AuthContext ctx) {
-        String tokenString = ctx.getAuthenticate();
-        AuthInfo authInfo = parse(tokenString);
-        String token = getToken(authInfo);
-        ctx.getRequestHeaders().add("Authorization", "Bearer " + token);
-    }
-
-
-    private AuthInfo parse(String token) {
-        String bearer = token.replace("Bearer", "");
-        String[] split = bearer.split(",");
-        AuthInfo authInfo = new AuthInfo();
-        for (String s : split) {
-            String[] keyValue = s.trim().split("=");
-            switch (keyValue[0]) {
-                case "realm":
-                    authInfo.setRealm(keyValue[1].replace("\"", ""));
+        if (checkCredentials()) {
+            String tokenReq = ctx.getAuthenticate();
+            String[] split = StringUtils.split(tokenReq, " ");
+            Assert.isTrue(split.length == 2, "invalid token request " + tokenReq);
+            String type = split[0];
+            switch (type) {
+                case "Bearer":
+                    Map<String, String> map = Splitter.on(",").withKeyValueSeparator("=").split(split[1]);
+                    AuthInfo authInfo = AuthInfo.builder()
+                            .realm(map.get("realm"))
+                            .service(map.get("service"))
+                            .scope(map.get("scope")).build();
+                    String token = getToken(authInfo);
+                    ctx.getRequestHeaders().add(AUTHORIZATION, "Bearer " + token);
                     break;
-                case "service":
-                    authInfo.setService(keyValue[1].replace("\"", ""));
+                case "Basic":
+                    RegistryCredentials registryCredentials = provider.getRegistryCredentials();
+                    ctx.getRequestHeaders().add(AUTHORIZATION, "Basic " +
+                            java.util.Base64.getEncoder().encodeToString(
+                                    ((registryCredentials.getUsername() + ":" + registryCredentials.getPassword()).getBytes())));
                     break;
-                case "scope":
-                    authInfo.setScope(keyValue[1].replace("\"", ""));
+                default:
+                    throw new IllegalArgumentException("Invalid token string " + tokenReq);
             }
         }
-        return authInfo;
+
     }
 
     @SuppressWarnings("unchecked")
@@ -83,12 +88,8 @@ class DockerRegistryAuthAdapter implements RegistryAuthAdapter {
         // get https://auth.docker.io/token?service=registry.docker.io
         try {
             URI path = getPath(authInfo);
-            HttpEntity<String> request = null;
-            if (registryCredentials != null && StringUtils.hasText(registryCredentials.getUsername()) &&
-                    StringUtils.hasText(registryCredentials.getPassword())) {
-                request = new HttpEntity<>(
-                        createHeaders(registryCredentials.getUsername(), registryCredentials.getPassword()));
-            }
+            HttpEntity<String> request = new HttpEntity<>(
+                    createHeaders(registryCredentials.getUsername(), registryCredentials.getPassword()));
             Map<String, String> token = restTemplate.exchange(path, HttpMethod.GET, request, Map.class).getBody();
 
             if (!token.isEmpty()) {
@@ -100,6 +101,12 @@ class DockerRegistryAuthAdapter implements RegistryAuthAdapter {
             log.error("Can't do request", e);
         }
         return null;
+    }
+
+    private boolean checkCredentials() {
+        RegistryCredentials registryCredentials = provider.getRegistryCredentials();
+        return registryCredentials != null && StringUtils.hasText(registryCredentials.getUsername()) &&
+                StringUtils.hasText(registryCredentials.getPassword());
     }
 
     private HttpHeaders createHeaders(String username, String password) {
@@ -128,10 +135,11 @@ class DockerRegistryAuthAdapter implements RegistryAuthAdapter {
         return builder.build().toUri();
     }
 
-    @Data
+    @Value
+    @Builder
     private static class AuthInfo {
-        private String realm;
-        private String service;
-        private String scope;
+        private final String realm;
+        private final String service;
+        private final String scope;
     }
 }
