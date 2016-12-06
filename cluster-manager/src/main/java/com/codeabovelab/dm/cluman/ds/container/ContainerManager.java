@@ -366,8 +366,8 @@ public class ContainerManager {
             for (String key : publish.keySet()) {
                 if (StringUtils.hasText(key)) {
                     String value = publish.get(key);
-                    ExposedPort exposedPort = new ExposedPort(Integer.parseInt(key));
-                    Ports.Binding binding = new Ports.Binding(Integer.parseInt(value));
+                    ExposedPort exposedPort = new ExposedPort(Integer.parseInt(value));
+                    Ports.Binding binding = new Ports.Binding(key);
                     ports.bind(exposedPort, binding);
                 }
             }
