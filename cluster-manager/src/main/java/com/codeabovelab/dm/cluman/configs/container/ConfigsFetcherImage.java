@@ -68,7 +68,6 @@ public class ConfigsFetcherImage implements ConfigsFetcher {
 
         }
         ContainerSource nc = new ContainerSource();
-        Sugar.setIfNotNull(nc.getEnvironment()::addAll, containerConfig.getEnv());
         nc.getLabels().putAll(containerConfig.getLabels());
         context.addCreateContainerArg(nc);
     }
