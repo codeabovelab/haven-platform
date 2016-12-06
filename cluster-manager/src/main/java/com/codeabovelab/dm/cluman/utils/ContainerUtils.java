@@ -164,7 +164,8 @@ public final class ContainerUtils {
             return image;
         }
         int i = image.lastIndexOf(':');
-        if (i < 0) {
+        int slash = image.lastIndexOf('/');
+        if (i < 0 || i < slash) {
             return image + ":" + version;
         }
         return image.substring(0, i + 1) + version;
