@@ -15,7 +15,8 @@ import datetime
 default_value = {
     "docker": "$DOCKER$",
     "master": "$MASTER$",
-    "secret": "$SECRET$"
+    "secret": "$SECRET$",
+    "timeout": "60"
 }
 
 
@@ -272,13 +273,13 @@ By default find config in:
             res = getattr(args, name, None)
             if res is None and cm is not None:
                 res = cm.get(name)
-            if res is not None and callable(converter):
-                res = converter(res)
             if res is None:
                 res = default_value.get(name)
                 # when default value is not set, we ignore it
                 if res is not None and len(res) > 2 and res[0] == '$' and res[-1] == '$':
                     res = None
+            if res is not None and callable(converter):
+                res = converter(res)
             return res
 
         self.log_level = get('log_level', int)
