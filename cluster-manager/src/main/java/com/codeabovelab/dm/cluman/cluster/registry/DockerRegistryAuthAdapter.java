@@ -81,7 +81,10 @@ class DockerRegistryAuthAdapter implements RegistryAuthAdapter {
         // get https://auth.docker.io/token?service=registry.docker.io
         try {
             URI path = getPath(authInfo);
-            HttpEntity<String> request = new HttpEntity<>(createHeaders(registryCredentials));
+            HttpEntity<String> request = null;
+            if (checkCredentials()) {
+                request = new HttpEntity<>(createHeaders(registryCredentials));
+            }
             Map<String, String> token = restTemplate.exchange(path, HttpMethod.GET, request, Map.class).getBody();
 
             if (!token.isEmpty()) {
@@ -103,9 +106,7 @@ class DockerRegistryAuthAdapter implements RegistryAuthAdapter {
 
     private HttpHeaders createHeaders(RegistryCredentials registryCredentials) {
         HttpHeaders httpHeaders = new HttpHeaders();
-        if (checkCredentials()) {
-            httpHeaders.set(AUTHORIZATION, createBasicHeader(registryCredentials));
-        }
+        httpHeaders.set(AUTHORIZATION, createBasicHeader(registryCredentials));
         return httpHeaders;
     }
 
