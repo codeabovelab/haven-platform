@@ -8,6 +8,8 @@ import json
 import logging
 import os
 import sys
+import shutil
+import stat
 import time
 import datetime
 
@@ -229,25 +231,33 @@ class DockerMaster:
 
 class Bootstrap:
     def __init__(self):
+        this_name = os.path.basename(__file__)
+        self.this_name = (this_name[0:-len('.py')] if this_name.endswith('.py') else this_name)
+
+        config_name = self.this_name + '.ini'
+        self.config_path_global = '/etc/' + config_name
+
         config_home = os.getenv('XDG_CONFIG_HOME')
         if config_home is None:
             config_home = os.path.expanduser('~/.config/')
         cwd = os.getcwd()
-        config_files = [cwd + '/dm-agent.ini', config_home + 'dm-agent.ini', '/etc/dm-agent.ini']
+        config_files = [cwd + '/' + config_name, config_home + config_name, self.config_path_global]
+
+        self.sample_config = '''[main]
+docker = 172.31.0.12:2375
+master = 172.31.0.3:8762
+timeout = 10
+secret = secr3t
+log_level = 2'''
 
         parser = argparse.ArgumentParser(formatter_class=argparse.RawTextHelpFormatter,
-                                        description='DockMaster node agent.',
+                                         description='DockMaster node agent.',
                                          epilog='''Example:
   dockmaster-agent.py -d 172.31.0.12:2375 -m 172.31.0.3:8763 -t 2 -vv
-Sample config:
-  [main]
-  docker = 172.31.0.12:2375
-  master = 172.31.0.3:8762
-  timeout = 10
-  secret = secr3t
-  log_level = 2
-By default find config in:
-\t''' + '\n\t'.join(config_files))
+Sample config:''' + self.sample_config + 'By default find config in:\n\t' + '\n\t'.join(config_files))
+        parser.add_argument('command', choices=['daemon', 'install'], nargs='?', default='daemon',
+                            help='''daemon - run agent daemon (it default)
+install - this into OS startup scripts''')
         parser.add_argument('-d', '--docker', dest='docker', action='store',
                             help='ip and port of docker service')
         parser.add_argument('-m', '--master', dest='master', action='store',
@@ -266,6 +276,8 @@ By default find config in:
         config = configparser.ConfigParser()
         if args.config is not None:
             config_files.append(args.config)
+        # for backward capability
+        config_files.extend([cwd + '/dm-agent.ini', config_home + 'dm-agent.ini', '/etc/dm-agent.ini'])
         self._readed_files = config.read(config_files, encoding='utf8')
         cm = config['main'] if 'main' in config else None
 
@@ -284,21 +296,75 @@ By default find config in:
 
         self.log_level = get('log_level', int)
         self.docker = get('docker')
-        self.check_address(self.docker)
         self.timeout = get('timeout', int)
         self.master = get('master')
         self.secret = get('secret')
-        self.check_address(self.master)
-
-
+        self.command = get('command')
+        if self.command == 'daemon':
+            # also do another args validation here
+            self.check_address(self.docker)
+            self.check_address(self.master)
 
     def check_address(self, address):
         if address is None or (address.find(':') <= 0):
             raise ValueError("Address must be non null and has format: 'host:port', but: " + str(address))
 
     def print_config(self):
-        args = {k: v for k, v in self.__dict__.items() if not k.startswith("_")}
+        args = {}
+        for k in ['log_level', 'docker', 'timeout', 'master', 'secret']:
+            args[k] = self.__dict__.get(k)
         logging.info('Configs: %s\nArguments: %s', ', '.join(self._readed_files), args)
+
+
+def install(bs):
+    script_path = __file__
+    script_name = os.path.basename(script_path)
+    bin_dir = '/usr/local/bin/'
+    if not script_path.startswith(bin_dir):
+        script_path = bin_dir + script_name
+        logging.warning('Copy script to %s', script_path)
+        shutil.copyfile(__file__, script_path)
+
+    os.chmod(script_path, stat.S_IRWXU | stat.S_IRGRP | stat.S_IROTH | stat.S_IXGRP | stat.S_IXOTH)
+    service_name = bs.this_name + '.service'
+    service_path = '/etc/systemd/system/' + service_name
+    service_str = '''
+[Unit]
+Description=Haven node agent.
+Documentation=https://github.com/codeabovelab/haven-platform
+After=network.target docker.service
+
+[Service]
+Type=simple
+ExecStart={} -v
+
+[Install]
+WantedBy=multi-user.target
+'''.format(script_path)
+    with open(service_path, 'w') as file:
+        file.write(service_str)
+    if not os.path.exists(bs.config_path_global):
+        with open(bs.config_path_global, 'w') as file:
+            file.write(bs.sample_config.replace("\n", "\n#"))
+    logging.warning('Script at %s,\n\t unit %s at %s \n\t config at %s',
+                    script_path, service_name, service_path, bs.config_path_global)
+
+    os.spawnl(os.P_WAIT, '/bin/systemctl', '--system', 'daemon-reload')
+    os.spawnl(os.P_WAIT, '/bin/systemctl', '--system', 'enable', service_name)
+    os.spawnl(os.P_WAIT, '/bin/systemctl', '--system', 'start', service_name)
+    logging.warning('Done')
+
+
+def uninstall():
+    # bin_dir = '/usr/local/bin/'
+    # service_path = '/etc/systemd/system/' + service_name
+    #
+    # os.spawnl(os.P_WAIT, '/bin/systemctl', '--system', 'stop', service_name)
+    # os.spawnl(os.P_WAIT, '/bin/systemctl', '--system', 'disable', service_name)
+    # TODO remove service, config & script
+    # os.spawnl(os.P_WAIT, '/bin/systemctl', '--system', 'daemon-reload')
+    logging.warning('Done')
+
 
 
 def main():
@@ -307,6 +373,10 @@ def main():
     logging.basicConfig(level=logging.INFO if bs.log_level == 1 else logging.DEBUG if bs.log_level == 2 else logging.WARNING,
                         format='%(asctime)s - %(levelname)s - %(message)s')
     bs.print_config()
+
+    if bs.command == 'install':
+        install(bs)
+        return
 
     docker = Docker(bs.docker)
 
