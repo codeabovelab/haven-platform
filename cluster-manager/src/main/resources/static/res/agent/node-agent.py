@@ -244,17 +244,19 @@ class Bootstrap:
         config_files = [cwd + '/' + config_name, config_home + config_name, self.config_path_global]
 
         self.sample_config = '''[main]
-docker = 172.31.0.12:2375
-master = 172.31.0.3:8762
-timeout = 10
-secret = secr3t
-log_level = 2'''
+ docker = 172.31.0.12:2375
+ master = 172.31.0.3:8762
+ timeout = 10
+ secret = secr3t
+ log_level = 2'''
 
         parser = argparse.ArgumentParser(formatter_class=argparse.RawTextHelpFormatter,
                                          description='DockMaster node agent.',
                                          epilog='''Example:
-  dockmaster-agent.py -d 172.31.0.12:2375 -m 172.31.0.3:8763 -t 2 -vv
-Sample config:''' + self.sample_config + 'By default find config in:\n\t' + '\n\t'.join(config_files))
+  ''' + this_name + ''' -d 172.31.0.12:2375 -m 172.31.0.3:8763 -t 2 -vv
+Sample config:
+
+''' + self.sample_config + '\n\nBy default find config in:\n\t' + '\n\t'.join(config_files))
         parser.add_argument('command', choices=['daemon', 'install'], nargs='?', default='daemon',
                             help='''daemon - run agent daemon (it default)
 install - this into OS startup scripts''')
