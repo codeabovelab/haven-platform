@@ -35,7 +35,6 @@ import org.springframework.web.util.UriComponentsBuilder;
 
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.nio.charset.Charset;
 import java.util.Map;
 
 import static org.springframework.http.HttpHeaders.AUTHORIZATION;
@@ -53,29 +52,26 @@ class DockerRegistryAuthAdapter implements RegistryAuthAdapter {
 
     @Override
     public void handle(AuthContext ctx) {
-        if (checkCredentials()) {
-            String tokenReq = ctx.getAuthenticate();
-            String[] split = StringUtils.split(tokenReq, " ");
-            Assert.isTrue(split.length == 2, "invalid token request " + tokenReq);
-            String type = split[0];
-            switch (type) {
-                case "Bearer":
-                    Map<String, String> map = Splitter.on(",").withKeyValueSeparator("=").split(split[1].replace("\"", ""));
-                    AuthInfo authInfo = AuthInfo.builder()
-                            .realm(map.get("realm"))
-                            .service(map.get("service"))
-                            .scope(map.get("scope")).build();
-                    String token = getToken(authInfo);
-                    ctx.getRequestHeaders().add(AUTHORIZATION, "Bearer " + token);
-                    break;
-                case "Basic":
-                    ctx.getRequestHeaders().add(AUTHORIZATION, createBasicHeader(provider.getRegistryCredentials()));
-                    break;
-                default:
-                    throw new IllegalArgumentException("Invalid token string " + tokenReq);
-            }
+        String tokenReq = ctx.getAuthenticate();
+        String[] split = StringUtils.split(tokenReq, " ");
+        Assert.isTrue(split.length == 2, "invalid token request " + tokenReq);
+        String type = split[0];
+        switch (type) {
+            case "Bearer":
+                Map<String, String> map = Splitter.on(",").withKeyValueSeparator("=").split(split[1].replace("\"", ""));
+                AuthInfo authInfo = AuthInfo.builder()
+                        .realm(map.get("realm"))
+                        .service(map.get("service"))
+                        .scope(map.get("scope")).build();
+                String token = getToken(authInfo);
+                ctx.getRequestHeaders().add(AUTHORIZATION, "Bearer " + token);
+                break;
+            case "Basic":
+                ctx.getRequestHeaders().add(AUTHORIZATION, createBasicHeader(provider.getRegistryCredentials()));
+                break;
+            default:
+                throw new IllegalArgumentException("Invalid token string " + tokenReq);
         }
-
     }
 
     @SuppressWarnings("unchecked")
@@ -85,8 +81,7 @@ class DockerRegistryAuthAdapter implements RegistryAuthAdapter {
         // get https://auth.docker.io/token?service=registry.docker.io
         try {
             URI path = getPath(authInfo);
-            HttpEntity<String> request = new HttpEntity<>(
-                    createHeaders(registryCredentials));
+            HttpEntity<String> request = new HttpEntity<>(createHeaders(registryCredentials));
             Map<String, String> token = restTemplate.exchange(path, HttpMethod.GET, request, Map.class).getBody();
 
             if (!token.isEmpty()) {
@@ -108,7 +103,9 @@ class DockerRegistryAuthAdapter implements RegistryAuthAdapter {
 
     private HttpHeaders createHeaders(RegistryCredentials registryCredentials) {
         HttpHeaders httpHeaders = new HttpHeaders();
-        httpHeaders.set(AUTHORIZATION, createBasicHeader(registryCredentials));
+        if (checkCredentials()) {
+            httpHeaders.set(AUTHORIZATION, createBasicHeader(registryCredentials));
+        }
         return httpHeaders;
     }
 

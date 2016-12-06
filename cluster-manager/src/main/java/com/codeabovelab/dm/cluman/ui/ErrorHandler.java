@@ -84,7 +84,7 @@ public class ErrorHandler {
         HttpStatus statusCode = e.getStatusCode();
         UiError response = createResponse(StringUtils.trimWhitespace(e.getResponseBodyAsString()),
                 Throwables.printToString(e), statusCode);
-        return new ResponseEntity<>(response, statusCode);
+        return new ResponseEntity<>(response, BAD_REQUEST);
     }
 
     @ExceptionHandler(HttpException.class)
