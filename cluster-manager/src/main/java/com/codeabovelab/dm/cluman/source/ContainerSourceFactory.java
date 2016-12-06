@@ -85,20 +85,12 @@ public class ContainerSourceFactory {
 
         nc.getPorts().putAll(parsePorts(portBindings));
         nc.setVolumeDriver(hostConfig.getVolumeDriver());
-        parseBinds(hostConfig.getBinds(), nc.getVolumeBinds());
+        nc.getVolumeBinds().addAll(hostConfig.getBinds());
 //TODO            createContainerArg.setLogging(hostConfig.getLogConfig()); and etc
         Sugar.setIfNotNull(nc.getSecurityOpt()::addAll, hostConfig.getSecurityOpts());
 
         nc.setImage(container.getImage());
         nc.setImageId(container.getImageId());
-    }
-
-    private static void parseBinds(List<Bind> binds, Map<String, String> dest) {
-        for (Bind bind : binds) {
-            // we use format from https://docs.docker.com/engine/reference/run/#volume-shared-filesystems
-            // 'what we mount (host src)' -> 'where we mount (container dest)'
-            dest.put(bind.getVolume().getPath(), bind.getPath());
-        }
     }
 
     private static Map<String, String> parseLinks(List<Link> links) {

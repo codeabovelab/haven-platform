@@ -348,15 +348,12 @@ public class ContainerManager {
     }
 
 
-    private Binds getHostBindings(CreateContainerContext cc, ContainerSource arg) {
-        ArrayList<Bind> list = new ArrayList<>();
-        for(Map.Entry<String, String> entry: arg.getVolumeBinds().entrySet()) {
-            // note that key - is volume, value - path in container
-            String value = entry.getValue();
-            Bind bind = new Bind(value, new Volume(entry.getKey()));
-            list.add(bind);
+    private List<String> getHostBindings(CreateContainerContext cc, ContainerSource arg) {
+        List<String> volumeBinds = arg.getVolumeBinds();
+        if(volumeBinds == null) {
+            return Collections.emptyList();
         }
-        return new Binds(list);
+        return new ArrayList<>(volumeBinds);
     }
 
     private DockerService getDockerForCluster(String clusterId) {

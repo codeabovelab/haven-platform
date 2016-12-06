@@ -79,8 +79,7 @@ public class ContainerSource extends EditableContainerSource implements Cloneabl
      * <a href="https://docs.docker.com/engine/tutorials/dockervolumes/">See docs.docker.com</a>
      */
     @Setter(AccessLevel.NONE)
-    @JsonPropertyOrder(alphabetic = true)
-    private Map<String, String> volumeBinds = new HashMap<>();
+    private List<String> volumeBinds = new ArrayList<>();
     /**
      *
      */

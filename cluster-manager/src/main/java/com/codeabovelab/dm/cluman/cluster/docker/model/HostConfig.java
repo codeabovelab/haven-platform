@@ -34,7 +34,7 @@ import java.util.List;
 public class HostConfig {
 
     @JsonProperty("Binds")
-    private Binds binds;
+    private List<String> binds;
 
     @JsonProperty("BlkioWeight")
     private Integer blkioWeight;
@@ -255,8 +255,8 @@ public class HostConfig {
 
 
     @JsonIgnore
-    public List<Bind> getBinds() {
-        return (binds == null) ? Collections.emptyList() : binds.getBinds();
+    public List<String> getBinds() {
+        return (binds == null) ? Collections.emptyList() : binds;
     }
 
     public Integer getBlkioWeight() {
@@ -474,18 +474,6 @@ public class HostConfig {
         return volumeDriver;
     }
 
-    @JsonIgnore
-    public void setBinds(Bind... binds) {
-        this.binds = new Binds(binds);
-    }
-
-    @JsonIgnore
-    public void setLinks(Link... links) {
-        this.links = new Links(links);
-    }
-
-
-
     @Override
     public String toString() {
         return MoreObjects.toStringHelper(this)
@@ -536,7 +524,7 @@ public class HostConfig {
     }
 
     public static final class Builder {
-        private Binds binds;
+        private List<String> binds;
         private Integer blkioWeight;
         private List<Object> blkioWeightDevice;
         private List<Object> blkioDeviceReadBps;
@@ -586,7 +574,7 @@ public class HostConfig {
             return new HostConfig(this);
         }
 
-        public Builder binds(Binds binds) {
+        public Builder binds(List<String> binds) {
             this.binds = binds;
             return this;
         }
