@@ -45,7 +45,6 @@ public class DefaultParser extends AbstractParser {
     public void parse(File file, ContainerCreationContext context) {
         try {
             ContainerSource arg = new ContainerSource();
-            context.addCreateContainerArg(arg);
             PropertySourcesLoader loader = new PropertySourcesLoader();
             loader.load(new FileSystemResource(file));
             MutablePropertySources loaded = loader.getPropertySources();
@@ -55,6 +54,7 @@ public class DefaultParser extends AbstractParser {
             factory.setConversionService(defaultConversionService);
             factory.bindPropertiesToTarget();
             arg.getInclude().forEach(a -> parse(new File(file.getParent(), a), context));
+            context.addCreateContainerArg(arg);
         } catch (Exception e) {
             log.error("", e);
         }

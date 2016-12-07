@@ -48,8 +48,8 @@ public class YamlParser extends AbstractParser {
         try {
             ContainerSource configuration = mapper.readValue(file, ContainerSource.class);
             List<String> include = configuration.getInclude();
-            context.addCreateContainerArg(configuration);
             include.forEach(a -> parse(new File(file.getParent(), a), context));
+            context.addCreateContainerArg(configuration);
             LOG.info("Result of parsing {}", configuration);
         } catch (IOException e) {
             LOG.error("can't parse configuration", e);
