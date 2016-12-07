@@ -21,6 +21,7 @@ import com.codeabovelab.dm.cluman.cluster.docker.management.argument.GetContaine
 import com.codeabovelab.dm.cluman.cluster.docker.management.argument.GetImagesArg;
 import com.codeabovelab.dm.cluman.cluster.docker.management.argument.TagImageArg;
 import com.codeabovelab.dm.cluman.cluster.docker.management.result.ServiceCallResult;
+import com.codeabovelab.dm.cluman.cluster.docker.model.ContainerDetails;
 import com.codeabovelab.dm.cluman.cluster.docker.model.ImageItem;
 import com.codeabovelab.dm.cluman.cluster.filter.Filter;
 import com.codeabovelab.dm.cluman.cluster.filter.FilterFactory;
@@ -36,6 +37,7 @@ import com.codeabovelab.dm.cluman.ds.clusters.SwarmNodesGroupConfig;
 import com.codeabovelab.dm.cluman.model.*;
 import com.codeabovelab.dm.cluman.security.AccessContext;
 import com.codeabovelab.dm.cluman.security.AccessContextFactory;
+import com.codeabovelab.dm.cluman.source.ContainerSourceFactory;
 import com.codeabovelab.dm.cluman.ui.model.*;
 import com.codeabovelab.dm.cluman.utils.ContainerUtils;
 import com.codeabovelab.dm.cluman.validate.ExtendedAssert;
@@ -90,20 +92,38 @@ public class ImagesApi {
             String imageId = container.getImageId();
             UiDeployedImage img = images.computeIfAbsent(imageId, UiDeployedImage::new);
             img.addContainer(container);
-            String imageWithTag = container.getImage();
-            if(ImageName.isId(imageWithTag)) {
-                continue;
-            }
-            String image = ContainerUtils.getRegistryAndImageName(imageWithTag);
-            RegistryService registryService = registryRepository.getRegistryByImageName(image);
-            if(registryService != null) {
-                Tags tags = registryService.getTags(image);
-                if(tags != null) {
-                    img.getTags().addAll(tags.getTags());
-                }
-            }
+            loadImageTagsIfNeed(service, container, img);
         }
         return images.values();
+    }
+
+    private void loadImageTagsIfNeed(DockerService service, DockerContainer container, UiDeployedImage img) {
+        String imageWithTag = container.getImage();
+        if(!img.getTags().isEmpty()) {
+            return;
+        }
+        if(ImageName.isId(imageWithTag)) {
+            try {
+                ContainerDetails cd = service.getContainer(container.getId());
+                imageWithTag = ContainerSourceFactory.resolveImageName(cd);
+                if(imageWithTag == null || ImageName.isId(imageWithTag)) {
+                    return;
+                }
+                img.updateName(imageWithTag);
+            } catch (Exception e) {
+                log.error("Error while get container details:", e);
+                return;
+            }
+        }
+        String image = ContainerUtils.getRegistryAndImageName(imageWithTag);
+        RegistryService registryService = registryRepository.getRegistryByImageName(image);
+        if(registryService != null) {
+            img.setRegistry(registryService.getConfig().getName());
+            Tags tags = registryService.getTags(image);
+            if(tags != null) {
+                img.getTags().addAll(tags.getTags());
+            }
+        }
     }
 
     @ApiOperation("search by image substring, if you specify repository then you can use expression like '*word*' ")

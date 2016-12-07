@@ -18,7 +18,6 @@ package com.codeabovelab.dm.cluman.ui.model;
 
 import com.codeabovelab.dm.cluman.model.DockerContainer;
 import com.codeabovelab.dm.cluman.model.ImageName;
-import com.codeabovelab.dm.cluman.utils.ContainerUtils;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
@@ -57,6 +56,10 @@ public class UiDeployedImage extends UiImageData {
 
     private void fillFromContainer(DockerContainer dc) {
         String fullImageName = dc.getImage();
+        updateName(fullImageName);
+    }
+
+    public void updateName(String fullImageName) {
         if(ImageName.isId(fullImageName)) {
             return;
         }

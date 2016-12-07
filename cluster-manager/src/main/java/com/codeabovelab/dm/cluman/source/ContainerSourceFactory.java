@@ -90,11 +90,11 @@ public class ContainerSourceFactory {
 //TODO            createContainerArg.setLogging(hostConfig.getLogConfig()); and etc
         Sugar.setIfNotNull(nc.getSecurityOpt()::addAll, hostConfig.getSecurityOpts());
 
-        resolveImageName(container, nc);
+        nc.setImage(resolveImageName(container));
         nc.setImageId(container.getImageId());
     }
 
-    private static void resolveImageName(ContainerDetails container, ContainerSource nc) {
+    public static String resolveImageName(ContainerDetails container) {
         String imageName = container.getImage();
         if(ImageName.isId(imageName)) {
             ContainerConfig config = container.getConfig();
@@ -102,7 +102,7 @@ public class ContainerSourceFactory {
                 imageName = config.getImage();
             }
         }
-        nc.setImage(imageName);
+        return imageName;
     }
 
     private static Map<String, String> parseLinks(List<Link> links) {
