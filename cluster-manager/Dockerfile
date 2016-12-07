@@ -16,7 +16,8 @@ RUN export GOPATH=/gocode && \
   git clone https://github.com/docker/swarm && \
   cd swarm && \
   git checkout -b v1.2.5 v1.2.5 &&\
-  godep go install .
+  godep go install . && \
+  rm -rf $GOPATH/src/*
 
 RUN apt-get clean && \
   rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
