@@ -7,6 +7,7 @@ import http.client
 import json
 import logging
 import os
+import pwd
 import subprocess
 import sys
 import shutil
@@ -255,12 +256,14 @@ class Bootstrap:
                                          description='DockMaster node agent.',
                                          epilog='''Example:
   ''' + this_name + ''' -d 172.31.0.12:2375 -m 172.31.0.3:8763 -t 2 -vv
+  ''' + this_name + ' install -u ' + self.this_name + '''
 Sample config:
 
 ''' + self.sample_config + '\n\nBy default find config in:\n\t' + '\n\t'.join(config_files))
         parser.add_argument('command', choices=['daemon', 'install', 'uninstall'], nargs='?', default='daemon',
-                            help='''daemon - run agent daemon (it default)
-install - this into OS startup scripts''')
+                            help='daemon - run agent daemon (it default)\n'
+                                 'install - this into OS startup scripts\n'
+                                 'uninstall - remove script and its config and unit files')
         parser.add_argument('-d', '--docker', dest='docker', action='store',
                             help='ip and port of docker service')
         parser.add_argument('-m', '--master', dest='master', action='store',
@@ -274,6 +277,9 @@ install - this into OS startup scripts''')
                             help='logging level, -v is INFO, -vv is DEBUG')
         parser.add_argument('-f', '--config', dest='config', action='store',
                             help='path to config file')
+        parser.add_argument('-u', dest='user', action='store',
+                            help='install: user which is used for running installed daemon, will created if absent.'
+                                 ' If not specified service will run under \'root\'')
         args = parser.parse_args()
 
         config = configparser.ConfigParser()
@@ -303,6 +309,7 @@ install - this into OS startup scripts''')
         self.master = get('master')
         self.secret = get('secret')
         self.command = get('command')
+        self.user = get('user')
         if self.command == 'daemon':
             # also do another args validation here
             self.check_address(self.docker)
@@ -325,6 +332,7 @@ class Installer:
         self.this_path = __file__
         self.script_name = os.path.basename(self.this_path)
         self.bin_dir = '/usr/local/bin/'
+        self.user = bs.user
         if self.this_path.startswith(self.bin_dir):
             self.script_path = self.this_path
         else:
@@ -353,6 +361,19 @@ class Installer:
             shutil.copyfile(__file__, self.script_path)
 
         os.chmod(self.script_path, stat.S_IRWXU | stat.S_IRGRP | stat.S_IROTH | stat.S_IXGRP | stat.S_IXOTH)
+
+        user_entry = ''
+        if self.user is not None:
+            logging.warning('Agent will be run under %s user', self.user)
+            user_entry = "User=" + self.user
+            try:
+                user_exists = pwd.getpwnam(self.user) is not None
+            except KeyError as e:
+                user_exists = False
+            if not user_exists:
+                logging.warning('User %s is not exists, crate it', self.user)
+                subprocess.run(['useradd', '-M', '-N', '-r', '-s', '/bin/false', self.user])
+
         service_str = '''
 [Unit]
 Description=Haven node agent.
@@ -362,10 +383,11 @@ After=network.target docker.service
 [Service]
 Type=simple
 ExecStart={} -v
+{}
 
 [Install]
 WantedBy=multi-user.target
-'''.format(self.script_path)
+'''.format(self.script_path, user_entry)
         with open(self.service_path, 'w') as file:
             file.write(service_str)
         if not os.path.exists(self.config_path):
