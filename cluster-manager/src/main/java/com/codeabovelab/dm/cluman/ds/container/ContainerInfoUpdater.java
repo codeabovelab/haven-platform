@@ -25,6 +25,7 @@ import com.codeabovelab.dm.cluman.model.*;
 import com.codeabovelab.dm.common.mb.Subscriptions;
 import com.codeabovelab.dm.cluman.security.TempAuth;
 import com.codeabovelab.dm.common.utils.RescheduledTask;
+import com.google.common.base.Throwables;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -210,7 +211,13 @@ class ContainerInfoUpdater implements SmartLifecycle {
             this.containerStorage.remove(old);
             log.info("Containers of node '{}', current:{}, removed:{}", node, containers.size(), old.size());
         } catch (Exception e) {
-            log.info("Updating containers of node '{}' failed with error.", node, e);
+            Throwable root = Throwables.getRootCause(e);
+            if(root instanceof java.net.SocketException) {
+                //reduce log noise when node has permanent network failure
+                log.info("Updating containers of node '{}' failed with error: {}", node, root.getMessage());
+            } else {
+                log.info("Updating containers of node '{}' failed with error.", node, e);
+            }
         }
     }
 }
