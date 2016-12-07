@@ -7,6 +7,7 @@ import http.client
 import json
 import logging
 import os
+import subprocess
 import sys
 import shutil
 import stat
@@ -257,7 +258,7 @@ class Bootstrap:
 Sample config:
 
 ''' + self.sample_config + '\n\nBy default find config in:\n\t' + '\n\t'.join(config_files))
-        parser.add_argument('command', choices=['daemon', 'install'], nargs='?', default='daemon',
+        parser.add_argument('command', choices=['daemon', 'install', 'uninstall'], nargs='?', default='daemon',
                             help='''daemon - run agent daemon (it default)
 install - this into OS startup scripts''')
         parser.add_argument('-d', '--docker', dest='docker', action='store',
@@ -318,19 +319,41 @@ install - this into OS startup scripts''')
         logging.info('Configs: %s\nArguments: %s', ', '.join(self._readed_files), args)
 
 
-def install(bs):
-    script_path = __file__
-    script_name = os.path.basename(script_path)
-    bin_dir = '/usr/local/bin/'
-    if not script_path.startswith(bin_dir):
-        script_path = bin_dir + script_name
-        logging.warning('Copy script to %s', script_path)
-        shutil.copyfile(__file__, script_path)
+class Installer:
 
-    os.chmod(script_path, stat.S_IRWXU | stat.S_IRGRP | stat.S_IROTH | stat.S_IXGRP | stat.S_IXOTH)
-    service_name = bs.this_name + '.service'
-    service_path = '/etc/systemd/system/' + service_name
-    service_str = '''
+    def __init__(self, bs):
+        self.this_path = __file__
+        self.script_name = os.path.basename(self.this_path)
+        self.bin_dir = '/usr/local/bin/'
+        if self.this_path.startswith(self.bin_dir):
+            self.script_path = self.this_path
+        else:
+            self.script_path = self.bin_dir + self.script_name
+        self.service_name = bs.this_name + '.service'
+        self.service_path = '/etc/systemd/system/' + self.service_name
+        self.config_path = bs.config_path_global
+        self.config_str = bs.sample_config.replace("\n", "\n#")
+
+    def check_access(self):
+        if os.getuid() != 0:
+            # we check for root, but not interrupt installation
+            # user is warned and known what doing
+            logging.error('User is not root, operation can not be successful')
+
+    def install(self):
+        logging.warning('Begin install')
+        if os.path.exists(self.service_path):
+            logging.error('System has systemd unit at %s, it mean that agent is installed.'
+                          '\n You can uninstall this through \"%s uninstall\" command ',
+                          self.service_path, self.script_path)
+            return
+        self.check_access()
+        if self.this_path != self.script_path:
+            logging.warning('Copy script to %s', self.script_path)
+            shutil.copyfile(__file__, self.script_path)
+
+        os.chmod(self.script_path, stat.S_IRWXU | stat.S_IRGRP | stat.S_IROTH | stat.S_IXGRP | stat.S_IXOTH)
+        service_str = '''
 [Unit]
 Description=Haven node agent.
 Documentation=https://github.com/codeabovelab/haven-platform
@@ -342,31 +365,36 @@ ExecStart={} -v
 
 [Install]
 WantedBy=multi-user.target
-'''.format(script_path)
-    with open(service_path, 'w') as file:
-        file.write(service_str)
-    if not os.path.exists(bs.config_path_global):
-        with open(bs.config_path_global, 'w') as file:
-            file.write(bs.sample_config.replace("\n", "\n#"))
-    logging.warning('Script at %s,\n\t unit %s at %s \n\t config at %s',
-                    script_path, service_name, service_path, bs.config_path_global)
+'''.format(self.script_path)
+        with open(self.service_path, 'w') as file:
+            file.write(service_str)
+        if not os.path.exists(self.config_path):
+            with open(self.config_path, 'w') as file:
+                file.write(self.config_str)
+        logging.warning('Script at %s,\n\t unit %s at %s \n\t config at %s',
+                        self.script_path, self.service_name, self.service_path, self.config_path)
 
-    os.spawnl(os.P_WAIT, '/bin/systemctl', '--system', 'daemon-reload')
-    os.spawnl(os.P_WAIT, '/bin/systemctl', '--system', 'enable', service_name)
-    os.spawnl(os.P_WAIT, '/bin/systemctl', '--system', 'start', service_name)
-    logging.warning('Done')
+        subprocess.run(['/bin/systemctl', '--system', 'daemon-reload'])
+        subprocess.run(['/bin/systemctl', '--system', 'enable', self.service_name])
+        subprocess.run(['/bin/systemctl', '--system', 'start', self.service_name])
+        logging.warning('Done install')
 
+    def remove(self, path):
+        if os.path.exists(path):
+            logging.warning('Delete %s', path)
+            os.remove(path)
 
-def uninstall():
-    # bin_dir = '/usr/local/bin/'
-    # service_path = '/etc/systemd/system/' + service_name
-    #
-    # os.spawnl(os.P_WAIT, '/bin/systemctl', '--system', 'stop', service_name)
-    # os.spawnl(os.P_WAIT, '/bin/systemctl', '--system', 'disable', service_name)
-    # TODO remove service, config & script
-    # os.spawnl(os.P_WAIT, '/bin/systemctl', '--system', 'daemon-reload')
-    logging.warning('Done')
-
+    def uninstall(self):
+        self.check_access()
+        logging.warning('Begin uninstall.')
+        # we do not any check here because this must work on broken installation (when agent partially installed)
+        subprocess.run(['/bin/systemctl', '--system', 'stop', self.service_name])
+        subprocess.run(['/bin/systemctl', '--system', 'disable', self.service_name])
+        self.remove(self.config_path)
+        self.remove(self.service_path)
+        self.remove(self.script_path)
+        subprocess.run(['/bin/systemctl', '--system', 'daemon-reload'])
+        logging.warning('Done uninstall')
 
 
 def main():
@@ -376,10 +404,16 @@ def main():
                         format='%(asctime)s - %(levelname)s - %(message)s')
     bs.print_config()
 
-    if bs.command == 'install':
-        install(bs)
+    if bs.command != 'daemon':
+        installer = Installer(bs)
+        if bs.command == 'install':
+            installer.install()
+        elif bs.command == 'uninstall':
+            installer.uninstall()
+        else:
+            logging.warning('Unknown command: %s', bs.command)
         return
-
+    logging.warning('Run as daemon')
     docker = Docker(bs.docker)
 
     ttl = bs.timeout * 2  # ttl is a least two of update interval in seconds
