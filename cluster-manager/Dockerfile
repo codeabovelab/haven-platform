@@ -2,7 +2,9 @@ FROM debian:stretch
 
 MAINTAINER docker@codeabovelab.com
 
-RUN apt-get update && apt-get install -y --no-install-recommends curl git golang openjdk-8-jdk-headless && apt-get clean
+RUN apt-get update && apt-get install -y --no-install-recommends \
+  curl git golang openjdk-8-jdk-headless
+
 RUN curl -L https://github.com/docker/compose/releases/download/1.8.1/docker-compose-`uname -s`-`uname -m` > /usr/local/bin/docker-compose && \
   chmod +x /usr/local/bin/docker-compose
 
@@ -16,10 +18,12 @@ RUN export GOPATH=/gocode && \
   git checkout -b v1.2.5 v1.2.5 &&\
   godep go install .
 
+RUN apt-get clean && \
+  rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+
 ENV PATH $PATH:/bin:/usr/bin:/gocode/bin
 
 LABEL service-type=system
-
 LABEL arg.memory=512M
 LABEL arg.restart=always
 LABEL arg.ports=8761:8761
