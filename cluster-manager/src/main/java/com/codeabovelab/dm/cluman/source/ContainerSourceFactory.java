@@ -16,6 +16,7 @@
 
 package com.codeabovelab.dm.cluman.source;
 
+import com.codeabovelab.dm.cluman.model.ImageName;
 import com.codeabovelab.dm.cluman.utils.ContainerUtils;
 import com.codeabovelab.dm.cluman.cluster.docker.model.*;
 import com.codeabovelab.dm.cluman.ds.SwarmUtils;
@@ -89,8 +90,19 @@ public class ContainerSourceFactory {
 //TODO            createContainerArg.setLogging(hostConfig.getLogConfig()); and etc
         Sugar.setIfNotNull(nc.getSecurityOpt()::addAll, hostConfig.getSecurityOpts());
 
-        nc.setImage(container.getImage());
+        resolveImageName(container, nc);
         nc.setImageId(container.getImageId());
+    }
+
+    private static void resolveImageName(ContainerDetails container, ContainerSource nc) {
+        String imageName = container.getImage();
+        if(ImageName.isId(imageName)) {
+            ContainerConfig config = container.getConfig();
+            if(config != null && config.getImage() != null) {
+                imageName = config.getImage();
+            }
+        }
+        nc.setImage(imageName);
     }
 
     private static Map<String, String> parseLinks(List<Link> links) {
