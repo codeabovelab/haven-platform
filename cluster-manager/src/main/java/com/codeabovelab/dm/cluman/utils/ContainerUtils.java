@@ -93,11 +93,13 @@ public final class ContainerUtils {
 
     /**
      * Returns image name without Registry _prefix_ and version
-     * example: example.com/com.example.core:172 -> com.example.core
-     *
+     * example: example.com/com.example.core:172 -> com.example.core. <p/>
+     * Due to docker naming contract we can not differ hub private repos from hub namespaces, therefore this method can
+     * work incorrectly and now our registries accept image name with registry prefix.
      * @param imageName full image name
      * @return image name without any '/'
      */
+    @Deprecated
     public static String getImageNameWithoutPrefix(String imageName) {
         String name = getImageVersionName(imageName);
         int lastIndex = name.lastIndexOf(':');

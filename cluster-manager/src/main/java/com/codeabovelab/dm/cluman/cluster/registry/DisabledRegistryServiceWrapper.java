@@ -90,6 +90,11 @@ public class DisabledRegistryServiceWrapper implements RegistryService {
     }
 
     @Override
+    public String toRelative(String name) {
+        return registryService.toRelative(name);
+    }
+
+    @Override
     public SearchResult search(String searchTerm, int page, int count) {
         SearchResult result = new SearchResult();
         result.setPage(0);

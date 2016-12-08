@@ -86,4 +86,9 @@ class DockerHubRegistryServiceWrapper implements RegistryService, DockerHubRegis
         }
         return (hasText(registryName) ? registryName : "library") + "/" + name;
     }
+
+    @Override
+    public String toRelative(String name) {
+        return name;
+    }
 }

@@ -91,6 +91,13 @@ public interface RegistryService extends SupportSearch {
     SearchResult search(String searchTerm, int page, int count);
 
     /**
+     * Remove registry prefix from image name, if it exists.
+     * @param name with or without prefix
+     * @return image name without prefix
+     */
+    String toRelative(String name);
+
+    /**
      * Credentials for login into registry for docker service.
      * @return
      */

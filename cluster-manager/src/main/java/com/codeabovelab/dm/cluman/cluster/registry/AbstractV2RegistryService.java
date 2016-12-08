@@ -172,8 +172,19 @@ abstract class AbstractV2RegistryService implements RegistryService {
 
     private UriComponentsBuilder forName(String name) {
         UriComponentsBuilder ucb = makeBaseUrl();
-        String processed = adapter.adaptNameForUrl(name);
+        String processed = adapter.adaptNameForUrl(toRelative(name));
         return ucb.path(processed);
+    }
+
+    @Override
+    public String toRelative(String name) {
+        String registryName = getConfig().getName();
+        int len = registryName.length();
+        if(name.length() > len + 1 && name.startsWith(registryName) && name.charAt(len) == '/') {
+            // remove registry name + slash
+            return name.substring(registryName.length() + 1);
+        }
+        return name;
     }
 
     //DELETE /v2/<name>/manifests/<reference>

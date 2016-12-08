@@ -41,4 +41,9 @@ public class DockerHubRegistryImpl extends AbstractV2RegistryService implements 
     public ImageCatalog getCatalog() {
         return new ImageCatalog(Collections.emptyList());
     }
+
+    @Override
+    public String toRelative(String name) {
+        return name;
+    }
 }
