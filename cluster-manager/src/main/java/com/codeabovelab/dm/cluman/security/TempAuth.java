@@ -32,13 +32,14 @@ public final class TempAuth implements AutoCloseable {
     private static final Logger LOG = LoggerFactory.getLogger(TempAuth.class);
     private final Authentication newAuth;
     private final SecurityContext context;
-    private Authentication oldAuth;
+    private final SecurityContext oldContext;
     private AccessContextHolder aclHolder;
 
     TempAuth(Authentication newAuth) {
         Assert.notNull(newAuth, "Authentication is null");
         this.newAuth = newAuth;
-        this.context = SecurityContextHolder.getContext();
+        this.oldContext = SecurityContextHolder.getContext();
+        this.context = SecurityContextHolder.createEmptyContext();
     }
 
     /**
@@ -56,7 +57,7 @@ public final class TempAuth implements AutoCloseable {
     }
 
     private void init() {
-        oldAuth = context.getAuthentication();
+        SecurityContextHolder.setContext(context);
         context.setAuthentication(newAuth);
         AccessContextFactory acf = AccessContextFactory.getInstanceOrNull();
         if(acf != null) {
@@ -67,11 +68,11 @@ public final class TempAuth implements AutoCloseable {
 
     @Override
     public void close() {
-        Authentication currAuth = context.getAuthentication();
-        if(currAuth != newAuth) {
-            LOG.warn("Current auth \"{}\" not equal with expected: \"{}\"", currAuth, newAuth);
+        SecurityContext currContext = SecurityContextHolder.getContext();
+        if(currContext != context) {
+            LOG.warn("Current context \"{}\" not equal with expected: \"{}\"", currContext, context);
         }
-        context.setAuthentication(oldAuth);
+        SecurityContextHolder.setContext(oldContext);
         if(aclHolder != null) {
             aclHolder.close();
         }
