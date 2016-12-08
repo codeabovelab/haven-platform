@@ -334,8 +334,9 @@ public class ContainerApi {
         ExtendedAssert.notFound(cr, "Can't find container by name " + name);
         DockerService service = dockerServices.getService(cluster);
         ExtendedAssert.notFound(service, "Can't find cluster by id " + cluster);
-        ContainerDetails container = service.getContainer(cr.getId());
-        ExtendedAssert.notFound(container, "Can't find container by id " + container + " in cluster " + cluster);
+        String containerId = cr.getId();
+        ContainerDetails container = service.getContainer(containerId);
+        ExtendedAssert.notFound(container, "Can't find container by id " + containerId + " in cluster " + cluster);
         return toContainerDetails(cr, container);
     }
 
