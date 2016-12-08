@@ -65,6 +65,13 @@ public class Container {
     private String status;
 
     /**
+     * See 'func (s *State) StateString()' at https://github.com/docker/docker/blob/master/container/state.go#L123 <p/>
+     * Possible values: "paused", "restarting", "running", "removing", "dead", "created", "exited"
+     */
+    @JsonProperty("State")
+    private String state;
+
+    /**
      * @since ~{@link RemoteApiVersion#VERSION_1_19}
      */
     @JsonProperty("SizeRw")
@@ -157,48 +164,57 @@ public class Container {
         return hostConfig;
     }
 
+    public String getState() {
+        return state;
+    }
+
     @Override
     public String toString() {
         return MoreObjects.toStringHelper(this)
-                .add("command", command)
-                .add("created", created)
-                .add("id", id)
-                .add("image", image)
-                .add("imageId", imageId)
-                .add("names", names)
-                .add("ports", ports)
-                .add("labels", labels)
-                .add("status", status)
-                .add("sizeRw", sizeRw)
-                .add("sizeRootFs", sizeRootFs)
-                .add("hostConfig", hostConfig)
-                .add("networkSettings", networkSettings)
-                .omitNullValues()
-                .toString();
+          .add("command", command)
+          .add("created", created)
+          .add("id", id)
+          .add("image", image)
+          .add("imageId", imageId)
+          .add("names", names)
+          .add("ports", ports)
+          .add("labels", labels)
+          .add("status", status)
+          .add("state", state)
+          .add("sizeRw", sizeRw)
+          .add("sizeRootFs", sizeRootFs)
+          .add("hostConfig", hostConfig)
+          .add("networkSettings", networkSettings)
+          .toString();
     }
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (this == o) {
+            return true;
+        }
+        if (!(o instanceof Container)) {
+            return false;
+        }
         Container container = (Container) o;
-        return com.google.common.base.Objects.equal(command, container.command) &&
-                Objects.equal(created, container.created) &&
-                Objects.equal(id, container.id) &&
-                Objects.equal(image, container.image) &&
-                Objects.equal(imageId, container.imageId) &&
-                Objects.equal(names, container.names) &&
-                Objects.equal(ports, container.ports) &&
-                Objects.equal(labels, container.labels) &&
-                Objects.equal(status, container.status) &&
-                Objects.equal(sizeRw, container.sizeRw) &&
-                Objects.equal(sizeRootFs, container.sizeRootFs) &&
-                Objects.equal(hostConfig, container.hostConfig) &&
-                Objects.equal(networkSettings, container.networkSettings);
+        return Objects.equal(command, container.command) &&
+          Objects.equal(created, container.created) &&
+          Objects.equal(id, container.id) &&
+          Objects.equal(image, container.image) &&
+          Objects.equal(imageId, container.imageId) &&
+          Objects.equal(names, container.names) &&
+          Objects.equal(ports, container.ports) &&
+          Objects.equal(labels, container.labels) &&
+          Objects.equal(status, container.status) &&
+          Objects.equal(state, container.state) &&
+          Objects.equal(sizeRw, container.sizeRw) &&
+          Objects.equal(sizeRootFs, container.sizeRootFs) &&
+          Objects.equal(hostConfig, container.hostConfig) &&
+          Objects.equal(networkSettings, container.networkSettings);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hashCode(command, created, id, image, imageId, names, ports, labels, status, sizeRw, sizeRootFs, hostConfig, networkSettings);
+        return Objects.hashCode(command, created, id, image, imageId, names, ports, labels, status, state, sizeRw, sizeRootFs, hostConfig, networkSettings);
     }
 }

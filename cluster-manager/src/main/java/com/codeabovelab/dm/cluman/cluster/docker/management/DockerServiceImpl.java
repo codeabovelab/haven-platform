@@ -348,6 +348,7 @@ public class DockerServiceImpl implements DockerService {
         dcb.setPorts(c.getPorts());
         dcb.setLabels(c.getLabels());
         dcb.setStatus(c.getStatus());
+        dcb.setState(DockerContainer.State.fromString(c.getState()));
 
         resolveNameAndNode(c, dcb);
     }

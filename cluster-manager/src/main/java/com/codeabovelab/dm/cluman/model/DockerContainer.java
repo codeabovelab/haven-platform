@@ -19,6 +19,7 @@ package com.codeabovelab.dm.cluman.model;
 import com.codeabovelab.dm.cluman.cluster.docker.model.Port;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import lombok.Data;
 import org.springframework.util.Assert;
 
 import java.util.ArrayList;
@@ -30,7 +31,41 @@ import java.util.Map;
  *
  * Now iot simply copy of docker container with additional fields, but in future we need to refactor it.
  */
+@Data
 public class DockerContainer implements ContainerBaseIface, WithNode {
+
+    public enum State {
+        PAUSED(true),
+        RESTARTING(true),
+        RUNNING(true),
+        REMOVING(false),
+        DEAD(false),
+        CREATED(false),
+        EXITED(false);
+
+        private final boolean run;
+
+        State(boolean run) {
+            this.run = run;
+        }
+
+        public boolean isRun() {
+            return run;
+        }
+
+        public static State fromString(String str) {
+            if(str == null) {
+                return null;
+            }
+            try {
+                return State.valueOf(str.toUpperCase());
+            } catch (Exception e) {
+                return null;
+            }
+        }
+    }
+
+    @Data
     public static class Builder {
         private String id;
         private String name;
@@ -41,23 +76,12 @@ public class DockerContainer implements ContainerBaseIface, WithNode {
         private final List<Port> ports = new ArrayList<>();
         private final Map<String, String> labels = new HashMap<>();
         private String status;
+        private State state;
         private Node node;
-
-        public String getId() {
-            return id;
-        }
 
         public Builder id(String id) {
             setId(id);
             return this;
-        }
-
-        public void setId(String id) {
-            this.id = id;
-        }
-
-        public String getName() {
-            return name;
         }
 
         public Builder name(String name) {
@@ -65,25 +89,9 @@ public class DockerContainer implements ContainerBaseIface, WithNode {
             return this;
         }
 
-        public void setName(String name) {
-            this.name = name;
-        }
-
-        public String getImage() {
-            return image;
-        }
-
         public Builder image(String image) {
             setImage(image);
             return this;
-        }
-
-        public void setImage(String image) {
-            this.image = image;
-        }
-
-        public String getImageId() {
-            return imageId;
         }
 
         public Builder imageId(String imageId) {
@@ -91,38 +99,14 @@ public class DockerContainer implements ContainerBaseIface, WithNode {
             return this;
         }
 
-        public void setImageId(String imageId) {
-            this.imageId = imageId;
-        }
-
-        public String getCommand() {
-            return command;
-        }
-
         public Builder command(String command) {
             setCommand(command);
             return this;
         }
 
-        public void setCommand(String command) {
-            this.command = command;
-        }
-
-        public long getCreated() {
-            return created;
-        }
-
         public Builder created(long created) {
             setCreated(created);
             return this;
-        }
-
-        public void setCreated(long created) {
-            this.created = created;
-        }
-
-        public List<Port> getPorts() {
-            return ports;
         }
 
         public Builder ports(List<Port> ports) {
@@ -137,10 +121,6 @@ public class DockerContainer implements ContainerBaseIface, WithNode {
             }
         }
 
-        public Map<String, String> getLabels() {
-            return labels;
-        }
-
         public Builder labels(Map<String, String> labels) {
             setLabels(labels);
             return this;
@@ -153,30 +133,14 @@ public class DockerContainer implements ContainerBaseIface, WithNode {
             }
         }
 
-        public String getStatus() {
-            return status;
-        }
-
         public Builder status(String status) {
             setStatus(status);
             return this;
         }
 
-        public void setStatus(String status) {
-            this.status = status;
-        }
-
-        public Node getNode() {
-            return node;
-        }
-
         public Builder node(Node node) {
             setNode(node);
             return this;
-        }
-
-        public void setNode(Node node) {
-            this.node = node;
         }
 
         public Builder from(ContainerBaseIface container) {
@@ -191,6 +155,7 @@ public class DockerContainer implements ContainerBaseIface, WithNode {
                 setPorts(dc.getPorts());
                 setLabels(dc.getLabels());
                 setStatus(dc.getStatus());
+                setState(dc.getState());
                 setNode(dc.getNode());
             }
             return this;
@@ -211,6 +176,7 @@ public class DockerContainer implements ContainerBaseIface, WithNode {
     private final List<Port> ports;
     private final Map<String, String> labels;
     private final String status;
+    private final State state;
     private final Node node;
 
     public DockerContainer(Builder builder) {
@@ -223,6 +189,7 @@ public class DockerContainer implements ContainerBaseIface, WithNode {
         this.ports = ImmutableList.copyOf(builder.ports);
         this.labels = ImmutableMap.copyOf(builder.labels);
         this.status = builder.status;
+        this.state = builder.state;
         this.node = builder.node;
         Assert.notNull(this.node, "node is null");
         Assert.notNull(this.imageId, "imageId is null");
@@ -247,57 +214,13 @@ public class DockerContainer implements ContainerBaseIface, WithNode {
         return b;
     }
 
-    @Override
-    public String getId() {
-        return id;
-    }
-
-    @Override
-    public String getName() {
-        return name;
-    }
-
-    @Override
-    public String getImage() {
-        return image;
-    }
-
-    public String getImageId() {
-        return imageId;
-    }
-
-    public String getCommand() {
-        return command;
-    }
-
-    public long getCreated() {
-        return created;
-    }
-
-    public List<Port> getPorts() {
-        return ports;
-    }
-
-    @Override
-    public Map<String, String> getLabels() {
-        return labels;
-    }
-
-    public String getStatus() {
-        return status;
-    }
-
     /**
-     * value calculated from status
-     * @return
+     * value calculated from state
+     * @see State#isRun()
+     * @return true when container is run
      */
     public boolean isRun() {
-        return status != null && status.contains("Up");
-    }
-
-    @Override
-    public Node getNode() {
-        return node;
+        return state != null && state.isRun();
     }
 
     @Override
@@ -311,6 +234,7 @@ public class DockerContainer implements ContainerBaseIface, WithNode {
           ", ports=" + ports +
           ", labels=" + labels +
           ", status='" + status + '\'' +
+          ", state='" + state + '\'' +
           '}';
     }
 }

@@ -94,10 +94,6 @@ public final class UiUtils {
         return sb.toString();
     }
 
-    public static boolean calculateIsRun(String status) {
-        return status != null && status.contains("Up");
-    }
-
     public static double convertToGB(long memory) {
         return Math.round(memory * 100 / (1024 * 1024 * 1024)) / 100d;
     }

@@ -42,6 +42,7 @@ public class UiContainer implements Comparable<UiContainer>, UiContainerIface, W
     protected final List<String> command = new ArrayList<>();
     protected final List<Port> ports = new ArrayList<>();
     protected String status;
+    protected DockerContainer.State state;
     protected Date created;
     protected boolean lock;
     protected String lockCause;
@@ -83,7 +84,8 @@ public class UiContainer implements Comparable<UiContainer>, UiContainerIface, W
         uic.getPorts().addAll(container.getPorts());
         String status = container.getStatus();
         uic.setStatus(status);
-        uic.setRun(UiUtils.calculateIsRun(status));
+        uic.setState(container.getState());
+        uic.setRun(container.isRun());
         // this is workaround, because docker use simply command representation in container,
         // for full you need use ContainerDetails
         uic.getCommand().add(container.getCommand());
