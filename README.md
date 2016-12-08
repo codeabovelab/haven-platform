@@ -2,8 +2,7 @@
  
 ## Introduction
 Haven is a Docker cluster management system. The user controls the entire platform via user-friendly yet powerful UI and 
-commandline tools. Built on top of Docker, Swarm, and Compose, it offers multiple clusters and image registries management 
-and while built on top of Docker, Swarm, and Compose.
+commandline tools. Built on top of Docker, Swarm, and Compose, it offers multiple clusters and image registries management.
 
 ### Requirements
 
