@@ -45,3 +45,32 @@ All jobs has common list of parameters:
         }
     }
     ```
+
+Example request:
+
+```js
+{
+    type: "ui.updateContainers.stopThenStartEach",
+    title: "Update test nginx & java",
+    parameters: {
+        cluster: "clusterName",
+        "LoadContainersOfImage.percentage": 100,
+        images: {
+            images: [
+                {
+                    name: "our-repo:8080/nginx",
+                    from: "*",
+                    to: "latest"
+                },
+                {
+                    name: "our-repo:8080/java",
+                    from: "*",
+                    to: "latest"
+                }
+            ]
+        }
+    }
+}
+```
+
+Also see [tests](https://github.com/codeabovelab/haven-api-tests/blob/master/test_jobs_update.js)
