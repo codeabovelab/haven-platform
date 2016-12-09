@@ -11,6 +11,36 @@ After then it removed (by timeout or manually), you can run it again with same p
 twice you must add any additional parameter (for example `'counter': i` where i will incremented for each job).  
 You can retrieve status of each executed job, its logs, or read runtime log stream.
 
+### Scheduling ###
+
+Any job can be scheduled, it done by adding 'schedule' parameter. 
+
+Look, below a simple job:
+
+```js
+{
+  "type": "job.sample",
+  "parameters":{
+      "inParam":"test"
+  }
+}
+```
+
+And now scheduled job:
+
+```js
+{
+  "type": "job.sample",
+  "schedule" : "*/10 * * * * *", // every ten seconds.
+  "parameters":{
+      "inParam":"test"
+  }
+}
+```
+
+Which is executed every 10 seconds. You can rollback it too, but rollback only last iteration. Also note that this 
+jobs does not stop on their own, but you can stop and remove its.  
+
 ## Api ##
 
 List job types:
