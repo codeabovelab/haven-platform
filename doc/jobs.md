@@ -96,3 +96,28 @@ List job instances:
 ]
 ```
 
+Rollback job instance:
+
+```js
+// POST /ui/api/jobs/ 
+{
+  "type": "job.rollback",
+  "title": "Rollback job.sample-0",
+  "parameters":{
+      "jobId":"job.sample-0"
+  }
+}
+// result:
+{
+  "id": "job.rollback-0",
+  "title": "Rollback job.sample-0",
+  "status": "STARTED",
+  "createTime": "2016-12-02T18:51:18.589",
+  "startTime": "2016-12-02T18:51:18.822",
+  "endTime": "+999999999-12-31T23:59:59.999999999",
+  "running": true,
+  "canRollback": false,
+  "parameters": null
+}
+```
+
