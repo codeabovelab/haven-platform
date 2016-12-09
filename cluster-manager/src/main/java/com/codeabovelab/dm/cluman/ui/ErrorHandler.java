@@ -105,7 +105,7 @@ public class ErrorHandler {
     @ExceptionHandler({TokenException.class, BadCredentialsException.class})
     @ResponseStatus(HttpStatus.UNAUTHORIZED)
     @ResponseBody
-    public UiError badCredentialsException(TokenException e) {
+    public UiError badCredentialsException(Exception e) {
         log.error("Can't process request", e);
         return createResponse(e.getMessage(), e.getMessage(), HttpStatus.UNAUTHORIZED);
     }
