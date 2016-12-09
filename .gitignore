@@ -19,3 +19,4 @@
 target/
 
 *.log
+*.log.zip
