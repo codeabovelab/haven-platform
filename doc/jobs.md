@@ -1,5 +1,16 @@
 # Jobs #
 
+System has internal job engine. Engine provide list of job types and job instances.
+Job type has description of job with list of all its parameters and types. A job instance - handle for running task 
+of specified job type. 
+
+Instance can be created from `JobParameters` object. Note that engine identity job by its 
+parameters, so if you pass parameters twice - system does not run job again.
+Job instances is persist in memory for execution time, and remain there for configured time (default on day). 
+After then it removed (by timeout or manually), you can run it again with same parameters. When you need to run job 
+twice you must add any additional parameter (for example `'counter': i` where i will incremented for each job).  
+You can retrieve status of each executed job, its logs, or read runtime log stream.
+
 ## Api ##
 
 List job types:
