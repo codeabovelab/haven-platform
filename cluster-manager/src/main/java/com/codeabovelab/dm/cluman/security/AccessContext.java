@@ -38,11 +38,9 @@ public class AccessContext {
     private final ExtPermissionGrantingStrategy pgs;
     private final List<Sid> sids;
     private final Authentication authentication;
-    private final SecurityContext context;
 
     AccessContext(AccessContextFactory factory) {
-        this.context = SecurityContextHolder.getContext();
-        this.authentication = context.getAuthentication();
+        this.authentication = SecurityContextHolder.getContext().getAuthentication();
         List<Sid> sids;
         if(this.authentication == null) {
             throw new AccessDeniedException("No credentials in context.");
@@ -120,17 +118,27 @@ public class AccessContext {
     }
 
     boolean isActual() {
-        Authentication currAuth = SecurityContextHolder.getContext().getAuthentication();
-        return this.authentication == currAuth;
+        return getActualAuthIfNew() == null;
+    }
+
+    private Authentication getActualAuthIfNew() {
+        SecurityContext currContext = SecurityContextHolder.getContext();
+        Authentication currAuth = currContext.getAuthentication();
+        // something may change authentication and we can not use '==', so we need compare only principal and his authorities
+        // it cause by spring which can save context into http session and change its authentication in different threads
+        if(this.authentication.getPrincipal().equals(currAuth.getPrincipal()) &&
+           this.authentication.getAuthorities().equals(currAuth.getAuthorities())) {
+            return null;
+        }
+        return currAuth;
     }
 
     /**
      * Check that current authentication is complies for context authentication.
      */
     void assertActual() {
-        Authentication currAuth = SecurityContextHolder.getContext().getAuthentication();
-        // something may change authentication and we can not use '==', so we need compare only principal and his authorities
-        if(this.authentication != currAuth) {
+        Authentication currAuth = getActualAuthIfNew();
+        if(currAuth != null) {
             throw new IllegalStateException("AccessContext is for " + this.authentication
               + " but current is " + currAuth);
         }

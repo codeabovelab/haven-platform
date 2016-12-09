@@ -57,8 +57,8 @@ public final class TempAuth implements AutoCloseable {
     }
 
     private void init() {
-        SecurityContextHolder.setContext(context);
         context.setAuthentication(newAuth);
+        SecurityContextHolder.setContext(context);
         AccessContextFactory acf = AccessContextFactory.getInstanceOrNull();
         if(acf != null) {
             // we must open new context only when has factory
