@@ -74,7 +74,7 @@ public class JobApi {
         return jobsManager.getDescription(type);
     }
 
-    @RequestMapping(value = "/jobs/{job:.*}/", method = GET)
+    @RequestMapping(value = "/jobs/{job:.*}", method = GET)
     public UiJob getJob(@PathVariable("job") String job) {
         JobInstance ji = jobsManager.getJob(job);
         ExtendedAssert.notFound(ji, "Job was not found by id: " + job);
@@ -90,7 +90,7 @@ public class JobApi {
         return ji.getLog().stream().map(JobApi::toUi).collect(Collectors.toList());
     }
 
-    @RequestMapping(value = "/jobs/{job:.*}/", method = DELETE)
+    @RequestMapping(value = "/jobs/{job:.*}", method = DELETE)
     public UiJob deleteJob(@PathVariable("job") String job) {
         JobInstance ji = jobsManager.getJob(job);
         ExtendedAssert.notFound(ji, "Job was not found by id: " + job);
