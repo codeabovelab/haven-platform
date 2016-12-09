@@ -17,6 +17,7 @@
 package com.codeabovelab.dm.cluman.job;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.google.common.collect.ImmutableMap;
 import lombok.Data;
 import org.springframework.util.Assert;
@@ -67,6 +68,7 @@ public final class JobParameters {
             return this;
         }
 
+        @JsonDeserialize(contentUsing = JobParametersDeserializer.class)
         public void setParameters(Map<String, Object> parameters) {
             this.parameters.clear();
             if(parameters != null) {

@@ -29,6 +29,7 @@ import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Scope;
 
+import javax.annotation.PostConstruct;
 import java.util.Map;
 
 /**
@@ -57,9 +58,16 @@ public class JobConfiguration {
         private String executedJobLifetime = "P1D";
     }
 
+    @Autowired
+    private JobsManager jobsManager;
+
+    @PostConstruct
+    public void init() {
+        JobParametersDeserializer.setJobsManager(jobsManager);
+    }
 
     @Bean(name = JobEvent.BUS)
-    Subscriptions<JobEvent> jobEventSubscriptions(JobsManager jobsManager) {
+    Subscriptions<JobEvent> jobEventSubscriptions() {
         return jobsManager.getSubscriptions();
     }
 
