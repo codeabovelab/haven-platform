@@ -15,7 +15,7 @@ All jobs has common list of parameters:
 * LoadContainersOfImage.percentage - 0-100 - float value for partially update  
     * type: float
     * required: false
-* images - list of images which need update
+* images - object with list of images which need update
     * type: object
     * required: true
     
