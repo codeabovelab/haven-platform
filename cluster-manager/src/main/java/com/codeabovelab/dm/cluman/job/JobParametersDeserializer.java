@@ -22,9 +22,7 @@ import com.fasterxml.jackson.core.JsonStreamContext;
 import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.JsonDeserializer;
-import com.fasterxml.jackson.databind.deser.std.ContainerDeserializerBase;
 import com.fasterxml.jackson.databind.type.TypeFactory;
-import org.springframework.util.Assert;
 
 import java.io.IOException;
 
@@ -70,10 +68,10 @@ class JobParametersDeserializer extends JsonDeserializer {
             type = typeFactory.constructType(param.getType());
         }
         JsonDeserializer<Object> deser = ctx.findNonContextualValueDeserializer(type);
-        if(deser instanceof ContainerDeserializerBase) {
-            Assert.notNull(((ContainerDeserializerBase)deser).getContentDeserializer() == null,
-              "No content deserializer for '" + jobType + "." + paramName + "' job parameter ");
+        try {
+            return deser.deserialize(p, ctx);
+        } catch (Exception e) {
+            throw new RuntimeException("Can not deserialize '" + jobType + "." + paramName + "' job parameter ", e );
         }
-        return deser.deserialize(p, ctx);
     }
 }
