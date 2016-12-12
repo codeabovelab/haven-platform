@@ -79,7 +79,7 @@ class JobBeanDescriptionFactory {
 
     private void processProps(Map<String, JobParameterDescription> map, JobBeanIntrospector.Metadata md) {
         for(JobBeanIntrospector.PropertyMetadata pm : md.getProps().values()) {
-            JobParameterDescription pd = new JobParameterDescription(pm.getName(), pm.getProperty().getType(), pm.isRequired(), pm.isIn(), pm.isOut());
+            JobParameterDescription pd = new JobParameterDescription(pm.getName(), pm.getType(), pm.isRequired(), pm.isIn(), pm.isOut());
             map.put(pd.getName(), pd);
         }
     }

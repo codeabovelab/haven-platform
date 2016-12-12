@@ -28,10 +28,7 @@ import org.springframework.core.annotation.AnnotatedElementUtils;
 import org.springframework.util.ReflectionUtils;
 import org.springframework.util.StringUtils;
 
-import java.lang.reflect.AnnotatedElement;
-import java.lang.reflect.Field;
-import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
+import java.lang.reflect.*;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -125,6 +122,10 @@ final class JobBeanIntrospector {
 
         boolean isOut() {
             return out;
+        }
+
+        public Type getType() {
+            return property.getGenericType();
         }
     }
 
