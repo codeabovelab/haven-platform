@@ -27,7 +27,6 @@ import lombok.AllArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseBodyEmitter;
@@ -78,9 +77,7 @@ public class JobApi {
     public UiJob getJob(@PathVariable("job") String job) {
         JobInstance ji = jobsManager.getJob(job);
         ExtendedAssert.notFound(ji, "Job was not found by id: " + job);
-        return UiJob.toUiBuilder(ji)
-                .parameters(ji.getJobContext().getParameters())
-                .build();
+        return UiJob.toUi(ji);
     }
 
     @RequestMapping(value = "/jobs/{job:.*}/log", method = GET)

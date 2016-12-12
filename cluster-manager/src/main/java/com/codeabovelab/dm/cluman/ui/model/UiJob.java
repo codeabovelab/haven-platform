@@ -60,6 +60,7 @@ public class UiJob {
                 .endTime(jh.getEndTime())
                 .status(status)
                 .canRollback(ji.getJobContext().getRollback() != null)
+                .parameters(ji.getJobContext().getParameters())
                 .running(status == JobStatus.STARTED);
     }
 
