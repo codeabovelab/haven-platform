@@ -18,6 +18,7 @@ package com.codeabovelab.dm.common.utils.pojo;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Member;
+import java.lang.reflect.Type;
 
 /**
  * a property, getter-setter pair or public object field
@@ -35,6 +36,11 @@ public interface Property {
      * @return
      */
     Class<?> getType();
+
+    /**
+     * @return generic Type of property.
+     */
+    Type getGenericType();
 
     /**
      * get property value from property owner object

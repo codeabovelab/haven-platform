@@ -21,6 +21,7 @@ import org.springframework.util.ReflectionUtils;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
+import java.lang.reflect.Type;
 
 /**
  */
@@ -59,6 +60,11 @@ public final class FieldProperty implements Property {
     @Override
     public Class<?> getType() {
         return field.getType();
+    }
+
+    @Override
+    public Type getGenericType() {
+        return field.getGenericType();
     }
 
     @Override

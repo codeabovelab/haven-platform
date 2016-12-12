@@ -20,6 +20,7 @@ import org.springframework.core.annotation.AnnotationUtils;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
+import java.lang.reflect.Type;
 
 /**
  * property represented by getter and setter methods
@@ -81,10 +82,19 @@ public final class MethodsProperty implements Property {
     @Override
     public Class<?> getType() {
         Method m = this.getter;
-        if(m == null) {
-            m = this.setter;
+        if(m != null) {
+            return m.getReturnType();
         }
-        return m.getReturnType();
+        return this.setter.getParameterTypes()[0];
+    }
+
+    @Override
+    public Type getGenericType() {
+        Method m = this.getter;
+        if(m != null) {
+            return m.getGenericReturnType();
+        }
+        return this.setter.getGenericParameterTypes()[0];
     }
 
     @Override
