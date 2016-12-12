@@ -16,12 +16,20 @@
 
 package com.codeabovelab.dm.cluman.ui.model;
 
-import lombok.Data;
+import com.fasterxml.jackson.annotation.JsonCreator;
+import lombok.AllArgsConstructor;
+import lombok.Value;
+import org.hibernate.validator.constraints.Length;
+
+import javax.validation.constraints.NotNull;
 
 /**
  */
-@Data
+@Value
+@AllArgsConstructor(onConstructor = @__(@JsonCreator))
 public class UiUserCredentials {
-    private String username;
-    private String password;
+    @NotNull
+    private final String username;
+    @NotNull @Length(min = 3)
+    private final String password;
 }

@@ -17,6 +17,9 @@
 package com.codeabovelab.dm.cluman.ui.model;
 
 import lombok.Data;
+import org.hibernate.validator.constraints.Length;
+
+import javax.validation.constraints.NotNull;
 
 /**
  */
@@ -26,10 +29,13 @@ public class UiUserBase {
      * Stub for any non null password
      */
     public static final String PWD_STUB = "********";
+    @NotNull
     private String user;
     private String title;
     private String email;
     private String tenant;
+    @NotNull
+    @Length(min = 3)
     private String password;
     private Boolean accountNonExpired;
     private Boolean accountNonLocked;

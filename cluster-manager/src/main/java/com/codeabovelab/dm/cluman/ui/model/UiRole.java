@@ -21,10 +21,13 @@ import com.codeabovelab.dm.common.utils.Comparables;
 import lombok.Data;
 import org.springframework.security.core.GrantedAuthority;
 
+import javax.validation.constraints.NotNull;
+
 /**
  */
 @Data
 public class UiRole implements Comparable<UiRole> {
+    @NotNull
     private String name;
     private String tenant;
 
