@@ -15,7 +15,7 @@ import stat
 import time
 import datetime
 
-# default values which is set by preprocessor on server
+# default values set by preprocessor on server
 default_value = {
     "docker": "$DOCKER$",
     "master": "$MASTER$",
@@ -65,7 +65,7 @@ class Docker:
         except:
             self.conn.close()
             self.conn = None
-            logging.error("Can not connect to docker %s due to error: %s", self.gather_error_info(), sys.exc_info()[1])
+            logging.error("Cannot connect to Docker %s due to error: %s", self.gather_error_info(), sys.exc_info()[1])
             raise
         resp = self.conn.getresponse()
         if resp.status != http.client.OK:
@@ -108,7 +108,7 @@ class DockerMaster:
         self.conn = http.client.HTTPConnection(self.host, self.port, timeout=self.timeout*20)
 
     def process_container(self, c):
-        # name is looked like /nodename/containername or /containername and we need to correct it
+        # name looks like /nodename/containername or /containername and we need to correct it
         name_src = c['Names'][0].split('/')
         name = name_src[len(name_src) - 1]
         return {
@@ -166,7 +166,7 @@ class DockerMaster:
             docker = self.docker
             info = docker.info()
             name = info['Name']
-            id = name  # we use name as id, perhaps we should use full domain name
+            id = name  # we use the name as ID. Perhaps we should use the full domain name?
             path = '/discovery/nodes/' + id
             path += "?ttl=" + str(self.timeout)
 
@@ -186,7 +186,7 @@ class DockerMaster:
 
             def do_register():
                 try:
-                    # docker master close connection after each query, we must try with keep alive
+                    # Haven closes connection after each query. We must try with keep-alive
                     self.open()
                     headers = {
                         'Content-Type': 'application/json'
@@ -198,7 +198,7 @@ class DockerMaster:
                     rd = r.read()
                     if r.status != http.client.OK:
                         if r.status == http.client.UNAUTHORIZED:
-                            raise Exception("Server http://{}:{}{}, require authorization, specify correct 'secret'. \n\n {}"
+                            raise Exception("Server http://{}:{}{}, requires authorization. Please specify the correct 'secret'. \n\n {}"
                                             .format(self.host, self.port, path,
                                                     rd))
                         else:
@@ -208,7 +208,7 @@ class DockerMaster:
                                                     self.host, self.port, path,
                                                     rd))
                     r.close()
-                    logging.debug("update registration success")
+                    logging.debug("Registration update success")
                 except:
                     self.conn.close()
                     self.conn = None
@@ -221,8 +221,8 @@ class DockerMaster:
                     break
                 except Exception as e:
                     # we cannot find cause of BrokenPipeError and
-                    # therefore need to immediately repeat at this error
-                    if e is BrokenPipeError: # in python 3.4 no this exception or e is http.client.RemoteDisconnected:
+                    # therefore need to immediately repeat this error
+                    if e is BrokenPipeError: # in Python 3.4, this exception or e is http.client.RemoteDisconnected:
                         continue
                     else:
                         logging.exception("Cannot update registration due to %s", e)
@@ -263,7 +263,7 @@ Sample config:
         parser.add_argument('command', choices=['daemon', 'install', 'uninstall'], nargs='?', default='daemon',
                             help='daemon - run agent daemon (it default)\n'
                                  'install - this into OS startup scripts\n'
-                                 'uninstall - remove script and its config and unit files')
+                                 'uninstall - remove the script and its config and unit files')
         parser.add_argument('-d', '--docker', dest='docker', action='store',
                             help='ip and port of docker service')
         parser.add_argument('-m', '--master', dest='master', action='store',
@@ -278,8 +278,8 @@ Sample config:
         parser.add_argument('-f', '--config', dest='config', action='store',
                             help='path to config file')
         parser.add_argument('-u', dest='user', action='store',
-                            help='install: user which is used for running installed daemon, will created if absent.'
-                                 ' If not specified service will run under \'root\'')
+                            help='install: user which is used for running installed daemon, will be created if it does not exist.'
+                                 ' If not specified, the service will run under \'root\'')
         args = parser.parse_args()
 
         config = configparser.ConfigParser()
@@ -344,14 +344,14 @@ class Installer:
 
     def check_access(self):
         if os.getuid() != 0:
-            # we check for root, but not interrupt installation
-            # user is warned and known what doing
-            logging.error('User is not root, operation can not be successful')
+            # we check for root, but do not interrupt the installation
+            # user is warned and knows what  he is doing
+            logging.error('User is not root so the operation will not be be successful.')
 
     def install(self):
         logging.warning('Begin install')
         if os.path.exists(self.service_path):
-            logging.error('System has systemd unit at %s, it mean that agent is installed.'
+            logging.error('System has systemd unit at %s and the agent is installed.'
                           '\n You can uninstall this through \"%s uninstall\" command ',
                           self.service_path, self.script_path)
             return
@@ -371,7 +371,7 @@ class Installer:
             except KeyError as e:
                 user_exists = False
             if not user_exists:
-                logging.warning('User %s is not exists, crate it', self.user)
+                logging.warning('User %s does not exists. Creating it now.', self.user)
                 subprocess.run(['useradd', '-M', '-N', '-r', '-s', '/bin/false', self.user])
 
         service_str = '''
@@ -408,8 +408,8 @@ WantedBy=multi-user.target
 
     def uninstall(self):
         self.check_access()
-        logging.warning('Begin uninstall.')
-        # we do not any check here because this must work on broken installation (when agent partially installed)
+        logging.warning('Begin uninstall')
+        # we don't do any check here because this must work on broken installation (when agent partially installed)
         subprocess.run(['/bin/systemctl', '--system', 'stop', self.service_name])
         subprocess.run(['/bin/systemctl', '--system', 'disable', self.service_name])
         self.remove(self.config_path)
