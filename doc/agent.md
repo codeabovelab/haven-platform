@@ -1,6 +1,6 @@
 # Dockmaster Agent #
 
-Agent is [a Python script](/cluster-manager/src/main/resources/static/res/agent/dockmaster-agent.py). 
+Agent is [a Python script](/cluster-manager/src/main/resources/static/res/agent/node-agent.py). 
 It is written in Python 3 and only has one dependency: python3-psutil >= 4.2.
 
 use '-h' option for getting help:
