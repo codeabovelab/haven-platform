@@ -16,147 +16,97 @@
 
 package com.codeabovelab.dm.cluman.configs.container;
 
-import com.codeabovelab.dm.cluman.configuration.DataLocatinConfiguration;
+import com.codeabovelab.dm.cluman.configuration.DataLocationConfiguration;
 import com.codeabovelab.dm.cluman.utils.ContainerUtils;
 import com.codeabovelab.dm.common.utils.Throwables;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FileUtils;
-import org.eclipse.jgit.api.CreateBranchCommand;
 import org.eclipse.jgit.api.Git;
-import org.eclipse.jgit.api.errors.GitAPIException;
 import org.eclipse.jgit.transport.CredentialsProvider;
 import org.eclipse.jgit.transport.UsernamePasswordCredentialsProvider;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
-import org.springframework.util.Assert;
-import org.springframework.util.StringUtils;
 
-import javax.annotation.PostConstruct;
 import java.io.File;
 import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
-import java.util.function.Function;
 
 import static java.util.Collections.singleton;
+import static org.springframework.util.StringUtils.hasText;
 
 /**
  * Fetches configs from remote REPO
- * Env name = branch if exists
  * Cluster name = dir
  */
+@Slf4j
 @Component
 @Order(1)
-@ConditionalOnBean(GitSettings.class)
+@ConditionalOnProperty("dm.image.configuration.git.url")
 public class ConfigsFetcherGit implements ConfigsFetcher {
 
-    private static final Logger LOG = LoggerFactory.getLogger(ConfigsFetcherGit.class);
-    private final static String HEAD = "refs/heads/";
+    private static final String HEAD = "refs/heads/";
 
     private final Path gitDirPath;
     private final GitSettings gitSettings;
     private final List<Parser> parser;
-    private final List<Function<String, String>> functions = new ArrayList<>(Arrays.asList(new NameFunction(), new NameVersionFunction()));
-    private volatile Git git;
-    private CredentialsProvider cp;
+    private final Git git;
+    private final CredentialsProvider cp;
 
     @Autowired
-    public ConfigsFetcherGit(GitSettings gitSettings, DataLocatinConfiguration locatinConfiguration, List<Parser> parser) {
+    public ConfigsFetcherGit(GitSettings gitSettings, DataLocationConfiguration location, List<Parser> parser) {
         this.gitSettings = gitSettings;
         this.parser = parser;
-        this.gitDirPath = new File(locatinConfiguration.getLocation(), "git-container-configs").toPath();
-
+        this.gitDirPath = new File(location.getLocation(), "git-container-configs").toPath();
+        this.git = initGitRepo();
+        this.cp = hasText(gitSettings.getPassword()) ? new UsernamePasswordCredentialsProvider(gitSettings.getUsername(), gitSettings.getPassword()) : null;
     }
 
     @Override
     public synchronized void resolveProperties(ContainerCreationContext context) {
 
         try {
-            initGitRepo();
-            git.fetch().setCredentialsProvider(cp).call();
-//            tryBranch(context.getCluster());
             git.pull().setCredentialsProvider(cp).call();
-            LOG.info("repo was updated");
+            log.info("repo {} was updated", gitDirPath);
             String clusterName = context.getCluster();
+            String imageNameWithoutPrefix = ContainerUtils.getImageNameWithoutPrefix(context.getImageName());
+            String imageVersionName = ContainerUtils.getImageVersionName(context.getImageName());
             String path = gitDirPath + File.separator + clusterName + File.separator;
-            for (Function<String, String> function : functions) {
-                for (Parser ps : parser) {
-                    ps.parse(path + function.apply(context.getImageName()), context);
-                }
-            }
+            parser.forEach(ps -> {
+                // search in base dir w/o version
+                ps.parse(imageNameWithoutPrefix, context);
+                // search in base dir with version
+                ps.parse(imageVersionName, context);
+                // search in cluster dir w/o version
+                ps.parse(path + imageNameWithoutPrefix, context);
+                // search in cluster dir with version
+                ps.parse(path + imageVersionName, context);
+            });
         } catch (Exception e) {
-            LOG.error("", e);
+            log.error("", e);
         }
     }
 
-    private void tryBranch(String cluster) {
-        String envName = /*TODO getEnvName*/cluster;
+    private Git initGitRepo() {
         try {
-            Assert.notNull(envName);
-            git.checkout()
-                    .setCreateBranch(true)
-                    .setName(HEAD + envName)
-                    .setStartPoint("origin/" + envName)
-                    .setUpstreamMode(CreateBranchCommand.SetupUpstreamMode.TRACK)
+            log.info("try to init repo {}", gitSettings.getUrl());
+            File gitDir = gitDirPath.toFile();
+            FileUtils.deleteQuietly(gitDir);
+            gitDir.mkdirs();
+
+            Git git = Git.cloneRepository()
+                    .setURI(gitSettings.getUrl())
+                    .setCredentialsProvider(cp)
+                    .setDirectory(gitDir)
+                    .setBranchesToClone(singleton(HEAD + gitSettings.getBranch()))
+                    .setBranch(HEAD + gitSettings.getBranch())
                     .call();
-            LOG.info("co branch  {} ", cluster);
+            log.info("repo was cloned from url: {} to dir: {}, branch: {} ", gitSettings.getUrl(), gitDir, git.getRepository().getBranch());
+            return git;
         } catch (Exception e) {
-            LOG.warn("branch '{}' doesn't exist, use default: {}", envName, gitSettings.getBranch());
-            try {
-                git.checkout()
-                        .setName(HEAD + gitSettings.getBranch())
-                        .setUpstreamMode(CreateBranchCommand.SetupUpstreamMode.TRACK)
-                        .call();
-            } catch (GitAPIException e1) {
-                LOG.error("branch can't be switched", e1);
-            }
-
+            throw Throwables.asRuntime(e);
         }
     }
 
-    @PostConstruct
-    private void initGitRepo() {
-        if (git == null) {
-            try {
-                LOG.info("try to init repo {}", gitSettings.getUrl());
-                File gitDir = gitDirPath.toFile();
-                FileUtils.deleteQuietly(gitDir);
-                gitDir.mkdirs();
-                if (StringUtils.hasText(gitSettings.getPassword())) {
-                    cp = new UsernamePasswordCredentialsProvider(gitSettings.getUsername(), gitSettings.getPassword());
-                }
-                git = Git.cloneRepository()
-                        .setURI(gitSettings.getUrl())
-                        .setCredentialsProvider(cp)
-                        .setDirectory(gitDir)
-                        .setBranchesToClone(singleton(HEAD + gitSettings.getBranch()))
-                        .setBranch(HEAD + gitSettings.getBranch())
-                        .call();
-                LOG.info("repo was cloned from url: {} to dir: {}, branch: {} ", gitSettings.getUrl(), gitDir, git.getRepository().getBranch());
-            } catch (Exception e) {
-                git = null;
-                throw Throwables.asRuntime(e);
-            }
-        }
-    }
-
-    private final static class NameVersionFunction implements Function<String, String> {
-
-        @Override
-        public String apply(String s) {
-            return ContainerUtils.getImageVersionName(s).replace(":", "-");
-        }
-    }
-
-    private final static class NameFunction implements Function<String, String> {
-
-        @Override
-        public String apply(String s) {
-            return ContainerUtils.getImageNameWithoutPrefix(s);
-        }
-    }
 }

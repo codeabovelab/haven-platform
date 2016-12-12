@@ -2,7 +2,7 @@ package com.codeabovelab.dm.cluman.configs.container;
 
 import com.codeabovelab.dm.cluman.cluster.docker.model.ContainerConfig;
 import com.codeabovelab.dm.cluman.cluster.docker.model.Image;
-import com.codeabovelab.dm.cluman.configuration.DataLocatinConfiguration;
+import com.codeabovelab.dm.cluman.configuration.DataLocationConfiguration;
 import com.codeabovelab.dm.cluman.model.ContainerSource;
 import com.google.common.io.Files;
 import org.junit.Assert;
@@ -37,19 +37,18 @@ public class ConfigsFetcherGitTest {
         Assert.assertNotNull(envs.get("MQ_HOST"));
     }
 
-    public static ConfigProvider createConfigProvider() throws Exception {
+    static ConfigProvider createConfigProvider() {
         GitSettings gitSettings = new GitSettings();
         gitSettings.setUrl("https://github.com/codeabovelab/haven-example-container-configuration.git");
-        DataLocatinConfiguration dataLocatinConfiguration = new DataLocatinConfiguration();
-        dataLocatinConfiguration.setLocation(Files.createTempDir().getPath());
+        DataLocationConfiguration dataLocationConfiguration = new DataLocationConfiguration();
+        dataLocationConfiguration.setLocation(Files.createTempDir().getPath());
 
         List<ConfigsFetcher> fetchers = new ArrayList<ConfigsFetcher>() {{
-            add(new ConfigsFetcherGit(gitSettings, dataLocatinConfiguration,
+            add(new ConfigsFetcherGit(gitSettings, dataLocationConfiguration,
                     Collections.singletonList(new DefaultParser())));
             add(new ConfigsFetcherImage(Collections.singletonList(new DefaultParser())));
         }};
 
-        ConfigProvider configProvider = new ConfigProviderImpl(fetchers);
-        return configProvider;
+        return new ConfigProviderImpl(fetchers);
     }
 }

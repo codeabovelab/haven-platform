@@ -26,6 +26,6 @@ import org.springframework.stereotype.Component;
 @Component
 @ConfigurationProperties("dm.data")
 @Data
-public class DataLocatinConfiguration {
+public class DataLocationConfiguration {
     private String location;
 }
