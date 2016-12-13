@@ -43,10 +43,17 @@ class ScheduledJobInstanceImpl extends AbstractJobInstance {
     private void checkCronAndSetStartDate(String schedule) {
         Assert.hasText(schedule, "parameters.schedule is empty or null");
         Assert.isTrue(CronSequenceGenerator.isValidExpression(schedule), "Cron expression is not valid: " + schedule);
-        Date next = new CronSequenceGenerator(schedule).next(new Date());
-        LocalDateTime startTime = LocalDateTime.ofInstant(next.toInstant(), ZoneId.systemDefault());
+        updateNextStart(calculateNextStart(schedule));
+    }
+
+    private void updateNextStart(LocalDateTime startTime) {
         JobInfo info = getInfo();
         setInfo(info, JobInfo.builder().from(info).startTime(startTime).build());
+    }
+
+    private LocalDateTime calculateNextStart(String schedule) {
+        Date next = new CronSequenceGenerator(schedule).next(new Date());
+        return LocalDateTime.ofInstant(next.toInstant(), ZoneId.systemDefault());
     }
 
     @Override
