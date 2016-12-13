@@ -177,7 +177,11 @@ public class RemoveImageJob implements Runnable {
         } else {
             res = service.removeImage(removeImageArg);
         }
-        context.fire("Deletion \"{0}\" from \"{1}\" node which ended with \"{2}\"", image, service.getNode(), res);
+        if(res.getCode() == ResultCode.OK) {
+            context.fire("Success delete \"{0}\" from \"{1}\" node.", image, service.getNode());
+        } else {
+            context.fire("Can not delete \"{0}\" from \"{1}\" node, code {2}, error: \"{3}\"", image, service.getNode(), res.getCode(), res.getMessage());
+        }
     }
 
     private void doInRegistry(RegistryService registry, String name, String tag) {
