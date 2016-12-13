@@ -351,6 +351,8 @@ public class DockerServiceImpl implements DockerService {
         dcb.setState(DockerContainer.State.fromString(c.getState()));
 
         resolveNameAndNode(c, dcb);
+
+        dcb.setImage(ContainerUtils.getFixedImageName(dcb));
     }
 
     private void resolveNameAndNode(Container c, DockerContainer.Builder dcb) {

@@ -16,6 +16,7 @@
 
 package com.codeabovelab.dm.cluman.ds.container;
 
+import com.codeabovelab.dm.cluman.utils.ContainerUtils;
 import com.codeabovelab.dm.common.kv.mapping.KvMapper;
 import com.codeabovelab.dm.common.kv.mapping.KvMapperFactory;
 import com.codeabovelab.dm.common.kv.mapping.KvMapping;
@@ -101,6 +102,7 @@ public class ContainerRegistration {
                 throw new IllegalArgumentException("Bad container name: " + name);
             }
             this.container.from(container);
+            ContainerUtils.getFixedImageName(this.container);
             setNode(node);
             String currId = this.container.getId();
             Assert.isTrue(this.id.equals(currId), "After update container has differ id: old=" + this.id + " new=" + currId);
