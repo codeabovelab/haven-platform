@@ -17,12 +17,18 @@
 package com.codeabovelab.dm.cluman.job;
 
 import com.google.common.base.MoreObjects;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.scheduling.support.CronSequenceGenerator;
 import org.springframework.util.Assert;
 
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.util.Date;
 import java.util.concurrent.ScheduledFuture;
 
 /**
  */
+@Slf4j
 class ScheduledJobInstanceImpl extends AbstractJobInstance {
 
     private final boolean repeatable;
@@ -30,8 +36,17 @@ class ScheduledJobInstanceImpl extends AbstractJobInstance {
 
     public ScheduledJobInstanceImpl(Config config) {
         super(config);
+        checkCronAndSetStartDate(config.getParameters().getSchedule());
         this.repeatable = config.isRepeatable();
-        Assert.hasText(config.parameters.getSchedule(), "parameters.schedule is empty or null");
+    }
+
+    private void checkCronAndSetStartDate(String schedule) {
+        Assert.hasText(schedule, "parameters.schedule is empty or null");
+        Assert.isTrue(CronSequenceGenerator.isValidExpression(schedule), "Cron expression is not valid: " + schedule);
+        Date next = new CronSequenceGenerator(schedule).next(new Date());
+        LocalDateTime startTime = LocalDateTime.ofInstant(next.toInstant(), ZoneId.systemDefault());
+        JobInfo info = getInfo();
+        setInfo(info, JobInfo.builder().from(info).startTime(startTime).build());
     }
 
     @Override

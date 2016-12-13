@@ -16,15 +16,11 @@
 
 package com.codeabovelab.dm.cluman.job;
 
-import org.springframework.scheduling.support.CronSequenceGenerator;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.util.Assert;
 import org.springframework.util.StringUtils;
 
 import java.time.LocalDateTime;
-import java.time.ZoneId;
 import java.util.Collections;
-import java.util.Date;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -49,12 +45,12 @@ class JobFactoryForBean implements JobFactory {
 
     @Override
     public JobInstance create(JobParameters parameters) {
-        JobInfo.Builder infoBuilder = JobInfo.builder()
-                .id(jobName + "-" + counter.getAndIncrement())
-                .title(parameters.getTitle())
-                .type(jobName)
-                .createTime(LocalDateTime.now());
-
+        JobInfo info = JobInfo.builder()
+          .id(jobName + "-" + counter.getAndIncrement())
+          .title(parameters.getTitle())
+          .type(jobName)
+          .createTime(LocalDateTime.now())
+          .build();
         JobBean ann = jobClass.getAnnotation(JobBean.class);
         boolean repeatable = ann.repeatable();
         AbstractJobInstance.Config config = new AbstractJobInstance.Config();
@@ -63,17 +59,11 @@ class JobFactoryForBean implements JobFactory {
         config.setAuthentication(SecurityContextHolder.getContext().getAuthentication());
         config.setJobsManager(this.jobManager);
         config.setParameters(parameters);
-        String schedule = parameters.getSchedule();
-        if (StringUtils.hasText(schedule)) {
-            Assert.isTrue(CronSequenceGenerator.isValidExpression(schedule), "Cron expression is not valid: " + schedule);
-            Date next = new CronSequenceGenerator(parameters.getSchedule()).next(new Date());
-            LocalDateTime startDate = LocalDateTime.ofInstant(next.toInstant(), ZoneId.systemDefault());
-            infoBuilder.setStartTime(startDate);
-            config.setInfo(infoBuilder.build());
+        config.setInfo(info);
+        if(StringUtils.hasText(parameters.getSchedule())) {
             config.setWatcher(new ScheduledJobWatcher());
             return new ScheduledJobInstanceImpl(config);
         } else {
-            config.setInfo(infoBuilder.build());
             return new JobInstanceImpl(config);
         }
     }
