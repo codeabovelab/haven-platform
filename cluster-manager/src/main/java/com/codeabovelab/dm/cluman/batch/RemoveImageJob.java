@@ -109,15 +109,7 @@ public class RemoveImageJob implements Runnable {
             context.fire("Tag is unspecified, delete all tags of image \"{0}\"", fullImageName);
             if(!CollectionUtils.isEmpty(nodes)) {
                 for(String nodeName: nodes) {
-                    DockerService service = dockerServices.getNodeService(nodeName);
-                    String regImage = ContainerUtils.getRegistryAndImageName(fullImageName);
-                    List<ImageItem> images = service.getImages(GetImagesArg.builder()
-                            .all(true)
-                            .name(regImage)
-                            .build());
-                    for(ImageItem image: images) {
-                        doInNode(image.getId(), service);
-                    }
+                    removeOnNode(nodeName);
                 }
             }
             if(registry != null) {//registry may be null only when image must not be deleted from it
@@ -143,13 +135,33 @@ public class RemoveImageJob implements Runnable {
         }
     }
 
+    private void removeOnNode(String nodeName) {
+        try {
+            DockerService service = dockerServices.getNodeService(nodeName);
+            String regImage = ContainerUtils.getRegistryAndImageName(fullImageName);
+            List<ImageItem> images = service.getImages(GetImagesArg.builder()
+                    .all(true)
+                    .name(regImage)
+                    .build());
+            for(ImageItem image: images) {
+                doInNode(image.getId(), service);
+            }
+        } catch (Exception e) {
+            context.fire("Can not delete image \"{0}\" from \"{1}\", due error.", fullImageName, nodeName, e);
+        }
+    }
+
     private void doInNodes(String imageId) {
         if(nodes == null) {
             return;
         }
         for(String nodeName: nodes) {
-            DockerService service = dockerServices.getNodeService(nodeName);
-            doInNode(imageId, service);
+            try {
+                DockerService service = dockerServices.getNodeService(nodeName);
+                doInNode(imageId, service);
+            } catch (Exception e) {
+                context.fire("Can not delete image \"{0}\" from \"{1}\", due error.", fullImageName, nodeName, e);
+            }
         }
     }
 
