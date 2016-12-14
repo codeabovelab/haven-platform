@@ -6,7 +6,7 @@ It is written in Python 3 and only has one dependency: python3-psutil >= 4.2.
 use '-h' option for getting help:
 
 ```
-usage: dockmaster-agent.py [-h] [-d DOCKER] [-m MASTER] [-t TIMEOUT] [-v]
+usage: haven-agent.py [-h] [-d DOCKER] [-m MASTER] [-t TIMEOUT] [-v]
                            [-f CONFIG]
 
 DockMaster node agent.
@@ -24,7 +24,7 @@ optional arguments:
                         path to the configuration file
 
 Example:
-  dockmaster-agent.py -d 172.31.0.11:2375 -m 172.31.0.3:8763 -t 2 -vv
+  haven-agent.py -d 172.31.0.11:2375 -m 172.31.0.3:8763 -t 2 -vv
 Sample config:
   [main]
   docker = 172.31.0.12:2375
@@ -32,9 +32,9 @@ Sample config:
   timeout = 10
   log_level = 2
 By default find config in:
-        $CWD/dm-agent.ini
-        $HOME/.config/dm-agent.ini
-        /etc/dm-agent.ini
+        $CWD/haven-agent.ini
+        $HOME/.config/haven-agent.ini
+        /etc/haven-agent.ini
 ```
 
 Note that all Agent and Master instances must be accessible to each other.
