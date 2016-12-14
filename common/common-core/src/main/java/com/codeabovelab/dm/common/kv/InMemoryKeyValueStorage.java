@@ -21,6 +21,7 @@ import com.codeabovelab.dm.common.mb.*;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 
@@ -28,18 +29,50 @@ import java.util.function.Function;
  * "In Memory" key value storage, designed for debugging and test.
  */
 public class InMemoryKeyValueStorage implements KeyValueStorage {
+    private class Context {
+        private final String key;
+        private int pos;
+        private String current;
+        private boolean leaf;
 
+        Context(String key) {
+            this.key = key;
+            pos = key.charAt(0) == '/' ? 1 : 0;
+        }
+
+        private void fire(KvStorageEvent.Crud action, String val) {
+            bus.accept(new KvStorageEvent(counter.incrementAndGet(), key, val, Long.MAX_VALUE, action));
+        }
+
+        public void next() {
+            int sp = key.indexOf('/', pos);
+            final int length = key.length();
+            leaf = (length > 1 && sp == length - 1) || sp == -1;
+            if(leaf) {
+                current = key;
+            } else {
+                current = key.substring(pos, sp);
+                pos = sp + 1; // pos after '/'
+            }
+        }
+
+        boolean isLeaf() {
+            return leaf;
+        }
+    }
     private static final Object NULL = new Object();
     private final Node root = new Node("/");
     private final MessageBus<KvStorageEvent> bus;
+    private final AtomicInteger counter = new AtomicInteger();
 
     public InMemoryKeyValueStorage() {
         bus = MessageBuses.createConditional("inmemory", KvStorageEvent.class, KvStorageEvent::getKey, KvUtils::predicate);
     }
 
+
     @Override
     public String get(String key) {
-        return root.get(key);
+        return root.get(new Context(key));
     }
 
     @Override
@@ -49,32 +82,32 @@ public class InMemoryKeyValueStorage implements KeyValueStorage {
 
     @Override
     public void set(String key, String value, WriteOptions ops) {
-        root.set(key, value);
+        root.set(new Context(key), value);
     }
 
     @Override
     public void setdir(String key, WriteOptions ops) {
-        root.setdir(key, ops);
+        root.setdir(new Context(key), ops);
     }
 
     @Override
     public void deletedir(String key, DeleteDirOptions ops) {
-        root.deletedir(key, ops);
+        root.deletedir(new Context(key), ops);
     }
 
     @Override
     public void delete(String key, WriteOptions ops) {
-        root.delete(key, ops);
+        root.delete(new Context(key), ops);
     }
 
     @Override
     public List<String> list(String key) {
-        return root.list(key);
+        return root.list(new Context(key));
     }
 
     @Override
     public Map<String, String> map(String key) {
-        return root.map(key);
+        return root.map(new Context(key));
     }
 
     @SuppressWarnings("unchecked")
@@ -97,17 +130,12 @@ public class InMemoryKeyValueStorage implements KeyValueStorage {
             this.path = path;
         }
 
-        private <T> T doing(String key, boolean create, Function<String, T> onLeaf, BiFunction<String, Node, T> onNode) {
-            int sp = key.indexOf('/');
-            final int length = key.length();
-            if(length > 1 && sp == length - 1) {
-                key = key.substring(0, sp);
-                sp = -1;
+        private <T> T doing(Context ctx, boolean create, Function<Context, T> onLeaf, BiFunction<Context, Node, T> onNode) {
+            ctx.next();
+            if(ctx.isLeaf()) {
+                return onLeaf.apply(ctx);
             }
-            if(sp < 0) {
-                return onLeaf.apply(key);
-            }
-            String dirname = key.substring(0, sp);
+            String dirname = ctx.current;
             Node node;
             if(create) {
                 node = nodes.computeIfAbsent(dirname, Node::new);
@@ -117,76 +145,99 @@ public class InMemoryKeyValueStorage implements KeyValueStorage {
             if(node == null) {
                 return null;
             }
-            return onNode.apply(key.substring(sp + 1), node);
+            return onNode.apply(ctx, node);
         }
 
-        String get(String key) {
-            return doing(key, false,
+        String get(Context ctx) {
+            return doing(ctx, false,
               (k) -> {
-                  Object val = leafs.get(k);
-                  return val == NULL ? null : (String) val;
+                  Object val = leafs.get(k.current);
+                  String strVal = toStrVal(val);
+                  ctx.fire(KvStorageEvent.Crud.READ, strVal);
+                  return strVal;
               },
               (k, dir) -> dir.get(k));
         }
 
-        void set(String key, String value) {
-            this.doing(key, true,
-              (k) -> leafs.put(k, value == null? NULL : value),
+        void set(Context ctx, String value) {
+            this.doing(ctx, true,
+              (k) -> {
+                  Object old = leafs.put(k.current, value == null? NULL : value);
+                  ctx.fire(old == null? KvStorageEvent.Crud.CREATE : KvStorageEvent.Crud.UPDATE, toStrVal(value));
+                  return old;
+              },
               (k, dir) -> {
                   dir.set(k, value);
                   return null;
               });
         }
 
-        void setdir(String key, WriteOptions ops) {
-            this.<Object>doing(key, true,
-              (k) -> nodes.put(k, new Node(k)),
+        void setdir(Context ctx, WriteOptions ops) {
+            this.<Object>doing(ctx, true,
+              (k) -> {
+                  Node old = nodes.put(k.current, new Node(k.current));
+                  ctx.fire(KvStorageEvent.Crud.CREATE, null);
+                  return old;
+              },
               (k, dir) -> {
                   dir.setdir(k, ops);
                   return null;
               });
         }
 
-        void deletedir(String key, DeleteDirOptions ops) {
-            this.<Object>doing(key, false,
-              nodes::remove,
+        void deletedir(Context ctx, DeleteDirOptions ops) {
+            this.<Object>doing(ctx, false,
+              (k) -> {
+                  Node old = nodes.remove(k.current);
+                  ctx.fire(KvStorageEvent.Crud.DELETE, null);
+                  return old;
+              },
               (k, dir) -> {
                   dir.deletedir(k, ops);
                   return null;
               });
         }
 
-        void delete(String key, WriteOptions ops) {
-            this.<Object>doing(key, false,
-              leafs::remove,
+        void delete(Context ctx, WriteOptions ops) {
+            this.<Object>doing(ctx, false,
+              (k) -> {
+                  Object old = leafs.remove(k.current);
+                  ctx.fire(KvStorageEvent.Crud.DELETE, toStrVal(old));
+                  return old;
+              },
               (k, dir) -> {
                   dir.delete(k, ops);
                   return null;
               });
         }
 
-        public List<String> list(String key) {
-            return doing(key, false,
+        public List<String> list(Context ctx) {
+            return doing(ctx, false,
               (k) -> {
-                  Node node = nodes.get(k);
+                  Node node = nodes.get(k.current);
                   return node == null? Collections.emptyList() : new ArrayList<>(node.leafs.keySet());
               },
               (k, dir) -> dir.list(k));
         }
 
-        public Map<String, String> map(String key) {
-            return doing(key, false,
+        public Map<String, String> map(Context ctx) {
+            return doing(ctx, false,
               (k) -> {
-                  Node node = nodes.get(k);
+                  Node node = nodes.get(k.current);
                   Map<String, String> map = new HashMap<>();
                   if(node != null) {
+                      ctx.fire(KvStorageEvent.Crud.READ, null);
                       node.leafs.forEach((lk, lv) -> {
-                          map.put(lk, lv == NULL? null : (String) lv);
+                          map.put(lk, toStrVal(lv));
                       });
                   }
                   return map;
               },
               (k, dir) -> dir.map(k));
         }
+    }
+
+    private String toStrVal(Object val) {
+        return val == NULL ? null : (String) val;
     }
 }

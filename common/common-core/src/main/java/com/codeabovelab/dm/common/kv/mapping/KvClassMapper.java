@@ -99,7 +99,16 @@ public class KvClassMapper<T> {
             createPrefix();
             list = this.storage.list(prefix);
         }
-        return list.stream().map(k -> KvUtils.name(prefix, k)).collect(Collectors.toList());
+        return list.stream().map(k -> getName(k)).collect(Collectors.toList());
+    }
+
+    /**
+     * Get relative name from full path.
+     * @param path
+     * @return
+     */
+    public String getName(String path) {
+        return KvUtils.name(prefix, path);
     }
 
     private void createPrefix() {
