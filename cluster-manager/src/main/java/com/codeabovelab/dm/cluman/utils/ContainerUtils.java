@@ -16,6 +16,7 @@
 
 package com.codeabovelab.dm.cluman.utils;
 
+import com.codeabovelab.dm.cluman.model.ContainerBase;
 import com.codeabovelab.dm.cluman.model.ContainerBaseIface;
 import com.codeabovelab.dm.cluman.model.ImageName;
 import com.codeabovelab.dm.common.utils.ContainerDetector;
@@ -24,6 +25,12 @@ import org.springframework.util.StringUtils;
 
 
 public final class ContainerUtils {
+
+    /**
+     * Due to some docker issues we can loose image name after pull new version of image with same tag.
+     * So we store original image name in container labels.
+     */
+    public static final String LABEL_IMAGE_NAME = "com.codeabovelab.dm.image.name";
 
     /**
      * use {@link  ImageName#isId(String)}
@@ -239,5 +246,22 @@ public final class ContainerUtils {
 
     private static boolean isHex(char c) {
         return c >= '0' && c <= '9' || c >= 'a' && c <= 'f' || c >= 'A' && c <= 'F';
+    }
+
+    /**
+     * In some cases docker give image id instead of image name.
+     * @see #LABEL_IMAGE_NAME
+     * @param container
+     * @return
+     */
+    public static String getFixedImageName(ContainerBaseIface container) {
+        String image = container.getImage();
+        if(ImageName.isId(image)) {
+            String imageName = container.getLabels().get(ContainerUtils.LABEL_IMAGE_NAME);
+            if(imageName != null && !ImageName.isId(imageName)) {
+                return imageName;
+            }
+        }
+        return image;
     }
 }

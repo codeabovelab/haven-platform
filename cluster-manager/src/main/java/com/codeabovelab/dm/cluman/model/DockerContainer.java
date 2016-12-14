@@ -66,7 +66,7 @@ public class DockerContainer implements ContainerBaseIface, WithNode {
     }
 
     @Data
-    public static class Builder {
+    public static class Builder implements ContainerBaseIface, WithNode {
         private String id;
         private String name;
         private String image;

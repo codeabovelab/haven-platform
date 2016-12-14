@@ -277,6 +277,7 @@ public class ContainerManager {
         cmd.setEnv(env.toArray(new String[env.size()]));
         cmd.setImage(imageName);
         cmd.setLabels(result.getLabels());
+        cmd.getLabels().put(ContainerUtils.LABEL_IMAGE_NAME, imageName);
         List<String> command = nc.getCommand();
         if(!CollectionUtils.isEmpty(command)) {
             cmd.setCmd(command.toArray(new String[command.size()]));

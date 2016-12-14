@@ -19,6 +19,7 @@ package com.codeabovelab.dm.cluman.batch;
 import com.codeabovelab.dm.cluman.model.ImageName;
 import com.codeabovelab.dm.cluman.utils.ContainerUtils;
 import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.google.common.collect.ImmutableList;
 import io.swagger.annotations.ApiModelProperty;
 import lombok.AccessLevel;
@@ -82,6 +83,7 @@ public class ImagesForUpdate {
          * 'to' match all
          * @return true if 'to' match all
          */
+        @JsonIgnore
         public boolean isAllTo() {
             return isAll(to);
         }
@@ -90,6 +92,7 @@ public class ImagesForUpdate {
          * 'from' match all
          * @return true if 'from' match all
          */
+        @JsonIgnore
         public boolean isAllFrom() {
             return isAll(from);
         }
