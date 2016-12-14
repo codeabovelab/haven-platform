@@ -57,7 +57,7 @@ public class UsersStorage implements UserIdentifiersDetailsService {
     public UsersStorage(KvMapperFactory mapperFactory, AccessDecisionManager accessDecisionManager) {
         this.mapperFactory = mapperFactory;
         this.adm = accessDecisionManager;
-        this.prefix = KvUtils.join(this.mapperFactory.getStorage().getDockMasterPrefix(), "users");
+        this.prefix = KvUtils.join(this.mapperFactory.getStorage().getPrefix(), "users");
         this.mapper = mapperFactory.createClassMapper(prefix, UserRegistration.class);
     }
 

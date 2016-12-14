@@ -27,10 +27,10 @@ public class EtcdClientWrapperTest {
         final String key = "key";
         final String val = "val";
         etcdClientWrapper.set(key, val);
-        String res = etcdClientWrapper.get(key);
+        String res = etcdClientWrapper.get(key).getValue();
         assertEquals(val, res);
         etcdClientWrapper.delete(key, null);
-        String resNull = etcdClientWrapper.get(key);
+        String resNull = etcdClientWrapper.get(key).getValue();
         assertNull(resNull);
 
 

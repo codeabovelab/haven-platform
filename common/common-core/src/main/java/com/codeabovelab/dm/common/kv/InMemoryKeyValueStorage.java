@@ -22,6 +22,7 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 
@@ -71,33 +72,33 @@ public class InMemoryKeyValueStorage implements KeyValueStorage {
 
 
     @Override
-    public String get(String key) {
+    public KvNode get(String key) {
         return root.get(new Context(key));
     }
 
     @Override
-    public void set(String key, String value) {
-        set(key, value, null);
+    public KvNode set(String key, String value) {
+        return set(key, value, null);
     }
 
     @Override
-    public void set(String key, String value, WriteOptions ops) {
-        root.set(new Context(key), value);
+    public KvNode set(String key, String value, WriteOptions ops) {
+        return root.set(new Context(key), value);
     }
 
     @Override
-    public void setdir(String key, WriteOptions ops) {
-        root.setdir(new Context(key), ops);
+    public KvNode setdir(String key, WriteOptions ops) {
+        return root.setdir(new Context(key), ops);
     }
 
     @Override
-    public void deletedir(String key, DeleteDirOptions ops) {
-        root.deletedir(new Context(key), ops);
+    public KvNode deletedir(String key, DeleteDirOptions ops) {
+        return root.deletedir(new Context(key), ops);
     }
 
     @Override
-    public void delete(String key, WriteOptions ops) {
-        root.delete(new Context(key), ops);
+    public KvNode delete(String key, WriteOptions ops) {
+        return root.delete(new Context(key), ops);
     }
 
     @Override
@@ -117,7 +118,7 @@ public class InMemoryKeyValueStorage implements KeyValueStorage {
     }
 
     @Override
-    public String getDockMasterPrefix() {
+    public String getPrefix() {
         return "dmp";
     }
 
@@ -125,6 +126,7 @@ public class InMemoryKeyValueStorage implements KeyValueStorage {
         private final String path;
         private final ConcurrentMap<String, Node> nodes = new ConcurrentHashMap<>();
         private final ConcurrentMap<String, Object> leafs = new ConcurrentHashMap<>();
+        private final AtomicLong index = new AtomicLong();
 
         Node(String path) {
             this.path = path;
@@ -148,67 +150,61 @@ public class InMemoryKeyValueStorage implements KeyValueStorage {
             return onNode.apply(ctx, node);
         }
 
-        String get(Context ctx) {
+        KvNode get(Context ctx) {
             return doing(ctx, false,
               (k) -> {
                   Object val = leafs.get(k.current);
                   String strVal = toStrVal(val);
                   ctx.fire(KvStorageEvent.Crud.READ, strVal);
-                  return strVal;
+                  return new KvNode(index.get(), strVal);
               },
               (k, dir) -> dir.get(k));
         }
 
-        void set(Context ctx, String value) {
-            this.doing(ctx, true,
+        KvNode set(Context ctx, String value) {
+            return doing(ctx, true,
               (k) -> {
                   Object old = leafs.put(k.current, value == null? NULL : value);
-                  ctx.fire(old == null? KvStorageEvent.Crud.CREATE : KvStorageEvent.Crud.UPDATE, toStrVal(value));
-                  return old;
+                  String strVal = toStrVal(value);
+                  ctx.fire(old == null? KvStorageEvent.Crud.CREATE : KvStorageEvent.Crud.UPDATE, strVal);
+                  return modifyNode(strVal);
               },
-              (k, dir) -> {
-                  dir.set(k, value);
-                  return null;
-              });
+              (k, dir) -> dir.set(k, value));
         }
 
-        void setdir(Context ctx, WriteOptions ops) {
-            this.<Object>doing(ctx, true,
+        KvNode setdir(Context ctx, WriteOptions ops) {
+            return doing(ctx, true,
               (k) -> {
                   Node old = nodes.put(k.current, new Node(k.current));
                   ctx.fire(KvStorageEvent.Crud.CREATE, null);
-                  return old;
+                  return modifyNode(null);
               },
-              (k, dir) -> {
-                  dir.setdir(k, ops);
-                  return null;
-              });
+              (k, dir) -> dir.setdir(k, ops));
         }
 
-        void deletedir(Context ctx, DeleteDirOptions ops) {
-            this.<Object>doing(ctx, false,
+        KvNode deletedir(Context ctx, DeleteDirOptions ops) {
+            return doing(ctx, false,
               (k) -> {
                   Node old = nodes.remove(k.current);
                   ctx.fire(KvStorageEvent.Crud.DELETE, null);
-                  return old;
+                  return modifyNode(null);
               },
-              (k, dir) -> {
-                  dir.deletedir(k, ops);
-                  return null;
-              });
+              (k, dir) -> dir.deletedir(k, ops));
         }
 
-        void delete(Context ctx, WriteOptions ops) {
-            this.<Object>doing(ctx, false,
+        private KvNode modifyNode(String val) {
+            return new KvNode(index.incrementAndGet(), val);
+        }
+
+        KvNode delete(Context ctx, WriteOptions ops) {
+            return doing(ctx, false,
               (k) -> {
                   Object old = leafs.remove(k.current);
-                  ctx.fire(KvStorageEvent.Crud.DELETE, toStrVal(old));
-                  return old;
+                  String val = toStrVal(old);
+                  ctx.fire(KvStorageEvent.Crud.DELETE, val);
+                  return modifyNode(val);
               },
-              (k, dir) -> {
-                  dir.delete(k, ops);
-                  return null;
-              });
+              (k, dir) -> dir.delete(k, ops));
         }
 
         public List<String> list(Context ctx) {

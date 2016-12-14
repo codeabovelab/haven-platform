@@ -29,49 +29,55 @@ public interface KeyValueStorage {
     /**
      * Get the value of a key.
      * @param key the key
-     * @return the corresponding value
+     * @return the node with corresponding value
      */
-    String get(String key);
+    KvNode get(String key);
 
     /**
      * Setting the value of a key
      * @param key the key
      * @param value the value
+     * @return node
      */
-    void set(String key, String value);
+    default KvNode set(String key, String value) {
+        return set(key, value, null);
+    }
 
     /**
      * Setting the value of a key with options
      * @param key the key
      * @param value the value
      * @param ops ops or null
+     * @return node
      */
-    void set(String key, String value, WriteOptions ops);
+    KvNode set(String key, String value, WriteOptions ops);
 
     /**
      * Make or update directory at specified key.
      * @param key
      * @param ops ops or null
      * @throws Exception
+     * @return node
      */
-    void setdir(String key, WriteOptions ops);
+    KvNode setdir(String key, WriteOptions ops);
 
     /**
      * Delete directory
      * @param key
      * @param ops
      * @throws Exception
+     * @return node
      */
-    void deletedir(String key, DeleteDirOptions ops);
+    KvNode deletedir(String key, DeleteDirOptions ops);
 
 
     /**
      * Delete a key
      * @param key the key
      * @param ops ops or null
-     * // @return operation result
+     * @return node
      */
-    void delete(String key, WriteOptions ops);
+    KvNode delete(String key, WriteOptions ops);
 
     /**
      * List keys of specified prefix
@@ -94,5 +100,5 @@ public interface KeyValueStorage {
      */
     ConditionalSubscriptions<KvStorageEvent, String> subscriptions();
 
-    String getDockMasterPrefix();
+    String getPrefix();
 }

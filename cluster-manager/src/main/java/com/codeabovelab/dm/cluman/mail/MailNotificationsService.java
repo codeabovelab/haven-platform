@@ -114,7 +114,7 @@ public class MailNotificationsService {
         this.sources.values().forEach(Source::init);
 
         KeyValueStorage storage = kvMapperFactory.getStorage();
-        final String prefix = KvUtils.join(storage.getDockMasterPrefix(), "/mail-notifications");
+        final String prefix = KvUtils.join(storage.getPrefix(), "/mail-notifications");
         this.classMapper = kvMapperFactory.createClassMapper(prefix, MailSubscription.Builder.class);
 
         try {

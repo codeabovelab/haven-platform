@@ -39,6 +39,10 @@ public class KvStorageEvent {
         this.action = action;
     }
 
+    /**
+     * Index of node
+     * @return index of node
+     */
     public long getIndex() {
         return index;
     }

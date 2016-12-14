@@ -102,7 +102,7 @@ public class EtcdClientWrapper implements KeyValueStorage {
                             break;
                     }
                     if(action != null) {
-                        KvStorageEvent e = new KvStorageEvent(r.etcdIndex, r.node.key, r.node.value, r.node.ttl, action);
+                        KvStorageEvent e = new KvStorageEvent(r.node.modifiedIndex, r.node.key, r.node.value, r.node.ttl, action);
                         this.executor.submit(() -> bus.accept(e));
                     }
                 } catch (Exception e) {
@@ -114,14 +114,21 @@ public class EtcdClientWrapper implements KeyValueStorage {
         }
     }
 
+    private KvNode toNode(EtcdKeysResponse resp) {
+        return new KvNode(resp.node.modifiedIndex, resp.node.value);
+    }
+
+    private KvNode toNode(EtcdException e) {
+        return new KvNode(e.index, null);
+    }
+
     @Override
-    public String get(String key) {
+    public KvNode get(String key) {
         try {
             EtcdResponsePromise<EtcdKeysResponse> send = etcd.get(key).send();
-            EtcdKeysResponse etcdKeysResponse = send.get();
-            String value = etcdKeysResponse.node.value;
-            log.debug("get value {} for key {}", etcdKeysResponse.node.value, etcdKeysResponse.node.key);
-            return value;
+            EtcdKeysResponse resp = send.get();
+            log.debug("get value {} for key {}", resp.node.value, resp.node.key);
+            return toNode(resp);
         } catch (EtcdException e) {
             if (e.errorCode != KEY_NOT_FOUND) {
                 log.error("Error during fetching key", e);
@@ -133,25 +140,26 @@ public class EtcdClientWrapper implements KeyValueStorage {
     }
 
     @Override
-    public void set(String key, String value) {
+    public KvNode set(String key, String value) {
         try {
             EtcdResponsePromise<EtcdKeysResponse> send = etcd.put(key, value).send();
-            EtcdKeysResponse etcdKeysResponse = send.get();
-            log.debug("set value {} for key {}", etcdKeysResponse.node.value, etcdKeysResponse.node.key);
+            EtcdKeysResponse resp = send.get();
+            log.debug("set value {} for key {}", resp.node.value, resp.node.key);
+            return toNode(resp);
         } catch (Exception e) {
             throw Throwables.asRuntime(e);
         }
     }
 
-
     @Override
-    public void set(String key, String value, WriteOptions ops) {
+    public KvNode set(String key, String value, WriteOptions ops) {
         EtcdKeyPutRequest req = etcd.put(key, value);
         fillPutReq(ops, req);
         try {
             EtcdResponsePromise<EtcdKeysResponse> send = req.send();
-            EtcdKeysResponse etcdKeysResponse = send.get();
-            log.debug("set value {} for key {}, ops {}", etcdKeysResponse.node.value, etcdKeysResponse.node.key, ops);
+            EtcdKeysResponse resp = send.get();
+            log.debug("set value {} for key {}, ops {}", resp.node.value, resp.node.key, ops);
+            return toNode(resp);
         } catch (Exception e) {
             throw Throwables.asRuntime(e);
         }
@@ -160,13 +168,14 @@ public class EtcdClientWrapper implements KeyValueStorage {
 
 
     @Override
-    public void delete(String key, WriteOptions ops) {
+    public KvNode delete(String key, WriteOptions ops) {
         EtcdKeyDeleteRequest req = etcd.delete(key);
         fillDeleteReq(ops, req);
         try {
             EtcdResponsePromise<EtcdKeysResponse> send = req.send();
-            EtcdKeysResponse etcdKeysResponse = send.get();
-            log.debug("deleted key {}", etcdKeysResponse.node.key);
+            EtcdKeysResponse resp = send.get();
+            log.debug("deleted key {}", resp.node.key);
+            return toNode(resp);
         } catch (Exception e) {
             throw Throwables.asRuntime(e);
         }
@@ -204,13 +213,14 @@ public class EtcdClientWrapper implements KeyValueStorage {
     }
 
     @Override
-    public void setdir(String key, WriteOptions ops) {
+    public KvNode setdir(String key, WriteOptions ops) {
         EtcdKeyPutRequest req = etcd.putDir(key);
         fillPutReq(ops, req);
         try {
             EtcdResponsePromise<EtcdKeysResponse> send = req.send();
-            EtcdKeysResponse etcdKeysResponse = send.get();
-            log.debug("make dir at key {}", etcdKeysResponse.node.key);
+            EtcdKeysResponse resp = send.get();
+            log.debug("make dir at key {}", resp.node.key);
+            return toNode(resp);
         } catch (EtcdException e) {
             if(e.errorCode == NOT_A_FILE /* not a file */ || e.errorCode == KEY_ALREADY_EXISTS) {
                 // https://github.com/coreos/etcd/issues/169
@@ -218,6 +228,7 @@ public class EtcdClientWrapper implements KeyValueStorage {
                 if(ops.isFailIfExists()) {
                     throw new RuntimeException(key + " already exists.", e);
                 }
+                return toNode(e);
             } else {
                 throw Throwables.asRuntime(e);
             }
@@ -227,7 +238,7 @@ public class EtcdClientWrapper implements KeyValueStorage {
     }
 
     @Override
-    public void deletedir(String key, DeleteDirOptions ops) {
+    public KvNode deletedir(String key, DeleteDirOptions ops) {
         EtcdKeyDeleteRequest req = etcd.deleteDir(key);
         if(ops.isRecursive()) {
             req.recursive();
@@ -235,12 +246,14 @@ public class EtcdClientWrapper implements KeyValueStorage {
         fillDeleteReq(ops, req);
         try {
             EtcdResponsePromise<EtcdKeysResponse> send = req.send();
-            EtcdKeysResponse etcdKeysResponse = send.get();
-            log.debug("deleted key {}", etcdKeysResponse.node.key);
+            EtcdKeysResponse resp = send.get();
+            log.debug("deleted key {}", resp.node.key);
+            return toNode(resp);
         } catch (EtcdException e) {
             if(e.errorCode != KEY_NOT_FOUND || ops.isFailIfAbsent()) {
                 throw Throwables.asRuntime(e);
             }
+            return toNode(e);
         } catch (Exception e) {
             throw Throwables.asRuntime(e);
         }
@@ -286,7 +299,7 @@ public class EtcdClientWrapper implements KeyValueStorage {
     }
 
     @Override
-    public String getDockMasterPrefix() {
+    public String getPrefix() {
         return prefix;
     }
 }

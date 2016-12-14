@@ -25,7 +25,6 @@ import com.codeabovelab.dm.cluman.cluster.docker.management.result.CreateApplica
 import com.codeabovelab.dm.cluman.cluster.docker.management.result.ResultCode;
 import com.codeabovelab.dm.cluman.cluster.docker.model.ContainerDetails;
 import com.codeabovelab.dm.cluman.source.ContainerSourceFactory;
-import com.codeabovelab.dm.cluman.source.SourceService;
 import com.codeabovelab.dm.cluman.model.ApplicationSource;
 import com.codeabovelab.dm.cluman.ds.DockerServiceRegistry;
 import com.codeabovelab.dm.common.kv.KeyValueStorage;
@@ -75,7 +74,7 @@ public class ApplicationServiceImpl implements ApplicationService {
                                   @Qualifier(ApplicationEvent.BUS) MessageBus<ApplicationEvent> applicationBus) {
         this.keyValueStorage = keyValueStorage;
         this.dockerServiceRegistry = dockerServiceRegistry;
-        this.appPrefix = keyValueStorage.getDockMasterPrefix() + "/applications/";
+        this.appPrefix = keyValueStorage.getPrefix() + "/applications/";
         this.objectMapper = objectMapper;
         this.composeExecutor = composeExecutor;
         this.applicationBus = applicationBus;
@@ -100,7 +99,7 @@ public class ApplicationServiceImpl implements ApplicationService {
 
     private ApplicationInstance readApplication(String cluster, String appId) {
         try {
-            String value = keyValueStorage.get(buildKey(cluster, appId));
+            String value = keyValueStorage.get(buildKey(cluster, appId)).getValue();
             return objectMapper.readValue(value, ApplicationInstance.class);
         } catch (Exception e) {
             LOG.error("can't parse Applications", e);

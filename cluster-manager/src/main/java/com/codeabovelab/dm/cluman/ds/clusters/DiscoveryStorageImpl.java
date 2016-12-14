@@ -84,7 +84,7 @@ public class DiscoveryStorageImpl implements DiscoveryStorage {
         this.aclContextFactory = aclContextFactory;
         KeyValueStorage storage = kvmf.getStorage();
         this.filterFactory = filterFactory;
-        this.prefix = storage.getDockMasterPrefix() + "/clusters/";
+        this.prefix = storage.getPrefix() + "/clusters/";
         //create clusters, its need for empty etcd database
         storage.setdir(this.prefix, WriteOptions.builder().build());
         storage.subscriptions().subscribeOnKey(e -> {

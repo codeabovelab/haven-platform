@@ -21,7 +21,6 @@ import com.codeabovelab.dm.cluman.cluster.registry.data.SearchResult;
 import com.codeabovelab.dm.cluman.cluster.registry.model.RegistriesConfig;
 import com.codeabovelab.dm.cluman.cluster.registry.model.RegistryConfig;
 import com.codeabovelab.dm.cluman.model.ImageName;
-import com.codeabovelab.dm.cluman.model.NotFoundException;
 import com.codeabovelab.dm.cluman.model.Severity;
 import com.codeabovelab.dm.cluman.model.StandardActions;
 import com.codeabovelab.dm.cluman.reconfig.ReConfigObject;
@@ -66,7 +65,7 @@ public class RegistryRepository implements SupportSearch {
                               @Qualifier(RegistryEvent.BUS) MessageBus<RegistryEvent> eventBus) {
         this.defaultRegistry = defaultRegistry;
         this.factory = factory;
-        String prefix = classMapper.getStorage().getDockMasterPrefix() + "/docker-registry/";
+        String prefix = classMapper.getStorage().getPrefix() + "/docker-registry/";
         this.classMapper = classMapper.createClassMapper(prefix, RegistryConfig.class);
         this.eventBus = eventBus;
         this.executorService = Executors.newSingleThreadExecutor(new ThreadFactoryBuilder()

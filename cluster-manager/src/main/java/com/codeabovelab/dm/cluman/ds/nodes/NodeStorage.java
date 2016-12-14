@@ -42,7 +42,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.HttpStatus;
 import org.springframework.scheduling.annotation.Scheduled;
-import org.springframework.security.acls.model.ObjectIdentity;
 import org.springframework.stereotype.Component;
 import org.springframework.util.Assert;
 import org.springframework.util.StringUtils;
@@ -88,7 +87,7 @@ public class NodeStorage implements NodeInfoProvider {
         });
         this.executorService = executorService;
         KeyValueStorage storage = kvmf.getStorage();
-        nodesPrefix = storage.getDockMasterPrefix() + "/nodes/";
+        nodesPrefix = storage.getPrefix() + "/nodes/";
         this.nodeMapper = kvmf.createClassMapper(nodesPrefix, NodeInfoImpl.Builder.class);
         storage.subscriptions().subscribeOnKey(this::onKVEvent, nodesPrefix + "*");
         dockerBus.asSubscriptions().subscribe(this::onDockerServiceEvent);

@@ -104,8 +104,8 @@ public class PipelineServiceImpl implements PipelineService {
         this.containerManager = containerManager;
         KeyValueStorage storage = kvmf.getStorage();
         this.updateCronExpression = updateCronExpression;
-        this.pipelinePrefix = storage.getDockMasterPrefix() + "/pipelines/";
-        this.pipelineInstancePrefix = storage.getDockMasterPrefix() + "/pipelineInstances/";
+        this.pipelinePrefix = storage.getPrefix() + "/pipelines/";
+        this.pipelineInstancePrefix = storage.getPrefix() + "/pipelineInstances/";
         this.pipelineSchemas = CacheBuilder.newBuilder().build(new CacheLoader<String, PipelineSchema>() {
             @Override
             public PipelineSchema load(String name) throws Exception {

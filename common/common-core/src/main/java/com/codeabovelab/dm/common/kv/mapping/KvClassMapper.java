@@ -127,7 +127,7 @@ public class KvClassMapper<T> {
             String path = path(name);
             String proppath = KvUtils.join(path, property);
             try {
-                String str = this.storage.get(proppath);
+                String str = this.storage.get(proppath).getValue();
                 JsonSubTypes subTypes = AnnotationUtils.findAnnotation(this.type, JsonSubTypes.class);
                 for (JsonSubTypes.Type t : subTypes.value()) {
                     if (t.name().equals(str.replace("\"", ""))) {
@@ -157,7 +157,7 @@ public class KvClassMapper<T> {
             String proppath = KvUtils.join(path, property.getKey());
             String str;
             try {
-                str = this.storage.get(proppath);
+                str = this.storage.get(proppath).getValue();
             } catch (Exception e) {
                 throw new RuntimeException("Error at path: " + proppath, e);
             }

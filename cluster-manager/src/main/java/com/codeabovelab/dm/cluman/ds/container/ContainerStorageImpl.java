@@ -20,7 +20,6 @@ import com.codeabovelab.dm.common.kv.DeleteDirOptions;
 import com.codeabovelab.dm.common.kv.KvUtils;
 import com.codeabovelab.dm.common.kv.WriteOptions;
 import com.codeabovelab.dm.common.kv.mapping.KvMapperFactory;
-import com.codeabovelab.dm.cluman.ds.swarm.DockerServicesConfig;
 import com.codeabovelab.dm.cluman.model.*;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.InitializingBean;
@@ -47,7 +46,7 @@ public class ContainerStorageImpl implements ContainerStorage, InitializingBean 
     @Autowired
     public ContainerStorageImpl(KvMapperFactory kvmf) {
         this.kvmf = kvmf;
-        this.prefix = kvmf.getStorage().getDockMasterPrefix() + "/containers/";
+        this.prefix = kvmf.getStorage().getPrefix() + "/containers/";
         this.containerMap = new ConcurrentHashMap<>();
     }
 

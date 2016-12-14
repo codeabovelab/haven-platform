@@ -1,6 +1,5 @@
 package com.codeabovelab.dm.cluman.cluster.registry;
 
-import com.codeabovelab.dm.cluman.cluster.filter.Filter;
 import com.codeabovelab.dm.cluman.cluster.registry.aws.AwsService;
 import com.codeabovelab.dm.cluman.cluster.registry.data.ImageCatalog;
 import com.codeabovelab.dm.cluman.cluster.registry.data.SearchResult;
@@ -202,7 +201,7 @@ public class RegistryRepositoryTest {
             KvMapperFactory mapper = mock(KvMapperFactory.class);
             KeyValueStorage storage = mock(KeyValueStorage.class);
             when(mapper.getStorage()).thenReturn(mock(KeyValueStorage.class));
-            when(storage.getDockMasterPrefix()).thenReturn("prefix");
+            when(storage.getPrefix()).thenReturn("prefix");
             when(mapper.createClassMapper(anyString(), any(Class.class))).thenReturn(mock(KvClassMapper.class));
             return mapper;
         }
