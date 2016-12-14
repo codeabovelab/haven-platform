@@ -1,12 +1,12 @@
 # Update jobs #
 
-System provides different job types which do cluster wide batch containers update. there are next strategies of updating containers:
+The system provides different job types which do cluster-wide batch containers update. There are different strategies of updating containers:
 
 * `ui.updateContainers.startThenStopEach` - start new container with different name, then stop and remove old
 * `ui.updateContainers.stopThenStartAll` - stop and remove all containers, then create new containers with same names
 * `ui.updateContainers.stopThenStartEach` - stop and remove old container, then start new, repeat for each other
 
-All jobs has common list of parameters:
+All jobs has a common list of parameters:
 
 
 * cluster - name of processed cluster
@@ -46,7 +46,7 @@ All jobs has common list of parameters:
     }
     ```
 
-Example request:
+An example request:
 
 ```js
 {
