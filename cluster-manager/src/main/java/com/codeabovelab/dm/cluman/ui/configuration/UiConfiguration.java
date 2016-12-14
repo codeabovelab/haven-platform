@@ -52,7 +52,7 @@ public class UiConfiguration {
 
             @Override
             public void addResourceHandlers(ResourceHandlerRegistry registry) {
-                registry.addResourceHandler("/resources/static/**")
+                registry.addResourceHandler("/resources/static/**", "/static/**")
                         .setCacheControl(CacheControl.maxAge(4, TimeUnit.HOURS));
             }
 

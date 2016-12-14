@@ -24,7 +24,10 @@ import com.codeabovelab.dm.common.security.SuccessAuthProcessor;
 import com.codeabovelab.dm.common.security.token.TokenValidator;
 import com.codeabovelab.dm.common.security.token.TokenValidatorConfiguration;
 import com.codeabovelab.dm.gateway.auth.UserCompositeAuthProvider;
-import com.codeabovelab.dm.gateway.token.*;
+import com.codeabovelab.dm.gateway.token.RequestTokenHeaderRequestMatcher;
+import com.codeabovelab.dm.gateway.token.TokenAuthFilterConfigurer;
+import com.codeabovelab.dm.gateway.token.TokenAuthProvider;
+import com.codeabovelab.dm.gateway.token.TokenServiceConfiguration;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.catalina.connector.Connector;
 import org.apache.coyote.http11.Http11NioProtocol;
@@ -143,6 +146,7 @@ public class ServletContainerConfiguration {
                     .authorizeRequests().antMatchers(uiPrefix + "/token/login").permitAll()
                     .antMatchers(HttpMethod.OPTIONS, "/**").permitAll()//allow CORS option calls
                     .antMatchers(uiPrefix + "**").authenticated()
+                    .and().headers().cacheControl().disable()
                     .and().formLogin().loginPage(loginUrl).permitAll().defaultSuccessUrl(uiPrefix)
                     .and().logout().logoutUrl(uiPrefix + "logout").logoutSuccessUrl(loginUrl)
                     .and().apply(tokenFilterConfigurer);
