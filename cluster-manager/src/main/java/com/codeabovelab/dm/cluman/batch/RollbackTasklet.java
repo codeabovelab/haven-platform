@@ -17,6 +17,7 @@
 package com.codeabovelab.dm.cluman.batch;
 
 import com.codeabovelab.dm.cluman.cluster.docker.management.DockerService;
+import com.codeabovelab.dm.cluman.cluster.docker.management.result.ServiceCallResult;
 import com.codeabovelab.dm.cluman.cluster.docker.model.ContainerDetails;
 import com.codeabovelab.dm.cluman.job.JobComponent;
 import com.codeabovelab.dm.cluman.job.JobContext;
@@ -65,6 +66,9 @@ public class RollbackTasklet {
                         break;
                     case DELETE:
                         createDeleted(record.container);
+                        break;
+                    case STOP:
+                        startStopped(record.container);
                         break;
                     default:
                         context.fire("Unknown action in {0}", record);
@@ -122,4 +126,20 @@ public class RollbackTasklet {
         return builder;
     }
 
+    private void startStopped(ProcessedContainer pc) {
+        // usually container stop and then remove,
+        // so at rollback it will created, and now expected as run
+        context.fire("Try to start stopped \"{0}\"", pc);
+        // we check that name of new container is not busy,
+        String name = pc.getName();
+        ContainerDetails oldcd = dockerService.getContainer(name);
+        if(oldcd == null) {
+            context.fire("Stopped container \"{0}\" is not exists, nothing to run.", name);
+            return;
+        }
+        ServiceCallResult res = dockerService.startContainer(name);
+        context.fire("Start container \"{0}\" with result code \"{1}\" and message \"{2}\" (id:{3})",
+          pc.getName(), res.getCode(), res.getMessage(), oldcd.getId());
+        BatchUtils.checkThatIsOkOrNotModified(res);
+    }
 }
