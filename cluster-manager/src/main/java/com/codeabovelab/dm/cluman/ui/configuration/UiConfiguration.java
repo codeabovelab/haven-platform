@@ -24,16 +24,15 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
+import org.springframework.http.CacheControl;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.converter.HttpMessageConverter;
-import org.springframework.web.servlet.config.annotation.CorsRegistration;
-import org.springframework.web.servlet.config.annotation.CorsRegistry;
-import org.springframework.web.servlet.config.annotation.PathMatchConfigurer;
-import org.springframework.web.servlet.config.annotation.WebMvcConfigurerAdapter;
+import org.springframework.web.servlet.config.annotation.*;
 import org.springframework.web.util.UrlPathHelper;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Main config for ui
@@ -50,6 +49,12 @@ public class UiConfiguration {
     @Bean
     WebMvcConfigurerAdapter webMvcConfigurerAdapter(YAMLMapper yamlMapper) {
         return new WebMvcConfigurerAdapter() {
+
+            @Override
+            public void addResourceHandlers(ResourceHandlerRegistry registry) {
+                registry.addResourceHandler("/resources/static/**", "/static/**")
+                        .setCacheControl(CacheControl.maxAge(4, TimeUnit.HOURS));
+            }
 
             @Override
             public void extendMessageConverters(List<HttpMessageConverter<?>> converters) {
