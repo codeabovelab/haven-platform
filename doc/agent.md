@@ -1,6 +1,6 @@
-# Dockmaster Agent #
+# Haven Agent #
 
-Agent is [a Python script](/cluster-manager/src/main/resources/static/res/agent/node-agent.py). 
+The agent is [a Python script](/cluster-manager/src/main/resources/static/res/agent/node-agent.py). 
 It is written in Python 3 and only has one dependency: python3-psutil >= 4.2.
 
 use '-h' option for getting help:
@@ -9,14 +9,14 @@ use '-h' option for getting help:
 usage: haven-agent.py [-h] [-d DOCKER] [-m MASTER] [-t TIMEOUT] [-v]
                            [-f CONFIG]
 
-DockMaster node agent.
+Haven node agent.
 
 optional arguments:
   -h, --help            shows this help message
   -d DOCKER, --docker DOCKER
                         IP and port of docker service
   -m MASTER, --master MASTER
-                        IP and port of dockmaster service
+                        IP and port of Haven service
   -t TIMEOUT, --timeout TIMEOUT
                         timeout in seconds between node registration updates
   -v, --verbose         logging level, -v is INFO, -vv is DEBUG
@@ -44,8 +44,8 @@ Note that all Agent and Master instances must be accessible to each other.
 The Agent sends data to MASTER on each TIMEOUT seconds. 
 The Agent starts at DEBUG level and prints the transmitted data to stdout:
 ```
-% ./dockmaster-agent.py         
-2016-08-10 15:03:04,583 - INFO - Configs: /home/user/.config/dm-agent.ini
+% ./haven-agent.py         
+2016-08-10 15:03:04,583 - INFO - Configs: /home/user/.config/haven-agent.ini
 Arguments: {'timeout': 10, 'master': '172.31.0.3:8762', 'docker': '172.31.0.12:2375', 'log_level': 2}
 2016-08-10 15:03:05,607 - DEBUG - do registration with {"time": "2016-08-10T15:03:05.559807", "labels": {}, "id": "docker-exp", ...}
 ```
