@@ -158,7 +158,7 @@
                 <dependency>
                     <groupId>com.codeabovelab.dm</groupId>
                     <artifactId>dm-ui</artifactId>
-                    <version>1.0.0-SNAPSHOT</version>
+                    <version>1.0.0</version>
                     <classifier>bundle</classifier>
                     <type>tar.gz</type>
                 </dependency>
