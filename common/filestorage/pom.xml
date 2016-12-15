@@ -3,7 +3,7 @@
     <parent>
         <artifactId>common</artifactId>
         <groupId>com.codeabovelab.dm</groupId>
-        <version>1.0.242-SNAPSHOT</version>
+        <version>1.1.0</version>
     </parent>
     <packaging>jar</packaging>
     <modelVersion>4.0.0</modelVersion>
