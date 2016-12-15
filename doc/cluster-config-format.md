@@ -1,8 +1,6 @@
-# Description of configuration format. #
+# Configuration Format Description #
 
-Compose - common format for deploying docker containers system, but it does not support some features, for 
-example: describe multiple clusters in one file. So we were forced to create own configuration file format. 
-It use Compose format as base.
+Compose - common format for deploying docker containers system, but it does not support some features, for example: describe multiple clusters in one file. So we were forced to create own configuration file format. It uses Compose format as the base.
 
 Example of one cluster configuration:
 

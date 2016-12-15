@@ -3,7 +3,7 @@
     <parent>
         <artifactId>dm-parent</artifactId>
         <groupId>com.codeabovelab.dm</groupId>
-        <version>1.0.242-SNAPSHOT</version>
+        <version>1.1.1-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
@@ -158,7 +158,7 @@
                 <dependency>
                     <groupId>com.codeabovelab.dm</groupId>
                     <artifactId>dm-ui</artifactId>
-                    <version>1.0.0-SNAPSHOT</version>
+                    <version>1.0.0</version>
                     <classifier>bundle</classifier>
                     <type>tar.gz</type>
                 </dependency>

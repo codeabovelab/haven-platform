@@ -2,7 +2,7 @@
 
 **Documentation is still very much a work-in-progress**
 
-Cluman is the server component of the Dockmaster project. This components manages the clusters via communication
+Cluman is the server component of the Haven project. This components manages the clusters via communication
 with the agent. The name comes from CLUster-MANager.
 
 ## What is Cluman? ##
@@ -28,9 +28,8 @@ Cluman has the follow entities:
  
     NodesGroup has 'features' which may be used for resolving into these group types:
 
-    * `SWARM` - nodes in this group type are grouped together by a single 'swarm' service. We consider groups with this feature as 'cluster' or 
-'real cluster'.
-    * `FORBID_NODE_ADDITION` - this group type is a meta group created by the system (For example, "orphan" mentioned below.) No modification allowed for these NodesGroup.
+    * `SWARM` - nodes in this group type are grouped together by a single 'swarm' service. We consider groups with this feature as 'cluster' or 'real cluster'.
+    * `FORBID_NODE_ADDITION` - this group type is a meta group created by the system (For example, "orphan" mentioned below.) No modification is allowed for these NodesGroup.
 
     In addition, Cluman has some pre-defined NodesGroup (all of them are them stored in `DiscoveryStorage.SYSTEM_GROUPS`):
 
@@ -60,10 +59,10 @@ Swarm part of etcd tree via `NodeStorage.updateSwarmRegistration`).
 
 ## Nodes ##
 
-Cluman registers node through [agent](agent.md), but also use some information about node from [docker info](https://docs.docker.com/engine/reference/api/docker_remote_api_v1.21/#/display-system-wide-information).
-All gathered info saved in `NodeRegistrationImpl`, data about node health and metrics is published as `NodeMetrics`.
+Cluman registers node through [agent](agent.md) but also use  information about node from [docker info](https://docs.docker.com/engine/reference/api/docker_remote_api_v1.21/#/display-system-wide-information).
+All gathered info are saved in `NodeRegistrationImpl`. Data about node health and metrics is published as `NodeMetrics`.
 
-Node has two main flags `health.healthy` and `on`. Difference between them:
+Node has two main flags `health.healthy` and `on`. The difference between the two are:
    
    * `on` - It shows the online node status.  The value is true when the node agent send ack in a specified time. If the timeout is exceeded 
    then node is immediately set to off (`on=false`). See `NodeRegistrationImpl.isOn` for details. Its flag ignores the status of 
@@ -71,7 +70,7 @@ Node has two main flags `health.healthy` and `on`. Difference between them:
    * `healthy` - Its value is derived from the Docker service status. The Docker developers can declare it as 'engine is unreachable' but 
      we may use the analysis of node metrics (for example storage space is exceeded, or hdd SMART errors).
      
-Note that node.health (aka NodeMetrics) has time value based on local node time.
+Note that node.health (aka NodeMetrics) has time value based on the local node time.
 
 ## Containers ##
 ### Creating containers ###
@@ -100,7 +99,7 @@ Application uses Docker Compose as the backend. Each application contains:
 
 ## Events ##
 
-Cluman has global instances of `MessageBus`. Each instance has unique id, usually its `id` can be obtain from
+Cluman has global instances of `MessageBus`. Each instance has a unique ID, usually its `id` can be obtain from
 static field of event class: `<EventClass>.BUS`. 
 
 List of global buses:
@@ -108,7 +107,7 @@ List of global buses:
 * bus.cluman.dockerservice - `DockerServiceEvent`, notifies `DockerServiceInfo` events. 
 * bus.cluman.log.application - `ApplicationEvent`, notifies 'applications' events.
 * bus.cluman.log.registry - `RegistryEvent`, notifies registry adding and deletion events. 
-* bus.cluman.node - `NodeEvent`, notifies node status updates, which are derived from [dockmaster-agent](agent.md) requests.
+* bus.cluman.node - `NodeEvent`, notifies node status updates, which are derived from [haven-agent](agent.md) requests.
 * bus.cluman.log.docker - `DockerLogEvent`, notifies proxy events from Docker service, see `DockerServices.convertToLogEvent`
 * bus.cluman.log.nodesGroup - `NodesGroupEvent`, notifies NodesGroup creations and deletions.
 * bus.cluman.erorrs - `LogEvent`, bus aggregate messages from other buses with `WithSeverity.getSeverity() >= WARNING`,
