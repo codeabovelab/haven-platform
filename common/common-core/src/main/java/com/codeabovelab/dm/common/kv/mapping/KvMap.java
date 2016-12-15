@@ -17,9 +17,11 @@
 package com.codeabovelab.dm.common.kv.mapping;
 
 import com.codeabovelab.dm.common.kv.KvStorageEvent;
+import com.codeabovelab.dm.common.kv.KvUtils;
 import com.google.common.collect.ImmutableSet;
 import lombok.Data;
 
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -52,6 +54,7 @@ public class KvMap<T> {
     private final  class ValueHolder {
         private final String key;
         private volatile T value;
+        private final Map<String, Long> index = new ConcurrentHashMap<>();
         private volatile boolean dirty = true;
 
         ValueHolder(String key) {
@@ -65,8 +68,17 @@ public class KvMap<T> {
             }
             T old = this.value;
             this.value = val;
-            mapper.save(key, val);
+            mapper.save(key, val, (p, res) -> {
+                index.put(p.getKey(), res.getIndex());
+            });
             return old;
+        }
+
+        synchronized void dirty(String prop, long newIndex) {
+            Long old = this.index.get(prop);
+            if(old != null && old != newIndex) {
+                dirty();
+            }
         }
 
         synchronized void dirty() {
@@ -104,20 +116,27 @@ public class KvMap<T> {
 
     private void onKvEvent(KvStorageEvent e) {
         String path = e.getKey();
+        final long index = e.getIndex();
+        KvStorageEvent.Crud action = e.getAction();
         String key = this.mapper.getName(path);
-        switch (e.getAction()) {
-            case CREATE:
-                // we use lazy loading
-                getOrCreateHolder(key);
-                break;
-            case READ:
-                //ignore
-                break;
-            case UPDATE:
-                getOrCreateHolder(key).dirty();
-                break;
-            case DELETE:
-                map.remove(key);
+        String property = KvUtils.child(this.mapper.getPrefix(), path, 1);
+        if(property != null) {
+            getOrCreateHolder(key).dirty(property, index);
+        } else {
+            switch (action) {
+                case CREATE:
+                    // we use lazy loading
+                    getOrCreateHolder(key);
+                    break;
+                case READ:
+                    //ignore
+                    break;
+                case UPDATE:
+                    getOrCreateHolder(key).dirty();
+                    break;
+                case DELETE:
+                    map.remove(key);
+            }
         }
     }
 

@@ -17,12 +17,16 @@
 package com.codeabovelab.dm.common.kv;
 
 import com.codeabovelab.dm.common.mb.*;
+import com.codeabovelab.dm.common.utils.ExecutorUtils;
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
+import lombok.Data;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 
@@ -30,6 +34,30 @@ import java.util.function.Function;
  * "In Memory" key value storage, designed for debugging and test.
  */
 public class InMemoryKeyValueStorage implements KeyValueStorage {
+
+    @Data
+    public static class Builder {
+
+        /**
+         * Override default single thread executor of this storage events.
+         */
+        private Executor eventsExecutor;
+
+        /**
+         * Override default single thread executor of this storage events.
+         * @param eventsExecutor executor instance or null
+         * @return this
+         */
+        public Builder eventsExecutor(Executor eventsExecutor) {
+            setEventsExecutor(eventsExecutor);
+            return this;
+        }
+
+        public InMemoryKeyValueStorage build() {
+            return new InMemoryKeyValueStorage(this);
+        }
+    }
+
     private class Context {
         private final String key;
         private int pos;
@@ -41,20 +69,24 @@ public class InMemoryKeyValueStorage implements KeyValueStorage {
             pos = key.charAt(0) == '/' ? 1 : 0;
         }
 
-        private void fire(KvStorageEvent.Crud action, String val) {
-            bus.accept(new KvStorageEvent(counter.incrementAndGet(), key, val, Long.MAX_VALUE, action));
+        private void fire(long index, KvStorageEvent.Crud action, String val) {
+            KvStorageEvent e = new KvStorageEvent(index, key, val, Long.MAX_VALUE, action);
+            executor.execute(() -> bus.accept(e));
         }
 
         public void next() {
             int sp = key.indexOf('/', pos);
             final int length = key.length();
             leaf = (length > 1 && sp == length - 1) || sp == -1;
-            if(leaf) {
-                current = key;
+            if(sp < 0) {
+                current = key.substring(pos);
             } else {
                 current = key.substring(pos, sp);
+            }
+            if(!leaf) {
                 pos = sp + 1; // pos after '/'
             }
+
         }
 
         boolean isLeaf() {
@@ -65,11 +97,24 @@ public class InMemoryKeyValueStorage implements KeyValueStorage {
     private final Node root = new Node("/");
     private final MessageBus<KvStorageEvent> bus;
     private final AtomicInteger counter = new AtomicInteger();
+    private final Executor executor;
 
     public InMemoryKeyValueStorage() {
+        this(builder());
+    }
+
+    public InMemoryKeyValueStorage(Builder builder) {
+        Executor ex = builder.eventsExecutor;
+        if(ex == null) {
+            ex = ExecutorUtils.DIRECT;
+        }
+        this.executor = ex;
         bus = MessageBuses.createConditional("inmemory", KvStorageEvent.class, KvStorageEvent::getKey, KvUtils::predicate);
     }
 
+    public static Builder builder() {
+        return new Builder();
+    }
 
     @Override
     public KvNode get(String key) {
@@ -124,21 +169,20 @@ public class InMemoryKeyValueStorage implements KeyValueStorage {
 
     private class Node {
         private final String path;
-        private final ConcurrentMap<String, Node> nodes = new ConcurrentHashMap<>();
-        private final ConcurrentMap<String, Object> leafs = new ConcurrentHashMap<>();
-        private final AtomicLong index = new AtomicLong();
+        private final ConcurrentMap<String, Object> nodes = new ConcurrentHashMap<>();
+        private volatile long index;
 
         Node(String path) {
             this.path = path;
         }
 
-        private <T> T doing(Context ctx, boolean create, Function<Context, T> onLeaf, BiFunction<Context, Node, T> onNode) {
+        private synchronized <T> T doing(Context ctx, boolean create, Function<Context, T> onLeaf, BiFunction<Context, Node, T> onNode) {
             ctx.next();
             if(ctx.isLeaf()) {
                 return onLeaf.apply(ctx);
             }
             String dirname = ctx.current;
-            Node node;
+            Object node;
             if(create) {
                 node = nodes.computeIfAbsent(dirname, Node::new);
             } else {
@@ -147,16 +191,48 @@ public class InMemoryKeyValueStorage implements KeyValueStorage {
             if(node == null) {
                 return null;
             }
-            return onNode.apply(ctx, node);
+            assertNode(ctx, node);
+            return onNode.apply(ctx, (Node) node);
+        }
+
+        private void assertNode(Context ctx, Object obj) {
+            if(!(obj instanceof Node)) {
+                throw new RuntimeException("The " + ctx.current + " in " + ctx.key + " is not a directory.");
+            }
+        }
+
+        private void assertNullOrNode(Context ctx) {
+            Object o = nodes.get(ctx.current);
+            assertNullOrNode(ctx, o);
+        }
+
+        private void assertNullOrNode(Context ctx, Object o) {
+            if(o == null) {
+                return;
+            }
+            assertNode(ctx, o);
+        }
+
+        private void assertNullOrNotNode(Context ctx) {
+            Object o = nodes.get(ctx.current);
+            if(o instanceof Node) {
+                throw new RuntimeException("The " + ctx.current + " in " + ctx.key + " is a directory.");
+            }
         }
 
         KvNode get(Context ctx) {
             return doing(ctx, false,
               (k) -> {
-                  Object val = leafs.get(k.current);
+                  Object val = nodes.get(k.current);
+                  if(val == null) {
+                      return null;
+                  }
+                  if(val instanceof Node) {
+                      return KvNode.dir(index);
+                  }
                   String strVal = toStrVal(val);
-                  ctx.fire(KvStorageEvent.Crud.READ, strVal);
-                  return new KvNode(index.get(), strVal);
+                  ctx.fire(index, KvStorageEvent.Crud.READ, strVal);
+                  return toNode(strVal);
               },
               (k, dir) -> dir.get(k));
         }
@@ -164,10 +240,12 @@ public class InMemoryKeyValueStorage implements KeyValueStorage {
         KvNode set(Context ctx, String value) {
             return doing(ctx, true,
               (k) -> {
-                  Object old = leafs.put(k.current, value == null? NULL : value);
+                  assertNullOrNotNode(k);
+                  Object old = nodes.put(k.current, value == null? NULL : value);
                   String strVal = toStrVal(value);
-                  ctx.fire(old == null? KvStorageEvent.Crud.CREATE : KvStorageEvent.Crud.UPDATE, strVal);
-                  return modifyNode(strVal);
+                  index++;
+                  ctx.fire(index, old == null? KvStorageEvent.Crud.CREATE : KvStorageEvent.Crud.UPDATE, strVal);
+                  return toNode(strVal);
               },
               (k, dir) -> dir.set(k, value));
         }
@@ -175,9 +253,13 @@ public class InMemoryKeyValueStorage implements KeyValueStorage {
         KvNode setdir(Context ctx, WriteOptions ops) {
             return doing(ctx, true,
               (k) -> {
-                  Node old = nodes.put(k.current, new Node(k.current));
-                  ctx.fire(KvStorageEvent.Crud.CREATE, null);
-                  return modifyNode(null);
+                  assertNullOrNode(k);
+                  Object old = nodes.putIfAbsent(k.current, new Node(k.current));
+                  if(old == null) {
+                      index++;
+                      ctx.fire(index, KvStorageEvent.Crud.CREATE, null);
+                  }
+                  return toNode(null);
               },
               (k, dir) -> dir.setdir(k, ops));
         }
@@ -185,24 +267,32 @@ public class InMemoryKeyValueStorage implements KeyValueStorage {
         KvNode deletedir(Context ctx, DeleteDirOptions ops) {
             return doing(ctx, false,
               (k) -> {
-                  Node old = nodes.remove(k.current);
-                  ctx.fire(KvStorageEvent.Crud.DELETE, null);
-                  return modifyNode(null);
+                  assertNullOrNode(k);
+                  Node old = (Node) nodes.remove(k.current);
+                  if(old != null) {
+                      index++;
+                      ctx.fire(index, KvStorageEvent.Crud.DELETE, null);
+                  }
+                  return toNode(null);
               },
               (k, dir) -> dir.deletedir(k, ops));
         }
 
-        private KvNode modifyNode(String val) {
-            return new KvNode(index.incrementAndGet(), val);
+        private KvNode toNode(String val) {
+            return KvNode.leaf(index, val);
         }
 
         KvNode delete(Context ctx, WriteOptions ops) {
             return doing(ctx, false,
               (k) -> {
-                  Object old = leafs.remove(k.current);
+                  assertNullOrNotNode(k);
+                  Object old = nodes.remove(k.current);
                   String val = toStrVal(old);
-                  ctx.fire(KvStorageEvent.Crud.DELETE, val);
-                  return modifyNode(val);
+                  if(old != null) {
+                      index++;
+                      ctx.fire(index, KvStorageEvent.Crud.DELETE, val);
+                  }
+                  return toNode(val);
               },
               (k, dir) -> dir.delete(k, ops));
         }
@@ -210,8 +300,10 @@ public class InMemoryKeyValueStorage implements KeyValueStorage {
         public List<String> list(Context ctx) {
             return doing(ctx, false,
               (k) -> {
-                  Node node = nodes.get(k.current);
-                  return node == null? Collections.emptyList() : new ArrayList<>(node.leafs.keySet());
+                  Object o = nodes.get(k.current);
+                  assertNullOrNode(k, o);
+                  Node node = (Node) o;
+                  return node == null? Collections.emptyList() : new ArrayList<>(node.nodes.keySet());
               },
               (k, dir) -> dir.list(k));
         }
@@ -219,12 +311,15 @@ public class InMemoryKeyValueStorage implements KeyValueStorage {
         public Map<String, String> map(Context ctx) {
             return doing(ctx, false,
               (k) -> {
-                  Node node = nodes.get(k.current);
+                  Object o = nodes.get(k.current);
                   Map<String, String> map = new HashMap<>();
-                  if(node != null) {
-                      ctx.fire(KvStorageEvent.Crud.READ, null);
-                      node.leafs.forEach((lk, lv) -> {
-                          map.put(lk, toStrVal(lv));
+                  if(o != null) {
+                      assertNode(k, o);
+                      Node node = (Node) o;
+                      ctx.fire(index, KvStorageEvent.Crud.READ, null);
+                      node.nodes.forEach((lk, lv) -> {
+                          String str = lv instanceof Node ? null : toStrVal(lv);
+                          map.put(lk, str);
                       });
                   }
                   return map;
@@ -234,6 +329,9 @@ public class InMemoryKeyValueStorage implements KeyValueStorage {
     }
 
     private String toStrVal(Object val) {
+        if(val instanceof Node) {
+            throw new IllegalArgumentException("Can not convert node to string.");
+        }
         return val == NULL ? null : (String) val;
     }
 }

@@ -19,6 +19,7 @@ package com.codeabovelab.dm.common.kv;
 import com.codeabovelab.dm.common.kv.mapping.KvMap;
 import com.codeabovelab.dm.common.kv.mapping.KvMapperFactory;
 import com.codeabovelab.dm.common.kv.mapping.KvMapping;
+import com.codeabovelab.dm.common.utils.ExecutorUtils;
 import com.codeabovelab.dm.common.utils.Uuids;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.MoreObjects;
@@ -37,6 +38,8 @@ import static org.mockito.Mockito.mock;
 /**
  */
 public class KvMapTest {
+
+    private ExecutorUtils.DeferredExecutor executor = ExecutorUtils.deferred();
 
     @Data
     public static class Bean {
@@ -62,7 +65,7 @@ public class KvMapTest {
     }
 
     @Test
-    public void test() {
+    public void test() throws Exception {
         KvMap<Bean> map = KvMap.builder()
           .factory(factory())
           .path("/test/beans")
@@ -74,23 +77,36 @@ public class KvMapTest {
         final Bean two = new Bean();
         final String twoKey = "two";
         map.put(twoKey, two);
+        executor.flush();
         Assert.assertThat(map.list(), contains(oneKey, twoKey));
+
         Bean newOne = new Bean();
         map.put(oneKey, newOne);
-        // values must be identity to
-        Assert.assertEquals(newOne, map.get(oneKey));
-        // it fail, so kv send update event and we reload value,
-        // but need to check that update was initiated by us
-//        Assert.assertTrue(newOne == map.get(oneKey));
-        Assert.assertEquals(two, map.get(twoKey));
-//        Assert.assertTrue(two == map.get(twoKey));
+        executor.flush();
+        {
+            // values must be identity to
+            Bean oneActual = map.get(oneKey);
+            Assert.assertEquals(newOne, oneActual);
+            // it fail, so kv send update event and we reload value,
+            // but need to check that update was initiated by us
+            Assert.assertTrue(newOne == oneActual);
+            Bean twoActual = map.get(twoKey);
+            Assert.assertEquals(two, twoActual);
+            Assert.assertTrue(two == twoActual);
+        }
+
         map.remove("one");
+        executor.flush();
+        {
+            Bean oneActual = map.get(oneKey);
+            Assert.assertNull(oneActual);
+        }
         Assert.assertThat(map.list(), contains(twoKey));
     }
 
     private KvMapperFactory factory() {
         return new KvMapperFactory(new ObjectMapper(),
-          new InMemoryKeyValueStorage(),
+          InMemoryKeyValueStorage.builder().eventsExecutor(executor).build(),
           mock(TextEncryptor.class),
           mock(Validator.class));
     }

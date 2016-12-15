@@ -14,32 +14,17 @@
  * limitations under the License.
  */
 
-package com.codeabovelab.dm.common.kv;
+package com.codeabovelab.dm.common.kv.mapping;
 
-import lombok.Data;
+import com.codeabovelab.dm.common.kv.KvNode;
 
 /**
  */
-@Data
-public class KvNode {
+interface KvPropertySetCallback {
     /**
-     * Index of node, usually used for CAS operations.
+     * Invoked after call set property to server
+     * @param property property
+     * @param res response from server
      */
-    private final long index;
-    private final String value;
-    private final boolean directory;
-
-    private KvNode(long index, String val, boolean dir) {
-        this.index = index;
-        this.value = val;
-        this.directory = dir;
-    }
-
-    public static KvNode dir(long index) {
-        return new KvNode(index, null, true);
-    }
-
-    public static KvNode leaf(long index, String val) {
-        return new KvNode(index, val, false);
-    }
+    void call(KvProperty property, KvNode res);
 }

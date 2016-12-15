@@ -115,11 +115,16 @@ public class EtcdClientWrapper implements KeyValueStorage {
     }
 
     private KvNode toNode(EtcdKeysResponse resp) {
-        return new KvNode(resp.node.modifiedIndex, resp.node.value);
+        EtcdKeysResponse.EtcdNode node = resp.node;
+        if(node.dir) {
+            // we must not return dir value
+            return KvNode.dir(node.modifiedIndex);
+        }
+        return KvNode.leaf(node.modifiedIndex, node.value);
     }
 
     private KvNode toNode(EtcdException e) {
-        return new KvNode(e.index, null);
+        return KvNode.leaf(e.index, null);
     }
 
     @Override

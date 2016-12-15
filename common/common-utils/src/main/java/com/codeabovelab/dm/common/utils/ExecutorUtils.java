@@ -16,6 +16,8 @@
 
 package com.codeabovelab.dm.common.utils;
 
+import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.Executor;
 
 /**
@@ -23,4 +25,41 @@ import java.util.concurrent.Executor;
  */
 public final class ExecutorUtils {
     public static final Executor DIRECT = command -> command.run();
+
+    /**
+     * Executor deffer tasks into internal storage and run its only at {@link #flush()} .
+     */
+    public static class DeferredExecutor implements Executor {
+        private final Object lock = new Object();
+        private volatile List<Runnable> queue = new CopyOnWriteArrayList<>();
+
+        @Override
+        public void execute(Runnable command) {
+            synchronized (lock) {
+                queue.add(command);
+            }
+        }
+
+        /**
+         * Execute all scheduled tasks.
+         */
+        public void flush() {
+            List<Runnable> old;
+            synchronized (lock) {
+                old = this.queue;
+                this.queue = new CopyOnWriteArrayList<>();
+            }
+            for(Runnable runnable: old) {
+                runnable.run();
+            }
+        }
+    }
+
+    /**
+     * @see DeferredExecutor
+     * @return new instance of {@link DeferredExecutor }
+     */
+    public static DeferredExecutor deferred() {
+        return new DeferredExecutor();
+    }
 }

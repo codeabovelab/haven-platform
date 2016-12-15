@@ -16,12 +16,9 @@
 
 package com.codeabovelab.dm.common.kv.mapping;
 
+import com.codeabovelab.dm.common.kv.*;
 import com.codeabovelab.dm.common.validate.Validity;
 import com.codeabovelab.dm.common.validate.ValidityException;
-import com.codeabovelab.dm.common.kv.DeleteDirOptions;
-import com.codeabovelab.dm.common.kv.KeyValueStorage;
-import com.codeabovelab.dm.common.kv.KvUtils;
-import com.codeabovelab.dm.common.kv.WriteOptions;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import lombok.extern.slf4j.Slf4j;
@@ -29,10 +26,7 @@ import org.springframework.beans.BeanUtils;
 import org.springframework.core.annotation.AnnotationUtils;
 import org.springframework.util.CollectionUtils;
 
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
@@ -55,6 +49,10 @@ public class KvClassMapper<T> {
         this.storage = factory.getStorage();
     }
 
+    public String getPrefix() {
+        return prefix;
+    }
+
     public void delete(String name) {
         this.storage.deletedir(path(name), DeleteDirOptions.builder().recursive(true).build());
     }
@@ -63,14 +61,29 @@ public class KvClassMapper<T> {
         return KvUtils.join(this.prefix, name);
     }
 
+    /**
+     * Save object to storage and return object that allow check for object modifications.
+     * @param name
+     * @param object
+     * @return
+     */
     public void save(String name, T object) {
-        String path = path(name);
+        save(name, object, null);
+    }
 
-        for(KvProperty property: getProps(object)) {
+    void save(String name, T object, KvPropertySetCallback callback) {
+        String path = path(name);
+        // we must read index of all node but, we can not create node in single command,
+        // so we use index of last sub node
+        Collection<KvProperty> props = getProps(object);
+        for(KvProperty property: props) {
             String strval = property.get(object);
             String proppath = KvUtils.join(path, property.getKey());
             try {
-                this.storage.set(proppath, strval);
+                KvNode res = this.storage.set(proppath, strval);
+                if(callback != null) {
+                    callback.call(property, res);
+                }
             } catch (Exception e) {
                 throw new RuntimeException("Error at path: " + proppath, e);
             }
@@ -121,29 +134,38 @@ public class KvClassMapper<T> {
      * @return
      */
     public T load(String name) {
+        String path = path(name);
+        //check that mapped dir is exists
+        KvNode node = this.storage.get(path);
+        if(node == null) {
+            return null;
+        }
+        Class<T> actualType = resolveType(path);
+        T object = BeanUtils.instantiate(actualType);
+        load(name, object);
+        return object;
+    }
+
+    @SuppressWarnings("unchecked")
+    private Class<T> resolveType(String path) {
+        Class<T> actualType = this.type;
         JsonTypeInfo typeInfo = AnnotationUtils.findAnnotation(this.type, JsonTypeInfo.class);
         if (typeInfo != null) {
             String property = typeInfo.property();
-            String path = path(name);
             String proppath = KvUtils.join(path, property);
             try {
                 String str = this.storage.get(proppath).getValue();
                 JsonSubTypes subTypes = AnnotationUtils.findAnnotation(this.type, JsonSubTypes.class);
                 for (JsonSubTypes.Type t : subTypes.value()) {
                     if (t.name().equals(str.replace("\"", ""))) {
-                        @SuppressWarnings("unchecked")
-                        T object = (T) BeanUtils.instantiate(t.value());
-                        load(name, object);
-                        return object;
+                        actualType = (Class<T>) t.value();
                     }
                 }
             } catch (Exception e) {
                 log.error("can't instantiate class", e);
             }
         }
-        T object = BeanUtils.instantiate(this.type);
-        load(name, object);
-        return object;
+        return actualType;
     }
 
     /**

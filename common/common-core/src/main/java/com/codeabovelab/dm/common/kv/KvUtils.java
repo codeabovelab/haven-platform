@@ -100,4 +100,40 @@ public class KvUtils {
         }
         return tmp;
     }
+
+    /**
+     * Gives child of specified number enclosure.
+     * @param prefix prefix, child start from it
+     * @param path path
+     * @param childNum number of enclosing
+     * @return child or null
+     */
+    public static String child(String prefix, String path, int childNum) {
+        if(!path.startsWith(prefix)) {
+            return null;
+        }
+        int start = prefix.length();
+        if(prefix.charAt(start - 1) != '/') {
+            start += 1;
+        }
+        int end;
+        while(true) {
+            end = path.indexOf('/', start);
+            if(childNum <= 0) {
+                break;
+            }
+            if(end < start) {
+                return null;
+            }
+            childNum--;
+            start = end + 1;
+        }
+        if(start == path.length()) {
+            return null;
+        }
+        if(end < start) {
+            return path.substring(start);
+        }
+        return path.substring(start, end);
+    }
 }
