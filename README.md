@@ -6,6 +6,9 @@ commandline tools. Built on top of Docker, Swarm, and Compose, it offers multipl
 
 ![dashboard](https://raw.githubusercontent.com/codeabovelab/haven-platform/master/doc/img/dashboard.png)
 
+
+[More screenshots](/doc/img)
+
 ### Requirements
 
 Haven is comprised of Master and Agent nodes. The common requirements for both are: 
