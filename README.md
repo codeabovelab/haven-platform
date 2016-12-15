@@ -5,7 +5,7 @@ Haven is a Docker cluster management system. The user controls the entire platfo
 commandline tools. Built on top of Docker, Swarm, and Compose, it offers multiple clusters and image registries management.
 
 ![dashboard](https://raw.githubusercontent.com/codeabovelab/haven-platform/master/doc/img/dashboard.png)
-
+![jobs](https://raw.githubusercontent.com/codeabovelab/haven-platform/master/doc/img/jobs.png)
 
 [More screenshots](/doc/img)
 
