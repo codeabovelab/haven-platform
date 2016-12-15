@@ -4,6 +4,11 @@
 Haven is a Docker cluster management system. The user controls the entire platform via user-friendly yet powerful UI and 
 commandline tools. Built on top of Docker, Swarm, and Compose, it offers multiple clusters and image registries management.
 
+![dashboard](https://raw.githubusercontent.com/codeabovelab/haven-platform/master/doc/img/dashboard.png)
+
+
+[More screenshots](/doc/img)
+
 ### Requirements
 
 Haven is comprised of Master and Agent nodes. The common requirements for both are: 
@@ -74,7 +79,7 @@ and MacOS instruction:
   
 ```sh
  %cat /etc/default/docker
- DOCKER_OPTS="--cluster-store=etcd://$MASTER_IP:2379/dn --cluster-advertise=$SELF_IP:2375 \
+a DOCKER_OPTS="--cluster-store=etcd://$MASTER_IP:2379/dn --cluster-advertise=$SELF_IP:2375 \
   -H tcp://0.0.0.0:2375"
 ```
  
