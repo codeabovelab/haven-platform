@@ -1,21 +1,15 @@
 # Jobs #
 
-System has internal job engine. Engine provide list of job types and job instances.
-Job type has description of job with list of all its parameters and types. A job instance - handle for running task 
-of specified job type. 
+The system has internal job engine. Engine provide a list of job types and job instances. Job type has a description of the job with a list of all its parameters and types. A job instance - handle for running task of specified job type.
 
-Instance can be created from `JobParameters` object. Note that engine identity job by its 
-parameters, so if you pass parameters twice - system does not run job again.
-Job instances is persist in memory for execution time, and remain there for configured time (default on day). 
-After then it removed (by timeout or manually), you can run it again with same parameters. When you need to run job 
-twice you must add any additional parameter (for example `'counter': i` where i will incremented for each job).  
-You can retrieve status of each executed job, its logs, or read runtime log stream.
+An instance can be created from `JobParameters` object. Note that engine identity job by its parameters so if you pass parameters twice, the system does not run the job again. Job instances are persisted in memory for execution time and remain there for configured time (defaults to one day). After then it removed (by timeout or manually), you can run it again with same parameters. When you need to run job twice you must add any additional parameter (for example `'counter': i` where i will incremented for each job).
+You can retrieve the status of each executed job, its logs, or read runtime log stream.
 
 ### Scheduling ###
 
-Any job can be scheduled, it done by adding 'schedule' parameter. 
+Any job can be scheduled by adding 'schedule' parameter. 
 
-Look, below a simple job:
+below is a simple job:
 
 ```js
 {
@@ -26,7 +20,7 @@ Look, below a simple job:
 }
 ```
 
-And now scheduled job:
+And now the scheduled job is:
 
 ```js
 {
@@ -38,10 +32,10 @@ And now scheduled job:
 }
 ```
 
-Which is executed every 10 seconds. You can rollback it too, but rollback only last iteration. Also note that this 
-jobs does not stop on their own, but you can stop and remove its.  
+It is executed every 10 seconds. You can do a rollback too but only to the last iteration. Also note that this 
+jobs does not stop on their own, but you can stop and remove it.  
 
-## Api ##
+## API ##
 
 List job types:
 
@@ -63,7 +57,7 @@ List job types:
 ]
 ```
 
-Get job type parameters:
+Get the job type parameters:
 
 ```js
 // GET /ui/api/jobtypes/job.sample/
@@ -90,7 +84,7 @@ Get job type parameters:
 }
 ```
 
-Run job instance:
+Run a job instance:
 
 ```js 
 // POST /ui/api/jobs/ 
@@ -117,7 +111,7 @@ Run job instance:
 }
 ```
 
-List job instances:
+List the job instances:
 
 ```js
 // GET /ui/api/jobs/
@@ -137,7 +131,7 @@ List job instances:
 ]
 ```
 
-Rollback job instance:
+Rollback a job instance:
 
 ```js
 // POST /ui/api/jobs/ 
