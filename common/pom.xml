@@ -17,8 +17,5 @@
         <module>gateway-common</module>
         <module>platform-common</module>
         <module>mail</module>
-        <module>filestorage</module>
-        <module>filestorage-dto</module>
-        <!--<module>security</module>-->
     </modules>
 </project>

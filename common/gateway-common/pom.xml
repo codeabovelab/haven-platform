@@ -31,10 +31,6 @@
             <artifactId>spring-boot-starter-tomcat</artifactId>
         </dependency>
 
-        <dependency>
-            <groupId>com.codeabovelab.dm</groupId>
-            <artifactId>filestorage-dto</artifactId>
-        </dependency>
     </dependencies>
 
 </project>
