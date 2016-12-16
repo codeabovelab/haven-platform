@@ -86,10 +86,10 @@ public class NodeStorage implements NodeInfoProvider {
         this.executorService = executorService;
         KeyValueStorage storage = kvmf.getStorage();
         nodesPrefix = storage.getPrefix() + "/nodes/";
-        this.nodeMapper = KvMap.builder()
+        this.nodeMapper = KvMap.builder(NodeInfoImpl.Builder.class)
           .path(nodesPrefix)
           .factory(kvmf)
-          .build(NodeInfoImpl.Builder.class);
+          .build();
         storage.subscriptions().subscribeOnKey(this::onKVEvent, nodesPrefix + "*");
         dockerBus.asSubscriptions().subscribe(this::onDockerServiceEvent);
     }

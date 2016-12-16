@@ -46,10 +46,10 @@ public class ContainerStorageImpl implements ContainerStorage, InitializingBean 
     public ContainerStorageImpl(KvMapperFactory kvmf) {
         this.kvmf = kvmf;
         this.prefix = kvmf.getStorage().getPrefix() + "/containers/";
-        this.map = KvMap.builder()
+        this.map = KvMap.builder(ContainerRegistration.class)
           .factory(kvmf)
           .path(prefix)
-          .build(ContainerRegistration.class);
+          .build();
     }
 
     @Override

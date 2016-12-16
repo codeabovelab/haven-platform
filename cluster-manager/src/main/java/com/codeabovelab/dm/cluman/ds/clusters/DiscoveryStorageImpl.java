@@ -29,6 +29,7 @@ import com.codeabovelab.dm.common.kv.DeleteDirOptions;
 import com.codeabovelab.dm.common.kv.KeyValueStorage;
 import com.codeabovelab.dm.common.kv.KvUtils;
 import com.codeabovelab.dm.common.kv.WriteOptions;
+import com.codeabovelab.dm.common.kv.mapping.KvMap;
 import com.codeabovelab.dm.common.kv.mapping.KvMapperFactory;
 import com.codeabovelab.dm.common.mb.MessageBus;
 import com.codeabovelab.dm.common.security.Action;
@@ -63,7 +64,7 @@ public class DiscoveryStorageImpl implements DiscoveryStorage {
     private final Logger log = LoggerFactory.getLogger(getClass());
     private final DockerServices services;
     private final NodeStorage nodeStorage;
-    private final ConcurrentMap<String, NodesGroup> clusters = new ConcurrentHashMap<>();
+    private final KvMap<NodesGroup> clusters;
     private final KvMapperFactory kvmf;
     private final String prefix;
     private final FilterFactory filterFactory;
@@ -85,6 +86,10 @@ public class DiscoveryStorageImpl implements DiscoveryStorage {
         KeyValueStorage storage = kvmf.getStorage();
         this.filterFactory = filterFactory;
         this.prefix = storage.getPrefix() + "/clusters/";
+        this.clusters = KvMap.builder(NodesGroup.class)
+          .path(prefix)
+          .factory(kvmf)
+          .build();
         //create clusters, its need for empty etcd database
         storage.setdir(this.prefix, WriteOptions.builder().build());
         storage.subscriptions().subscribeOnKey(e -> {
@@ -103,10 +108,7 @@ public class DiscoveryStorageImpl implements DiscoveryStorage {
                 default:
                     NodesGroup reg = this.clusters.get(key);
                     fireGroupEvent(key, StandardActions.UPDATE);
-                    if(reg instanceof AbstractNodesGroup) {
-                        //do reloading cache
-                        ((AbstractNodesGroup<?, ?>)reg).getMapper().load();
-                    }
+
             }
         }, prefix + "*");
 
@@ -155,8 +157,8 @@ public class DiscoveryStorageImpl implements DiscoveryStorage {
         return prefix;
     }
 
-    KvMapperFactory getKvMapperFactory() {
-        return kvmf;
+    KvMap<NodesGroup> getKvMap() {
+        return clusters;
     }
 
     DockerServices getDockerServices() {

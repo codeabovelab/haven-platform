@@ -18,6 +18,7 @@ package com.codeabovelab.dm.common.kv.mapping;
 
 import com.codeabovelab.dm.common.kv.KvStorageEvent;
 import com.codeabovelab.dm.common.kv.KvUtils;
+import com.google.common.base.MoreObjects;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import lombok.Data;
@@ -28,6 +29,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.function.BiConsumer;
 import java.util.function.Function;
 
 /**
@@ -38,22 +40,31 @@ import java.util.function.Function;
 public class KvMap<T> {
 
     @Data
-    public static class Builder {
+    public static class Builder<T, V> {
         private KvMapperFactory factory;
         private String path;
+        private KvMapAdapter<T> adapter = KvMapAdapter.direct();
+        private final Class<T> type;
+        private final Class<V> valueType;
 
-        public Builder factory(KvMapperFactory factory) {
+        public Builder<T, V> factory(KvMapperFactory factory) {
             setFactory(factory);
             return this;
         }
 
-        public Builder path(String path) {
+        public Builder<T, V> path(String path) {
             setPath(path);
             return this;
         }
 
-        public <T> KvMap<T> build(Class<T> type) {
-            return new KvMap<>(this, type);
+        public Builder<T, V> adapter(KvMapAdapter<T> adapter) {
+            setAdapter(adapter);
+            return this;
+        }
+
+        public KvMap<T> build() {
+            Assert.notNull(type);
+            return new KvMap<>(this);
         }
     }
     private final  class ValueHolder {
@@ -80,7 +91,8 @@ public class KvMap<T> {
 
         synchronized void flush() {
             this.dirty = false;
-            mapper.save(key, this.value, (p, res) -> {
+            Object obj = adapter.get(this.value);
+            mapper.save(key, value, (p, res) -> {
                 index.put(p.getKey(), res.getIndex());
             });
         }
@@ -105,6 +117,10 @@ public class KvMap<T> {
 
         synchronized void set(T value) {
             checkValue(value);
+            internalSet(value);
+        }
+
+        private void internalSet(T value) {
             this.dirty = false;
             this.value = value;
         }
@@ -114,7 +130,9 @@ public class KvMap<T> {
         }
 
         synchronized void load() {
-            set(mapper.load(key));
+            Object obj = mapper.load(key);
+            T newVal = adapter.set(this.value, obj);
+            internalSet(newVal);
         }
 
         synchronized T getIfPresent() {
@@ -134,16 +152,24 @@ public class KvMap<T> {
         }
     }
 
-    private final KvClassMapper<T> mapper;
+    private final KvClassMapper<Object> mapper;
+    private final KvMapAdapter<T> adapter;
     private final ConcurrentMap<String, ValueHolder> map = new ConcurrentHashMap<>();
 
-    private KvMap(Builder builder, Class<T> type) {
-        this.mapper = builder.factory.createClassMapper(builder.path, type);
+    @SuppressWarnings("unchecked")
+    private KvMap(Builder builder) {
+        this.adapter = builder.adapter;
+        Class<Object> mapperType = MoreObjects.firstNonNull(builder.valueType, (Class<Object>)builder.type);
+        this.mapper = builder.factory.createClassMapper(builder.path, mapperType);
         builder.factory.getStorage().subscriptions().subscribeOnKey(this::onKvEvent, builder.path);
     }
 
-    public static Builder builder() {
-        return new Builder();
+    public static <T> Builder<T, T> builder(Class<T> type) {
+        return new Builder<>(type, type);
+    }
+
+    public static <T, V> Builder<T, V> builder(Class<T> type, Class<V> value) {
+        return new Builder<>(type, value);
     }
 
     private void onKvEvent(KvStorageEvent e) {
@@ -256,5 +282,12 @@ public class KvMap<T> {
         ImmutableList.Builder<T> b = ImmutableList.builder();
         this.map.values().forEach(valueHolder -> b.add(valueHolder.get()));
         return b.build();
+    }
+
+    public void forEach(BiConsumer<String, ? super T> action) {
+        this.map.forEach((key, holder) -> {
+            T value = holder.get();
+            action.accept(key, value);
+        });
     }
 }

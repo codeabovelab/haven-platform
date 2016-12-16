@@ -64,7 +64,6 @@ class NodesGroupImpl extends AbstractNodesGroup<NodesGroupImpl, DefaultNodesGrou
         } else {
             this.predicate = filterFactory.createFilter(config.getNodeFilter());
         }
-        getMapper().loadOrCreate();
     }
 
     DockerServices getDockerServices() {

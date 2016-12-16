@@ -87,7 +87,7 @@ public final class RealCluster extends AbstractNodesGroup<RealCluster, SwarmNode
 
     protected void init() {
         try {
-            getMapper().loadOrCreate();
+            //TODO remove after test getMapper().loadOrCreate();
         } catch (Exception e) {
             log.error("Can not load cluster from KV.", e);
         }
