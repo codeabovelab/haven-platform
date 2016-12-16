@@ -18,13 +18,17 @@ package com.codeabovelab.dm.common.kv.mapping;
 
 import com.codeabovelab.dm.common.kv.KvStorageEvent;
 import com.codeabovelab.dm.common.kv.KvUtils;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import lombok.Data;
+import org.springframework.util.Assert;
 
+import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.function.Function;
 
 /**
  * KeyValue storage map of directory. <p/>
@@ -32,6 +36,7 @@ import java.util.concurrent.ConcurrentMap;
  * guava cache because want to add keys into map without loading values.
  */
 public class KvMap<T> {
+
     @Data
     public static class Builder {
         private KvMapperFactory factory;
@@ -62,16 +67,22 @@ public class KvMap<T> {
         }
 
         synchronized T save(T val) {
+            checkValue(val);
             this.dirty = false;
             if(val == value) {
                 return value;
             }
             T old = this.value;
             this.value = val;
-            mapper.save(key, val, (p, res) -> {
+            flush();
+            return old;
+        }
+
+        synchronized void flush() {
+            this.dirty = false;
+            mapper.save(key, this.value, (p, res) -> {
                 index.put(p.getKey(), res.getIndex());
             });
-            return old;
         }
 
         synchronized void dirty(String prop, long newIndex) {
@@ -93,12 +104,33 @@ public class KvMap<T> {
         }
 
         synchronized void set(T value) {
+            checkValue(value);
             this.dirty = false;
             this.value = value;
         }
 
+        private void checkValue(T value) {
+            Assert.notNull(value, "Null value is not allowed");
+        }
+
         synchronized void load() {
             set(mapper.load(key));
+        }
+
+        synchronized T getIfPresent() {
+            if(dirty) {
+                // returning dirty value may cause unexpected effects
+                return null;
+            }
+            return value;
+        }
+
+        synchronized T computeIfAbsent(Function<String, T> func) {
+            if(value == null) {
+                save(func.apply(key));
+            }
+            // get - is load value if its present, but dirty
+            return get();
         }
     }
 
@@ -169,10 +201,34 @@ public class KvMap<T> {
 
     /**
      * Remove value directly from storage, from map it will be removed at event.
+     *
      * @param key key for remove
+     * @return gives value only if present, not load it, this mean that you may obtain null, event storage has value
      */
-    public void remove(String key) {
+    public T remove(String key) {
+        ValueHolder valueHolder = map.get(key);
         mapper.delete(key);
+        if (valueHolder != null) {
+            // we must not load value
+            return valueHolder.getIfPresent();
+        }
+        return null;
+    }
+
+    public T computeIfAbsent(String key, Function<String, T> func) {
+        ValueHolder holder = getOrCreateHolder(key);
+        return holder.computeIfAbsent(func);
+    }
+
+    /**
+     * Save existed value of specified key. If is not present, do nothing.
+     * @param key key of value.
+     */
+    public void flush(String key) {
+        ValueHolder holder = map.get(key);
+        if(holder == null) {
+            holder.flush();
+        }
     }
 
     private ValueHolder getOrCreateHolder(String key) {
@@ -192,13 +248,13 @@ public class KvMap<T> {
         return ImmutableSet.copyOf(this.map.keySet());
     }
 
-    private ValueHolder load(String key) {
-        T val = mapper.load(key);
-        if(val == null) {
-            return null;
-        }
-        ValueHolder holder = new ValueHolder(key);
-        holder.save(val);
-        return holder;
+    /**
+     * Load all values of map. Note that it may cause time consumption.
+     * @return immutable collection of values
+     */
+    public Collection<T> values() {
+        ImmutableList.Builder<T> b = ImmutableList.builder();
+        this.map.values().forEach(valueHolder -> b.add(valueHolder.get()));
+        return b.build();
     }
 }
