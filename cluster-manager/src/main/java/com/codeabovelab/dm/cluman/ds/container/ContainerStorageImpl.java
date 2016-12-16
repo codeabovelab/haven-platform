@@ -122,7 +122,7 @@ public class ContainerStorageImpl implements ContainerStorage, InitializingBean 
 
     ContainerRegistration getOrCreateContainer(String id, Consumer<ContainerRegistration> onCreate) {
         return map.computeIfAbsent(id, s -> {
-            ContainerRegistration registration = new ContainerRegistration(id);
+            ContainerRegistration registration = new ContainerRegistration(this.map, id);
             onCreate.accept(registration);
             registration.flush();
             ContainerBase cb = registration.getContainer();
