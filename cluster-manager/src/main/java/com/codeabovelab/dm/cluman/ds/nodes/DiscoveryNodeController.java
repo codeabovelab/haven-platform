@@ -18,7 +18,7 @@ package com.codeabovelab.dm.cluman.ds.nodes;
 
 import com.codeabovelab.dm.cluman.model.*;
 import com.codeabovelab.dm.cluman.security.TempAuth;
-import com.codeabovelab.dm.common.utils.FileUtils;
+import com.codeabovelab.dm.cluman.utils.FileUtils;
 import com.codeabovelab.dm.common.utils.StringUtils;
 import com.google.common.base.Strings;
 import lombok.AllArgsConstructor;

@@ -1,7 +1,8 @@
-package com.codeabovelab.dm.common.utils;
+package com.codeabovelab.dm.cluman.utils;
 
-import com.sun.xml.internal.messaging.saaj.packaging.mime.internet.MimeUtility;
+import com.codeabovelab.dm.common.utils.Throwables;
 
+import javax.mail.internet.MimeUtility;
 import java.io.UnsupportedEncodingException;
 
 public class FileUtils {
