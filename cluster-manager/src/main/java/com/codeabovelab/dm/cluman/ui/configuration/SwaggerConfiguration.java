@@ -17,6 +17,7 @@
 package com.codeabovelab.dm.cluman.ui.configuration;
 
 import com.google.common.base.Predicate;
+import com.google.common.base.Predicates;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -52,7 +53,7 @@ public class SwaggerConfiguration {
     }
 
     private Predicate<String> makePathRegexp() {
-        return PathSelectors.regex(".*");
+        return Predicates.not(PathSelectors.regex("/error"));
     }
 
     private ApiInfo apiInfo() {
