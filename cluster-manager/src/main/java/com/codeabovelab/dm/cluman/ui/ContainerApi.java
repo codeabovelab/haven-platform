@@ -69,6 +69,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 import static com.codeabovelab.dm.cluman.utils.ContainerUtils.getImageNameWithoutPrefix;
@@ -294,11 +295,9 @@ public class ContainerApi {
             }
         }
         log.info("got create request container request at cluster: {} : {}", cluster, container);
-        CreateContainerArg arg = new CreateContainerArg();
-        arg.setContainer(container);
 
         try (final ServletOutputStream writer = response.getOutputStream()) {
-            arg.setWatcher(processEvent -> {
+            Consumer<ProcessEvent> watcher = processEvent -> {
                 // we use '\n' as delimiter for log formatter in js
                 try {
                     writer.println(processEvent.getMessage());
@@ -306,11 +305,12 @@ public class ContainerApi {
                 } catch (IOException e) {
                     log.error("", e);
                 }
-            });
+            };
             try {
-                ProcessEvent.watch(arg.getWatcher(), "Creating container with params: {0}", container);
-                CreateAndStartContainerResult res = containerManager.createContainer(arg, false);
-                ProcessEvent.watch(arg.getWatcher(), "Finished with {0}", res.getCode());
+                CreateContainerArg arg = CreateContainerArg.builder().container(container).watcher(watcher).build();
+                ProcessEvent.watch(watcher, "Creating container with params: {0}", container);
+                CreateAndStartContainerResult res = containerManager.createContainer(arg);
+                ProcessEvent.watch(watcher, "Finished with {0}", res.getCode());
                 objectMapper.writeValue(writer, res);
             } catch (Exception e) {
                 log.error("Error during creating", e);

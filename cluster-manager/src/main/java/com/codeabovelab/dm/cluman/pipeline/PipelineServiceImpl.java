@@ -362,7 +362,7 @@ public class PipelineServiceImpl implements PipelineService {
         Map<String, String> labels = createContainerArg.getContainer().getLabels();
         labels.putAll(getRequiredLabels(pipelineSchema, pipelineStages));
         labels.put(PIPELINE_ID, pipelineInstanceId);
-        containerManager.createContainer(createContainerArg, true);
+        containerManager.createContainer(createContainerArg);
         instance.getMapper().save();
         riseEvent(pipelineSchema, "deploy");
 

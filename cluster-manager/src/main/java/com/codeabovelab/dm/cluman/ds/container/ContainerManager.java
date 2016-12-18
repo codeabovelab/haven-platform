@@ -66,18 +66,13 @@ public class ContainerManager {
         final CreateContainerArg arg;
         final Consumer<ProcessEvent> watcher;
         /**
-         * define whether fetch configuration from external sources
-         */
-        final boolean enrichConfigs;
-        /**
          * Service instance of concrete node or cluster on which do creation .
          */
         final DockerService dockerService;
         private String name;
 
-        CreateContainerContext(CreateContainerArg arg, DockerService service, boolean enrichConfigs) {
+        CreateContainerContext(CreateContainerArg arg, DockerService service) {
             this.arg = arg;
-            this.enrichConfigs = enrichConfigs;
             Assert.notNull(arg.getContainer(), "arg.container is null");
             this.watcher = firstNonNull(arg.getWatcher(), Consumers.<ProcessEvent>nop());
             if (service != null) {
@@ -121,7 +116,7 @@ public class ContainerManager {
      * @param arg
      * @return id of new container
      */
-    public CreateAndStartContainerResult createContainer(CreateContainerArg arg, boolean enrichConfigs) {
+    public CreateAndStartContainerResult createContainer(CreateContainerArg arg) {
         LOG.info("CreateContainerArg: {}", arg);
 
         DockerService docker;
@@ -137,7 +132,7 @@ public class ContainerManager {
                 throw new IllegalArgumentException("Cluster and node is null.");
             }
         }
-        CreateContainerContext cc = new CreateContainerContext(arg, docker, enrichConfigs);
+        CreateContainerContext cc = new CreateContainerContext(arg, docker);
         return createContainerInternal(cc);
     }
 
@@ -225,9 +220,8 @@ public class ContainerManager {
                 nc.setHostname(null);
                 nc.setDomainname(null);
                 SwarmUtils.clearLabels(nc.getLabels());
-                CreateContainerArg arg = new CreateContainerArg();
-                arg.setContainer(nc);
-                CreateContainerContext cc = new CreateContainerContext(arg, docker, false);
+                CreateContainerArg arg = CreateContainerArg.builder().container(nc).build();
+                CreateContainerContext cc = new CreateContainerContext(arg, docker);
                 CreateAndStartContainerResult containerInternal = createContainerInternal(cc);
                 if (containerInternal.getCode() == ResultCode.ERROR) {
                     return containerInternal;
@@ -255,7 +249,7 @@ public class ContainerManager {
         String imageName = nc.getImage();
         ImageDescriptor image = dockerService.pullImage(imageName, cc.watcher);
         ContainerSource result = nc;
-        if (cc.enrichConfigs) {
+        if (cc.arg.isEnrichConfigs()) {
             result = configProvider.resolveProperties(nc.getCluster(), image, imageName, nc);
         }
         Map<String, Integer> appCountPerNode = getContainersPerNodeForImage(cc, imageName);

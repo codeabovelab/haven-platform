@@ -66,14 +66,13 @@ public class CreateContainerTasklet {
         cs.setImage(item.getImage());
         cs.setImageId(item.getImageId());
         context.fire("Create container \"{0}\" with \"{1}\" image on \"{2}\" node", cs.getName(), cs.getImage(), cs.getNode());
-        CreateContainerArg arg = new CreateContainerArg();
-        arg.setContainer(cs);
-        arg.setWatcher(new MessageProxy());
-        CreateAndStartContainerResult res = containerManager.createContainer(arg, false);
+        CreateContainerArg arg = CreateContainerArg.builder()
+                .container(cs).watcher(new MessageProxy()).build();
+        CreateAndStartContainerResult res = containerManager.createContainer(arg);
         item = item.makeCopy().id(res.getContainerId()).name(res.getName()).build();
         rollback.record(item, RollbackData.Action.CREATE);
         ResultCode code = res.getCode();
-        if(code != ResultCode.OK && code != ResultCode.NOT_MODIFIED) {
+        if (code != ResultCode.OK && code != ResultCode.NOT_MODIFIED) {
             throw new RuntimeException("On create " + arg + ", we got: " + res.getCode() + " " + res.getMessage());
         }
         return item;
@@ -83,7 +82,7 @@ public class CreateContainerTasklet {
     protected ContainerSource createEnrichConfiguration(ContainerSource arg, String image) {
         try {
             String registryAndImageName = ImageName.withoutTag(image);
-            if(containersConfigs != null) {
+            if (containersConfigs != null) {
                 Object configs = containersConfigs.get(registryAndImageName);
                 if (configs != null && configs instanceof Map) {
                     Map<String, Object> configsMap = (Map<String, Object>) configs;

@@ -18,6 +18,8 @@ package com.codeabovelab.dm.cluman.cluster.docker.management.argument;
 
 import com.codeabovelab.dm.cluman.cluster.docker.management.result.ProcessEvent;
 import com.codeabovelab.dm.cluman.model.ContainerSource;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 
 import java.util.function.Consumer;
@@ -26,15 +28,15 @@ import java.util.function.Consumer;
  * Parameters required for creating new container
  */
 @Data
+@Builder
+@AllArgsConstructor
 public class CreateContainerArg {
 
-    private Consumer<ProcessEvent> watcher;
-
-    private Integer scale;
-
-    private Integer maxScale;
-
-    private ContainerSource container;
+    private final Consumer<ProcessEvent> watcher;
+    private final Integer scale;
+    private final Integer maxScale;
+    private final ContainerSource container;
+    private final boolean enrichConfigs;
 
 }
 

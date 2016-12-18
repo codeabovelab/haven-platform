@@ -232,14 +232,13 @@ public class DeploySourceJob implements Runnable {
             return;
         }
         jobContext.fire("Begin create container {0}", containerLogId);
-        CreateContainerArg cca = new CreateContainerArg();
         ContainerSource clone = containerSource.clone();
         clone.setApplication(ctx.getApplicationName());
         clone.setCluster(ctx.getClusterName());
         SwarmUtils.clearConstraints(clone.getLabels());
-        cca.setContainer(clone);
-        cca.setWatcher((pe) -> jobContext.fire("On {0}, {1}", containerLogId, pe.getMessage()));
-        CreateAndStartContainerResult ccr = containerManager.createContainer(cca, false);
+        CreateContainerArg cca = CreateContainerArg.builder().container(clone)
+                .watcher((pe) -> jobContext.fire("On {0}, {1}", containerLogId, pe.getMessage())).build();
+        CreateAndStartContainerResult ccr = containerManager.createContainer(cca);
         ch.handle(clone, ccr);
         String containerId = ccr.getContainerId();
         jobContext.fire("End create container {0} with id {1} and result {2}", containerLogId, containerId, ccr);
