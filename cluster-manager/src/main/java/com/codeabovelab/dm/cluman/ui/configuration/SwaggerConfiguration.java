@@ -16,6 +16,7 @@
 
 package com.codeabovelab.dm.cluman.ui.configuration;
 
+import com.codeabovelab.dm.common.utils.AppInfo;
 import com.google.common.base.Predicate;
 import com.google.common.base.Predicates;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -58,13 +59,13 @@ public class SwaggerConfiguration {
 
     private ApiInfo apiInfo() {
         return new ApiInfoBuilder()
-                .title("DockMaster API")
-                .description("Dockmaster is an open source Docker container management system. " +
+                .title("Haven API")
+                .description("Haven is an open source Docker container management system. " +
                         "It integrates container, application, cluster, image, and registry management in one single place.")
                 .contact(new Contact("Code Above Lab LLC", "https://github.com/codeabovelab/haven-platform", "info@codeabovelab.com"))
                 .license("Apache License")
                 .licenseUrl("https://www.apache.org/licenses/LICENSE-2.0")
-                .version("1.0")
+                .version("1.0, server version: " + AppInfo.getApplicationVersion() + ", revision: " + AppInfo.getBuildRevision())
                 .build();
     }
 
