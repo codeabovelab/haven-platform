@@ -22,7 +22,6 @@ import com.codeabovelab.dm.cluman.job.JobConfiguration;
 import com.codeabovelab.dm.cluman.mail.MailConfiguration;
 import com.codeabovelab.dm.cluman.objprinter.ObjectPrinterFactory;
 import com.codeabovelab.dm.cluman.reconfig.AppConfigService;
-import com.codeabovelab.dm.cluman.security.PropertyAclServiceConfigurer;
 import com.codeabovelab.dm.cluman.source.SourceService;
 import com.codeabovelab.dm.cluman.users.UsersStorage;
 import com.codeabovelab.dm.common.kv.mapping.KvMapperFactory;
@@ -33,7 +32,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.actuate.autoconfigure.EndpointWebMvcAutoConfiguration;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
-import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
@@ -69,7 +67,8 @@ import springfox.documentation.swagger2.annotations.EnableSwagger2;
 public class Application {
 
     public static void main(String[] args) {
-        log.info("Application Version: {}, Build time: {}", AppInfo.getApplicationVersion(), AppInfo.getBuildTime());
+        log.info("Application Version: {}, revision: {}, Build time: {}", AppInfo.getApplicationVersion(),
+                AppInfo.getBuildRevision(), AppInfo.getBuildTime());
         SpringApplication.run(Application.class, args);
     }
 

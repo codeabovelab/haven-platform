@@ -87,11 +87,7 @@
                     <groupId>org.springframework.boot</groupId>
                     <artifactId>spring-boot-maven-plugin</artifactId>
                     <configuration>
-                        <jvmArguments>
-                            -Dspring.profiles.active=${spring.profiles.active}
-                        </jvmArguments>
                         <mainClass>${start-class}</mainClass>
-                        <layout>JAR</layout>
                         <classifier>boot</classifier>
                     </configuration>
                     <executions>
@@ -101,6 +97,24 @@
                             </goals>
                         </execution>
                     </executions>
+                </plugin>
+                <plugin>
+                    <groupId>org.codehaus.mojo</groupId>
+                    <artifactId>buildnumber-maven-plugin</artifactId>
+                    <version>1.4</version>
+                    <executions>
+                        <execution>
+                            <phase>validate</phase>
+                            <goals>
+                                <goal>create</goal>
+                            </goals>
+                        </execution>
+                    </executions>
+                    <configuration>
+                        <doCheck>false</doCheck>
+                        <doUpdate>false</doUpdate>
+                        <shortRevisionLength>5</shortRevisionLength>
+                    </configuration>
                 </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
@@ -138,6 +152,7 @@
                                 <addDefaultSpecificationEntries>true</addDefaultSpecificationEntries>
                             </manifest>
                             <manifestEntries>
+                                <dm-cluman-info-buildRevision>${buildNumber}</dm-cluman-info-buildRevision>
                                 <dm-cluman-info-name>${project.artifactId}</dm-cluman-info-name>
                                 <dm-cluman-info-version>${project.version}</dm-cluman-info-version>
                                 <dm-cluman-info-date>${maven.build.timestamp}</dm-cluman-info-date>
@@ -226,11 +241,11 @@
             <!--     SPRING     -->
 
             <!--<dependency>-->
-                <!--<groupId>io.spring.platform</groupId>-->
-                <!--<artifactId>platform-bom</artifactId>-->
-                <!--<version>2.0.7.RELEASE</version>-->
-                <!--<scope>import</scope>-->
-                <!--<type>pom</type>-->
+            <!--<groupId>io.spring.platform</groupId>-->
+            <!--<artifactId>platform-bom</artifactId>-->
+            <!--<version>2.0.7.RELEASE</version>-->
+            <!--<scope>import</scope>-->
+            <!--<type>pom</type>-->
             <!--</dependency>-->
             <dependency>
                 <groupId>org.springframework.cloud</groupId>
@@ -554,5 +569,5 @@
             <url>http://ni1.codeabovelab.com:8081/repository/maven-snapshots/</url>
         </snapshotRepository>
     </distributionManagement>
-    
+
 </project>

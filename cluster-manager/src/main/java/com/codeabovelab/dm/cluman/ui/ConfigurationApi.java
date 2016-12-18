@@ -101,6 +101,7 @@ public class ConfigurationApi {
         return UiApplicationInfo.builder()
                 .version(AppInfo.getApplicationVersion())
                 .buildTime(AppInfo.getBuildTime())
+                .buildRevision(AppInfo.getBuildRevision())
                 .address(UiUtils.getAppAddress(environment))
           .build();
 

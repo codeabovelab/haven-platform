@@ -45,6 +45,10 @@ public class AppInfo {
         return getValue("dm-cluman-info-version");
     }
 
+    public static String getBuildRevision() {
+        return getValue("dm-cluman-info-buildRevision");
+    }
+
     public static OffsetDateTime getBuildTime() {
         try {
             return OffsetDateTime.parse(getValue("dm-cluman-info-date"), DateTimeFormatter.ISO_OFFSET_DATE_TIME);

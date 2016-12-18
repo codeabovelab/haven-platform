@@ -25,6 +25,7 @@ import lombok.Value;
 import java.time.OffsetDateTime;
 
 /**
+ * Information about application
  */
 @Value
 @Builder
@@ -32,6 +33,8 @@ import java.time.OffsetDateTime;
 public class UiApplicationInfo {
     private final String version;
     private final OffsetDateTime buildTime;
+    @ApiModelProperty("Git revision")
+    private final String buildRevision;
     @ApiModelProperty("host:port address of this application")
     private final String address;
 }

@@ -20,6 +20,10 @@
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
             </plugin>
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>buildnumber-maven-plugin</artifactId>
+            </plugin>
         </plugins>
     </build>
 
@@ -99,7 +103,7 @@
         <dependency>
             <groupId>org.eclipse.jgit</groupId>
             <artifactId>org.eclipse.jgit</artifactId>
-            <version>4.2.0.201601211800-r</version>
+            <version>4.5.0.201609210915-r</version>
         </dependency>
         <dependency>
             <groupId>commons-beanutils</groupId>
