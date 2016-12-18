@@ -20,6 +20,7 @@ import com.codeabovelab.dm.cluman.cluster.registry.model.RegistryAuthAdapter;
 import com.codeabovelab.dm.cluman.cluster.registry.model.RegistryCredentials;
 import com.codeabovelab.dm.cluman.cluster.registry.model.RegistryCredentialsProvider;
 import com.google.common.base.Splitter;
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Value;
 import lombok.extern.slf4j.Slf4j;
@@ -41,14 +42,11 @@ import static org.springframework.http.HttpHeaders.AUTHORIZATION;
 import static org.springframework.web.util.UriComponentsBuilder.newInstance;
 
 @Slf4j
+@AllArgsConstructor
 class DockerRegistryAuthAdapter implements RegistryAuthAdapter {
 
     private final RestTemplate restTemplate = new RestTemplate();
     private final RegistryCredentialsProvider provider;
-
-    DockerRegistryAuthAdapter(RegistryCredentialsProvider provider) {
-        this.provider = provider;
-    }
 
     @Override
     public void handle(AuthContext ctx) {

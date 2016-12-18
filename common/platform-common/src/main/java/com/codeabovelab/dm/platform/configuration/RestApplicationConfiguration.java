@@ -28,18 +28,13 @@ import org.springframework.web.client.RestTemplate;
 @Configuration
 public class RestApplicationConfiguration {
 
-    /**
-     * Defines the socket timeout (<code>SO_TIMEOUT</code>) in milliseconds,
-     * which is the timeout for waiting for data  or, put differently,
-     * a maximum period inactivity between two consecutive data packets).
-     */
-    @Value("${restTemplate.timeout:5000}")
-    private Integer timeout;
+    @Value("${dm.rest-template.connect.to:2000}")
+    private Integer connectTimeOut;
 
     @Bean
     public RestTemplate restTemplate() {
         HttpComponentsClientHttpRequestFactory requestFactory = new HttpComponentsClientHttpRequestFactory();
-        requestFactory.setReadTimeout(timeout);
+        requestFactory.setConnectTimeout(connectTimeOut);
         RestTemplate restTemplate = new RestTemplate(requestFactory);
         return restTemplate;
     }

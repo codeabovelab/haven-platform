@@ -218,7 +218,7 @@ public class ContainerApi {
     @RequestMapping(value = "/clusters/{cluster}/defaultparams", method = GET)
     public ContainerSource defaultParams(@PathVariable("cluster") String cluster,
                                          @RequestParam("image") String image,
-                                         @RequestParam("tag") String tag) throws Exception {
+                                         @RequestParam("tag") String tag) {
         String fullImageName = setImageVersion(image, tag);
         RegistryService regisrty = registryRepository.getRegistryByImageName(fullImageName);
         ImageDescriptor img = regisrty.getImage(fullImageName);
@@ -324,7 +324,7 @@ public class ContainerApi {
 
     @RequestMapping(value = "/{id}/updateLabels", method = RequestMethod.PUT)
     public void updateLabels(@PathVariable("id") String containerId,
-                             Map<String, String> additionalLabels) throws Exception {
+                             Map<String, String> additionalLabels) {
 
         ContainerRegistration container = containerStorage.getContainer(containerId);
         ExtendedAssert.notFound(container, "Container not found by id " + containerId);
@@ -334,8 +334,7 @@ public class ContainerApi {
 
     @ApiOperation("this method allows to get container's id by name and cluster")
     @RequestMapping(value = "/{cluster}/{name}", method = RequestMethod.GET)
-    public UIContainerDetails getContainerDetailsByName(@PathVariable("cluster") String cluster, @PathVariable("name") String name)
-            throws Exception {
+    public UIContainerDetails getContainerDetailsByName(@PathVariable("cluster") String cluster, @PathVariable("name") String name) {
         ContainerRegistration cr = containerStorage.findContainer(name);
         ExtendedAssert.notFound(cr, "Can't find container by name " + name);
         DockerService service = dockerServices.getService(cluster);
@@ -348,7 +347,7 @@ public class ContainerApi {
 
     @RequestMapping(value = "/{id}/update", method = RequestMethod.PUT)
     public ResponseEntity<?> updateContainer(@PathVariable("id") String containerId,
-                                             @RequestBody UiUpdateContainer container) throws Exception {
+                                             @RequestBody UiUpdateContainer container) {
         String cluster = getClusterForContainer(containerId);
         log.info("Begin update container '{}' at cluster: '{}' request: '{}'", containerId, cluster, container);
         UpdateContainerCmd cmd = new UpdateContainerCmd();

@@ -30,7 +30,6 @@ import org.springframework.util.Assert;
 import org.springframework.util.CollectionUtils;
 
 import java.io.File;
-import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 
@@ -66,13 +65,13 @@ public class ComposeExecutor {
         return startCompose(monitor, path, composeArg.getAppName(), dockerService);
     }
 
-    public void stop(Application application, final DockerService dockerService) throws IOException {
+    public void stop(Application application, final DockerService dockerService) {
         if (checkFile(application.getInitFile())) {
             stopTask(application.getInitFile(), ComposeMonitor.env(dockerService));
         }
     }
 
-    public void rm(Application application, final DockerService dockerService) throws IOException {
+    public void rm(Application application, final DockerService dockerService) {
         if (checkFile(application.getInitFile())) {
             rmTask(application.getInitFile(), ComposeMonitor.env(dockerService));
         }

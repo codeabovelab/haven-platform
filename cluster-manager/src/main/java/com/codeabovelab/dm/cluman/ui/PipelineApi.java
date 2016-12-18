@@ -100,7 +100,7 @@ public class PipelineApi {
     @RequestMapping(value = "deploy/{pipelineStageName}", method = PUT)
     @ApiOperation("Promote pipeline")
     public void deploy(@PathVariable("pipelineInstance") String pipelineInstance,
-                       @RequestBody UIPipelineDeploy uiPipelineDeploy) throws Exception {
+                       @RequestBody UIPipelineDeploy uiPipelineDeploy) {
 
         ContainerSource container = uiPipelineDeploy.getUiContainer();
         log.info("got create request container request at cluster: {} : {}", container.getCluster(), container);

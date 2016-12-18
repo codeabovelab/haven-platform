@@ -42,7 +42,7 @@ public class ChunkedInputStream<T> extends InputStream {
          * @return the next byte of data, or <code>-1</code> if the end of the stream is reached.
          * @throws IOException
          */
-        int readByte(T chunk) throws IOException;
+        int readByte(T chunk);
 
         /**
          *
@@ -56,7 +56,7 @@ public class ChunkedInputStream<T> extends InputStream {
          *             the stream has been reached.
          * @throws IOException
          */
-        int readBytes(T chunk, byte[] arr, int off, int len) throws IOException;
+        int readBytes(T chunk, byte[] arr, int off, int len);
     }
 
     public static final int EOF = -1;

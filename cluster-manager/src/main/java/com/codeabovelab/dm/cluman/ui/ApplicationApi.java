@@ -119,7 +119,7 @@ public class ApplicationApi {
     }
 
     @RequestMapping(value = "{cluster}/{appId}/stop", method = POST)
-    public void stopApplication(@PathVariable("cluster") String cluster, @PathVariable("appId") String appId) throws Exception {
+    public void stopApplication(@PathVariable("cluster") String cluster, @PathVariable("appId") String appId) {
         applicationService.stopApplication(cluster, appId);
     }
 

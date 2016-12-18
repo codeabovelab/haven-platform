@@ -199,8 +199,7 @@ public class DockerServiceSecurityWrapperTest {
     }
 
     private AuthenticationData createUserAuth(String ... roles) {
-        List<GrantedAuthorityImpl> authorities = Arrays.asList(roles)
-          .stream()
+        List<GrantedAuthorityImpl> authorities = Arrays.stream(roles)
           .map((r) -> new GrantedAuthorityImpl(r, ROOT))
           .collect(Collectors.toList());
         return AuthenticationData.build()

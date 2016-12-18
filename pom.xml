@@ -515,7 +515,6 @@
                                 <arguments>
                                     <!-- Shell script location -->
                                     <argument>${project.basedir}/../docker.sh</argument>
-                                    <argument>${project.groupId}</argument>
                                     <argument>${project.artifactId}</argument>
                                     <argument>${project.version}</argument>
                                 </arguments>

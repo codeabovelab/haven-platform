@@ -64,7 +64,7 @@ class LazyObjectPrinter implements CharSequence {
         return res;
     }
 
-    private void print() throws Exception {
+    private void print() {
         StringBuilder sb = new StringBuilder();
         PojoClass pojoClass = new PojoClass(obj.getClass());
         List<Property> props = new ArrayList<>(pojoClass.getProperties().values());

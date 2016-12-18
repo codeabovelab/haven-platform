@@ -19,8 +19,6 @@ package com.codeabovelab.dm.platform.http.async;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufHolder;
 
-import java.io.IOException;
-
 /**
  */
 class ByteBufHolderAdapter implements ChunkedInputStream.Adapter<ByteBufHolder> {
@@ -41,7 +39,7 @@ class ByteBufHolderAdapter implements ChunkedInputStream.Adapter<ByteBufHolder> 
     }
 
     @Override
-    public int readByte(ByteBufHolder chunk) throws IOException {
+    public int readByte(ByteBufHolder chunk) {
         ByteBuf buf = chunk.content();
         if (buf.readableBytes() == 0) {
             return ChunkedInputStream.EOF;
@@ -50,7 +48,7 @@ class ByteBufHolderAdapter implements ChunkedInputStream.Adapter<ByteBufHolder> 
     }
 
     @Override
-    public int readBytes(ByteBufHolder chunk, byte[] arr, int off, int len) throws IOException {
+    public int readBytes(ByteBufHolder chunk, byte[] arr, int off, int len) {
         ByteBuf buf = chunk.content();
         int avail = buf.readableBytes();
         if (avail == 0) {

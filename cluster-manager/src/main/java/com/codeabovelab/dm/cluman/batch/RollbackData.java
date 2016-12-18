@@ -36,7 +36,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 public class RollbackData {
 
     @Data
-    @AllArgsConstructor(onConstructor = @_(@JsonCreator))
+    @AllArgsConstructor(onConstructor = @__(@JsonCreator))
     private static class RollbackHandleImpl implements RollbackHandle {
         private final RollbackData data;
 

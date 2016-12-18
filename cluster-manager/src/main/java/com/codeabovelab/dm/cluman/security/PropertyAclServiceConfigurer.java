@@ -28,7 +28,6 @@ import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.security.acls.domain.CumulativePermission;
 import org.springframework.security.acls.model.Permission;
-import org.springframework.security.acls.model.Sid;
 import org.springframework.util.StringUtils;
 
 import java.util.Iterator;
@@ -94,12 +93,15 @@ public class PropertyAclServiceConfigurer implements AclServiceConfigurer {
         Iterator<String> it = ACE_SPLITTER.split(token).iterator();
         String grantStr = it.next();
         AceSource.Builder asb = AceSource.builder();
-        if(grantStr.equals("grant")) {
-            asb.granting(true);
-        } else if(grantStr.equals("revoke")) {
-            asb.granting(false);
-        } else {
-            throw new IllegalArgumentException("rule: " + token + " must start with 'grant' or 'revoke'");
+        switch (grantStr) {
+            case "grant":
+                asb.granting(true);
+                break;
+            case "revoke":
+                asb.granting(false);
+                break;
+            default:
+                throw new IllegalArgumentException("rule: " + token + " must start with 'grant' or 'revoke'");
         }
         try {
             TenantSid sid = parseSid(it.next());

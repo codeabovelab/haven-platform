@@ -17,8 +17,6 @@
 package com.codeabovelab.dm.platform.configuration;
 
 import com.codeabovelab.dm.common.security.AdminRoleVoter;
-import com.codeabovelab.dm.platform.security.CachedPasswordEncoder;
-import com.google.common.cache.CacheBuilder;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -27,19 +25,11 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.validation.beanvalidation.LocalValidatorFactoryBean;
 
-import java.util.concurrent.TimeUnit;
-
 @Configuration
 public class SecurityApplicationConfiguration {
 
     @Value("${dm.bcrypt.strength:8}")
     private Integer bcryptStrength;
-
-    @Value("${dm.passwordEncoder.expireAfterAccess:60}")
-    private long expireAfterAccess;
-
-    @Value("${dm.passwordEncoder.expireAfterWrite:-1}")
-    private long expireAfterWrite;
 
     @Bean(name = "annotationValidator")
     public LocalValidatorFactoryBean getLocalValidatorFactoryBean() {
@@ -49,17 +39,6 @@ public class SecurityApplicationConfiguration {
     @Bean
     public PasswordEncoder getPasswordEncoder() {
         PasswordEncoder passwordEncoder = new BCryptPasswordEncoder(bcryptStrength);
-        if(expireAfterAccess >= 0 || expireAfterWrite >= 0) {
-            CacheBuilder<Object, Object> builder = CacheBuilder.newBuilder();
-            if(expireAfterAccess >= 0) {
-                builder.expireAfterAccess(expireAfterAccess, TimeUnit.SECONDS);
-            }
-            if(expireAfterWrite >= 0) {
-                builder.expireAfterAccess(expireAfterWrite, TimeUnit.SECONDS);
-            }
-            passwordEncoder = new CachedPasswordEncoder(passwordEncoder, builder
-            );
-        }
         return passwordEncoder;
     }
 

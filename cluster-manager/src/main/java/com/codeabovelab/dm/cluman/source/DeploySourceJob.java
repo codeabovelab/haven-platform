@@ -79,8 +79,8 @@ public class DeploySourceJob implements Runnable {
         private DockerService service;
 
         public String getPath(String container) {
-            StringBuilder sb = new StringBuilder();
-            sb.append(getClusterName()).append('/')
+            StringBuilder sb = new StringBuilder()
+              .append(getClusterName()).append('/')
               .append(getApplicationName()).append('/')
               .append(container);
             return sb.toString();

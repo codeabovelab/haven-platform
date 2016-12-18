@@ -58,7 +58,7 @@ import static org.springframework.web.bind.annotation.RequestMethod.POST;
 public class DiscoveryNodeController {
 
     private static final Pattern PATTERN = Pattern.compile("\\$[\\w]+\\$");
-    private final String HEADER = "X-Auth-Node";
+    private static final String HEADER = "X-Auth-Node";
     private final NodeStorage storage;
     private final String nodeSecret;
 

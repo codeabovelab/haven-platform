@@ -187,7 +187,7 @@ public class SecurityApi {
 
     @RequestMapping(path = "/acl/", method = RequestMethod.GET)
     public List<String> getSecuredTypes() {
-        return Arrays.asList(SecuredType.values()).stream().map(SecuredType::name).collect(Collectors.toList());
+        return Arrays.stream(SecuredType.values()).map(SecuredType::name).collect(Collectors.toList());
     }
 
     @ApiOperation("Batch update of ACLs. Not that, due to we can not guarantee consistency of batch update, we return " +

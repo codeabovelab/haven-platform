@@ -22,8 +22,6 @@ import com.codeabovelab.dm.cluman.ds.DockerServiceRegistry;
 import com.codeabovelab.dm.common.healthcheck.ServiceHealthCheckResult;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
-import org.springframework.transaction.annotation.Propagation;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.Assert;
 
 import java.util.function.Consumer;
@@ -54,7 +52,7 @@ public class HealthCheckService {
      * @return null or ServiceHealthCheckResult
      * @throws InterruptedException
      */
-    public ServiceHealthCheckResult checkContainer(String cluster, String id, long timeout) throws InterruptedException {
+    public ServiceHealthCheckResult checkContainer(String cluster, String id, long timeout) {
         Assert.hasText(id, "id is null or empty");
         ContainerDetails container = dockerServiceRegistry.getService(cluster).getContainer(id);
         if(container == null) {
