@@ -39,11 +39,14 @@ import com.codeabovelab.dm.cluman.ds.nodes.NodeRegistration;
 import com.codeabovelab.dm.cluman.ds.nodes.NodeStorage;
 import com.codeabovelab.dm.cluman.ds.swarm.DockerServices;
 import com.codeabovelab.dm.cluman.model.Application;
+import com.codeabovelab.dm.cluman.model.ContainerSource;
 import com.codeabovelab.dm.cluman.model.ImageDescriptor;
 import com.codeabovelab.dm.cluman.model.NodeInfo;
-import com.codeabovelab.dm.cluman.model.ContainerSource;
 import com.codeabovelab.dm.cluman.source.ContainerSourceFactory;
-import com.codeabovelab.dm.cluman.ui.model.*;
+import com.codeabovelab.dm.cluman.ui.model.UIContainerDetails;
+import com.codeabovelab.dm.cluman.ui.model.UIStatistics;
+import com.codeabovelab.dm.cluman.ui.model.UiContainer;
+import com.codeabovelab.dm.cluman.ui.model.UiUpdateContainer;
 import com.codeabovelab.dm.cluman.validate.ExtendedAssert;
 import com.codeabovelab.dm.common.cache.DefineCache;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -62,7 +65,10 @@ import org.springframework.web.bind.annotation.*;
 import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
-import java.util.*;
+import java.util.Date;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 import static com.codeabovelab.dm.cluman.utils.ContainerUtils.getImageNameWithoutPrefix;
@@ -303,7 +309,7 @@ public class ContainerApi {
             });
             try {
                 ProcessEvent.watch(arg.getWatcher(), "Creating container with params: {0}", container);
-                CreateAndStartContainerResult res = containerManager.createContainer(arg);
+                CreateAndStartContainerResult res = containerManager.createContainer(arg, false);
                 ProcessEvent.watch(arg.getWatcher(), "Finished with {0}", res.getCode());
                 objectMapper.writeValue(writer, res);
             } catch (Exception e) {

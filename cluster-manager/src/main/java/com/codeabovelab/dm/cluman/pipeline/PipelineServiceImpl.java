@@ -16,8 +16,6 @@
 
 package com.codeabovelab.dm.cluman.pipeline;
 
-import com.codeabovelab.dm.cluman.cluster.registry.RegistryService;
-import com.codeabovelab.dm.cluman.utils.ContainerUtils;
 import com.codeabovelab.dm.cluman.batch.LoadContainersOfImageTasklet;
 import com.codeabovelab.dm.cluman.cluster.docker.management.DockerService;
 import com.codeabovelab.dm.cluman.cluster.docker.management.argument.CreateContainerArg;
@@ -26,12 +24,9 @@ import com.codeabovelab.dm.cluman.cluster.docker.management.argument.TagImageArg
 import com.codeabovelab.dm.cluman.cluster.filter.Filter;
 import com.codeabovelab.dm.cluman.cluster.filter.LabelFilter;
 import com.codeabovelab.dm.cluman.cluster.registry.RegistryRepository;
+import com.codeabovelab.dm.cluman.cluster.registry.RegistryService;
 import com.codeabovelab.dm.cluman.ds.DockerServiceRegistry;
 import com.codeabovelab.dm.cluman.ds.container.ContainerManager;
-import com.codeabovelab.dm.common.kv.DeleteDirOptions;
-import com.codeabovelab.dm.common.kv.KeyValueStorage;
-import com.codeabovelab.dm.common.kv.KvUtils;
-import com.codeabovelab.dm.common.kv.mapping.KvMapperFactory;
 import com.codeabovelab.dm.cluman.job.JobInstance;
 import com.codeabovelab.dm.cluman.job.JobParameters;
 import com.codeabovelab.dm.cluman.job.JobsManager;
@@ -46,9 +41,14 @@ import com.codeabovelab.dm.cluman.pipeline.instance.PipelineInstanceHistory;
 import com.codeabovelab.dm.cluman.pipeline.instance.State;
 import com.codeabovelab.dm.cluman.pipeline.schema.PipelineSchema;
 import com.codeabovelab.dm.cluman.pipeline.schema.PipelineStageSchema;
-import com.codeabovelab.dm.cluman.ui.model.PipeLineAction;
-import com.codeabovelab.dm.common.mb.MessageBus;
 import com.codeabovelab.dm.cluman.security.TempAuth;
+import com.codeabovelab.dm.cluman.ui.model.PipeLineAction;
+import com.codeabovelab.dm.cluman.utils.ContainerUtils;
+import com.codeabovelab.dm.common.kv.DeleteDirOptions;
+import com.codeabovelab.dm.common.kv.KeyValueStorage;
+import com.codeabovelab.dm.common.kv.KvUtils;
+import com.codeabovelab.dm.common.kv.mapping.KvMapperFactory;
+import com.codeabovelab.dm.common.mb.MessageBus;
 import com.codeabovelab.dm.common.utils.Throwables;
 import com.codeabovelab.dm.common.utils.Uuids;
 import com.google.common.base.MoreObjects;
@@ -362,7 +362,7 @@ public class PipelineServiceImpl implements PipelineService {
         Map<String, String> labels = createContainerArg.getContainer().getLabels();
         labels.putAll(getRequiredLabels(pipelineSchema, pipelineStages));
         labels.put(PIPELINE_ID, pipelineInstanceId);
-        containerManager.createContainer(createContainerArg);
+        containerManager.createContainer(createContainerArg, true);
         instance.getMapper().save();
         riseEvent(pipelineSchema, "deploy");
 

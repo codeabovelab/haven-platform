@@ -16,8 +16,6 @@
 
 package com.codeabovelab.dm.cluman.batch;
 
-import com.codeabovelab.dm.cluman.model.ImageName;
-import com.codeabovelab.dm.cluman.utils.ContainerUtils;
 import com.codeabovelab.dm.cluman.cluster.docker.management.argument.CreateContainerArg;
 import com.codeabovelab.dm.cluman.cluster.docker.management.result.CreateAndStartContainerResult;
 import com.codeabovelab.dm.cluman.cluster.docker.management.result.ProcessEvent;
@@ -28,14 +26,13 @@ import com.codeabovelab.dm.cluman.job.JobComponent;
 import com.codeabovelab.dm.cluman.job.JobContext;
 import com.codeabovelab.dm.cluman.job.JobParam;
 import com.codeabovelab.dm.cluman.model.ContainerSource;
+import com.codeabovelab.dm.cluman.model.ImageName;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.util.Assert;
 
 import java.util.Map;
 import java.util.function.Consumer;
-
-import static com.codeabovelab.dm.cluman.batch.LoadContainersOfImageTasklet.JP_IMAGE;
 
 /**
  * Processor which create containers
@@ -72,7 +69,7 @@ public class CreateContainerTasklet {
         CreateContainerArg arg = new CreateContainerArg();
         arg.setContainer(cs);
         arg.setWatcher(new MessageProxy());
-        CreateAndStartContainerResult res = containerManager.createContainer(arg);
+        CreateAndStartContainerResult res = containerManager.createContainer(arg, false);
         item = item.makeCopy().id(res.getContainerId()).name(res.getName()).build();
         rollback.record(item, RollbackData.Action.CREATE);
         ResultCode code = res.getCode();

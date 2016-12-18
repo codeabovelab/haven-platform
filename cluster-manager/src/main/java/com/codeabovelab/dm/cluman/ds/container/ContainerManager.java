@@ -16,7 +16,6 @@
 
 package com.codeabovelab.dm.cluman.ds.container;
 
-import com.codeabovelab.dm.cluman.utils.ContainerUtils;
 import com.codeabovelab.dm.cluman.cluster.docker.management.DockerService;
 import com.codeabovelab.dm.cluman.cluster.docker.management.DockerServiceImpl;
 import com.codeabovelab.dm.cluman.cluster.docker.management.DockerUtils;
@@ -31,11 +30,12 @@ import com.codeabovelab.dm.cluman.configs.container.ConfigProvider;
 import com.codeabovelab.dm.cluman.ds.DockerServiceRegistry;
 import com.codeabovelab.dm.cluman.ds.SwarmUtils;
 import com.codeabovelab.dm.cluman.ds.swarm.NetworkManager;
-import com.codeabovelab.dm.cluman.model.ImageDescriptor;
 import com.codeabovelab.dm.cluman.model.ContainerSource;
+import com.codeabovelab.dm.cluman.model.ImageDescriptor;
 import com.codeabovelab.dm.cluman.model.NodeInfo;
 import com.codeabovelab.dm.cluman.model.NodeRegistry;
 import com.codeabovelab.dm.cluman.source.ContainerSourceFactory;
+import com.codeabovelab.dm.cluman.utils.ContainerUtils;
 import com.codeabovelab.dm.cluman.validate.ExtendedAssert;
 import com.codeabovelab.dm.common.utils.Consumers;
 import com.google.common.base.MoreObjects;
@@ -50,6 +50,7 @@ import org.springframework.util.StringUtils;
 
 import java.util.*;
 import java.util.function.Consumer;
+
 import static com.codeabovelab.dm.cluman.cluster.docker.management.DockerUtils.SCALABLE;
 import static com.codeabovelab.dm.cluman.cluster.docker.model.RestartPolicy.parse;
 import static com.google.common.base.MoreObjects.firstNonNull;
@@ -65,13 +66,18 @@ public class ContainerManager {
         final CreateContainerArg arg;
         final Consumer<ProcessEvent> watcher;
         /**
+         * define whether fetch configuration from external sources
+         */
+        final boolean enrichConfigs;
+        /**
          * Service instance of concrete node or cluster on which do creation .
          */
         final DockerService dockerService;
         private String name;
 
-        CreateContainerContext(CreateContainerArg arg, DockerService service) {
+        CreateContainerContext(CreateContainerArg arg, DockerService service, boolean enrichConfigs) {
             this.arg = arg;
+            this.enrichConfigs = enrichConfigs;
             Assert.notNull(arg.getContainer(), "arg.container is null");
             this.watcher = firstNonNull(arg.getWatcher(), Consumers.<ProcessEvent>nop());
             if (service != null) {
@@ -115,7 +121,7 @@ public class ContainerManager {
      * @param arg
      * @return id of new container
      */
-    public CreateAndStartContainerResult createContainer(CreateContainerArg arg) {
+    public CreateAndStartContainerResult createContainer(CreateContainerArg arg, boolean enrichConfigs) {
         LOG.info("CreateContainerArg: {}", arg);
 
         DockerService docker;
@@ -131,7 +137,7 @@ public class ContainerManager {
                 throw new IllegalArgumentException("Cluster and node is null.");
             }
         }
-        CreateContainerContext cc = new CreateContainerContext(arg, docker);
+        CreateContainerContext cc = new CreateContainerContext(arg, docker, enrichConfigs);
         return createContainerInternal(cc);
     }
 
@@ -221,7 +227,7 @@ public class ContainerManager {
                 SwarmUtils.clearLabels(nc.getLabels());
                 CreateContainerArg arg = new CreateContainerArg();
                 arg.setContainer(nc);
-                CreateContainerContext cc = new CreateContainerContext(arg, docker);
+                CreateContainerContext cc = new CreateContainerContext(arg, docker, false);
                 CreateAndStartContainerResult containerInternal = createContainerInternal(cc);
                 if (containerInternal.getCode() == ResultCode.ERROR) {
                     return containerInternal;
@@ -248,7 +254,10 @@ public class ContainerManager {
         ContainerSource nc = cc.arg.getContainer();
         String imageName = nc.getImage();
         ImageDescriptor image = dockerService.pullImage(imageName, cc.watcher);
-        ContainerSource result = configProvider.resolveProperties(nc.getCluster(), image, imageName, nc);
+        ContainerSource result = nc;
+        if (cc.enrichConfigs) {
+            result = configProvider.resolveProperties(nc.getCluster(), image, imageName, nc);
+        }
         Map<String, Integer> appCountPerNode = getContainersPerNodeForImage(cc, imageName);
         List<String> existsNodes = DockerUtils.listNodes(dockerService.getInfo());
         // we want to save order of entries, but skip duplicates
