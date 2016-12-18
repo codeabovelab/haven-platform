@@ -18,7 +18,6 @@ package com.codeabovelab.dm.cluman.ds.clusters;
 
 import com.codeabovelab.dm.cluman.security.AclModifier;
 import com.codeabovelab.dm.cluman.security.SecuredType;
-import com.codeabovelab.dm.common.kv.mapping.KvMapper;
 import com.codeabovelab.dm.cluman.ds.nodes.NodeStorage;
 import com.codeabovelab.dm.cluman.model.NodesGroup;
 import com.codeabovelab.dm.common.security.SecurityUtils;
@@ -42,7 +41,6 @@ abstract class AbstractNodesGroup<T extends AbstractNodesGroup<T, C>, C extends 
     private final Set<Feature> features;
     private final DiscoveryStorageImpl storage;
     private final String name;
-    private volatile KvMapper<C> mapper;
     protected volatile C config;
     protected final Object lock = new Object();
     private final ObjectIdentityData oid;
@@ -68,19 +66,8 @@ abstract class AbstractNodesGroup<T extends AbstractNodesGroup<T, C>, C extends 
 
     @Override
     public void flush() {
-        KvMapper<C> mapper;
-        synchronized (lock) {
-            mapper = this.mapper;
-        }
-        mapper.save();
+        storage.getKvMap().flush(name);
     }
-
-    KvMapper<C> getMapper() {
-        synchronized (lock) {
-            return mapper;
-        }
-    }
-
 
     public String getImageFilter() {
         synchronized (lock) {
@@ -97,7 +84,7 @@ abstract class AbstractNodesGroup<T extends AbstractNodesGroup<T, C>, C extends 
 
     protected void onSet(String name, Object oldVal, Object newVal) {
         synchronized (lock) {
-            mapper.onSet(name, oldVal, newVal);
+            //TODO remove after test mapper.onSet(name, oldVal, newVal);
         }
     }
 
@@ -174,7 +161,6 @@ abstract class AbstractNodesGroup<T extends AbstractNodesGroup<T, C>, C extends 
 
     @Override
     public void updateAcl(AclModifier operator) {
-        KvMapper<C> mapper;
         synchronized (lock) {
             AclSource acl = this.config.getAcl();
             AclSource.Builder b = defaultAclBuilder().from(acl);
@@ -188,9 +174,8 @@ abstract class AbstractNodesGroup<T extends AbstractNodesGroup<T, C>, C extends 
             AclSource modified = b.build();
             onSet("acl", acl, modified);
             this.config.setAcl(modified);
-            mapper = this.mapper;
         }
-        mapper.save();
+        flush();
     }
 
     @Override
@@ -205,12 +190,10 @@ abstract class AbstractNodesGroup<T extends AbstractNodesGroup<T, C>, C extends 
     public void setConfig(AbstractNodesGroupConfig<?> config) {
         this.configClazz.cast(config);
         validateConfig(config);
-        KvMapper<C> mapper;
         synchronized (lock) {
             this.config = (C) config.clone();
-            mapper = this.mapper = storage.getKvMapperFactory().createMapper(this.config, storage.getPrefix() + name);
         }
-        mapper.save();
+        flush();
     }
 
     private void validateConfig(AbstractNodesGroupConfig<?> config) {

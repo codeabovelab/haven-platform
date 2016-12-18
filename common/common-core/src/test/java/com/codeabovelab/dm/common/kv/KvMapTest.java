@@ -66,10 +66,10 @@ public class KvMapTest {
 
     @Test
     public void test() throws Exception {
-        KvMap<Bean> map = KvMap.builder()
+        KvMap<Bean> map = KvMap.builder(Bean.class)
           .factory(factory())
           .path("/test/beans")
-          .build(Bean.class);
+          .build();
         Assert.assertThat(map.list(), hasSize(0));
         final Bean one = new Bean();
         final String oneKey = "one";

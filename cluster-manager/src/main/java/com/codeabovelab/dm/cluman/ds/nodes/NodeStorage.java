@@ -23,6 +23,7 @@ import com.codeabovelab.dm.cluman.security.SecuredType;
 import com.codeabovelab.dm.cluman.validate.ExtendedAssert;
 import com.codeabovelab.dm.common.kv.*;
 import com.codeabovelab.dm.common.kv.mapping.KvClassMapper;
+import com.codeabovelab.dm.common.kv.mapping.KvMap;
 import com.codeabovelab.dm.common.kv.mapping.KvMapperFactory;
 import com.codeabovelab.dm.cluman.model.*;
 import com.codeabovelab.dm.cluman.persistent.PersistentBusFactory;
@@ -46,10 +47,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.util.Assert;
 import org.springframework.util.StringUtils;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.function.Predicate;
@@ -63,7 +61,7 @@ public class NodeStorage implements NodeInfoProvider {
 
     private final Logger log = LoggerFactory.getLogger(getClass());
     private final KvMapperFactory kvmf;
-    private final KvClassMapper<NodeInfoImpl.Builder> nodeMapper;
+    private final KvMap<NodeInfoImpl.Builder> nodeMapper;
     private final MessageBus<NodeEvent> nodeEventBus;
     private final LoadingCache<String, NodeRegistrationImpl> nodes;
     private final String nodesPrefix;
@@ -88,7 +86,10 @@ public class NodeStorage implements NodeInfoProvider {
         this.executorService = executorService;
         KeyValueStorage storage = kvmf.getStorage();
         nodesPrefix = storage.getPrefix() + "/nodes/";
-        this.nodeMapper = kvmf.createClassMapper(nodesPrefix, NodeInfoImpl.Builder.class);
+        this.nodeMapper = KvMap.builder(NodeInfoImpl.Builder.class)
+          .path(nodesPrefix)
+          .factory(kvmf)
+          .build();
         storage.subscriptions().subscribeOnKey(this::onKVEvent, nodesPrefix + "*");
         dockerBus.asSubscriptions().subscribe(this::onDockerServiceEvent);
     }
@@ -147,7 +148,7 @@ public class NodeStorage implements NodeInfoProvider {
 
     private NodeInfoImpl.Builder load(String nodeId) {
         try {
-            NodeInfoImpl.Builder nib = nodeMapper.load(nodeId);
+            NodeInfoImpl.Builder nib = nodeMapper.get(nodeId);
             if(nib.getAddress() == null) {
                 //node cannot be without address, so we load nothing
                 return null;
@@ -285,7 +286,7 @@ public class NodeStorage implements NodeInfoProvider {
     private void save(NodeRegistrationImpl nr) {
         Assert.notNull(nr, "nodeInfo is null");
         // we use copy of node info, for data consistency
-        nodeMapper.save(nr.getName(), NodeInfoImpl.builder(nr.getNodeInfo()));
+        nodeMapper.put(nr.getName(), NodeInfoImpl.builder(nr.getNodeInfo()));
     }
 
     public void setNodeCluster(String nodeName, String cluster) {
@@ -350,7 +351,7 @@ public class NodeStorage implements NodeInfoProvider {
      * @return
      */
     public Collection<NodeInfo> getNodes(Predicate<? super NodeRegistration> predicate) {
-        List<String> keys = listNodeNames();
+        Set<String> keys = listNodeNames();
         AccessContext ac = AccessContextFactory.getLocalContext();
         List<NodeInfo> nodeList = new ArrayList<>(keys.size());
         for (String key : keys) {
@@ -365,13 +366,13 @@ public class NodeStorage implements NodeInfoProvider {
         return nodeList;
     }
 
-    private List<String> listNodeNames() {
+    private Set<String> listNodeNames() {
         return nodeMapper.list();
     }
 
     @ReConfigObject
     private NodeStorageConfigObj getConfig() {
-        List<String> nodeNames = listNodeNames();
+        Set<String> nodeNames = listNodeNames();
         NodeStorageConfigObj obj = new NodeStorageConfigObj();
         List<NodeInfoImpl> list = new ArrayList<>();
         obj.setNodes(list);

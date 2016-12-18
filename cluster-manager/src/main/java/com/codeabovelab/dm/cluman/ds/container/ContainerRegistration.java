@@ -17,13 +17,10 @@
 package com.codeabovelab.dm.cluman.ds.container;
 
 import com.codeabovelab.dm.cluman.utils.ContainerUtils;
-import com.codeabovelab.dm.common.kv.mapping.KvMapper;
-import com.codeabovelab.dm.common.kv.mapping.KvMapperFactory;
+import com.codeabovelab.dm.common.kv.mapping.KvMap;
 import com.codeabovelab.dm.common.kv.mapping.KvMapping;
 import com.codeabovelab.dm.cluman.model.ContainerBase;
 import com.codeabovelab.dm.cluman.model.ContainerBaseIface;
-import lombok.AccessLevel;
-import lombok.Getter;
 import org.springframework.util.Assert;
 
 import java.util.Collections;
@@ -36,18 +33,13 @@ public class ContainerRegistration {
     private final ContainerBase.Builder container = ContainerBase.builder();
     private final Object lock = new Object();
     private ContainerBase cached;
-    @Getter(AccessLevel.NONE)
-    private final String prefix;
     private String node;
-    private final KvMapper<ContainerRegistration> mapper;
+    private KvMap<?> kvmap;
 
-    public ContainerRegistration(String prefix, String id, KvMapperFactory kvmf) {
+    ContainerRegistration(KvMap<?> kvmap, String id) {
         this.id = id;
         Assert.notNull(id, "id is null");
-
-        this.prefix = prefix;
-
-        this.mapper = kvmf.createMapper(this, prefix + id);
+        this.kvmap = kvmap;
     }
 
     public String getId() {
@@ -55,7 +47,6 @@ public class ContainerRegistration {
     }
 
     public void setAdditionalLabels(Map<String, String> additionalLabels) {
-        onSet("additionalLabels", this.additionalLabels, additionalLabels);
         this.additionalLabels = additionalLabels;
     }
 
@@ -63,12 +54,8 @@ public class ContainerRegistration {
         return additionalLabels == null? Collections.emptyMap() : Collections.unmodifiableMap(additionalLabels);
     }
 
-    protected void onSet(String name, Object oldVal, Object newVal) {
-        mapper.onSet(name, oldVal, newVal);
-    }
-
     public void flush() {
-        mapper.save();
+        kvmap.flush(id);
     }
 
     public ContainerBase getContainer() {

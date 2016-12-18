@@ -18,13 +18,19 @@ package com.codeabovelab.dm.common.kv.mapping;
 
 import com.codeabovelab.dm.common.kv.KvStorageEvent;
 import com.codeabovelab.dm.common.kv.KvUtils;
+import com.google.common.base.MoreObjects;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import lombok.Data;
+import org.springframework.util.Assert;
 
+import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.function.BiConsumer;
+import java.util.function.Function;
 
 /**
  * KeyValue storage map of directory. <p/>
@@ -32,23 +38,33 @@ import java.util.concurrent.ConcurrentMap;
  * guava cache because want to add keys into map without loading values.
  */
 public class KvMap<T> {
+
     @Data
-    public static class Builder {
+    public static class Builder<T, V> {
         private KvMapperFactory factory;
         private String path;
+        private KvMapAdapter<T> adapter = KvMapAdapter.direct();
+        private final Class<T> type;
+        private final Class<V> valueType;
 
-        public Builder factory(KvMapperFactory factory) {
+        public Builder<T, V> factory(KvMapperFactory factory) {
             setFactory(factory);
             return this;
         }
 
-        public Builder path(String path) {
+        public Builder<T, V> path(String path) {
             setPath(path);
             return this;
         }
 
-        public <T> KvMap<T> build(Class<T> type) {
-            return new KvMap<>(this, type);
+        public Builder<T, V> adapter(KvMapAdapter<T> adapter) {
+            setAdapter(adapter);
+            return this;
+        }
+
+        public KvMap<T> build() {
+            Assert.notNull(type);
+            return new KvMap<>(this);
         }
     }
     private final  class ValueHolder {
@@ -62,16 +78,23 @@ public class KvMap<T> {
         }
 
         synchronized T save(T val) {
+            checkValue(val);
             this.dirty = false;
             if(val == value) {
                 return value;
             }
             T old = this.value;
             this.value = val;
-            mapper.save(key, val, (p, res) -> {
+            flush();
+            return old;
+        }
+
+        synchronized void flush() {
+            this.dirty = false;
+            Object obj = adapter.get(this.value);
+            mapper.save(key, value, (p, res) -> {
                 index.put(p.getKey(), res.getIndex());
             });
-            return old;
         }
 
         synchronized void dirty(String prop, long newIndex) {
@@ -93,25 +116,60 @@ public class KvMap<T> {
         }
 
         synchronized void set(T value) {
+            checkValue(value);
+            internalSet(value);
+        }
+
+        private void internalSet(T value) {
             this.dirty = false;
             this.value = value;
         }
 
+        private void checkValue(T value) {
+            Assert.notNull(value, "Null value is not allowed");
+        }
+
         synchronized void load() {
-            set(mapper.load(key));
+            Object obj = mapper.load(key);
+            T newVal = adapter.set(this.value, obj);
+            internalSet(newVal);
+        }
+
+        synchronized T getIfPresent() {
+            if(dirty) {
+                // returning dirty value may cause unexpected effects
+                return null;
+            }
+            return value;
+        }
+
+        synchronized T computeIfAbsent(Function<String, T> func) {
+            if(value == null) {
+                save(func.apply(key));
+            }
+            // get - is load value if its present, but dirty
+            return get();
         }
     }
 
-    private final KvClassMapper<T> mapper;
+    private final KvClassMapper<Object> mapper;
+    private final KvMapAdapter<T> adapter;
     private final ConcurrentMap<String, ValueHolder> map = new ConcurrentHashMap<>();
 
-    private KvMap(Builder builder, Class<T> type) {
-        this.mapper = builder.factory.createClassMapper(builder.path, type);
+    @SuppressWarnings("unchecked")
+    private KvMap(Builder builder) {
+        this.adapter = builder.adapter;
+        Class<Object> mapperType = MoreObjects.firstNonNull(builder.valueType, (Class<Object>)builder.type);
+        this.mapper = builder.factory.createClassMapper(builder.path, mapperType);
         builder.factory.getStorage().subscriptions().subscribeOnKey(this::onKvEvent, builder.path);
     }
 
-    public static Builder builder() {
-        return new Builder();
+    public static <T> Builder<T, T> builder(Class<T> type) {
+        return new Builder<>(type, type);
+    }
+
+    public static <T, V> Builder<T, V> builder(Class<T> type, Class<V> value) {
+        return new Builder<>(type, value);
     }
 
     private void onKvEvent(KvStorageEvent e) {
@@ -169,10 +227,34 @@ public class KvMap<T> {
 
     /**
      * Remove value directly from storage, from map it will be removed at event.
+     *
      * @param key key for remove
+     * @return gives value only if present, not load it, this mean that you may obtain null, event storage has value
      */
-    public void remove(String key) {
+    public T remove(String key) {
+        ValueHolder valueHolder = map.get(key);
         mapper.delete(key);
+        if (valueHolder != null) {
+            // we must not load value
+            return valueHolder.getIfPresent();
+        }
+        return null;
+    }
+
+    public T computeIfAbsent(String key, Function<String, T> func) {
+        ValueHolder holder = getOrCreateHolder(key);
+        return holder.computeIfAbsent(func);
+    }
+
+    /**
+     * Save existed value of specified key. If is not present, do nothing.
+     * @param key key of value.
+     */
+    public void flush(String key) {
+        ValueHolder holder = map.get(key);
+        if(holder == null) {
+            holder.flush();
+        }
     }
 
     private ValueHolder getOrCreateHolder(String key) {
@@ -192,13 +274,20 @@ public class KvMap<T> {
         return ImmutableSet.copyOf(this.map.keySet());
     }
 
-    private ValueHolder load(String key) {
-        T val = mapper.load(key);
-        if(val == null) {
-            return null;
-        }
-        ValueHolder holder = new ValueHolder(key);
-        holder.save(val);
-        return holder;
+    /**
+     * Load all values of map. Note that it may cause time consumption.
+     * @return immutable collection of values
+     */
+    public Collection<T> values() {
+        ImmutableList.Builder<T> b = ImmutableList.builder();
+        this.map.values().forEach(valueHolder -> b.add(valueHolder.get()));
+        return b.build();
+    }
+
+    public void forEach(BiConsumer<String, ? super T> action) {
+        this.map.forEach((key, holder) -> {
+            T value = holder.get();
+            action.accept(key, value);
+        });
     }
 }

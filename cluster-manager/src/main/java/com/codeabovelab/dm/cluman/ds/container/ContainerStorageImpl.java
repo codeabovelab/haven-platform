@@ -19,6 +19,7 @@ package com.codeabovelab.dm.cluman.ds.container;
 import com.codeabovelab.dm.common.kv.DeleteDirOptions;
 import com.codeabovelab.dm.common.kv.KvUtils;
 import com.codeabovelab.dm.common.kv.WriteOptions;
+import com.codeabovelab.dm.common.kv.mapping.KvMap;
 import com.codeabovelab.dm.common.kv.mapping.KvMapperFactory;
 import com.codeabovelab.dm.cluman.model.*;
 import lombok.extern.slf4j.Slf4j;
@@ -29,8 +30,6 @@ import org.springframework.stereotype.Component;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
@@ -40,14 +39,17 @@ public class ContainerStorageImpl implements ContainerStorage, InitializingBean 
 
     private final KvMapperFactory kvmf;
 
-    private final ConcurrentMap<String, ContainerRegistration> containerMap;
+    private final KvMap<ContainerRegistration> map;
     private final String prefix;
 
     @Autowired
     public ContainerStorageImpl(KvMapperFactory kvmf) {
         this.kvmf = kvmf;
         this.prefix = kvmf.getStorage().getPrefix() + "/containers/";
-        this.containerMap = new ConcurrentHashMap<>();
+        this.map = KvMap.builder(ContainerRegistration.class)
+          .factory(kvmf)
+          .path(prefix)
+          .build();
     }
 
     @Override
@@ -63,7 +65,7 @@ public class ContainerStorageImpl implements ContainerStorage, InitializingBean 
         } catch (Exception e) {
             log.error("Can't delete container", e);
         }
-        ContainerRegistration cr = containerMap.remove(id);
+        ContainerRegistration cr = map.remove(id);
         if(cr != null) {
             ContainerBase cb = cr.getContainer();
             log.info("Container remove: {} '{}', of '{}'", cr.getId(), cb.getName(), cb.getImage());
@@ -72,19 +74,19 @@ public class ContainerStorageImpl implements ContainerStorage, InitializingBean 
 
     @Override
     public List<ContainerRegistration> getContainers() {
-        return new ArrayList<>(containerMap.values());
+        return new ArrayList<>(map.values());
     }
 
     @Override
     public ContainerRegistration getContainer(String id) {
-        return containerMap.get(id);
+        return map.get(id);
     }
 
     @Override
     public ContainerRegistration findContainer(String name) {
-        ContainerRegistration cr = containerMap.get(name);
+        ContainerRegistration cr = map.get(name);
         if(cr == null) {
-            cr = containerMap.values().stream().filter((c) -> {
+            cr = map.values().stream().filter((c) -> {
                 return c.getId().startsWith(name) || c.getContainer().getName().equals(name);
             }).findAny().orElse(null);
         }
@@ -93,14 +95,14 @@ public class ContainerStorageImpl implements ContainerStorage, InitializingBean 
 
     @Override
     public List<ContainerRegistration> getContainersByNode(String nodeName) {
-        return containerMap.values()
+        return map.values()
           .stream()
           .filter(c -> c.getNode().equals(nodeName))
           .collect(Collectors.toList());
     }
 
     Set<String> getContainersIdsByNode(String nodeName) {
-        return containerMap.values()
+        return map.values()
           .stream()
           .filter(c -> c.getNode().equals(nodeName))
           .map(ContainerRegistration::getId)
@@ -119,8 +121,8 @@ public class ContainerStorageImpl implements ContainerStorage, InitializingBean 
     }
 
     ContainerRegistration getOrCreateContainer(String id, Consumer<ContainerRegistration> onCreate) {
-        return containerMap.computeIfAbsent(id, s -> {
-            ContainerRegistration registration = new ContainerRegistration(prefix, id, kvmf);
+        return map.computeIfAbsent(id, s -> {
+            ContainerRegistration registration = new ContainerRegistration(this.map, id);
             onCreate.accept(registration);
             registration.flush();
             ContainerBase cb = registration.getContainer();
