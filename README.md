@@ -1,3 +1,4 @@
+![CI](https://travis-ci.org/codeabovelab/haven-platform.svg?branch=master)
 # Haven: Container Management Simplified
  
 ## Introduction
