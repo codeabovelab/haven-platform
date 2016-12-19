@@ -15,7 +15,8 @@ Haven features the following capabilities:
 * [Image Management](#image-management)
 * [Registry Management](#registry-management)
 * [Jobs](#jobs)
-* [Delegated Admin](#delegated_admin)
+* [Delegated Admin](#delegated-admin)
+* [Subset of additional features](#subset-of-additional-features)
 
 #### Dashboard
 The dashboard gives an overview of the status of the cluster and any containers or nodes that are using excessive 
@@ -56,6 +57,19 @@ Each cluster can have its set of jobs to update specific images.
 #### Delegated Admin
 Users can be assigned administrative rights to specific clusters to avoid admin bottleneck.
 ![users](https://raw.githubusercontent.com/codeabovelab/haven-platform/master/doc/img/users.png)
+
+#### Subset of additional features
+1. Creating/deleting tags and ability to set filters for clusters based on the tags, use/case: creating workflow: only images which were tested at QA should be visible on the prod cluster.
+2. Storing containers configuration in VCS per cluster, see https://github.com/codeabovelab/haven-example-container-configuration
+3. Additional policies/constraints for swarm.
+4. Group operations such as cleaning space, upgrade/rollback containers, use/cases:
+
+       a. checking/updating all containers from specified repository every five minutes for test cluster
+       
+       b. one-time update specified list of containers (which use common API, etc).
+       
+       c. or just click update all in this cluster
+5. Backups.
 
 ### Requirements
 
