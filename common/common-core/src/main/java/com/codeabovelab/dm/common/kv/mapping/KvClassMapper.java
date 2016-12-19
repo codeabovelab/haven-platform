@@ -76,6 +76,10 @@ public class KvClassMapper<T> {
         // we must read index of all node but, we can not create node in single command,
         // so we use index of last sub node
         Collection<KvProperty> props = getProps(object);
+        if(props.isEmpty()) {
+            throw new IllegalArgumentException("The key '" + name +
+              "' is mapped to object of type " + object.getClass() + " which has no properties.");
+        }
         for(KvProperty property: props) {
             String strval = property.get(object);
             String proppath = KvUtils.join(path, property.getKey());
