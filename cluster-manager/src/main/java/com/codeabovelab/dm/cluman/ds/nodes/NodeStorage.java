@@ -24,6 +24,7 @@ import com.codeabovelab.dm.cluman.validate.ExtendedAssert;
 import com.codeabovelab.dm.common.kv.*;
 import com.codeabovelab.dm.common.kv.mapping.KvClassMapper;
 import com.codeabovelab.dm.common.kv.mapping.KvMap;
+import com.codeabovelab.dm.common.kv.mapping.KvMapAdapter;
 import com.codeabovelab.dm.common.kv.mapping.KvMapperFactory;
 import com.codeabovelab.dm.cluman.model.*;
 import com.codeabovelab.dm.cluman.persistent.PersistentBusFactory;
@@ -34,9 +35,6 @@ import com.codeabovelab.dm.common.security.Action;
 import com.codeabovelab.dm.common.validate.ValidityException;
 import com.codeabovelab.dm.common.mb.MessageBus;
 import com.codeabovelab.dm.cluman.security.TempAuth;
-import com.google.common.cache.CacheBuilder;
-import com.google.common.cache.CacheLoader;
-import com.google.common.cache.LoadingCache;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -47,8 +45,8 @@ import org.springframework.stereotype.Component;
 import org.springframework.util.Assert;
 import org.springframework.util.StringUtils;
 
+import javax.annotation.PostConstruct;
 import java.util.*;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.function.Predicate;
 
@@ -61,9 +59,8 @@ public class NodeStorage implements NodeInfoProvider {
 
     private final Logger log = LoggerFactory.getLogger(getClass());
     private final KvMapperFactory kvmf;
-    private final KvMap<NodeInfoImpl.Builder> nodeMapper;
+    private final KvMap<NodeRegistrationImpl> nodes;
     private final MessageBus<NodeEvent> nodeEventBus;
-    private final LoadingCache<String, NodeRegistrationImpl> nodes;
     private final String nodesPrefix;
     private final PersistentBusFactory persistentBusFactory;
     private final ExecutorService executorService;
@@ -77,55 +74,69 @@ public class NodeStorage implements NodeInfoProvider {
         this.kvmf = kvmf;
         this.nodeEventBus = nodeEventBus;
         this.persistentBusFactory = persistentBusFactory;
-        this.nodes = CacheBuilder.newBuilder().build(new CacheLoader<String, NodeRegistrationImpl>() {
-            @Override
-            public NodeRegistrationImpl load(String nodeId) throws Exception {
-                return newRegistration(NodeStorage.this.load(nodeId));
-            }
-        });
-        this.executorService = executorService;
         KeyValueStorage storage = kvmf.getStorage();
         nodesPrefix = storage.getPrefix() + "/nodes/";
-        this.nodeMapper = KvMap.builder(NodeInfoImpl.Builder.class)
+        this.nodes = KvMap.builder(NodeRegistrationImpl.class, NodeInfoImpl.Builder.class)
           .path(nodesPrefix)
+          .adapter(new KvMapAdapter<NodeRegistrationImpl>() {
+              @Override
+              public Object get(String key, NodeRegistrationImpl source) {
+                  return NodeInfoImpl.builder(source.getNodeInfo());
+              }
+
+              @Override
+              public NodeRegistrationImpl set(String key, NodeRegistrationImpl source, Object value) {
+                  NodeInfo ni = (NodeInfo) value;
+                  if(source == null) {
+                      NodeInfoImpl.Builder nib = NodeInfoImpl.builder(ni);
+                      nib.setName(key);
+                      //TODO java.lang.IllegalStateException: No local context
+                      // but we must leave access checking!
+                      source = newRegistration(nib);
+                  } else {
+                      source.updateNodeInfo(b -> {
+                          NodeMetrics om = b.getHealth();
+                          b.from(ni);
+                          b.health(om);
+                      });
+                  }
+                  return source;
+              }
+
+              @Override
+              public Class<?> getType(NodeRegistrationImpl source) {
+                  return NodeInfoImpl.Builder.class;
+              }
+          })
           .factory(kvmf)
           .build();
+        this.executorService = executorService;
+
         storage.subscriptions().subscribeOnKey(this::onKVEvent, nodesPrefix + "*");
         dockerBus.asSubscriptions().subscribe(this::onDockerServiceEvent);
+    }
+
+    @PostConstruct
+    public void init() {
+        nodes.load();
     }
 
     private void onKVEvent(KvStorageEvent e) {
         String key = getNodeName(e.getKey());
         KvStorageEvent.Crud action = e.getAction();
-        if(key == null) {
-            if(nodesPrefix.startsWith(e.getKey()) && action == KvStorageEvent.Crud.DELETE) {
-                nodes.invalidateAll();
-            }
-            return;
-        }
         try (TempAuth ta = TempAuth.asSystem()) {
             switch (action) {
                 case DELETE: {
                     NodeRegistrationImpl nr = getNodeRegistrationInternal(key);
-                    this.nodes.invalidate(key);
                     NodeInfoImpl ni = nr == null? NodeInfoImpl.builder().name(key).build() : nr.getNodeInfo();
                     fireNodeModification(nr, StandardActions.DELETE, ni);
                     break;
                 }
                 default: {
                     NodeRegistrationImpl nr = this.nodes.getIfPresent(key);
-                    if (nr != null) {
-                        //do reloading cache
-                        NodeInfoImpl.Builder nib = load(key);
-                        nr.updateNodeInfo((b) -> {
-                            NodeMetrics om = b.getHealth();
-                            b.from(nib);
-                            b.health(om);
-                        });
-                        // update events will send from node registration
-                        if(action == KvStorageEvent.Crud.CREATE) {
-                            fireNodeModification(nr, StandardActions.CREATE, nr.getNodeInfo());
-                        }
+                    // update events will send from node registration
+                    if (nr != null && action == KvStorageEvent.Crud.CREATE) {
+                        fireNodeModification(nr, StandardActions.CREATE, nr.getNodeInfo());
                     }
                 }
             }
@@ -146,21 +157,6 @@ public class NodeStorage implements NodeInfoProvider {
         });
     }
 
-    private NodeInfoImpl.Builder load(String nodeId) {
-        try {
-            NodeInfoImpl.Builder nib = nodeMapper.get(nodeId);
-            if(nib.getAddress() == null) {
-                //node cannot be without address, so we load nothing
-                return null;
-            }
-            nib.name(nodeId);
-            return nib;
-        } catch (ValidityException e) {
-            //we interpret invalid nodes as null
-            return null;
-        }
-    }
-
     private void onDockerServiceEvent(DockerServiceEvent e) {
         if(e instanceof DockerServiceEvent.DockerServiceInfoEvent) {
             // we update health of all presented nodes
@@ -177,7 +173,7 @@ public class NodeStorage implements NodeInfoProvider {
     @Scheduled(fixedDelay = 60_000L)
     private void checkNodes() {
         // periodically check online status of nodes
-        for(NodeRegistrationImpl nr: nodes.asMap().values()) {
+        for(NodeRegistrationImpl nr: nodes.values()) {
             nr.getNodeInfo();
         }
     }
@@ -187,6 +183,7 @@ public class NodeStorage implements NodeInfoProvider {
     }
 
     private NodeRegistrationImpl newRegistration(NodeInfo nodeInfo) {
+        AccessContextFactory.getLocalContext().assertGranted(SecuredType.NODE.id(nodeInfo.getName()), Action.CREATE);
         return new NodeRegistrationImpl(persistentBusFactory, nodeInfo, this::fireNodeModification);
     }
 
@@ -232,35 +229,12 @@ public class NodeStorage implements NodeInfoProvider {
         NodeUtils.checkName(name);
         NodeRegistrationImpl nr = getNodeRegistrationInternal(name);
         checkAccess(nr, Action.DELETE);
-        String path = (nodesPrefix + name);
-        kvmf.getStorage().deletedir(path, DeleteDirOptions.builder().recursive(true).build());
-        //do not clear nodes cache here!
+        nodes.remove(name);
     }
 
     private NodeRegistrationImpl getOrCreateNodeRegistration(String name) {
         ExtendedAssert.matchAz09Hyp(name, "node name");
-        try {
-            return nodes.get(name, () -> {
-                AccessContextFactory.getLocalContext().assertGranted(SecuredType.NODE.id(name), Action.CREATE);
-                NodeRegistrationImpl nr;
-                NodeInfoImpl.Builder exists = load(name);
-                if(exists == null) {
-                    nr = newRegistration(NodeInfoImpl.builder().name(name));
-                    save(nr);
-                } else {
-                    nr = newRegistration(exists);
-                }
-                return nr;
-            });
-        } catch (ExecutionException e) {
-            Throwable cause = e.getCause();
-            if(cause instanceof IllegalArgumentException) {
-                // we pass out exception from invalid node name
-                throw (IllegalArgumentException)cause;
-            }
-            log.error("On loading: {} ", name, e);
-            return null;
-        }
+        return nodes.get(name);
     }
 
     /**
@@ -284,9 +258,9 @@ public class NodeStorage implements NodeInfoProvider {
     }
 
     private void save(NodeRegistrationImpl nr) {
-        Assert.notNull(nr, "nodeInfo is null");
+        Assert.notNull(nr, "NodeRegistrationImpl is null");
         // we use copy of node info, for data consistency
-        nodeMapper.put(nr.getName(), NodeInfoImpl.builder(nr.getNodeInfo()));
+        nodes.flush(nr.getName());
     }
 
     public void setNodeCluster(String nodeName, String cluster) {
@@ -367,7 +341,7 @@ public class NodeStorage implements NodeInfoProvider {
     }
 
     private Set<String> listNodeNames() {
-        return nodeMapper.list();
+        return nodes.list();
     }
 
     @ReConfigObject

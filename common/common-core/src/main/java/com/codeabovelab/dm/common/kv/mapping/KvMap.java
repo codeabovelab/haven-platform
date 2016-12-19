@@ -95,7 +95,7 @@ public class KvMap<T> {
                 // no value set, nothing to flush
                 return;
             }
-            Object obj = adapter.get(this.value);
+            Object obj = adapter.get(this.key, this.value);
 
             Assert.notNull(obj, "Adapter " + adapter + " return null from " + this.value + " that is not allowed");
             mapper.save(key, obj, (p, res) -> {
@@ -137,7 +137,7 @@ public class KvMap<T> {
 
         synchronized void load() {
             Object obj = mapper.load(key, adapter.getType(this.value));
-            T newVal = adapter.set(this.value, obj);
+            T newVal = adapter.set(this.key, this.value, obj);
             internalSet(newVal);
         }
 
@@ -168,6 +168,13 @@ public class KvMap<T> {
         Class<Object> mapperType = MoreObjects.firstNonNull(builder.valueType, (Class<Object>)builder.type);
         this.mapper = builder.factory.createClassMapper(builder.path, mapperType);
         builder.factory.getStorage().subscriptions().subscribeOnKey(this::onKvEvent, builder.path);
+    }
+
+    /**
+     * Load all data.
+     */
+    public void load() {
+        this.mapper.list().forEach(this::getOrCreateHolder);
     }
 
     public static <T> Builder<T, T> builder(Class<T> type) {
@@ -218,6 +225,19 @@ public class KvMap<T> {
             return null;
         }
         return holder.get();
+    }
+
+    /**
+     * Get exists value from storage. Not load it, even if dirty.
+     * @param key key
+     * @return value or null if not exists or dirty.
+     */
+    public T getIfPresent(String key) {
+        ValueHolder holder = map.get(key);
+        if(holder == null) {
+            return null;
+        }
+        return holder.getIfPresent();
     }
 
     /**

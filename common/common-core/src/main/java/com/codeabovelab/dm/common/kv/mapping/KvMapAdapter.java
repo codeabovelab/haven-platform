@@ -26,12 +26,12 @@ public interface KvMapAdapter<T> {
      */
     KvMapAdapter<Object> DIRECT = new KvMapAdapter<Object>() {
         @Override
-        public Object get(Object source) {
+        public Object get(String key, Object source) {
             return source;
         }
 
         @Override
-        public Object set(Object source, Object value) {
+        public Object set(String key, Object source, Object value) {
             return value;
         }
     };
@@ -46,7 +46,7 @@ public interface KvMapAdapter<T> {
      * @param source source object, can not be null
      * @return value null is not allowed
      */
-    Object get(T source);
+    Object get(String key, T source);
 
     /**
      * Set loaded object to source object.
@@ -54,10 +54,10 @@ public interface KvMapAdapter<T> {
      * @param value loaded value, null not allowed.
      * @return new source object, also you can return 'source'
      */
-    T set(T source, Object value);
+    T set(String key, T source, Object value);
 
     /**
-     * Return default type or value for specified source. Value - the object which is returned by {@link #get(Object)}
+     * Return default type or value for specified source. Value - the object which is returned by {@link #get(String, Object)}
      * @param source - source object, can be null
      * @return type, can be null
      */

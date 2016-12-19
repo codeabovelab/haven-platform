@@ -384,12 +384,12 @@ public class DiscoveryStorageImpl implements DiscoveryStorage {
 
     private static class KvMapAdapterImpl implements KvMapAdapter<NodesGroup> {
         @Override
-        public Object get(NodesGroup src) {
+        public Object get(String key, NodesGroup src) {
             return src.getConfig();
         }
 
         @Override
-        public NodesGroup set(NodesGroup src, Object value) {
+        public NodesGroup set(String key, NodesGroup src, Object value) {
             if(src != null) {
                 src.setConfig((AbstractNodesGroupConfig<?>) value);
             }
