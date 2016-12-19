@@ -30,6 +30,7 @@ import com.codeabovelab.dm.common.kv.KeyValueStorage;
 import com.codeabovelab.dm.common.kv.KvUtils;
 import com.codeabovelab.dm.common.kv.WriteOptions;
 import com.codeabovelab.dm.common.kv.mapping.KvMap;
+import com.codeabovelab.dm.common.kv.mapping.KvMapAdapter;
 import com.codeabovelab.dm.common.kv.mapping.KvMapperFactory;
 import com.codeabovelab.dm.common.mb.MessageBus;
 import com.codeabovelab.dm.common.security.Action;
@@ -48,8 +49,6 @@ import org.springframework.util.Assert;
 
 import java.util.List;
 import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
@@ -86,9 +85,10 @@ public class DiscoveryStorageImpl implements DiscoveryStorage {
         KeyValueStorage storage = kvmf.getStorage();
         this.filterFactory = filterFactory;
         this.prefix = storage.getPrefix() + "/clusters/";
-        this.clusters = KvMap.builder(NodesGroup.class)
+        this.clusters = KvMap.builder(NodesGroup.class, AbstractNodesGroupConfig.class)
           .path(prefix)
           .factory(kvmf)
+          .adapter(new KvMapAdapterImpl())
           .build();
         //create clusters, its need for empty etcd database
         storage.setdir(this.prefix, WriteOptions.builder().build());
@@ -99,14 +99,12 @@ public class DiscoveryStorageImpl implements DiscoveryStorage {
             }
             switch (e.getAction()) {
                 case DELETE:
-                    this.clusters.remove(key);
                     fireGroupEvent(key, StandardActions.DELETE);
                     break;
                 case CREATE:
                     fireGroupEvent(key, StandardActions.CREATE);
                     break;
-                default:
-                    NodesGroup reg = this.clusters.get(key);
+                case UPDATE:
                     fireGroupEvent(key, StandardActions.UPDATE);
 
             }
@@ -381,6 +379,34 @@ public class DiscoveryStorageImpl implements DiscoveryStorage {
             if(group != null) {
                 group.flush();
             }
+        }
+    }
+
+    private static class KvMapAdapterImpl implements KvMapAdapter<NodesGroup> {
+        @Override
+        public Object get(NodesGroup src) {
+            return src.getConfig();
+        }
+
+        @Override
+        public NodesGroup set(NodesGroup src, Object value) {
+            if(src != null) {
+                src.setConfig((AbstractNodesGroupConfig<?>) value);
+            }
+            return src;
+        }
+
+        @Override
+        public Class<?> getType(NodesGroup src) {
+            if(src == null) {
+                return null;
+            }
+            AbstractNodesGroupConfig<?> config = src.getConfig();
+            if(config != null) {
+                return config.getClass();
+            }
+            //src.getClass().getTypeParameters();
+            return null;
         }
     }
 }
