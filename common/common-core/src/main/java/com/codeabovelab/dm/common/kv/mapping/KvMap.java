@@ -253,8 +253,7 @@ public class KvMap<T> {
     public void flush(String key) {
         ValueHolder holder = map.get(key);
         if(holder != null) {
-            //TODO: fix it
-//            holder.flush();
+            holder.flush();
         }
     }
 
