@@ -150,20 +150,25 @@ public class KvClassMapper<T> {
     private Class<T> resolveType(String path) {
         Class<T> actualType = this.type;
         JsonTypeInfo typeInfo = AnnotationUtils.findAnnotation(this.type, JsonTypeInfo.class);
-        if (typeInfo != null) {
-            String property = typeInfo.property();
-            String proppath = KvUtils.join(path, property);
-            try {
-                String str = this.storage.get(proppath).getValue();
-                JsonSubTypes subTypes = AnnotationUtils.findAnnotation(this.type, JsonSubTypes.class);
-                for (JsonSubTypes.Type t : subTypes.value()) {
-                    if (t.name().equals(str.replace("\"", ""))) {
-                        actualType = (Class<T>) t.value();
-                    }
-                }
-            } catch (Exception e) {
-                log.error("can't instantiate class", e);
+        if (typeInfo == null) {
+            return actualType;
+        }
+        String property = typeInfo.property();
+        String proppath = KvUtils.join(path, property);
+        try {
+            KvNode node = this.storage.get(proppath);
+            if(node == null) {
+                return actualType;
             }
+            String str = node.getValue();
+            JsonSubTypes subTypes = AnnotationUtils.findAnnotation(this.type, JsonSubTypes.class);
+            for (JsonSubTypes.Type t : subTypes.value()) {
+                if (t.name().equals(str.replace("\"", ""))) {
+                    actualType = (Class<T>) t.value();
+                }
+            }
+        } catch (Exception e) {
+            log.error("can't instantiate class", e);
         }
         return actualType;
     }
