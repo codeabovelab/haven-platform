@@ -1,4 +1,5 @@
-![CI](https://travis-ci.org/codeabovelab/haven-platform.svg?branch=master)
+[![Build Status](https://travis-ci.org/codeabovelab/haven-platform.svg?branch=master)](https://travis-ci.org/codeabovelab/haven-platform)
+
 # Haven: Container Management Simplified
  
 ## Introduction
