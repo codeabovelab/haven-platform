@@ -177,9 +177,12 @@ public class KvClassMapper<T> {
         String path = path(name);
         for(KvProperty property: getProps(object)) {
             String proppath = KvUtils.join(path, property.getKey());
-            String str;
+            String str = null;
             try {
-                str = this.storage.get(proppath).getValue();
+                KvNode node = this.storage.get(proppath);
+                if(node != null) {
+                    str = node.getValue();
+                }
             } catch (Exception e) {
                 throw new RuntimeException("Error at path: " + proppath, e);
             }
