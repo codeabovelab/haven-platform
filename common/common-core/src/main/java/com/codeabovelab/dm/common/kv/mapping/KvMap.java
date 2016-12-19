@@ -91,8 +91,14 @@ public class KvMap<T> {
 
         synchronized void flush() {
             this.dirty = false;
+            if(this.value == null) {
+                // no value set, nothing to flush
+                return;
+            }
             Object obj = adapter.get(this.value);
-            mapper.save(key, value, (p, res) -> {
+
+            Assert.notNull(obj, "Adapter " + adapter + " return null from " + this.value + " that is not allowed");
+            mapper.save(key, obj, (p, res) -> {
                 index.put(p.getKey(), res.getIndex());
             });
         }
