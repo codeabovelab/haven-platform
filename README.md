@@ -27,7 +27,7 @@ In the Cluster module, the user can manage the nodes and the containers, and vie
 ![clusters](https://raw.githubusercontent.com/codeabovelab/haven-platform/master/doc/img/clusters.png)
 
 #### Container Management
-In the Containers module, the user can manage all of the active containers and their status. The user can also view logs,  
+In the Containers module, the user can manage all of the active containers and their status. The user can also view logs,
 moreover, configurations of each container.
 ![containers](https://raw.githubusercontent.com/codeabovelab/haven-platform/master/doc/img/containers.png)
 
@@ -48,7 +48,7 @@ without having to remember which registry it is on.
 
 
 #### Jobs
-Unattended jobs can be scheduled, and results are captured for auditing purposes.
+Unattended jobs can be scheduled and results are available for auditing purposes.
 ![jobs](https://raw.githubusercontent.com/codeabovelab/haven-platform/master/doc/img/jobs.png)
 Each cluster can have its set of jobs to update specific images. 
 ![update](https://raw.githubusercontent.com/codeabovelab/haven-platform/master/doc/img/update.png)
