@@ -4,14 +4,62 @@
 Haven is a Docker cluster management system. The user controls the entire platform via user-friendly yet powerful UI and 
 commandline tools. Built on top of Docker, Swarm, and Compose, it offers multiple clusters and image registries management.
 
-![dashboard](https://raw.githubusercontent.com/codeabovelab/haven-platform/master/doc/img/dashboard.png)
-![jobs](https://raw.githubusercontent.com/codeabovelab/haven-platform/master/doc/img/jobs.png)
+### Feature Overview
 
-[More screenshots](/doc/img)
+Haven features the following capabilities:
+
+* [Dashboard](#dashboard)
+* [Cluster Management](#cluster-management)
+* [Container Management](#container-management)
+* [Node Status](#node-status)
+* [Image Management](#image-management)
+* [Registry Management](#registry-management)
+* [Jobs](#jobs)
+* [Delegated Admin](#delegated_admin)
+
+#### Dashboard
+The dashboard gives an overview of the status of the cluster and any containers or nodes that are using excessive 
+resources. 
+![dashboard](https://raw.githubusercontent.com/codeabovelab/haven-platform/master/doc/img/dashboard.png)
+
+#### Cluster Management
+In the Cluster module, the user can manage the nodes and the containers, and view any errors the in the cluster event log.
+![clusters](https://raw.githubusercontent.com/codeabovelab/haven-platform/master/doc/img/clusters.png)
+
+#### Container Management
+In the Containers module, the user can manage all of the active containers and their status. The user can also view logs,  
+moreover, configurations of each container.
+![containers](https://raw.githubusercontent.com/codeabovelab/haven-platform/master/doc/img/containers.png)
+
+
+#### Node Status
+In the Node module, the user can see all nodes in the system and their detailed info.
+![nodes](https://raw.githubusercontent.com/codeabovelab/haven-platform/master/doc/img/nodes.png)
+
+#### Image Management
+In the Image Management module, the user can see all of the images downloaded onto each cluster and which nodes the image 
+resides on. Users can remove old images to save disk space.
+![images](https://raw.githubusercontent.com/codeabovelab/haven-platform/master/doc/img/images.png)
+
+#### Registry Management
+Private and public Registries can be configured on the system to let the user easily select the desired image for downloading
+without having to remember which registry it is on.
+![registries](https://raw.githubusercontent.com/codeabovelab/haven-platform/master/doc/img/registries.png)
+
+
+#### Jobs
+Unattended jobs can be scheduled, and results are captured for auditing purposes.
+![jobs](https://raw.githubusercontent.com/codeabovelab/haven-platform/master/doc/img/jobs.png)
+Each cluster can have its set of jobs to update specific images. 
+![update](https://raw.githubusercontent.com/codeabovelab/haven-platform/master/doc/img/update.png)
+
+#### Delegated Admin
+Users can be assigned administrative rights to specific clusters to avoid admin bottleneck.
+![users](https://raw.githubusercontent.com/codeabovelab/haven-platform/master/doc/img/users.png)
 
 ### Requirements
 
-Haven is comprised of Master and Agent nodes. The common requirements for both are: 
+Haven is comprised of Master and Agent nodes. The standard requirements are: 
  
  * Docker >= 1.10
  * Python >= 3.5
@@ -24,7 +72,7 @@ For Master node, it will also require:
 ### Optional 
 
 Haven has the option to use Git repositories to store its settings and the containers' setting and environment variables. If
-you intend to make use of this feature, we recommend that the Git repositories be setup first.  Also you can see the example
+you intend to make use of this feature, we recommend that the Git repositories be setup first.  Also, you can see the example
 repositories we have setup to see the structure.
 
 * Repository for Haven configuration: https://github.com/codeabovelab/haven-example-configuration
