@@ -368,7 +368,7 @@ public class ContainerManager {
                 if (StringUtils.hasText(key)) {
                     String value = publish.get(key);
                     ExposedPort exposedPort = new ExposedPort(Integer.parseInt(value));
-                    Ports.Binding binding = new Ports.Binding(key);
+                    Ports.Binding binding = Ports.Binding.parse(key);
                     ports.bind(exposedPort, binding);
                 }
             }
