@@ -136,7 +136,7 @@ public class KvMap<T> {
         }
 
         synchronized void load() {
-            Object obj = mapper.load(key);
+            Object obj = mapper.load(key, adapter.getType(this.value));
             T newVal = adapter.set(this.value, obj);
             internalSet(newVal);
         }

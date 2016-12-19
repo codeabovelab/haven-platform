@@ -24,6 +24,7 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
 import org.springframework.core.annotation.AnnotationUtils;
+import org.springframework.util.Assert;
 import org.springframework.util.CollectionUtils;
 
 import java.util.*;
@@ -133,26 +134,40 @@ public class KvClassMapper<T> {
     }
 
     /**
-     *
-     * @param name can be obtainer from {@link #list()}
-     * @return
+     * Load object from specified node. Name of node can be obtained from {@link #list()}.
+     * @param name name of node
+     * @return object or null
      */
     public T load(String name) {
+        return load(name, (Class<T>)null);
+    }
+
+    /**
+     * Load object from specified node. Name of node can be obtained from {@link #list()}.
+     * @param name name of node
+     * @param type null or instantiable type, must be a subtype of {@link T}
+     * @return object or null
+     */
+    public <S extends T> S load(String name, Class<S> type) {
         String path = path(name);
         //check that mapped dir is exists
         KvNode node = this.storage.get(path);
         if(node == null) {
             return null;
         }
-        Class<T> actualType = resolveType(path);
-        T object = BeanUtils.instantiate(actualType);
+        Class<S> actualType = resolveType(path, type);
+        S object = BeanUtils.instantiate(actualType);
         load(name, object);
-        return object;
+        return actualType.cast(object);
     }
 
     @SuppressWarnings("unchecked")
-    private Class<T> resolveType(String path) {
-        Class<T> actualType = this.type;
+    private <S extends T> Class<S> resolveType(String path, Class<S> subType) {
+        Class<S> actualType = (Class<S>) this.type;
+        if(subType != null) {
+            Assert.isTrue(this.type.isAssignableFrom(subType), "Specified type " + subType + " must be an subtype of " + this.type);
+            actualType = subType;
+        }
         JsonTypeInfo typeInfo = AnnotationUtils.findAnnotation(this.type, JsonTypeInfo.class);
         if (typeInfo == null) {
             return actualType;
@@ -168,7 +183,7 @@ public class KvClassMapper<T> {
             JsonSubTypes subTypes = AnnotationUtils.findAnnotation(this.type, JsonSubTypes.class);
             for (JsonSubTypes.Type t : subTypes.value()) {
                 if (t.name().equals(str.replace("\"", ""))) {
-                    actualType = (Class<T>) t.value();
+                    actualType = (Class<S>) t.value();
                 }
             }
         } catch (Exception e) {

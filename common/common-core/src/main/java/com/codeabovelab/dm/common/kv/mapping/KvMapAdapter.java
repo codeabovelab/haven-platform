@@ -43,7 +43,7 @@ public interface KvMapAdapter<T> {
 
     /**
      * Retrieve object from source for saving.
-     * @param source source object
+     * @param source source object, can not be null
      * @return value null is not allowed
      */
     Object get(T source);
@@ -56,4 +56,12 @@ public interface KvMapAdapter<T> {
      */
     T set(T source, Object value);
 
+    /**
+     * Return default type or value for specified source. Value - the object which is returned by {@link #get(Object)}
+     * @param source - source object, can be null
+     * @return type, can be null
+     */
+    default Class<?> getType(T source) {
+        return null;
+    }
 }
