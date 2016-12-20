@@ -169,9 +169,12 @@ public class KvMap<T> {
 
         synchronized void load() {
             Object obj = mapper.load(key, adapter.getType(this.value));
-            T newVal = adapter.set(this.key, this.value, obj);
-            if(obj != null && newVal == null) {
-                throw new IllegalStateException("Adapter " + adapter + " broke contract: it return null value for non null object.");
+            T newVal = null;
+            if(obj != null && this.value != null) {
+                newVal = adapter.set(this.key, this.value, obj);
+                if(newVal == null) {
+                    throw new IllegalStateException("Adapter " + adapter + " broke contract: it return null value for non null object.");
+                }
             }
             internalSet(newVal);
         }
