@@ -2,16 +2,16 @@ package com.codeabovelab.dm.cluman.cluster.docker.management;
 
 import com.codeabovelab.dm.cluman.cluster.compose.ComposeExecutor;
 import com.codeabovelab.dm.cluman.cluster.docker.model.ContainerDetails;
-import com.codeabovelab.dm.cluman.source.ContainerSourceFactory;
-import com.codeabovelab.dm.cluman.source.SourceService;
 import com.codeabovelab.dm.cluman.ds.DockerServiceRegistry;
-import com.codeabovelab.dm.common.kv.KeyValueStorage;
 import com.codeabovelab.dm.cluman.ds.kv.etcd.EtcdConfiguration;
 import com.codeabovelab.dm.cluman.model.Application;
 import com.codeabovelab.dm.cluman.model.ApplicationInstance;
+import com.codeabovelab.dm.cluman.source.ContainerSourceFactory;
 import com.codeabovelab.dm.common.json.JacksonConfiguration;
+import com.codeabovelab.dm.common.kv.KeyValueStorage;
 import com.codeabovelab.dm.common.mb.MessageBus;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,7 +19,6 @@ import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
-import org.springframework.context.annotation.PropertySource;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
@@ -37,6 +36,7 @@ import static org.mockito.Mockito.when;
 @ContextConfiguration(classes = ApplicationServiceTest.TestConfiguration.class)
 @TestPropertySource(properties = {
         "dm.kv.etcd.urls=http://127.0.0.1:2379"})
+@Ignore
 public class ApplicationServiceTest {
     @Autowired
     private ApplicationService applicationService;
