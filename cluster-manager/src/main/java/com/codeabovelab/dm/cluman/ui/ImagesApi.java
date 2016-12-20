@@ -35,8 +35,6 @@ import com.codeabovelab.dm.cluman.cluster.registry.data.Tags;
 import com.codeabovelab.dm.cluman.ds.DockerServiceRegistry;
 import com.codeabovelab.dm.cluman.ds.clusters.SwarmNodesGroupConfig;
 import com.codeabovelab.dm.cluman.model.*;
-import com.codeabovelab.dm.cluman.security.AccessContext;
-import com.codeabovelab.dm.cluman.security.AccessContextFactory;
 import com.codeabovelab.dm.cluman.source.ContainerSourceFactory;
 import com.codeabovelab.dm.cluman.ui.model.*;
 import com.codeabovelab.dm.cluman.utils.ContainerUtils;
@@ -88,7 +86,7 @@ public class ImagesApi {
         GetContainersArg arg = new GetContainersArg(true);
         List<DockerContainer> containers = service.getContainers(arg);
         Map<String, UiDeployedImage> images = new HashMap<>();
-        for(DockerContainer container: containers) {
+        for (DockerContainer container : containers) {
             String imageId = container.getImageId();
             UiDeployedImage img = images.computeIfAbsent(imageId, UiDeployedImage::new);
             img.addContainer(container);
@@ -99,14 +97,14 @@ public class ImagesApi {
 
     private void loadImageTagsIfNeed(DockerService service, DockerContainer container, UiDeployedImage img) {
         String imageWithTag = container.getImage();
-        if(!img.getTags().isEmpty()) {
+        if (!CollectionUtils.isEmpty(img.getTags())) {
             return;
         }
-        if(ImageName.isId(imageWithTag)) {
+        if (ImageName.isId(imageWithTag)) {
             try {
                 ContainerDetails cd = service.getContainer(container.getId());
                 imageWithTag = ContainerSourceFactory.resolveImageName(cd);
-                if(imageWithTag == null || ImageName.isId(imageWithTag)) {
+                if (imageWithTag == null || ImageName.isId(imageWithTag)) {
                     return;
                 }
                 img.updateName(imageWithTag);
@@ -117,10 +115,10 @@ public class ImagesApi {
         }
         String image = ContainerUtils.getRegistryAndImageName(imageWithTag);
         RegistryService registryService = registryRepository.getRegistryByImageName(image);
-        if(registryService != null) {
+        if (registryService != null) {
             img.setRegistry(registryService.getConfig().getName());
             Tags tags = registryService.getTags(image);
-            if(tags != null) {
+            if (tags != null) {
                 img.getTags().addAll(tags.getTags());
             }
         }
@@ -135,14 +133,9 @@ public class ImagesApi {
                                  @RequestParam(value = "size") int size) {
 
         List<String> registries = new ArrayList<>();
-
-        if (StringUtils.hasText(cluster)) {
-            NodesGroup nodesGroup = discoveryStorage.getCluster(cluster);
-            ExtendedAssert.notFound(nodesGroup, "Cluster not found " + cluster);
-            if (nodesGroup.getConfig() instanceof SwarmNodesGroupConfig) {
-                SwarmNodesGroupConfig swarmNodesGroupConfig = (SwarmNodesGroupConfig) nodesGroup.getConfig();
-                registries.addAll(swarmNodesGroupConfig.getConfig().getRegistries());
-            }
+        SwarmNodesGroupConfig swarmNodesGroupConfig = getSwarmNodesGroupConfig(cluster);
+        if (swarmNodesGroupConfig != null) {
+            registries.addAll(swarmNodesGroupConfig.getConfig().getRegistries());
         }
 
         try {
@@ -164,9 +157,9 @@ public class ImagesApi {
         SearchResult result;
         if (!CollectionUtils.isEmpty(registries)) {
             RegistrySearchHelper rsh = new RegistrySearchHelper(query, page, size);
-            for(String registry: registries) {
+            for (String registry : registries) {
                 RegistryService service = registryRepository.getByName(registry);
-                if(service != null) {
+                if (service != null) {
                     rsh.search(service);
                 }
             }
@@ -184,7 +177,7 @@ public class ImagesApi {
     public ImageDescriptor getImage(@RequestParam("fullImageName") String fullImageName) {
         final boolean isId = ContainerUtils.isImageId(fullImageName);
         ImageDescriptor image;
-        if(isId) { // id usually produced by clusters, therefore we can find it at clusters
+        if (isId) { // id usually produced by clusters, therefore we can find it at clusters
             DockerService docker = this.discoveryStorage.getCluster(DiscoveryStorage.GROUP_ID_ALL).getDocker();
             //  not that it simply iterate over all nodes until image is appeared
             image = docker.getImage(fullImageName);
@@ -226,35 +219,13 @@ public class ImagesApi {
     @Cacheable("TagsList")
     @DefineCache(expireAfterWrite = 60_000)
     public List<String> listTags(@RequestParam("imageName") String imageName,
-                                 @RequestParam(value = "filter", required = false) String filter) {
-        Filter imageFilter = getFilter(filter);
+                                 @RequestParam(value = "filter", required = false) String filter,
+                                 @RequestParam(value = "cluster", required = false) String cluster) {
+        Filter imageFilter = calculateImageFilter(filter, cluster);
         String name = ContainerUtils.getImageNameWithoutPrefix(imageName);
         RegistryService registry = registryRepository.getRegistryByImageName(imageName);
         Tags tgs = registry.getTags(name);
         return filter(tgs, name, registry, imageFilter);
-    }
-
-    private List<String> filter(Tags tags, String name, RegistryService registry, Filter filterSet) {
-        if (tags == null) {
-            return Collections.emptyList();
-        }
-        ImageFilterContext ifc = new ImageFilterContext(registry);
-        ifc.setName(name);
-        List<String> list = new ArrayList<>();
-        for (String tag : tags.getTags()) {
-            ifc.setTag(tag);
-            boolean test = filterSet.test(ifc);
-            if (test) {
-                list.add(tag);
-            }
-        }
-        return list;
-    }
-    private Filter getFilter(String filter) {
-        if (filter == null) {
-            return Filter.any();
-        }
-        return this.filterFactory.createFilter(filter);
     }
 
     @ApiOperation("get tags catalog (contains additional information), filter expression is SpEL cluster image filter")
@@ -262,9 +233,10 @@ public class ImagesApi {
     @Cacheable("UiImageCatalog")
     @DefineCache(expireAfterWrite = 60_000)
     public List<UiTagCatalog> listTagsDetailed(@RequestParam("imageName") String imageName,
-                                               @RequestParam(value = "filter", required = false) String filter) {
+                                               @RequestParam(value = "filter", required = false) String filter,
+                                               @RequestParam(value = "cluster", required = false) String cluster) {
 
-        Filter imageFilter = getFilter(filter);
+        Filter imageFilter = calculateImageFilter(filter, cluster);
         String name = ContainerUtils.getImageNameWithoutPrefix(imageName);
 
         RegistryService registry = registryRepository.getRegistryByImageName(imageName);
@@ -281,7 +253,7 @@ public class ImagesApi {
                 return null;
             }
 
-        }).filter(f -> f != null).collect(Collectors.toList());
+        }).filter(Objects::nonNull).collect(Collectors.toList());
 
     }
 
@@ -289,8 +261,9 @@ public class ImagesApi {
     @RequestMapping(value = "/", method = GET)
     @Cacheable("UiImageCatalog")
     @DefineCache(expireAfterWrite = 60_000)
-    public List<UiImageCatalog> listImageCatalogs(@RequestParam(value = "filter", required = false) String filterStr) {
-        final Filter filter = getFilter(filterStr);
+    public List<UiImageCatalog> listImageCatalogs(@RequestParam(value = "filter", required = false) String filterStr,
+                                                  @RequestParam(value = "cluster", required = false) String cluster) {
+        final Filter filter = calculateImageFilter(filterStr, cluster);
         Map<String, UiImageCatalog> catalogs = getDownloadedImages(filter);
         Collection<String> registries = registryRepository.getAvailableRegistries();
         ImageObject io = new ImageObject();
@@ -326,10 +299,10 @@ public class ImagesApi {
         List<NodesGroup> nodesGroups = discoveryStorage.getClusters();
         Map<String, UiImageCatalog> catalogs = new TreeMap<>();
         for (NodesGroup nodesGroup : nodesGroups) {
-              // we gather images from real clusters and orphans nodes
+            // we gather images from real clusters and orphans nodes
             String groupName = nodesGroup.getName();
             if (!nodesGroup.getFeatures().contains(NodesGroup.Feature.SWARM) &&
-                !DiscoveryStorage.GROUP_ID_ORPHANS.equals(groupName)) {
+                    !DiscoveryStorage.GROUP_ID_ORPHANS.equals(groupName)) {
                 continue;
             }
 
@@ -354,7 +327,7 @@ public class ImagesApi {
         for (ImageItem image : images) {
             for (String tag : image.getRepoTags()) {
                 String imageName = ContainerUtils.getRegistryAndImageName(tag);
-                if(imageName.contains(ImageName.NONE)) {
+                if (imageName.contains(ImageName.NONE)) {
                     imageName = image.getId();
                 } else {
                     io.setFullName(imageName);
@@ -362,25 +335,64 @@ public class ImagesApi {
                 if (!filter.test(io)) {
                     continue;
                 }
-                String registry = ContainerUtils.isImageId(imageName)? null :
+                String registry = ContainerUtils.isImageId(imageName) ? null :
                         registryRepository.resolveRegistryNameByImageName(imageName);
                 io.setRegistry(registry);
                 catalogs.putIfAbsent(imageName, new UiImageCatalog(imageName, registry));
                 UiImageCatalog uic = catalogs.get(imageName);
-                if(!DiscoveryStorage.GROUP_ID_ORPHANS.equals(clusterName)) {
+                if (!DiscoveryStorage.GROUP_ID_ORPHANS.equals(clusterName)) {
                     // we set name of real clusters only
                     uic.getClusters().add(clusterName);
                 }
                 String version = ContainerUtils.getImageVersion(tag);
-                UiImageData imgdt = uic.getOrAddId(image.getId());
-                imgdt.setCreated(image.getCreated());
-                imgdt.setSize(image.getSize());
-                if(!ImageName.NONE.equals(version)) {
-                    imgdt.getTags().add(version);
+                UiImageData imgData = uic.getOrAddId(image.getId());
+                imgData.setCreated(image.getCreated());
+                imgData.setSize(image.getSize());
+                if (!ImageName.NONE.equals(version)) {
+                    imgData.getTags().add(version);
                 }
-                imgdt.getNodes().addAll(nodes);
+                imgData.getNodes().addAll(nodes);
             }
         }
+    }
+
+    private SwarmNodesGroupConfig getSwarmNodesGroupConfig(String cluster) {
+        if (StringUtils.hasText(cluster)) {
+            NodesGroup nodesGroup = discoveryStorage.getCluster(cluster);
+            ExtendedAssert.notFound(nodesGroup, "Cluster not found " + cluster);
+            if (nodesGroup.getConfig() instanceof SwarmNodesGroupConfig) {
+                return (SwarmNodesGroupConfig) nodesGroup.getConfig();
+            }
+        }
+        return null;
+    }
+
+    private Filter calculateImageFilter(String filter, String cluster) {
+        SwarmNodesGroupConfig swarmNodesGroupConfig = getSwarmNodesGroupConfig(cluster);
+        if (!StringUtils.hasText(filter) && swarmNodesGroupConfig != null) {
+            filter = swarmNodesGroupConfig.getImageFilter();
+        }
+        if (!StringUtils.hasText(filter)) {
+            return Filter.any();
+        }
+        return this.filterFactory.createFilter(filter);
+    }
+
+    private List<String> filter(Tags tags, String name, RegistryService registry, Filter filterSet) {
+        if (tags == null) {
+            return Collections.emptyList();
+        }
+        ImageFilterContext ifc = new ImageFilterContext(registry);
+        ifc.setName(name);
+        List<String> list = new ArrayList<>();
+        for (String tag : tags.getTags()) {
+            ifc.setTag(tag);
+            boolean test = filterSet.test(ifc);
+            if (test) {
+                list.add(tag);
+            }
+        }
+        return list;
     }
 
     @Data
