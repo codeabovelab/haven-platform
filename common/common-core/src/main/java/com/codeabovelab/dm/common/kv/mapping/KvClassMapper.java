@@ -35,6 +35,7 @@ import java.util.stream.Collectors;
 @Slf4j
 public class KvClassMapper<T> {
 
+    private static final String PROP_TYPE = "@class";
     private final Class<T> type;
     private final String prefix;
     private final KvMapperFactory factory;
@@ -81,6 +82,9 @@ public class KvClassMapper<T> {
             throw new IllegalArgumentException("The key '" + name +
               "' is mapped to object of type " + object.getClass() + " which has no properties.");
         }
+        //store type of object
+        this.storage.set(KvUtils.join(path, PROP_TYPE), object.getClass().getName());
+        //store properties
         for(KvProperty property: props) {
             String strval = property.get(object);
             String proppath = KvUtils.join(path, property.getKey());
@@ -168,28 +172,73 @@ public class KvClassMapper<T> {
             Assert.isTrue(this.type.isAssignableFrom(subType), "Specified type " + subType + " must be an subtype of " + this.type);
             actualType = subType;
         }
-        JsonTypeInfo typeInfo = AnnotationUtils.findAnnotation(this.type, JsonTypeInfo.class);
+        Class<S> savedType = loadType(path);
+        if(savedType != null) {
+            actualType = savedType;
+        }
+        Class<S> jsonType = resolveJsonType(path, actualType);
+        if(jsonType != null) {
+            actualType = jsonType;
+        }
+        return actualType;
+    }
+
+    @SuppressWarnings("unchecked")
+    private <S extends T> Class<S> loadType(String path) {
+        KvNode node = this.storage.get(KvUtils.join(path, PROP_TYPE));
+        if(node == null) {
+            return null;
+        }
+        String className = node.getValue();
+        if(className == null) {
+            return null;
+        }
+        Class<S> savedType;
+        try {
+            savedType = (Class<S>) Thread.currentThread().getContextClassLoader().loadClass(className);
+        } catch (ClassNotFoundException e) {
+            // if we save some type, and can not restore it again, it mean that something wrong
+            throw new RuntimeException(e);
+        }
+        return savedType;
+    }
+
+    @SuppressWarnings("unchecked")
+    private <S> Class<S> resolveJsonType(String path, Class<S> type) {
+        JsonTypeInfo typeInfo = AnnotationUtils.findAnnotation(type, JsonTypeInfo.class);
         if (typeInfo == null) {
-            return actualType;
+            return null;
         }
         String property = typeInfo.property();
         String proppath = KvUtils.join(path, property);
         try {
             KvNode node = this.storage.get(proppath);
             if(node == null) {
-                return actualType;
+                return null;
             }
-            String str = node.getValue();
-            JsonSubTypes subTypes = AnnotationUtils.findAnnotation(this.type, JsonSubTypes.class);
+            String str = fromJsonString(node.getValue());
+            JsonSubTypes subTypes = AnnotationUtils.findAnnotation(type, JsonSubTypes.class);
             for (JsonSubTypes.Type t : subTypes.value()) {
-                if (t.name().equals(str.replace("\"", ""))) {
-                    actualType = (Class<S>) t.value();
+                if (t.name().equals(str)) {
+                    return (Class<S>) t.value();
                 }
             }
         } catch (Exception e) {
             log.error("can't instantiate class", e);
         }
-        return actualType;
+        return null;
+    }
+
+    private String fromJsonString(String value) {
+        if(value == null) {
+            return null;
+        }
+        int end = value.length() - 1;
+        // note that it method used only for type names, it does not support escape sequences and etc.
+        if(value.charAt(0) != '"' || value.charAt(end) != '"') {
+            throw new IllegalArgumentException("Invalid json string: " + value);
+        }
+        return value.substring(1, end);
     }
 
     /**

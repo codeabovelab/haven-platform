@@ -122,11 +122,11 @@ public class KvMap<T> {
         }
 
         synchronized void flush() {
-            this.dirty = false;
             if(this.value == null) {
                 // no value set, nothing to flush
                 return;
             }
+            this.dirty = false;
             Object obj = adapter.get(this.key, this.value);
 
             Assert.notNull(obj, "Adapter " + adapter + " return null from " + this.value + " that is not allowed");
@@ -170,6 +170,9 @@ public class KvMap<T> {
         synchronized void load() {
             Object obj = mapper.load(key, adapter.getType(this.value));
             T newVal = adapter.set(this.key, this.value, obj);
+            if(obj != null && newVal == null) {
+                throw new IllegalStateException("Adapter " + adapter + " broke contract: it return null value for non null object.");
+            }
             internalSet(newVal);
         }
 
@@ -377,7 +380,14 @@ public class KvMap<T> {
      */
     public Collection<T> values() {
         ImmutableList.Builder<T> b = ImmutableList.builder();
-        this.map.values().forEach(valueHolder -> b.add(valueHolder.get()));
+        this.map.values().forEach(valueHolder -> {
+            T element = valueHolder.get();
+            // map does not contain holders with null elements, but sometime it happen
+            // due to multithread access , for example in `put()` method
+            if(element != null) {
+                b.add(element);
+            }
+        });
         return b.build();
     }
 

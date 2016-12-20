@@ -16,9 +16,6 @@
 
 package com.codeabovelab.dm.cluman.ds.container;
 
-import com.codeabovelab.dm.common.kv.DeleteDirOptions;
-import com.codeabovelab.dm.common.kv.KvUtils;
-import com.codeabovelab.dm.common.kv.WriteOptions;
 import com.codeabovelab.dm.common.kv.mapping.KvMap;
 import com.codeabovelab.dm.common.kv.mapping.KvMapperFactory;
 import com.codeabovelab.dm.cluman.model.*;
@@ -54,17 +51,11 @@ public class ContainerStorageImpl implements ContainerStorage, InitializingBean 
 
     @Override
     public void afterPropertiesSet() {
-        this.kvmf.getStorage().setdir(this.prefix, WriteOptions.builder().build());
+
     }
 
 
     void deleteContainer(String id) {
-        try {
-            final String path = KvUtils.join(prefix, id);
-            kvmf.getStorage().deletedir(path, DeleteDirOptions.builder().recursive(true).build());
-        } catch (Exception e) {
-            log.error("Can't delete container", e);
-        }
         ContainerRegistration cr = map.remove(id);
         if(cr != null) {
             ContainerBase cb = cr.getContainer();
@@ -124,7 +115,6 @@ public class ContainerStorageImpl implements ContainerStorage, InitializingBean 
         return map.computeIfAbsent(id, s -> {
             ContainerRegistration registration = new ContainerRegistration(this.map, id);
             onCreate.accept(registration);
-            registration.flush();
             ContainerBase cb = registration.getContainer();
             log.info("Create container: {} '{}', of '{}'", registration.getId(), cb.getName(), cb.getImage());
             return registration;
