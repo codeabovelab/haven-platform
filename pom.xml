@@ -18,7 +18,6 @@
         <tag>dm-parent-1.0.19</tag>
     </scm>
 
-
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.java.version>8</project.java.version>
@@ -32,6 +31,7 @@
         <javax.validation.version>1.1.0.Final</javax.validation.version>
 
         <commons-validator.version>1.5.1</commons-validator.version>
+        <lombok.version>1.16.12</lombok.version>
 
         <maven-surefire.version>2.18.1</maven-surefire.version>
         <maven-jar.version>3.0.2</maven-jar.version>
@@ -227,7 +227,6 @@
                 <version>1.1.1-SNAPSHOT</version>
             </dependency>
 
-
             <!--     SPRING     -->
 
             <!--<dependency>-->
@@ -286,7 +285,6 @@
                 <version>${codehaus.woodstox.version}</version>
             </dependency>
 
-
             <dependency>
                 <groupId>commons-validator</groupId>
                 <artifactId>commons-validator</artifactId>
@@ -304,12 +302,10 @@
                 <version>${swagger.version}</version>
             </dependency>
 
-
             <!--
             in spring-eureka dependencies appeared two different versions of jersey it causes errors, for
              prevent it we need to fix version of all jersey components to same value
              -->
-
 
             <dependency>
                 <groupId>com.jayway.restassured</groupId>
@@ -373,7 +369,7 @@
             <dependency>
                 <groupId>org.projectlombok</groupId>
                 <artifactId>lombok</artifactId>
-                <version>1.16.10</version>
+                <version>${lombok.version}</version>
                 <scope>compile</scope>
             </dependency>
             <dependency>
