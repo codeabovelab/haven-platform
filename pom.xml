@@ -451,8 +451,8 @@
 
             <repositories>
                 <repository>
-                    <id>codeabove-public</id>
-                    <url>http://ni1.codeabovelab.com:8081/repository/maven-public/</url>
+                    <id>ossrh</id>
+                    <url>https://oss.sonatype.org/content/groups/public</url>
                 </repository>
             </repositories>
 
@@ -546,12 +546,12 @@
 
     <distributionManagement>
         <repository>
-            <id>codeabove-release</id>
-            <url>http://ni1.codeabovelab.com:8081/repository/maven-releases/</url>
+            <id>ossrh</id>
+            <url>https://oss.sonatype.org/service/local/staging/deploy/maven2</url>
         </repository>
         <snapshotRepository>
-            <id>codeabove-snapshot</id>
-            <url>http://ni1.codeabovelab.com:8081/repository/maven-snapshots/</url>
+            <id>ossrh</id>
+            <url>https://oss.sonatype.org/content/repositories/snapshots/</url>
         </snapshotRepository>
     </distributionManagement>
 
