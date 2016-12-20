@@ -25,6 +25,7 @@ import lombok.Data;
 import org.springframework.util.Assert;
 
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -103,6 +104,7 @@ public class KvMap<T> {
         private volatile boolean dirty = true;
 
         ValueHolder(String key) {
+            Assert.notNull(key, "key is null");
             this.key = key;
         }
 
@@ -224,6 +226,18 @@ public class KvMap<T> {
         final long index = e.getIndex();
         KvStorageEvent.Crud action = e.getAction();
         String key = this.mapper.getName(path);
+        if(key == null) {
+            if(action == KvStorageEvent.Crud.DELETE) {
+                Set<String> set = new HashSet<>(map.keySet());
+                // it meat that someone remove mapped node with all entries, we must clear map
+                // note that current implementation does not support consistency
+                set.forEach((removedKey) -> {
+                    ValueHolder holder = map.remove(removedKey);
+                    invokeListener(KvStorageEvent.Crud.DELETE, removedKey, holder);
+                });
+            }
+            return;
+        }
         String property = KvUtils.child(this.mapper.getPrefix(), path, 1);
         ValueHolder holder = null;
         if(property != null) {
@@ -246,6 +260,10 @@ public class KvMap<T> {
                     holder = map.remove(key);
             }
         }
+        invokeListener(action, key, holder);
+    }
+
+    private void invokeListener(KvStorageEvent.Crud action, String key, ValueHolder holder) {
         if(listener != null) {
             T value = null;
             if(holder != null) {
