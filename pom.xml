@@ -450,7 +450,7 @@
 
             <repositories>
                 <repository>
-                    <id>codeabove-public</id>
+                    <id>ossrh</id>
                     <url>https://oss.sonatype.org/content/groups/public</url>
                 </repository>
             </repositories>
@@ -546,12 +546,12 @@
 
     <distributionManagement>
         <repository>
-            <id>codeabove-release</id>
-            <url>https://oss.sonatype.org/content/repositories/snapshots/</url>
+            <id>ossrh</id>
+            <url>https://oss.sonatype.org/service/local/staging/deploy/maven2</url>
         </repository>
         <snapshotRepository>
-            <id>codeabove-snapshot</id>
-            <url>https://oss.sonatype.org/service/local/staging/deploy/maven2</url>
+            <id>ossrh</id>
+            <url>https://oss.sonatype.org/content/repositories/snapshots/</url>
         </snapshotRepository>
     </distributionManagement>
     
