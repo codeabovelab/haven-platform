@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/codeabovelab/haven-platform.svg?branch=master)](https://travis-ci.org/codeabovelab/haven-platform)
+
 # Building From Source #
 
 ## Requirements ##
