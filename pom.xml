@@ -226,16 +226,6 @@
                 <artifactId>mail</artifactId>
                 <version>1.1.1-SNAPSHOT</version>
             </dependency>
-            <dependency>
-                <groupId>com.codeabovelab.dm</groupId>
-                <artifactId>filestorage</artifactId>
-                <version>1.1.1-SNAPSHOT</version>
-            </dependency>
-            <dependency>
-                <groupId>com.codeabovelab.dm</groupId>
-                <artifactId>filestorage-dto</artifactId>
-                <version>1.1.1-SNAPSHOT</version>
-            </dependency>
 
 
             <!--     SPRING     -->
