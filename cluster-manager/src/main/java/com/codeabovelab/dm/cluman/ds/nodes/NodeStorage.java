@@ -22,7 +22,6 @@ import com.codeabovelab.dm.cluman.security.AccessContextFactory;
 import com.codeabovelab.dm.cluman.security.SecuredType;
 import com.codeabovelab.dm.cluman.validate.ExtendedAssert;
 import com.codeabovelab.dm.common.kv.*;
-import com.codeabovelab.dm.common.kv.mapping.KvClassMapper;
 import com.codeabovelab.dm.common.kv.mapping.KvMap;
 import com.codeabovelab.dm.common.kv.mapping.KvMapAdapter;
 import com.codeabovelab.dm.common.kv.mapping.KvMapperFactory;
@@ -78,34 +77,10 @@ public class NodeStorage implements NodeInfoProvider {
         nodesPrefix = storage.getPrefix() + "/nodes/";
         this.nodes = KvMap.builder(NodeRegistrationImpl.class, NodeInfoImpl.Builder.class)
           .path(nodesPrefix)
-          .adapter(new KvMapAdapter<NodeRegistrationImpl>() {
-              @Override
-              public Object get(String key, NodeRegistrationImpl source) {
-                  return NodeInfoImpl.builder(source.getNodeInfo());
-              }
-
-              @Override
-              public NodeRegistrationImpl set(String key, NodeRegistrationImpl source, Object value) {
-                  NodeInfo ni = (NodeInfo) value;
-                  if(source == null) {
-                      NodeInfoImpl.Builder nib = NodeInfoImpl.builder(ni);
-                      nib.setName(key);
-                      //TODO java.lang.IllegalStateException: No local context
-                      // but we must leave access checking!
-                      source = newRegistration(nib);
-                  } else {
-                      source.updateNodeInfo(b -> {
-                          NodeMetrics om = b.getHealth();
-                          b.from(ni);
-                          b.health(om);
-                      });
-                  }
-                  return source;
-              }
-
-              @Override
-              public Class<?> getType(NodeRegistrationImpl source) {
-                  return NodeInfoImpl.Builder.class;
+          .adapter(new KvMapAdapterImpl())
+          .consumer((e) -> {
+              if(e.getAction() == KvStorageEvent.Crud.CREATE) {
+                  AccessContextFactory.getLocalContext().assertGranted(SecuredType.NODE.id(e.getKey()), Action.CREATE);
               }
           })
           .factory(kvmf)
@@ -183,7 +158,6 @@ public class NodeStorage implements NodeInfoProvider {
     }
 
     private NodeRegistrationImpl newRegistration(NodeInfo nodeInfo) {
-        AccessContextFactory.getLocalContext().assertGranted(SecuredType.NODE.id(nodeInfo.getName()), Action.CREATE);
         return new NodeRegistrationImpl(persistentBusFactory, nodeInfo, this::fireNodeModification);
     }
 
@@ -374,6 +348,35 @@ public class NodeStorage implements NodeInfoProvider {
                 b.health(om);
             });
             save(nr);
+        }
+    }
+
+    private class KvMapAdapterImpl implements KvMapAdapter<NodeRegistrationImpl> {
+        @Override
+        public Object get(String key, NodeRegistrationImpl source) {
+            return NodeInfoImpl.builder(source.getNodeInfo());
+        }
+
+        @Override
+        public NodeRegistrationImpl set(String key, NodeRegistrationImpl source, Object value) {
+            NodeInfo ni = (NodeInfo) value;
+            if(source == null) {
+                NodeInfoImpl.Builder nib = NodeInfoImpl.builder(ni);
+                nib.setName(key);
+                source = newRegistration(nib);
+            } else {
+                source.updateNodeInfo(b -> {
+                    NodeMetrics om = b.getHealth();
+                    b.from(ni);
+                    b.health(om);
+                });
+            }
+            return source;
+        }
+
+        @Override
+        public Class<?> getType(NodeRegistrationImpl source) {
+            return NodeInfoImpl.Builder.class;
         }
     }
 }
