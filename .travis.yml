@@ -1,0 +1,14 @@
+language: java
+jdk:
+  - oraclejdk8
+
+cache:
+  directories:
+  - $HOME/.m2
+
+addons:
+  apt:
+    sources:
+    packages:
+      # Getting compile errors on javac 1.8.0_31-b13
+      - oracle-java8-installer
