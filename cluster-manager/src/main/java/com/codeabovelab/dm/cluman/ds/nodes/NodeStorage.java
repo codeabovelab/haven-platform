@@ -24,6 +24,7 @@ import com.codeabovelab.dm.cluman.validate.ExtendedAssert;
 import com.codeabovelab.dm.common.kv.*;
 import com.codeabovelab.dm.common.kv.mapping.KvMap;
 import com.codeabovelab.dm.common.kv.mapping.KvMapAdapter;
+import com.codeabovelab.dm.common.kv.mapping.KvMapEvent;
 import com.codeabovelab.dm.common.kv.mapping.KvMapperFactory;
 import com.codeabovelab.dm.cluman.model.*;
 import com.codeabovelab.dm.cluman.persistent.PersistentBusFactory;
@@ -83,11 +84,11 @@ public class NodeStorage implements NodeInfoProvider {
                   AccessContextFactory.getLocalContext().assertGranted(SecuredType.NODE.id(e.getKey()), Action.CREATE);
               }
           })
+          .listener(this::onKVEvent)
           .factory(kvmf)
           .build();
         this.executorService = executorService;
 
-        storage.subscriptions().subscribeOnKey(this::onKVEvent, nodesPrefix + "*");
         dockerBus.asSubscriptions().subscribe(this::onDockerServiceEvent);
     }
 
@@ -96,8 +97,8 @@ public class NodeStorage implements NodeInfoProvider {
         nodes.load();
     }
 
-    private void onKVEvent(KvStorageEvent e) {
-        String key = getNodeName(e.getKey());
+    private void onKVEvent(KvMapEvent<NodeRegistrationImpl> e) {
+        String key = e.getKey();
         KvStorageEvent.Crud action = e.getAction();
         try (TempAuth ta = TempAuth.asSystem()) {
             switch (action) {
@@ -151,10 +152,6 @@ public class NodeStorage implements NodeInfoProvider {
         for(NodeRegistrationImpl nr: nodes.values()) {
             nr.getNodeInfo();
         }
-    }
-
-    private String getNodeName(String path) {
-        return KvUtils.name(nodesPrefix, path);
     }
 
     private NodeRegistrationImpl newRegistration(NodeInfo nodeInfo) {

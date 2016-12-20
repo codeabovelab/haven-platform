@@ -86,7 +86,7 @@ public class KvMap<T> {
          * @param listener handler for KV storage events.
          * @return this
          */
-        public Builder listener(Consumer<KvMapEvent<T>> listener) {
+        public Builder<T, V> listener(Consumer<KvMapEvent<T>> listener) {
             setListener(listener);
             return this;
         }

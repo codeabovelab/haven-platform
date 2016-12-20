@@ -89,26 +89,22 @@ public class DiscoveryStorageImpl implements DiscoveryStorage {
           .path(prefix)
           .factory(kvmf)
           .adapter(new KvMapAdapterImpl())
+          .listener(e -> {
+              String key = e.getKey();
+              switch (e.getAction()) {
+                  case DELETE:
+                      fireGroupEvent(key, StandardActions.DELETE);
+                      break;
+                  case CREATE:
+                      fireGroupEvent(key, StandardActions.CREATE);
+                      break;
+                  case UPDATE:
+                      fireGroupEvent(key, StandardActions.UPDATE);
+              }
+          })
           .build();
         //create clusters, its need for empty etcd database
         storage.setdir(this.prefix, WriteOptions.builder().build());
-        storage.subscriptions().subscribeOnKey(e -> {
-            String key = KvUtils.name(prefix, e.getKey());
-            if(key == null) {
-                return;
-            }
-            switch (e.getAction()) {
-                case DELETE:
-                    fireGroupEvent(key, StandardActions.DELETE);
-                    break;
-                case CREATE:
-                    fireGroupEvent(key, StandardActions.CREATE);
-                    break;
-                case UPDATE:
-                    fireGroupEvent(key, StandardActions.UPDATE);
-
-            }
-        }, prefix + "*");
 
         filterFactory.registerFilter(new OrphansNodeFilterFactory(this));
         try(TempAuth ta = TempAuth.asSystem()) {
