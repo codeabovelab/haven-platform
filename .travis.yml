@@ -12,3 +12,5 @@ addons:
     packages:
       # Getting compile errors on javac 1.8.0_31-b13
       - oracle-java8-installer
+
+install: "mvn -Pstaging clean deploy"
