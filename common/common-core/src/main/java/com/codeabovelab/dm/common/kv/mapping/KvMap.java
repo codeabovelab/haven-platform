@@ -25,11 +25,13 @@ import lombok.Data;
 import org.springframework.util.Assert;
 
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.function.BiConsumer;
+import java.util.function.Consumer;
 import java.util.function.Function;
 
 /**
@@ -41,14 +43,23 @@ public class KvMap<T> {
 
     @Data
     public static class Builder<T, V> {
-        private KvMapperFactory factory;
+        private KvMapperFactory mapper;
         private String path;
         private KvMapAdapter<T> adapter = KvMapAdapter.direct();
         private final Class<T> type;
         private final Class<V> valueType;
+        /**
+         * Note that it invoke at events caused by map user. For events from KV storage use {@link #setListener(Consumer)}.
+         */
+        private Consumer<KvMapEvent<T>> consumer;
+        /**
+         * Note that it handle events from KV storage. For events caused by map user use {@link #setConsumer(Consumer)} .
+         */
+        private Consumer<KvMapEvent<T>> listener;
+        private KvObjectFactory<T> factory;
 
-        public Builder<T, V> factory(KvMapperFactory factory) {
-            setFactory(factory);
+        public Builder<T, V> mapper(KvMapperFactory factory) {
+            setMapper(factory);
             return this;
         }
 
@@ -59,6 +70,31 @@ public class KvMap<T> {
 
         public Builder<T, V> adapter(KvMapAdapter<T> adapter) {
             setAdapter(adapter);
+            return this;
+        }
+
+        /**
+         * Note that it invoke at events caused by map user. For events from KV storage use {@link #setListener(Consumer)}.
+         * @param consumer handler for local events causet by invoking of map methods
+         * @return this
+         */
+        public Builder<T, V> consumer(Consumer<KvMapEvent<T>> consumer) {
+            setConsumer(consumer);
+            return this;
+        }
+
+        /**
+         * Note that it handle events from KV storage. For events caused by map user use {@link #setConsumer(Consumer)} .
+         * @param listener handler for KV storage events.
+         * @return this
+         */
+        public Builder<T, V> listener(Consumer<KvMapEvent<T>> listener) {
+            setListener(listener);
+            return this;
+        }
+
+        public Builder<T, V> factory(KvObjectFactory<T> factory) {
+            setFactory(factory);
             return this;
         }
 
@@ -74,6 +110,7 @@ public class KvMap<T> {
         private volatile boolean dirty = true;
 
         ValueHolder(String key) {
+            Assert.notNull(key, "key is null");
             this.key = key;
         }
 
@@ -85,14 +122,21 @@ public class KvMap<T> {
             }
             T old = this.value;
             this.value = val;
+            onSave(this, old == null? KvStorageEvent.Crud.CREATE : KvStorageEvent.Crud.UPDATE);
             flush();
             return old;
         }
 
         synchronized void flush() {
+            if(this.value == null) {
+                // no value set, nothing to flush
+                return;
+            }
             this.dirty = false;
-            Object obj = adapter.get(this.value);
-            mapper.save(key, value, (p, res) -> {
+            Object obj = adapter.get(this.key, this.value);
+
+            Assert.notNull(obj, "Adapter " + adapter + " return null from " + this.value + " that is not allowed");
+            mapper.save(key, obj, (p, res) -> {
                 index.put(p.getKey(), res.getIndex());
             });
         }
@@ -130,8 +174,14 @@ public class KvMap<T> {
         }
 
         synchronized void load() {
-            Object obj = mapper.load(key);
-            T newVal = adapter.set(this.value, obj);
+            Object obj = mapper.load(key, adapter.getType(this.value));
+            T newVal = null;
+            if(obj != null || this.value != null) {
+                newVal = adapter.set(this.key, this.value, obj);
+                if(newVal == null) {
+                    throw new IllegalStateException("Adapter " + adapter + " broke contract: it return null value for non null object.");
+                }
+            }
             internalSet(newVal);
         }
 
@@ -144,6 +194,7 @@ public class KvMap<T> {
         }
 
         synchronized T computeIfAbsent(Function<String, T> func) {
+            get(); // we must try to load before compute
             if(value == null) {
                 save(func.apply(key));
             }
@@ -154,14 +205,28 @@ public class KvMap<T> {
 
     private final KvClassMapper<Object> mapper;
     private final KvMapAdapter<T> adapter;
+    private final Consumer<KvMapEvent<T>> consumer;
+    private final Consumer<KvMapEvent<T>> listener;
     private final ConcurrentMap<String, ValueHolder> map = new ConcurrentHashMap<>();
 
     @SuppressWarnings("unchecked")
     private KvMap(Builder builder) {
         this.adapter = builder.adapter;
+        this.consumer = builder.consumer;
+        this.listener = builder.listener;
         Class<Object> mapperType = MoreObjects.firstNonNull(builder.valueType, (Class<Object>)builder.type);
-        this.mapper = builder.factory.createClassMapper(builder.path, mapperType);
-        builder.factory.getStorage().subscriptions().subscribeOnKey(this::onKvEvent, builder.path);
+        this.mapper = builder.mapper.buildClassMapper(mapperType)
+          .prefix(builder.path)
+          .factory(builder.factory)
+          .build();
+        builder.mapper.getStorage().subscriptions().subscribeOnKey(this::onKvEvent, builder.path);
+    }
+
+    /**
+     * Load all data.
+     */
+    public void load() {
+        this.mapper.list().forEach(this::getOrCreateHolder);
     }
 
     public static <T> Builder<T, T> builder(Class<T> type) {
@@ -177,25 +242,60 @@ public class KvMap<T> {
         final long index = e.getIndex();
         KvStorageEvent.Crud action = e.getAction();
         String key = this.mapper.getName(path);
+        if(key == null) {
+            if(action == KvStorageEvent.Crud.DELETE) {
+                Set<String> set = new HashSet<>(map.keySet());
+                // it meat that someone remove mapped node with all entries, we must clear map
+                // note that current implementation does not support consistency
+                set.forEach((removedKey) -> {
+                    ValueHolder holder = map.remove(removedKey);
+                    invokeListener(KvStorageEvent.Crud.DELETE, removedKey, holder);
+                });
+            }
+            return;
+        }
         String property = KvUtils.child(this.mapper.getPrefix(), path, 1);
+        ValueHolder holder = null;
         if(property != null) {
-            getOrCreateHolder(key).dirty(property, index);
+            holder = getOrCreateHolder(key);
+            holder.dirty(property, index);
         } else {
             switch (action) {
                 case CREATE:
                     // we use lazy loading
-                    getOrCreateHolder(key);
+                    holder = getOrCreateHolder(key);
                     break;
                 case READ:
                     //ignore
                     break;
                 case UPDATE:
-                    getOrCreateHolder(key).dirty();
+                    holder = getOrCreateHolder(key);
+                    holder.dirty();
                     break;
                 case DELETE:
-                    map.remove(key);
+                    holder = map.remove(key);
             }
         }
+        invokeListener(action, key, holder);
+    }
+
+    private void invokeListener(KvStorageEvent.Crud action, String key, ValueHolder holder) {
+        if(listener != null) {
+            T value = null;
+            if(holder != null) {
+                // we cah obtain value before it become dirty, but it will wrong behavior
+                value = holder.getIfPresent();
+            }
+            listener.accept(new KvMapEvent<>(this, action, key, value));
+        }
+    }
+
+    private void onSave(ValueHolder holder, KvStorageEvent.Crud action) {
+        if(consumer == null) {
+            return;
+        }
+        KvMapEvent<T> event = new KvMapEvent<>(this, action, holder.key, holder.getIfPresent());
+        consumer.accept(event);
     }
 
     /**
@@ -212,6 +312,19 @@ public class KvMap<T> {
             return null;
         }
         return holder.get();
+    }
+
+    /**
+     * Get exists value from storage. Not load it, even if dirty.
+     * @param key key
+     * @return value or null if not exists or dirty.
+     */
+    public T getIfPresent(String key) {
+        ValueHolder holder = map.get(key);
+        if(holder == null) {
+            return null;
+        }
+        return holder.getIfPresent();
     }
 
     /**
@@ -253,8 +366,7 @@ public class KvMap<T> {
     public void flush(String key) {
         ValueHolder holder = map.get(key);
         if(holder != null) {
-            //TODO: fix it
-//            holder.flush();
+            holder.flush();
         }
     }
 
@@ -281,14 +393,23 @@ public class KvMap<T> {
      */
     public Collection<T> values() {
         ImmutableList.Builder<T> b = ImmutableList.builder();
-        this.map.values().forEach(valueHolder -> b.add(valueHolder.get()));
+        this.map.values().forEach(valueHolder -> {
+            T element = valueHolder.get();
+            // map does not contain holders with null elements, but sometime it happen
+            // due to multithread access , for example in `put()` method
+            if(element != null) {
+                b.add(element);
+            }
+        });
         return b.build();
     }
 
     public void forEach(BiConsumer<String, ? super T> action) {
         this.map.forEach((key, holder) -> {
             T value = holder.get();
-            action.accept(key, value);
+            if(value != null) {
+                action.accept(key, value);
+            }
         });
     }
 }

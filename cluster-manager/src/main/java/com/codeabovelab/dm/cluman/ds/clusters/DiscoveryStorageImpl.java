@@ -25,11 +25,10 @@ import com.codeabovelab.dm.cluman.reconfig.ReConfigObject;
 import com.codeabovelab.dm.cluman.reconfig.ReConfigurable;
 import com.codeabovelab.dm.cluman.security.*;
 import com.codeabovelab.dm.cluman.validate.ExtendedAssert;
-import com.codeabovelab.dm.common.kv.DeleteDirOptions;
 import com.codeabovelab.dm.common.kv.KeyValueStorage;
-import com.codeabovelab.dm.common.kv.KvUtils;
-import com.codeabovelab.dm.common.kv.WriteOptions;
+import com.codeabovelab.dm.common.kv.KvStorageEvent;
 import com.codeabovelab.dm.common.kv.mapping.KvMap;
+import com.codeabovelab.dm.common.kv.mapping.KvMapAdapter;
 import com.codeabovelab.dm.common.kv.mapping.KvMapperFactory;
 import com.codeabovelab.dm.common.mb.MessageBus;
 import com.codeabovelab.dm.common.security.Action;
@@ -48,8 +47,6 @@ import org.springframework.util.Assert;
 
 import java.util.List;
 import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
@@ -86,31 +83,29 @@ public class DiscoveryStorageImpl implements DiscoveryStorage {
         KeyValueStorage storage = kvmf.getStorage();
         this.filterFactory = filterFactory;
         this.prefix = storage.getPrefix() + "/clusters/";
-        this.clusters = KvMap.builder(NodesGroup.class)
+        this.clusters = KvMap.builder(NodesGroup.class, AbstractNodesGroupConfig.class)
           .path(prefix)
-          .factory(kvmf)
+          .mapper(kvmf)
+          .adapter(new KvMapAdapterImpl())
+          .listener(e -> {
+              String key = e.getKey();
+              switch (e.getAction()) {
+                  case DELETE:
+                      fireGroupEvent(key, StandardActions.DELETE);
+                      break;
+                  case CREATE:
+                      fireGroupEvent(key, StandardActions.CREATE);
+                      break;
+                  case UPDATE:
+                      fireGroupEvent(key, StandardActions.UPDATE);
+              }
+          })
+          .consumer(e -> {
+              if(e.getAction() == KvStorageEvent.Crud.CREATE) {
+                  checkThatCanCreate();
+              }
+          })
           .build();
-        //create clusters, its need for empty etcd database
-        storage.setdir(this.prefix, WriteOptions.builder().build());
-        storage.subscriptions().subscribeOnKey(e -> {
-            String key = KvUtils.name(prefix, e.getKey());
-            if(key == null) {
-                return;
-            }
-            switch (e.getAction()) {
-                case DELETE:
-                    this.clusters.remove(key);
-                    fireGroupEvent(key, StandardActions.DELETE);
-                    break;
-                case CREATE:
-                    fireGroupEvent(key, StandardActions.CREATE);
-                    break;
-                default:
-                    NodesGroup reg = this.clusters.get(key);
-                    fireGroupEvent(key, StandardActions.UPDATE);
-
-            }
-        }, prefix + "*");
 
         filterFactory.registerFilter(new OrphansNodeFilterFactory(this));
         try(TempAuth ta = TempAuth.asSystem()) {
@@ -132,22 +127,7 @@ public class DiscoveryStorageImpl implements DiscoveryStorage {
 
     public void load() {
         try(TempAuth ta = TempAuth.asSystem()) {
-            this.kvmf.getStorage().setdir(this.prefix, WriteOptions.builder().build());
-            List<String> list = kvmf.getStorage().list(prefix);
-            for(String clusterPath: list) {
-                String clusterId = KvUtils.suffix(prefix, clusterPath);
-                try {
-                    getOrCreateCluster(clusterId, null);
-                } catch (Exception  e) {
-                    log.error("Can not load cluster: {}", clusterId, e);
-                    fireGroupEvent(NodesGroupEvent.builder()
-                      .action("load")
-                      .cluster(clusterId)
-                      .severity(Severity.ERROR)
-                      .message(e.toString())
-                    );
-                }
-            }
+            clusters.load();
         } catch (Exception  e) {
             log.error("Can not load clusters from storage", e);
         }
@@ -218,25 +198,29 @@ public class DiscoveryStorageImpl implements DiscoveryStorage {
         ExtendedAssert.matchAz09Hyp(clusterId, "clusterId");
         NodesGroup ng = clusters.computeIfAbsent(clusterId, (cid) -> {
             checkThatCanCreate();
-            NodesGroup cluster;
-            if (config instanceof DefaultNodesGroupConfig) {
-                cluster = NodesGroupImpl.builder()
-                  .config((DefaultNodesGroupConfig) config)
-                  .filterFactory(filterFactory)
-                  .storage(this)
-                  .dockerServices(services)
-                  .feature(NodesGroup.Feature.FORBID_NODE_ADDITION)
-                  .build();
-            } else if (config instanceof SwarmNodesGroupConfig) {
-                cluster = RealCluster.factory(this, (SwarmNodesGroupConfig) config, null).apply(cid);
-            } else {
-                throw new IllegalArgumentException("Unsupported config: " + config);
-            }
-            return cluster;
+            return makeClusterFromConfig(config, cid);
         });
         // we place it after creation, because check it for not created cluster is not good
         checkThatCanRead(ng);
         return ng;
+    }
+
+    private NodesGroup makeClusterFromConfig(AbstractNodesGroupConfig<?> config, String cid) {
+        NodesGroup cluster;
+        if (config instanceof DefaultNodesGroupConfig) {
+            cluster = NodesGroupImpl.builder()
+              .config((DefaultNodesGroupConfig) config)
+              .filterFactory(filterFactory)
+              .storage(this)
+              .dockerServices(services)
+              .feature(NodesGroup.Feature.FORBID_NODE_ADDITION)
+              .build();
+        } else if (config instanceof SwarmNodesGroupConfig) {
+            cluster = RealCluster.factory(this, (SwarmNodesGroupConfig) config, null).apply(cid);
+        } else {
+            throw new IllegalArgumentException("Unsupported config: " + config);
+        }
+        return cluster;
     }
 
     @Override
@@ -290,13 +274,8 @@ public class DiscoveryStorageImpl implements DiscoveryStorage {
 
     private void deleteGroup(String clusterId) {
         aclContextFactory.getContext().assertGranted(SecuredType.CLUSTER.id(clusterId), Action.DELETE);
-        try {
-            final String clusterPath = KvUtils.join(prefix, clusterId);
-            kvmf.getStorage().deletedir(clusterPath, DeleteDirOptions.builder().recursive(true).build());
-        } catch (Exception e) {
-            log.error("Can not delete '{}' cluster.", clusterId, e);
-            throw new IllegalArgumentException("Can not delete cluster: " + clusterId + " due to error: " + e.getMessage(), e);
-        }
+        clusters.remove(clusterId);
+        log.error("Delete '{}' cluster.", clusterId);
     }
 
     public void deleteNodeGroup(String clusterId) {
@@ -381,6 +360,37 @@ public class DiscoveryStorageImpl implements DiscoveryStorage {
             if(group != null) {
                 group.flush();
             }
+        }
+    }
+
+    private class KvMapAdapterImpl implements KvMapAdapter<NodesGroup> {
+        @Override
+        public Object get(String key, NodesGroup src) {
+            return src.getConfig();
+        }
+
+        @Override
+        public NodesGroup set(String key, NodesGroup src, Object value) {
+            AbstractNodesGroupConfig<?> config = (AbstractNodesGroupConfig<?>) value;
+            if(src != null) {
+                src.setConfig(config);
+            } else {
+                src = makeClusterFromConfig(config, key);
+            }
+            return src;
+        }
+
+        @Override
+        public Class<?> getType(NodesGroup src) {
+            if(src == null) {
+                return null;
+            }
+            AbstractNodesGroupConfig<?> config = src.getConfig();
+            if(config != null) {
+                return config.getClass();
+            }
+            //src.getClass().getTypeParameters();
+            return null;
         }
     }
 }

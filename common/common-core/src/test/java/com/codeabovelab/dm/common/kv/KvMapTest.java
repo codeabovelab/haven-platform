@@ -67,7 +67,7 @@ public class KvMapTest {
     @Test
     public void test() throws Exception {
         KvMap<Bean> map = KvMap.builder(Bean.class)
-          .factory(factory())
+          .mapper(factory())
           .path("/test/beans")
           .build();
         Assert.assertThat(map.list(), hasSize(0));

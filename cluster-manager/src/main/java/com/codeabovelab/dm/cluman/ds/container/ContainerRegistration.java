@@ -34,12 +34,12 @@ public class ContainerRegistration {
     private final Object lock = new Object();
     private ContainerBase cached;
     private String node;
-    private KvMap<?> kvmap;
+    private KvMap<?> map;
 
-    ContainerRegistration(KvMap<?> kvmap, String id) {
+    ContainerRegistration(ContainerStorageImpl csi, String id) {
         this.id = id;
         Assert.notNull(id, "id is null");
-        this.kvmap = kvmap;
+        this.map = csi.map;
     }
 
     public String getId() {
@@ -55,7 +55,7 @@ public class ContainerRegistration {
     }
 
     public void flush() {
-        kvmap.flush(id);
+        map.flush(id);
     }
 
     public ContainerBase getContainer() {

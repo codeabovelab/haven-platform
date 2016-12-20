@@ -118,7 +118,11 @@ public class KvMapperFactory {
     }
 
     public <T>  KvClassMapper<T> createClassMapper(String prefix, Class<T> type) {
-        return new KvClassMapper<>(this, prefix, type);
+        return KvClassMapper.builder(this, type).prefix(prefix).build();
+    }
+
+    public <T>  KvClassMapper.Builder<T> buildClassMapper(Class<T> type) {
+        return KvClassMapper.builder(this, type);
     }
 
     public PropertyInterceptor[] getInterceptors(Class<? extends PropertyInterceptor>[] classes) {

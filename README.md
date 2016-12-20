@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/codeabovelab/haven-platform.svg?branch=master)](https://travis-ci.org/codeabovelab/haven-platform)
+
 # Haven: Container Management Simplified
  
 ## Introduction
@@ -120,8 +122,8 @@ Use the following command to start the etcd container:
 ```sh
 docker run -d -v /usr/share/ca-certificates/:/etc/ssl/certs \
      -p 4001:4001 -p 2380:2380 -p 2379:2379 --restart=always  \
-     -data-dir=data --name etcd0 quay.io/coreos/etcd:v2.3.7  -name etcd0  \
-     -advertise-client-urls http://$MASTER_IP:2379,http://$MASTER_IP:4001 \
+     --name etcd0 quay.io/coreos/etcd:v2.3.7  -name etcd0  \
+     -data-dir=data  -advertise-client-urls http://$MASTER_IP:2379,http://$MASTER_IP:4001 \
      -listen-client-urls http://0.0.0.0:2379,http://0.0.0.0:4001  -initial-advertise-peer-urls http://$MASTER_IP:2380 \
      -listen-peer-urls http://0.0.0.0:2380  -initial-cluster-token etcd-cluster-1 \
      -initial-cluster etcd0=http://$MASTER_IP:2380  -initial-cluster-state new
