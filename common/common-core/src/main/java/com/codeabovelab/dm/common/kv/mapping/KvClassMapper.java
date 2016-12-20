@@ -21,6 +21,8 @@ import com.codeabovelab.dm.common.validate.Validity;
 import com.codeabovelab.dm.common.validate.ValidityException;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import com.google.common.base.MoreObjects;
+import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
 import org.springframework.core.annotation.AnnotationUtils;
@@ -35,20 +37,59 @@ import java.util.stream.Collectors;
 @Slf4j
 public class KvClassMapper<T> {
 
+    private static final KvObjectFactory<Object> FACTORY = (String key, Class<?> type) -> {
+        return BeanUtils.instantiate(type);
+    };
+
+    @Data
+    public static class Builder<T> {
+        private final KvMapperFactory mapperFactory;
+        private final Class<T> type;
+        private String prefix;
+        private KvObjectFactory<T> factory;
+
+        Builder(KvMapperFactory mapperFactory, Class<T> type) {
+            this.mapperFactory = mapperFactory;
+            this.type = type;
+        }
+
+        public Builder<T> prefix(String prefix) {
+            setPrefix(prefix);
+            return this;
+        }
+
+        public Builder<T> factory(KvObjectFactory<T> factory) {
+            setFactory(factory);
+            return this;
+        }
+
+        public KvClassMapper<T> build() {
+            return new KvClassMapper<>(this);
+        }
+    }
+
     private static final String PROP_TYPE = "@class";
     private final Class<T> type;
     private final String prefix;
-    private final KvMapperFactory factory;
+    private final KvMapperFactory mapper;
     private final Map<Class, Map<String, KvProperty>> props = new HashMap<>();
     private final KeyValueStorage storage;
+    private final KvObjectFactory<T> factory;
 
-    KvClassMapper(KvMapperFactory factory, String prefix, Class<T> type) {
-        this.factory = factory;
-        this.prefix = prefix;
-        this.type = type;
-        Map<String, KvProperty> map = this.factory.loadProps(type, p -> p);
+
+    @SuppressWarnings("unchecked")
+    KvClassMapper(Builder<T> builder) {
+        this.mapper = builder.mapperFactory;
+        this.prefix = builder.prefix;
+        this.type = builder.type;
+        this.factory = MoreObjects.firstNonNull(builder.factory, (KvObjectFactory<T>) FACTORY);
+        Map<String, KvProperty> map = this.mapper.loadProps(type, p -> p);
         this.props.put(type, map);
-        this.storage = factory.getStorage();
+        this.storage = mapper.getStorage();
+    }
+
+    public static <T> Builder<T> builder(KvMapperFactory mf, Class<T> type) {
+        return new Builder<>(mf, type);
     }
 
     public String getPrefix() {
@@ -103,7 +144,7 @@ public class KvClassMapper<T> {
         Class<?> clazz = object.getClass();
         Map<String, KvProperty> p = this.props.get(clazz);
         if (p == null || CollectionUtils.isEmpty(this.props.get(clazz).values())) {
-            Map<String, KvProperty> map = this.factory.loadProps(clazz, t ->  t);
+            Map<String, KvProperty> map = this.mapper.loadProps(clazz, t ->  t);
             this.props.put(clazz, map);
             return map.values();
         } else {
@@ -160,7 +201,7 @@ public class KvClassMapper<T> {
             return null;
         }
         Class<S> actualType = resolveType(path, type);
-        S object = BeanUtils.instantiate(actualType);
+        S object = actualType.cast(factory.create(name, actualType));
         load(name, object);
         return actualType.cast(object);
     }
@@ -261,7 +302,7 @@ public class KvClassMapper<T> {
             }
             property.set(object, str);
         }
-        Validity validity = factory.validate(path, object);
+        Validity validity = mapper.validate(path, object);
         if(!validity.isValid()) {
             throw new ValidityException("Invalid : ", validity);
         }

@@ -85,7 +85,7 @@ public class DiscoveryStorageImpl implements DiscoveryStorage {
         this.prefix = storage.getPrefix() + "/clusters/";
         this.clusters = KvMap.builder(NodesGroup.class, AbstractNodesGroupConfig.class)
           .path(prefix)
-          .factory(kvmf)
+          .mapper(kvmf)
           .adapter(new KvMapAdapterImpl())
           .listener(e -> {
               String key = e.getKey();

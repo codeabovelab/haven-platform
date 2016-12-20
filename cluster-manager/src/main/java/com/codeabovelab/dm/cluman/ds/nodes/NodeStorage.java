@@ -85,7 +85,7 @@ public class NodeStorage implements NodeInfoProvider {
               }
           })
           .listener(this::onKVEvent)
-          .factory(kvmf)
+          .mapper(kvmf)
           .build();
         this.executorService = executorService;
 
@@ -205,7 +205,11 @@ public class NodeStorage implements NodeInfoProvider {
 
     private NodeRegistrationImpl getOrCreateNodeRegistration(String name) {
         ExtendedAssert.matchAz09Hyp(name, "node name");
-        return nodes.get(name);
+        return nodes.computeIfAbsent(name, (n) -> {
+            AccessContextFactory.getLocalContext().assertGranted(SecuredType.NODE.id(name), Action.CREATE);
+            NodeRegistrationImpl nr = newRegistration(NodeInfoImpl.builder().name(name));
+            return nr;
+        });
     }
 
     /**

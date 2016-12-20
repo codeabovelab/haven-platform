@@ -93,6 +93,7 @@ class NodeRegistrationImpl implements NodeRegistration {
         NodeInfoImpl ni;
         final boolean onlineChanged;
         synchronized (lock) {
+            builder.name(name);
             boolean on = isOn();
             onlineChanged = on != builder.isOn();
             ni = cache;

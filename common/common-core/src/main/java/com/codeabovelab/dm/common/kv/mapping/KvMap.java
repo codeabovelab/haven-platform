@@ -43,7 +43,7 @@ public class KvMap<T> {
 
     @Data
     public static class Builder<T, V> {
-        private KvMapperFactory factory;
+        private KvMapperFactory mapper;
         private String path;
         private KvMapAdapter<T> adapter = KvMapAdapter.direct();
         private final Class<T> type;
@@ -56,9 +56,10 @@ public class KvMap<T> {
          * Note that it handle events from KV storage. For events caused by map user use {@link #setConsumer(Consumer)} .
          */
         private Consumer<KvMapEvent<T>> listener;
+        private KvObjectFactory<T> factory;
 
-        public Builder<T, V> factory(KvMapperFactory factory) {
-            setFactory(factory);
+        public Builder<T, V> mapper(KvMapperFactory factory) {
+            setMapper(factory);
             return this;
         }
 
@@ -89,6 +90,11 @@ public class KvMap<T> {
          */
         public Builder<T, V> listener(Consumer<KvMapEvent<T>> listener) {
             setListener(listener);
+            return this;
+        }
+
+        public Builder<T, V> factory(KvObjectFactory<T> factory) {
+            setFactory(factory);
             return this;
         }
 
@@ -170,7 +176,7 @@ public class KvMap<T> {
         synchronized void load() {
             Object obj = mapper.load(key, adapter.getType(this.value));
             T newVal = null;
-            if(obj != null && this.value != null) {
+            if(obj != null || this.value != null) {
                 newVal = adapter.set(this.key, this.value, obj);
                 if(newVal == null) {
                     throw new IllegalStateException("Adapter " + adapter + " broke contract: it return null value for non null object.");
@@ -188,6 +194,7 @@ public class KvMap<T> {
         }
 
         synchronized T computeIfAbsent(Function<String, T> func) {
+            get(); // we must try to load before compute
             if(value == null) {
                 save(func.apply(key));
             }
@@ -208,8 +215,11 @@ public class KvMap<T> {
         this.consumer = builder.consumer;
         this.listener = builder.listener;
         Class<Object> mapperType = MoreObjects.firstNonNull(builder.valueType, (Class<Object>)builder.type);
-        this.mapper = builder.factory.createClassMapper(builder.path, mapperType);
-        builder.factory.getStorage().subscriptions().subscribeOnKey(this::onKvEvent, builder.path);
+        this.mapper = builder.mapper.buildClassMapper(mapperType)
+          .prefix(builder.path)
+          .factory(builder.factory)
+          .build();
+        builder.mapper.getStorage().subscriptions().subscribeOnKey(this::onKvEvent, builder.path);
     }
 
     /**
@@ -397,7 +407,9 @@ public class KvMap<T> {
     public void forEach(BiConsumer<String, ? super T> action) {
         this.map.forEach((key, holder) -> {
             T value = holder.get();
-            action.accept(key, value);
+            if(value != null) {
+                action.accept(key, value);
+            }
         });
     }
 }

@@ -26,9 +26,11 @@ import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @Component
 @Slf4j
@@ -36,7 +38,7 @@ public class ContainerStorageImpl implements ContainerStorage, InitializingBean 
 
     private final KvMapperFactory kvmf;
 
-    private final KvMap<ContainerRegistration> map;
+    final KvMap<ContainerRegistration> map;
     private final String prefix;
 
     @Autowired
@@ -44,8 +46,9 @@ public class ContainerStorageImpl implements ContainerStorage, InitializingBean 
         this.kvmf = kvmf;
         this.prefix = kvmf.getStorage().getPrefix() + "/containers/";
         this.map = KvMap.builder(ContainerRegistration.class)
-          .factory(kvmf)
+          .mapper(kvmf)
           .path(prefix)
+          .factory((key, type) -> new ContainerRegistration(this, key))
           .build();
     }
 
@@ -86,16 +89,18 @@ public class ContainerStorageImpl implements ContainerStorage, InitializingBean 
 
     @Override
     public List<ContainerRegistration> getContainersByNode(String nodeName) {
-        return map.values()
-          .stream()
-          .filter(c -> c.getNode().equals(nodeName))
+        return containersByNode(nodeName)
           .collect(Collectors.toList());
     }
 
-    Set<String> getContainersIdsByNode(String nodeName) {
+    private Stream<ContainerRegistration> containersByNode(String nodeName) {
         return map.values()
           .stream()
-          .filter(c -> c.getNode().equals(nodeName))
+          .filter(c -> Objects.equals(c.getNode(), nodeName));
+    }
+
+    Set<String> getContainersIdsByNode(String nodeName) {
+        return containersByNode(nodeName)
           .map(ContainerRegistration::getId)
           .collect(Collectors.toSet());
     }
@@ -107,13 +112,14 @@ public class ContainerStorageImpl implements ContainerStorage, InitializingBean 
      * @param node
      * @return
      */
+    @Override
     public ContainerRegistration getOrCreateContainer(ContainerBaseIface container, String node) {
         return getOrCreateContainer(container.getId(), cr -> cr.from(container, node));
     }
 
     ContainerRegistration getOrCreateContainer(String id, Consumer<ContainerRegistration> onCreate) {
         return map.computeIfAbsent(id, s -> {
-            ContainerRegistration registration = new ContainerRegistration(this.map, id);
+            ContainerRegistration registration = new ContainerRegistration(this, id);
             onCreate.accept(registration);
             ContainerBase cb = registration.getContainer();
             log.info("Create container: {} '{}', of '{}'", registration.getId(), cb.getName(), cb.getImage());
