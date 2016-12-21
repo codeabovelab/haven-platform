@@ -206,7 +206,7 @@ class ContainerInfoUpdater implements SmartLifecycle {
             Set<String> old = this.containerStorage.getContainersIdsByNode(node);
             for(DockerContainer dc: containers) {
                 old.remove(dc.getId());
-                this.containerStorage.getOrCreateContainer(dc, node);
+                this.containerStorage.updateAndGetContainer(dc, node);
             }
             this.containerStorage.remove(old);
             log.info("Containers of node '{}', current:{}, removed:{}", node, containers.size(), old.size());

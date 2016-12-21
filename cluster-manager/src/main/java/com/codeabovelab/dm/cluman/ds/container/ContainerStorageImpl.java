@@ -113,18 +113,12 @@ public class ContainerStorageImpl implements ContainerStorage, InitializingBean 
      * @return
      */
     @Override
-    public ContainerRegistration getOrCreateContainer(ContainerBaseIface container, String node) {
-        return getOrCreateContainer(container.getId(), cr -> cr.from(container, node));
-    }
-
-    ContainerRegistration getOrCreateContainer(String id, Consumer<ContainerRegistration> onCreate) {
-        return map.computeIfAbsent(id, s -> {
-            ContainerRegistration registration = new ContainerRegistration(this, id);
-            onCreate.accept(registration);
-            ContainerBase cb = registration.getContainer();
-            log.info("Create container: {} '{}', of '{}'", registration.getId(), cb.getName(), cb.getImage());
-            return registration;
-        });
+    public ContainerRegistration updateAndGetContainer(ContainerBaseIface container, String node) {
+        ContainerRegistration cr = map.computeIfAbsent(container.getId(), s -> new ContainerRegistration(this, s));
+        cr.from(container, node);
+        ContainerBase cb = cr.getContainer();
+        log.info("Update container: {} '{}', of '{}'", cr.getId(), cb.getName(), cb.getImage());
+        return cr;
     }
 
     void remove(Set<String> ids) {

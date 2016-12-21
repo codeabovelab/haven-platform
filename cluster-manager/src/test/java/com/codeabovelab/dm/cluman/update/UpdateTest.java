@@ -113,7 +113,7 @@ public class UpdateTest {
               .then((i) -> i.getArgumentAt(3, Object.class));
 
             ContainerStorage contStorage = mock(ContainerStorage.class);
-            when(contStorage.getOrCreateContainer(anyObject(), anyString())).thenReturn(mock(ContainerRegistration.class));
+            when(contStorage.updateAndGetContainer(anyObject(), anyString())).thenReturn(mock(ContainerRegistration.class));
 
             ContainerManager cm = new ContainerManager(discoveryStorage,
               mock(NodeRegistry.class),
