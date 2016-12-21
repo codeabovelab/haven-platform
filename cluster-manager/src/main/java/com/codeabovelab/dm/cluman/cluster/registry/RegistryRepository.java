@@ -79,15 +79,13 @@ public class RegistryRepository implements SupportSearch {
     }
 
     private void onLocalEvent(KvMapLocalEvent<RegistryService> e) {
-        KvStorageEvent.Crud action = e.getAction();
-        if (action == KvStorageEvent.Crud.CREATE || action == KvStorageEvent.Crud.UPDATE) {
-            processNew(e.getNewValue(), e.getKey());
+        RegistryService newValue = e.getNewValue();
+        if (newValue != null) {
+            processNew(newValue, e.getKey());
         }
-        if (action == KvStorageEvent.Crud.DELETE || action == KvStorageEvent.Crud.UPDATE) {
-            RegistryService oldValue = e.getOldValue();
-            if(oldValue != null) {
-                processOld(oldValue);
-            }
+        RegistryService oldValue = e.getOldValue();
+        if (oldValue != null) {
+            processOld(oldValue);
         }
     }
 
@@ -126,19 +124,20 @@ public class RegistryRepository implements SupportSearch {
     public void init(List<RegistryConfig> configs) {
         //init from KV
         try {
-            Collection<String> list = this.map.list();
-            log.debug("Loading repositories from storage: {}", list);
-            for (String repoName : list) {
-                try {
-                    this.map.get(repoName);
-                } catch (ValidityException e) {
-                    log.error("Repository: \"{}\" is invalid, deleting.", repoName, e);
-                    //delete broken registry
-                    this.map.remove(repoName);
-                } catch (Exception e) {
-                    log.error("Can not load repository: \"{}\" from storage", repoName, e);
-                }
-            }
+            this.map.load();
+//            Collection<String> list = this.map.list();
+//            log.debug("Loading repositories from storage: {}", list);
+//            for (String repoName : list) {
+//                try {
+//                    this.map.get(repoName);
+//                } catch (ValidityException e) {
+//                    log.error("Repository: \"{}\" is invalid, deleting.", repoName, e);
+//                    //delete broken registry
+//                    this.map.remove(repoName);
+//                } catch (Exception e) {
+//                    log.error("Can not load repository: \"{}\" from storage", repoName, e);
+//                }
+//            }
         } catch (Exception e) {
             log.error("Can not list repositories in storage, due to error.", e);
         }
@@ -167,11 +166,7 @@ public class RegistryRepository implements SupportSearch {
         String name = service.getConfig().getName();
         checkNotDefaultName(name);
         ExtendedAssert.matchId(name, "registry name");
-        RegistryService old = map.put(name, service);
-        if (old != service) {
-            processNew(service, name);
-            processOld(old);
-        }
+        map.put(name, service);
     }
 
     private void processOld(RegistryService old) {

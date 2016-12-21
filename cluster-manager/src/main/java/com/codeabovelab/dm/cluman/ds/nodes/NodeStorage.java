@@ -22,10 +22,7 @@ import com.codeabovelab.dm.cluman.security.AccessContextFactory;
 import com.codeabovelab.dm.cluman.security.SecuredType;
 import com.codeabovelab.dm.cluman.validate.ExtendedAssert;
 import com.codeabovelab.dm.common.kv.*;
-import com.codeabovelab.dm.common.kv.mapping.KvMap;
-import com.codeabovelab.dm.common.kv.mapping.KvMapAdapter;
-import com.codeabovelab.dm.common.kv.mapping.KvMapEvent;
-import com.codeabovelab.dm.common.kv.mapping.KvMapperFactory;
+import com.codeabovelab.dm.common.kv.mapping.*;
 import com.codeabovelab.dm.cluman.model.*;
 import com.codeabovelab.dm.cluman.persistent.PersistentBusFactory;
 import com.codeabovelab.dm.cluman.reconfig.ReConfigObject;
@@ -80,7 +77,7 @@ public class NodeStorage implements NodeInfoProvider {
           .path(nodesPrefix)
           .adapter(new KvMapAdapterImpl())
           .localListener((e) -> {
-              if(e.getAction() == KvStorageEvent.Crud.CREATE) {
+              if(e.getAction() == KvMapLocalEvent.Action.CREATE) {
                   AccessContextFactory.getLocalContext().assertGranted(SecuredType.NODE.id(e.getKey()), Action.CREATE);
               }
           })

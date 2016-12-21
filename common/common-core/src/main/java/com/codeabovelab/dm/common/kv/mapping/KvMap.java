@@ -113,12 +113,12 @@ public class KvMap<T> {
         synchronized T save(T val) {
             checkValue(val);
             // we must not publish dirty value
-            T old = this.dirty? null : this.value;
+            T old = getIfPresent();
             this.dirty = false;
             if(val == value) {
                 return value;
             }
-            KvStorageEvent.Crud action = this.value == null ? KvStorageEvent.Crud.CREATE : KvStorageEvent.Crud.UPDATE;
+            KvMapLocalEvent.Action action = this.value == null ? KvMapLocalEvent.Action.CREATE : KvMapLocalEvent.Action.UPDATE;
             this.value = val;
             onLocal(action, this, old, val);
             flush();
@@ -158,36 +158,25 @@ public class KvMap<T> {
             return value;
         }
 
-        synchronized void set(T value) {
-            checkValue(value);
-            KvStorageEvent.Crud action = this.value == null ? KvStorageEvent.Crud.CREATE : KvStorageEvent.Crud.UPDATE;
-            // we must not publish dirty value
-            T old = this.dirty? null : this.value;
-            onLocal(action, this, old, value);
-            internalSet(value);
-        }
-
-        private void internalSet(T value) {
-            this.dirty = false;
-            //here we must raise local event, but need to use another action like LOAD or SET,
-            // UPDATE and CREATE - is not acceptable here
-            this.value = value;
-        }
-
         private void checkValue(T value) {
             Assert.notNull(value, "Null value is not allowed");
         }
 
         synchronized void load() {
-            Object obj = mapper.load(key, adapter.getType(this.value));
+            T old = getIfPresent();
+            Object obj = mapper.load(key, adapter.getType(old));
             T newVal = null;
-            if(obj != null || this.value != null) {
-                newVal = adapter.set(this.key, this.value, obj);
+            if(obj != null || old != null) {
+                newVal = adapter.set(this.key, old, obj);
                 if(newVal == null) {
                     throw new IllegalStateException("Adapter " + adapter + " broke contract: it return null value for non null object.");
                 }
             }
-            internalSet(newVal);
+            this.dirty = false;
+            //here we must raise local event, but need to use another action like LOAD or SET,
+            // UPDATE and CREATE - is not acceptable here
+            this.value = newVal;
+            onLocal(KvMapLocalEvent.Action.LOAD, this, old, newVal);
         }
 
         synchronized T getIfPresent() {
@@ -257,7 +246,7 @@ public class KvMap<T> {
                     map.clear();
                 }
                 set.forEach((holder) -> {
-                    onLocal(KvStorageEvent.Crud.DELETE, holder, holder.getIfPresent(), null);
+                    onLocal(KvMapLocalEvent.Action.DELETE, holder, holder.getIfPresent(), null);
                     invokeListener(KvStorageEvent.Crud.DELETE, holder.key, holder);
                 });
             }
@@ -284,7 +273,7 @@ public class KvMap<T> {
                 case DELETE:
                     synchronized (map) {
                         holder = map.remove(key);
-                        onLocal(KvStorageEvent.Crud.DELETE, holder, holder.getIfPresent(), null);
+                        onLocal(KvMapLocalEvent.Action.DELETE, holder, holder.getIfPresent(), null);
                     }
             }
         }
@@ -302,7 +291,7 @@ public class KvMap<T> {
         }
     }
 
-    private void onLocal(KvStorageEvent.Crud action, ValueHolder holder, T oldValue, T newValue) {
+    private void onLocal(KvMapLocalEvent.Action action, ValueHolder holder, T oldValue, T newValue) {
         if(localListener == null) {
             return;
         }

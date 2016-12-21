@@ -29,6 +29,7 @@ import com.codeabovelab.dm.common.kv.KeyValueStorage;
 import com.codeabovelab.dm.common.kv.KvStorageEvent;
 import com.codeabovelab.dm.common.kv.mapping.KvMap;
 import com.codeabovelab.dm.common.kv.mapping.KvMapAdapter;
+import com.codeabovelab.dm.common.kv.mapping.KvMapLocalEvent;
 import com.codeabovelab.dm.common.kv.mapping.KvMapperFactory;
 import com.codeabovelab.dm.common.mb.MessageBus;
 import com.codeabovelab.dm.common.security.Action;
@@ -101,7 +102,7 @@ public class DiscoveryStorageImpl implements DiscoveryStorage {
               }
           })
           .localListener(e -> {
-              if(e.getAction() == KvStorageEvent.Crud.CREATE) {
+              if(e.getAction() == KvMapLocalEvent.Action.CREATE) {
                   checkThatCanCreate();
               }
           })
