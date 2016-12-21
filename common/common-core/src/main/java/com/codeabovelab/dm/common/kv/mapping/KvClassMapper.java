@@ -115,6 +115,7 @@ public class KvClassMapper<T> {
     }
 
     void save(String name, T object, KvPropertySetCallback callback) {
+        this.type.cast(object);
         String path = path(name);
         // we must read index of all node but, we can not create node in single command,
         // so we use index of last sub node
