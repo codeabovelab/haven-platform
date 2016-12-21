@@ -14,5 +14,5 @@ LABEL arg.publish=8000:8000
 ENV JAVA_OPTS=" -Xms128M -Xmx256M -Xss256k -XX:-HeapDumpOnOutOfMemoryError -XX:+UseConcMarkSweepGC "
 
 EXPOSE 8000
-ADD ./@artifactId@-*[0-9]-boot.jar /@artifactId@-@version@.jar
+ADD ./@artifactId@-*-boot.jar /@artifactId@-@version@.jar
 ENTRYPOINT java $JAVA_OPTS -Dspring.getenv.ignore=true -Djava.security.egd=file:/dev/./urandom  -jar /@artifactId@-@version@.jar
