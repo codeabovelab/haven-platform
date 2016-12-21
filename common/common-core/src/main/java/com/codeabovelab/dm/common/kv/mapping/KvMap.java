@@ -160,16 +160,16 @@ public class KvMap<T> {
 
         synchronized void set(T value) {
             checkValue(value);
+            KvStorageEvent.Crud action = this.value == null ? KvStorageEvent.Crud.CREATE : KvStorageEvent.Crud.UPDATE;
+            // we must not publish dirty value
+            T old = this.dirty? null : this.value;
+            onLocal(action, this, old, value);
             internalSet(value);
         }
 
         private void internalSet(T value) {
-            KvStorageEvent.Crud action = this.value == null ? KvStorageEvent.Crud.CREATE : KvStorageEvent.Crud.UPDATE;
-            // we must not publish dirty value
-            T old = this.dirty? null : this.value;
             this.dirty = false;
             this.value = value;
-            onLocal(action, this, old, value);
         }
 
         private void checkValue(T value) {
