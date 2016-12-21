@@ -47,9 +47,9 @@ public class KvMap<T> {
         /**
          * Note that it invoke at events caused by map user. For events from KV storage use {@link #setListener(Consumer)}.
          */
-        private Consumer<KvMapEvent<T>> consumer;
+        private Consumer<KvMapLocalEvent<T>> localListener;
         /**
-         * Note that it handle events from KV storage. For events caused by map user use {@link #setConsumer(Consumer)} .
+         * Note that it handle events from KV storage. For events caused by map user use {@link #setLocalListener(Consumer)} .
          */
         private Consumer<KvMapEvent<T>> listener;
         private KvObjectFactory<V> factory;
@@ -74,13 +74,13 @@ public class KvMap<T> {
          * @param consumer handler for local events causet by invoking of map methods
          * @return this
          */
-        public Builder<T, V> consumer(Consumer<KvMapEvent<T>> consumer) {
-            setConsumer(consumer);
+        public Builder<T, V> localListener(Consumer<KvMapLocalEvent<T>> consumer) {
+            setLocalListener(consumer);
             return this;
         }
 
         /**
-         * Note that it handle events from KV storage. For events caused by map user use {@link #setConsumer(Consumer)} .
+         * Note that it handle events from KV storage. For events caused by map user use {@link #setLocalListener(Consumer)} .
          * @param listener handler for KV storage events.
          * @return this
          */
@@ -112,13 +112,15 @@ public class KvMap<T> {
 
         synchronized T save(T val) {
             checkValue(val);
+            // we must not publish dirty value
+            T old = this.dirty? null : this.value;
             this.dirty = false;
             if(val == value) {
                 return value;
             }
-            T old = this.value;
+            KvStorageEvent.Crud action = this.value == null ? KvStorageEvent.Crud.CREATE : KvStorageEvent.Crud.UPDATE;
             this.value = val;
-            onSave(this, old == null? KvStorageEvent.Crud.CREATE : KvStorageEvent.Crud.UPDATE);
+            onLocal(action, this, old, val);
             flush();
             return old;
         }
@@ -162,8 +164,12 @@ public class KvMap<T> {
         }
 
         private void internalSet(T value) {
+            KvStorageEvent.Crud action = this.value == null ? KvStorageEvent.Crud.CREATE : KvStorageEvent.Crud.UPDATE;
+            // we must not publish dirty value
+            T old = this.dirty? null : this.value;
             this.dirty = false;
             this.value = value;
+            onLocal(action, this, old, value);
         }
 
         private void checkValue(T value) {
@@ -202,14 +208,14 @@ public class KvMap<T> {
 
     private final KvClassMapper<Object> mapper;
     private final KvMapAdapter<T> adapter;
-    private final Consumer<KvMapEvent<T>> consumer;
+    private final Consumer<KvMapLocalEvent<T>> localListener;
     private final Consumer<KvMapEvent<T>> listener;
     private final Map<String, ValueHolder> map = new LinkedHashMap<>();
 
     @SuppressWarnings("unchecked")
     private KvMap(Builder builder) {
         this.adapter = builder.adapter;
-        this.consumer = builder.consumer;
+        this.localListener = builder.localListener;
         this.listener = builder.listener;
         Class<Object> mapperType = MoreObjects.firstNonNull(builder.valueType, (Class<Object>)builder.type);
         this.mapper = builder.mapper.buildClassMapper(mapperType)
@@ -243,13 +249,14 @@ public class KvMap<T> {
             if(action == KvStorageEvent.Crud.DELETE) {
                 // it meat that someone remove mapped node with all entries, we must clear map
                 // note that current implementation does not support consistency
-                Set<String> set;
+                List<ValueHolder> set;
                 synchronized (map) {
-                    set = new HashSet<>(map.keySet());
+                    set = new ArrayList<>(map.values());
                     map.clear();
                 }
-                set.forEach((removedKey) -> {
-                    invokeListener(KvStorageEvent.Crud.DELETE, removedKey, null);
+                set.forEach((holder) -> {
+                    onLocal(KvStorageEvent.Crud.DELETE, holder, holder.getIfPresent(), null);
+                    invokeListener(KvStorageEvent.Crud.DELETE, holder.key, holder);
                 });
             }
             return;
@@ -275,6 +282,7 @@ public class KvMap<T> {
                 case DELETE:
                     synchronized (map) {
                         holder = map.remove(key);
+                        onLocal(KvStorageEvent.Crud.DELETE, holder, holder.getIfPresent(), null);
                     }
             }
         }
@@ -292,12 +300,12 @@ public class KvMap<T> {
         }
     }
 
-    private void onSave(ValueHolder holder, KvStorageEvent.Crud action) {
-        if(consumer == null) {
+    private void onLocal(KvStorageEvent.Crud action, ValueHolder holder, T oldValue, T newValue) {
+        if(localListener == null) {
             return;
         }
-        KvMapEvent<T> event = new KvMapEvent<>(this, action, holder.key, holder.getIfPresent());
-        consumer.accept(event);
+        KvMapLocalEvent<T> event = new KvMapLocalEvent<>(this, action, holder.key, oldValue, newValue);
+        localListener.accept(event);
     }
 
     /**
