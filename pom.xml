@@ -57,7 +57,7 @@
     <modules>
         <module>common</module>
         <module>cluster-manager</module>
-        <module>balancer-web</module>
+        <!--<module>balancer-web</module>-->
     </modules>
 
     <build>
