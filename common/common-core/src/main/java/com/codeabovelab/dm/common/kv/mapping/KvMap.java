@@ -169,6 +169,8 @@ public class KvMap<T> {
 
         private void internalSet(T value) {
             this.dirty = false;
+            //here we must raise local event, but need to use another action like LOAD or SET,
+            // UPDATE and CREATE - is not acceptable here
             this.value = value;
         }
 
@@ -398,7 +400,8 @@ public class KvMap<T> {
     }
 
     /**
-     * Immutable set of keys.
+     * Gives Immutable set of keys. Note that it not load keys from storage. <p/>
+     * For load keys you need to use {@link #load()}.
      * @return set of keys, never null.
      */
     public Set<String> list() {
