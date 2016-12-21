@@ -27,9 +27,8 @@ import com.codeabovelab.dm.cluman.reconfig.ReConfigObject;
 import com.codeabovelab.dm.cluman.reconfig.ReConfigurable;
 import com.codeabovelab.dm.cluman.utils.ContainerUtils;
 import com.codeabovelab.dm.cluman.validate.ExtendedAssert;
-import com.codeabovelab.dm.common.kv.mapping.KvMap;
-import com.codeabovelab.dm.common.kv.mapping.KvMapAdapter;
-import com.codeabovelab.dm.common.kv.mapping.KvMapperFactory;
+import com.codeabovelab.dm.common.kv.KvStorageEvent;
+import com.codeabovelab.dm.common.kv.mapping.*;
 import com.codeabovelab.dm.common.mb.MessageBus;
 import com.codeabovelab.dm.common.utils.Closeables;
 import com.codeabovelab.dm.common.validate.ValidityException;
@@ -51,7 +50,7 @@ import java.util.stream.Collectors;
 @ReConfigurable
 public class RegistryRepository implements SupportSearch {
 
-    private final KvMap<RegistryService> registryServiceMap;
+    private final KvMap<RegistryService> map;
     //docker hub registry
     private final DockerHubRegistry defaultRegistry;
     private final MessageBus<RegistryEvent> eventBus;
@@ -65,9 +64,11 @@ public class RegistryRepository implements SupportSearch {
         this.defaultRegistry = defaultRegistry;
         this.factory = factory;
         String prefix = mapperFactory.getStorage().getPrefix() + "/docker-registry/";
-        this.registryServiceMap = KvMap.builder(RegistryService.class, RegistryConfig.class)
+        this.map = KvMap.builder(RegistryService.class, RegistryConfig.class)
           .mapper(mapperFactory)
           .adapter(new KvMapAdapterImpl())
+          .listener(this::onStorageEvent)
+          .localListener(this::onLocalEvent)
           .path(prefix)
           .build();
         this.eventBus = eventBus;
@@ -77,22 +78,63 @@ public class RegistryRepository implements SupportSearch {
                 .build());
     }
 
+    private void onLocalEvent(KvMapLocalEvent<RegistryService> e) {
+        KvStorageEvent.Crud action = e.getAction();
+        if (action == KvStorageEvent.Crud.CREATE || action == KvStorageEvent.Crud.UPDATE) {
+            processNew(e.getNewValue(), e.getKey());
+        }
+        if (action == KvStorageEvent.Crud.DELETE || action == KvStorageEvent.Crud.UPDATE) {
+            RegistryService oldValue = e.getOldValue();
+            if(oldValue != null) {
+                processOld(oldValue);
+            }
+        }
+    }
+
+    private void onStorageEvent(KvMapEvent<RegistryService> e) {
+        KvStorageEvent.Crud action = e.getAction();
+        String targetAction;
+        switch (action) {
+            case CREATE:
+                targetAction = StandardActions.CREATE;
+                break;
+            case DELETE:
+                targetAction = StandardActions.DELETE;
+                break;
+            case UPDATE:
+                targetAction = StandardActions.UPDATE;
+                break;
+            default: return;
+        }
+        RegistryEvent.Builder logEvent = new RegistryEvent.Builder();
+        logEvent.setAction(targetAction);
+        logEvent.setName(e.getKey());
+        RegistryService service = e.getValue();
+        String errorMessage = null;
+        if (service != null) {
+            errorMessage = service.getConfig().getErrorMessage();
+        }
+        if (StringUtils.hasText(errorMessage)) {
+            logEvent.setSeverity(Severity.ERROR);
+            logEvent.setMessage(errorMessage);
+        } else {
+            logEvent.setSeverity(Severity.INFO);
+        }
+        eventBus.accept(logEvent.build());
+    }
+
     public void init(List<RegistryConfig> configs) {
         //init from KV
         try {
-            Collection<String> list = this.registryServiceMap.list();
+            Collection<String> list = this.map.list();
             log.debug("Loading repositories from storage: {}", list);
             for (String repoName : list) {
                 try {
-                    RegistryService service = this.registryServiceMap.get(repoName);
-                    //note that here we may replace existing services from config
-                    //   but it need for cases when somebody edit service through api
-                    internalRegister(service);
-                    fireRegistryAddedEvent(service.getConfig());
+                    this.map.get(repoName);
                 } catch (ValidityException e) {
                     log.error("Repository: \"{}\" is invalid, deleting.", repoName, e);
                     //delete broken registry
-                    //TODO classMapper.delete(repoName);
+                    this.map.remove(repoName);
                 } catch (Exception e) {
                     log.error("Can not load repository: \"{}\" from storage", repoName, e);
                 }
@@ -109,7 +151,6 @@ public class RegistryRepository implements SupportSearch {
             RegistryService registryService = factory.createRegistryService(config);
             try {
                 internalRegister(registryService);
-                fireRegistryAddedEvent(config);
             } catch (Exception e) {
                 log.error("Can not register repository: \"{}\" ", registryService, e);
             }
@@ -120,30 +161,37 @@ public class RegistryRepository implements SupportSearch {
         RegistryConfig config = registryService.getConfig();
         Assert.notNull(config, "Config should not be null!");
         internalRegister(registryService);
-        fireRegistryAddedEvent(config);
     }
 
     private void internalRegister(RegistryService service) {
         String name = service.getConfig().getName();
-        checkThatItDefaultName(name);
+        checkNotDefaultName(name);
         ExtendedAssert.matchId(name, "registry name");
-        RegistryService old = registryServiceMap.put(name, service);
+        RegistryService old = map.put(name, service);
         if (old != service) {
-            if (service instanceof AbstractV2RegistryService) {
-                ((AbstractV2RegistryService) service).setEventConsumer(this::dispatchEvent);
-            }
-            if (service instanceof InitializingBean) {
-                try {
-                    ((InitializingBean) service).afterPropertiesSet();
-                } catch (Exception e) {
-                    log.error("Can not init repository: \"{}\"", name, e);
-                }
-            }
-            Closeables.closeIfCloseable(old);
+            processNew(service, name);
+            processOld(old);
         }
     }
 
-    private void checkThatItDefaultName(String name) {
+    private void processOld(RegistryService old) {
+        Closeables.closeIfCloseable(old);
+    }
+
+    private void processNew(RegistryService service, String name) {
+        if (service instanceof AbstractV2RegistryService) {
+            ((AbstractV2RegistryService) service).setEventConsumer(this::dispatchEvent);
+        }
+        if (service instanceof InitializingBean) {
+            try {
+                ((InitializingBean) service).afterPropertiesSet();
+            } catch (Exception e) {
+                log.error("Can not init repository: \"{}\"", name, e);
+            }
+        }
+    }
+
+    private void checkNotDefaultName(String name) {
         if(defaultRegistry.getConfig().getName().equals(name)) {
             throw new IllegalArgumentException("Can not override default registry.");
         }
@@ -157,32 +205,8 @@ public class RegistryRepository implements SupportSearch {
     }
 
     public void unRegister(String name) {
-        checkThatItDefaultName(name);
-        RegistryService registryService = registryServiceMap.remove(name);
-        Assert.notNull(registryService, "registryService must not null");
-        Closeables.closeIfCloseable(registryService);
-        fireRegistryRemovedEvent(registryService.getConfig());
-    }
-
-    private void fireRegistryAddedEvent(RegistryConfig config) {
-        RegistryEvent.Builder logEvent = new RegistryEvent.Builder();
-        logEvent.setAction(StandardActions.CREATE);
-        logEvent.setName(config.getName());
-        if (StringUtils.hasText(config.getErrorMessage())) {
-            logEvent.setSeverity(Severity.ERROR);
-            logEvent.setMessage(config.getErrorMessage());
-        } else {
-            logEvent.setSeverity(Severity.INFO);
-        }
-        eventBus.accept(logEvent.build());
-    }
-
-    private void fireRegistryRemovedEvent(RegistryConfig config) {
-        RegistryEvent.Builder logEvent = new RegistryEvent.Builder();
-        logEvent.setAction(StandardActions.DELETE);
-        logEvent.setName(config.getName());
-        logEvent.setSeverity(Severity.INFO);
-        eventBus.accept(logEvent.build());
+        checkNotDefaultName(name);
+        map.remove(name);
     }
 
     public List<ImageCatalog> getCatalog(Collection<String> names) {
@@ -204,7 +228,7 @@ public class RegistryRepository implements SupportSearch {
 
     public Collection<String> getAvailableRegistries() {
         return ImmutableSet.<String>builder()
-          .addAll(registryServiceMap.list())
+          .addAll(map.list())
           .add(defaultRegistry.getConfig().getName())
           .build();
     }
@@ -268,7 +292,7 @@ public class RegistryRepository implements SupportSearch {
     public RegistryService getByName(String registryName) {
         RegistryService service = null;
         if (registryName != null && !Objects.equals(defaultRegistry.getConfig().getName(), registryName)) {
-            service = registryServiceMap.get(registryName);
+            service = map.get(registryName);
         }
         if (service == null) {
             service = defaultRegistry;
@@ -279,7 +303,7 @@ public class RegistryRepository implements SupportSearch {
     @Override
     public SearchResult search(String query, final int page, final int size) {
         RegistrySearchHelper rsh = new RegistrySearchHelper(query, page, size);
-        for (RegistryService service : registryServiceMap.values()) {
+        for (RegistryService service : map.values()) {
             rsh.search(service);
         }
         rsh.search(defaultRegistry);
@@ -289,7 +313,7 @@ public class RegistryRepository implements SupportSearch {
     @ReConfigObject
     private RegistriesConfig getConfig() {
         RegistriesConfig rsc = new RegistriesConfig();
-        registryServiceMap.forEach((k, v) -> {
+        map.forEach((k, v) -> {
             RegistryConfig config = v.getConfig();
             RegistryConfig exported = config.clone();
             exported.setName(k);

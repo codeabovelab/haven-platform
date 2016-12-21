@@ -100,7 +100,7 @@ public class DiscoveryStorageImpl implements DiscoveryStorage {
                       fireGroupEvent(key, StandardActions.UPDATE);
               }
           })
-          .consumer(e -> {
+          .localListener(e -> {
               if(e.getAction() == KvStorageEvent.Crud.CREATE) {
                   checkThatCanCreate();
               }

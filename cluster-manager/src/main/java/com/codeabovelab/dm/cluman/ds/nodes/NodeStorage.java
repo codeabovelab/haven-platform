@@ -79,7 +79,7 @@ public class NodeStorage implements NodeInfoProvider {
         this.nodes = KvMap.builder(NodeRegistrationImpl.class, NodeInfoImpl.Builder.class)
           .path(nodesPrefix)
           .adapter(new KvMapAdapterImpl())
-          .consumer((e) -> {
+          .localListener((e) -> {
               if(e.getAction() == KvStorageEvent.Crud.CREATE) {
                   AccessContextFactory.getLocalContext().assertGranted(SecuredType.NODE.id(e.getKey()), Action.CREATE);
               }
