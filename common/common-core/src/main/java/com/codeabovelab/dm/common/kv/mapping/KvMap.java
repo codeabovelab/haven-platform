@@ -24,12 +24,8 @@ import com.google.common.collect.ImmutableSet;
 import lombok.Data;
 import org.springframework.util.Assert;
 
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -207,7 +203,7 @@ public class KvMap<T> {
     private final KvMapAdapter<T> adapter;
     private final Consumer<KvMapEvent<T>> consumer;
     private final Consumer<KvMapEvent<T>> listener;
-    private final ConcurrentMap<String, ValueHolder> map = new ConcurrentHashMap<>();
+    private final Map<String, ValueHolder> map = new LinkedHashMap<>();
 
     @SuppressWarnings("unchecked")
     private KvMap(Builder builder) {
@@ -244,12 +240,15 @@ public class KvMap<T> {
         String key = this.mapper.getName(path);
         if(key == null) {
             if(action == KvStorageEvent.Crud.DELETE) {
-                Set<String> set = new HashSet<>(map.keySet());
                 // it meat that someone remove mapped node with all entries, we must clear map
                 // note that current implementation does not support consistency
+                Set<String> set;
+                synchronized (map) {
+                    set = new HashSet<>(map.keySet());
+                    map.clear();
+                }
                 set.forEach((removedKey) -> {
-                    ValueHolder holder = map.remove(removedKey);
-                    invokeListener(KvStorageEvent.Crud.DELETE, removedKey, holder);
+                    invokeListener(KvStorageEvent.Crud.DELETE, removedKey, null);
                 });
             }
             return;
@@ -273,7 +272,9 @@ public class KvMap<T> {
                     holder.dirty();
                     break;
                 case DELETE:
-                    holder = map.remove(key);
+                    synchronized (map) {
+                        holder = map.remove(key);
+                    }
             }
         }
         invokeListener(action, key, holder);
@@ -304,11 +305,12 @@ public class KvMap<T> {
      * @return value or null if not exists
      */
     public T get(String key) {
-        // we can not use computeIfAbsent here because load code can modify map
         ValueHolder holder = getOrCreateHolder(key);
         T val = holder.get();
         if(val == null) {
-            map.remove(key, holder);
+            synchronized (map) {
+                map.remove(key, holder);
+            }
             return null;
         }
         return holder.get();
@@ -320,7 +322,10 @@ public class KvMap<T> {
      * @return value or null if not exists or dirty.
      */
     public T getIfPresent(String key) {
-        ValueHolder holder = map.get(key);
+        ValueHolder holder;
+        synchronized (map) {
+            holder = map.get(key);
+        }
         if(holder == null) {
             return null;
         }
@@ -345,7 +350,11 @@ public class KvMap<T> {
      * @return gives value only if present, not load it, this mean that you may obtain null, event storage has value
      */
     public T remove(String key) {
-        ValueHolder valueHolder = map.get(key);
+        ValueHolder valueHolder;
+        synchronized (map) {
+            valueHolder = map.get(key);
+            // we not delete holder here, it mus tbe deleter from kv-event listener
+        }
         mapper.delete(key);
         if (valueHolder != null) {
             // we must not load value
@@ -364,19 +373,19 @@ public class KvMap<T> {
      * @param key key of value.
      */
     public void flush(String key) {
-        ValueHolder holder = map.get(key);
+        ValueHolder holder;
+        synchronized (map) {
+            holder = map.get(key);
+        }
         if(holder != null) {
             holder.flush();
         }
     }
 
     private ValueHolder getOrCreateHolder(String key) {
-        ValueHolder holder = new ValueHolder(key);
-        ValueHolder old = map.putIfAbsent(key, holder);
-        if(old != null) {
-            holder = old;
+        synchronized (map) {
+            return map.computeIfAbsent(key, ValueHolder::new);
         }
-        return holder;
     }
 
     /**
@@ -384,7 +393,9 @@ public class KvMap<T> {
      * @return set of keys, never null.
      */
     public Set<String> list() {
-        return ImmutableSet.copyOf(this.map.keySet());
+        synchronized (map) {
+            return ImmutableSet.copyOf(this.map.keySet());
+        }
     }
 
     /**
@@ -393,19 +404,26 @@ public class KvMap<T> {
      */
     public Collection<T> values() {
         ImmutableList.Builder<T> b = ImmutableList.builder();
-        this.map.values().forEach(valueHolder -> {
-            T element = valueHolder.get();
-            // map does not contain holders with null elements, but sometime it happen
-            // due to multithread access , for example in `put()` method
-            if(element != null) {
-                b.add(element);
-            }
-        });
+        synchronized (map) {
+            this.map.values().forEach(valueHolder -> {
+                T element = valueHolder.get();
+                // map does not contain holders with null elements, but sometime it happen
+                // due to multithread access , for example in `put()` method
+                if(element != null) {
+                    b.add(element);
+                }
+            });
+        }
         return b.build();
     }
 
     public void forEach(BiConsumer<String, ? super T> action) {
-        this.map.forEach((key, holder) -> {
+        // we use copy for prevent call external code in lock
+        Map<String, ValueHolder> copy;
+        synchronized (map) {
+            copy = new LinkedHashMap<>(this.map);
+        }
+        copy.forEach((key, holder) -> {
             T value = holder.get();
             if(value != null) {
                 action.accept(key, value);
