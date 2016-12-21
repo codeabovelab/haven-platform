@@ -52,7 +52,7 @@ public class KvMap<T> {
          * Note that it handle events from KV storage. For events caused by map user use {@link #setConsumer(Consumer)} .
          */
         private Consumer<KvMapEvent<T>> listener;
-        private KvObjectFactory<T> factory;
+        private KvObjectFactory<V> factory;
 
         public Builder<T, V> mapper(KvMapperFactory factory) {
             setMapper(factory);
@@ -89,7 +89,7 @@ public class KvMap<T> {
             return this;
         }
 
-        public Builder<T, V> factory(KvObjectFactory<T> factory) {
+        public Builder<T, V> factory(KvObjectFactory<V> factory) {
             setFactory(factory);
             return this;
         }
@@ -130,7 +130,8 @@ public class KvMap<T> {
             }
             this.dirty = false;
             Object obj = adapter.get(this.key, this.value);
-
+            // Note that message will be concatenated with type of object by `Assert.isInstanceOf`
+            Assert.isInstanceOf(mapper.getType(), obj, "Adapter " + adapter + " return object of inappropriate");
             Assert.notNull(obj, "Adapter " + adapter + " return null from " + this.value + " that is not allowed");
             mapper.save(key, obj, (p, res) -> {
                 index.put(p.getKey(), res.getIndex());

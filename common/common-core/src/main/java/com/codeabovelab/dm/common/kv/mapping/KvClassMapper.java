@@ -92,6 +92,10 @@ public class KvClassMapper<T> {
         return new Builder<>(mf, type);
     }
 
+    public Class<T> getType() {
+        return type;
+    }
+
     public String getPrefix() {
         return prefix;
     }
