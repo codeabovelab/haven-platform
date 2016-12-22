@@ -289,7 +289,9 @@ public class KvMap<T> {
                 case DELETE:
                     synchronized (map) {
                         holder = map.remove(key);
-                        onLocal(KvMapLocalEvent.Action.DELETE, holder, holder.getIfPresent(), null);
+                        if(holder != null) {
+                            onLocal(KvMapLocalEvent.Action.DELETE, holder, holder.getIfPresent(), null);
+                        }
                     }
             }
         }
