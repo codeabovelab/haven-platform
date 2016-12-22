@@ -26,7 +26,7 @@ import java.lang.annotation.Target;
  * Note that complex values (like list or map) must be immutable.
  */
 @Retention(RetentionPolicy.RUNTIME)
-@Target(ElementType.FIELD)
+@Target({ElementType.FIELD, ElementType.TYPE})
 public @interface KvMapping {
     /**
      * Canonical type representation. It use fore json deserialization.

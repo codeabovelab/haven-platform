@@ -16,6 +16,7 @@
 
 package com.codeabovelab.dm.cluman.model;
 
+import com.codeabovelab.dm.common.kv.mapping.KvMapping;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.google.common.collect.ImmutableList;
 import lombok.Data;
@@ -25,6 +26,7 @@ import java.util.Date;
 import java.util.List;
 
 
+@KvMapping
 @Data
 public class ApplicationImpl implements Application {
 
