@@ -28,5 +28,5 @@ public class Actor {
     private String id;
 
     @JsonProperty("Attributes")
-    private Map<String, String> Attributes;
+    private Map<String, String> attributes;
 }
