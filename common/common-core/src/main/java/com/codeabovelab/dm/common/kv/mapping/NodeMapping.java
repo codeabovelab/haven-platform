@@ -105,7 +105,7 @@ class NodeMapping<T> extends AbstractMapping<T> {
     @Override
     <S extends T> S load(String path, String name, Class<S> type) {
         Class<S> actualType = resolveType(path, type);
-        S object = actualType.cast(factory.create(name, type));
+        S object = actualType.cast(factory.create(name, actualType));
         load(path, object);
         return actualType.cast(object);
     }
