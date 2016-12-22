@@ -19,14 +19,9 @@ package com.codeabovelab.dm.cluman.cluster.docker.model.swarm;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Data;
 
-import java.util.Map;
-
 @Data
-public class Driver {
+public class Version {
 
-    @JsonProperty("Name")
-    private String name;
-
-    @JsonProperty("Options")
-    private Map<String, String> options;
+    @JsonProperty("Index")
+    private Long index;
 }

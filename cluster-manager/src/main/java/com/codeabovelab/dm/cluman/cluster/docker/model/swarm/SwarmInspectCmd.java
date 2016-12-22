@@ -19,14 +19,28 @@ package com.codeabovelab.dm.cluman.cluster.docker.model.swarm;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Data;
 
-import java.util.Map;
+import java.util.Date;
 
 @Data
-public class Driver {
+public class SwarmInspectCmd {
 
-    @JsonProperty("Name")
-    private String name;
+    @JsonProperty("ID")
+    private String id;
 
-    @JsonProperty("Options")
-    private Map<String, String> options;
+    @JsonProperty("Version")
+    private Version version;
+
+    @JsonProperty("CreatedAt")
+    private Date createdAt;
+
+    @JsonProperty("UpdatedAt")
+    private Date updatedAt;
+
+    @JsonProperty("Spec")
+    private SwarmConfig swarmConfig;
+
+    @JsonProperty("JoinTokens")
+    private JoinTokens joinTokens;
+
+
 }
