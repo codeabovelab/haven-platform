@@ -39,8 +39,6 @@ import com.codeabovelab.dm.common.kv.mapping.KvMap;
 import com.codeabovelab.dm.common.kv.mapping.KvMapperFactory;
 import com.codeabovelab.dm.common.mb.MessageBus;
 import lombok.extern.slf4j.Slf4j;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
@@ -56,8 +54,6 @@ import static com.google.common.base.MoreObjects.firstNonNull;
 @Service
 @Slf4j
 public class ApplicationServiceImpl implements ApplicationService {
-
-    private static final Logger LOG = LoggerFactory.getLogger(ApplicationServiceImpl.class);
 
     private final KeyValueStorage keyValueStorage;
     private final DockerServiceRegistry dockerServiceRegistry;
@@ -88,13 +84,13 @@ public class ApplicationServiceImpl implements ApplicationService {
 
     @Override
     public List<Application> getApplications(String cluster) {
-        Map<String, String> appsStrings = keyValueStorage.map(appPrefix + cluster);
-        if(appsStrings == null) {
+        List<String> appKeys = keyValueStorage.list(appPrefix + cluster);
+        if(appKeys == null) {
             return Collections.emptyList();
         }
         List<Application> apps = new ArrayList<>();
-        appsStrings.forEach((k, v) -> {
-            ApplicationImpl app = map.get(v);
+        appKeys.forEach((k) -> {
+            ApplicationImpl app = map.get(k);
             apps.add(app);
         });
         return apps;
