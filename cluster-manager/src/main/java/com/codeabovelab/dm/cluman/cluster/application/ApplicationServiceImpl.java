@@ -74,12 +74,13 @@ public class ApplicationServiceImpl implements ApplicationService {
                                   ComposeExecutor composeExecutor,
                                   ContainerSourceFactory sourceService,
                                   @Qualifier(ApplicationEvent.BUS) MessageBus<ApplicationEvent> applicationBus) {
+        this.keyValueStorage = mapper.getStorage();
+        this.appPrefix = keyValueStorage.getPrefix() + "/applications/";
         this.map = KvMap.builder(ApplicationImpl.class)
           .mapper(mapper)
+          .path(this.appPrefix)
           .build();
-        this.keyValueStorage = mapper.getStorage();
         this.dockerServiceRegistry = dockerServiceRegistry;
-        this.appPrefix = keyValueStorage.getPrefix() + "/applications/";
         this.composeExecutor = composeExecutor;
         this.applicationBus = applicationBus;
         this.sourceService = sourceService;
