@@ -212,6 +212,7 @@ public class KvMap<T> {
     @SuppressWarnings("unchecked")
     private KvMap(Builder builder) {
         Assert.notNull(builder.mapper, "mapper is null");
+        Assert.notNull(builder.path, "path is null");
         this.adapter = builder.adapter;
         this.localListener = builder.localListener;
         this.listener = builder.listener;
