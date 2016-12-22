@@ -141,13 +141,17 @@ public class KvMap<T> {
             // Note that message will be concatenated with type of object by `Assert.isInstanceOf`
             Assert.isInstanceOf(mapper.getType(), obj, "Adapter " + adapter + " return object of inappropriate");
             Assert.notNull(obj, "Adapter " + adapter + " return null from " + this.value + " that is not allowed");
-            mapper.save(key, obj, (p, res) -> {
-                index.put(p.getKey(), res.getIndex());
+            mapper.save(key, obj, (name, res) -> {
+                index.put(toIndexKey(name), res.getIndex());
             });
         }
 
+        private String toIndexKey(String name) {
+            return name == null? THIS : name;
+        }
+
         synchronized void dirty(String prop, long newIndex) {
-            Long old = this.index.get(prop);
+            Long old = this.index.get(toIndexKey(prop));
             if(old != null && old != newIndex) {
                 dirty();
             }
@@ -203,6 +207,10 @@ public class KvMap<T> {
         }
     }
 
+    /**
+     * Used for replace this property in index map
+     */
+    static final String THIS = " this";
     private final KvClassMapper<Object> mapper;
     private final KvMapAdapter<T> adapter;
     private final Consumer<KvMapLocalEvent<T>> localListener;
@@ -276,7 +284,7 @@ public class KvMap<T> {
                     break;
                 case UPDATE:
                     holder = getOrCreateHolder(key);
-                    holder.dirty();
+                    holder.dirty(null, index);
                     break;
                 case DELETE:
                     synchronized (map) {

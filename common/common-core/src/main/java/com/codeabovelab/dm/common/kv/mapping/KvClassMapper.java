@@ -109,7 +109,7 @@ public class KvClassMapper<T> {
         save(name, object, null);
     }
 
-    void save(String name, T object, KvPropertySetCallback callback) {
+    void save(String name, T object, KvSaveCallback callback) {
         this.type.cast(object);
         String path = path(name);
         this.mapping.save(path, object, callback);

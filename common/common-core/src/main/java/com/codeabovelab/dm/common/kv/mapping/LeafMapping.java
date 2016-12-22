@@ -27,12 +27,11 @@ class LeafMapping<T> extends AbstractMapping<T> {
     }
 
     @Override
-    void save(String path, T object, KvPropertySetCallback callback) {
+    void save(String path, T object, KvSaveCallback callback) {
         try {
             String value = getObjectMapper().writeValueAsString(object);
             KvNode res = getStorage().set(path, value);
             if(callback != null) {
-                //FIXME null
                 callback.call(null, res);
             }
         } catch (Exception e) {

@@ -58,7 +58,7 @@ class NodeMapping<T> extends AbstractMapping<T> {
     }
 
     @Override
-    void save(String path, T object, KvPropertySetCallback callback) {
+    void save(String path, T object, KvSaveCallback callback) {
         // we must read index of all node but, we can not create node in single command,
         // so we use index of last sub node
         Collection<KvProperty> props = getProps(object);
@@ -72,11 +72,12 @@ class NodeMapping<T> extends AbstractMapping<T> {
         //store properties
         for(KvProperty property: props) {
             String strval = property.get(object);
-            String proppath = KvUtils.join(path, property.getKey());
+            String key = property.getKey();
+            String proppath = KvUtils.join(path, key);
             try {
                 KvNode res = storage.set(proppath, strval);
                 if(callback != null) {
-                    callback.call(property, res);
+                    callback.call(key, res);
                 }
             } catch (Exception e) {
                 throw new RuntimeException("Error at path: " + proppath, e);

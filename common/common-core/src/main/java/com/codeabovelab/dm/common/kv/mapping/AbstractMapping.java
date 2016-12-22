@@ -38,7 +38,7 @@ abstract class AbstractMapping<T> {
         return this.mapper.getObjectMapper();
     }
 
-    abstract void save(String path, T object, KvPropertySetCallback callback);
+    abstract void save(String path, T object, KvSaveCallback callback);
     abstract void load(String path, T object);
     abstract <S extends T> S load(String path, String name, Class<S> type);
 }
