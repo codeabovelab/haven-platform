@@ -19,7 +19,7 @@ package com.codeabovelab.dm.cluman.ui;
 import com.codeabovelab.dm.cluman.cluster.compose.ComposeExecutor;
 import com.codeabovelab.dm.cluman.cluster.compose.ComposeUtils;
 import com.codeabovelab.dm.cluman.cluster.compose.model.ComposeArg;
-import com.codeabovelab.dm.cluman.cluster.docker.management.ApplicationService;
+import com.codeabovelab.dm.cluman.cluster.application.ApplicationService;
 import com.codeabovelab.dm.cluman.cluster.docker.management.result.CreateApplicationResult;
 import com.codeabovelab.dm.cluman.model.Application;
 import com.codeabovelab.dm.cluman.model.ApplicationInstance;

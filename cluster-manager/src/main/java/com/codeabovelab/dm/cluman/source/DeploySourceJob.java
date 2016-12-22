@@ -16,7 +16,7 @@
 
 package com.codeabovelab.dm.cluman.source;
 
-import com.codeabovelab.dm.cluman.cluster.docker.management.ApplicationService;
+import com.codeabovelab.dm.cluman.cluster.application.ApplicationService;
 import com.codeabovelab.dm.cluman.cluster.docker.management.DockerService;
 import com.codeabovelab.dm.cluman.cluster.docker.management.argument.CreateContainerArg;
 import com.codeabovelab.dm.cluman.cluster.docker.management.argument.DeleteContainerArg;
