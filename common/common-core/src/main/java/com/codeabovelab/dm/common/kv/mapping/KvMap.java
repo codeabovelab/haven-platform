@@ -54,6 +54,12 @@ public class KvMap<T> {
         private Consumer<KvMapEvent<T>> listener;
         private KvObjectFactory<V> factory;
 
+        public Builder(Class<T> type, Class<V> valueType) {
+            Assert.notNull(type, "type is null");
+            this.type = type;
+            this.valueType = valueType;
+        }
+
         public Builder<T, V> mapper(KvMapperFactory factory) {
             setMapper(factory);
             return this;
@@ -205,6 +211,7 @@ public class KvMap<T> {
 
     @SuppressWarnings("unchecked")
     private KvMap(Builder builder) {
+        Assert.notNull(builder.mapper, "mapper is null");
         this.adapter = builder.adapter;
         this.localListener = builder.localListener;
         this.listener = builder.listener;

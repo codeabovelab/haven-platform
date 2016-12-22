@@ -214,7 +214,12 @@ public class DeploySourceJob implements Runnable {
             containerNames.add(cr.getName());
         };
         deployContainers(dc, appSrc, ch);
-        ApplicationInstance app = new ApplicationInstance(appSrc.getName(), dc.getClusterName(), null, new Date(), containerNames);
+        ApplicationImpl app = ApplicationImpl.builder()
+          .name(appSrc.getName())
+          .cluster(dc.getClusterName())
+          .creatingDate(new Date())
+          .containers(containerNames)
+          .build();
         applicationService.addApplication(app);
         jobContext.fire("End create app {0}", appSrc.getName());
     }

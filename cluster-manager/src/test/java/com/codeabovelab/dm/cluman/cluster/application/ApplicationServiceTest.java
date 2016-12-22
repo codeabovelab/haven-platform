@@ -22,10 +22,11 @@ import com.codeabovelab.dm.cluman.cluster.docker.model.ContainerDetails;
 import com.codeabovelab.dm.cluman.ds.DockerServiceRegistry;
 import com.codeabovelab.dm.cluman.ds.kv.etcd.EtcdConfiguration;
 import com.codeabovelab.dm.cluman.model.Application;
-import com.codeabovelab.dm.cluman.model.ApplicationInstance;
+import com.codeabovelab.dm.cluman.model.ApplicationImpl;
 import com.codeabovelab.dm.cluman.source.ContainerSourceFactory;
 import com.codeabovelab.dm.common.json.JacksonConfiguration;
 import com.codeabovelab.dm.common.kv.KeyValueStorage;
+import com.codeabovelab.dm.common.kv.mapping.KvMapperFactory;
 import com.codeabovelab.dm.common.mb.MessageBus;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.Ignore;
@@ -60,7 +61,7 @@ public class ApplicationServiceTest {
 
     @Test
     public void test() throws Exception {
-        ApplicationInstance application = ApplicationInstance.builder()
+        ApplicationImpl application = ApplicationImpl.builder()
                 .name(UUID.randomUUID().toString())
                 .cluster("cluster")
                 .creatingDate(new Date())
@@ -83,12 +84,12 @@ public class ApplicationServiceTest {
         @Bean
         @Autowired
         @SuppressWarnings("unchecked")
-        ApplicationService applicationService(KeyValueStorage keyValueStorage, ObjectMapper objectMapper, ContainerSourceFactory srcService) {
+        ApplicationService applicationService(KvMapperFactory mapper, ContainerSourceFactory srcService) {
             DockerServiceRegistry dockerServiceRegistry = mock(DockerServiceRegistry.class);
             DockerService dockerService = mock(DockerService.class);
             when(dockerServiceRegistry.getService(anyString())).thenReturn(dockerService);
             when(dockerService.getContainer(anyString())).thenReturn(mock(ContainerDetails.class));
-            ApplicationService applicationService = new ApplicationServiceImpl(keyValueStorage, objectMapper,
+            ApplicationService applicationService = new ApplicationServiceImpl(mapper,
                     dockerServiceRegistry, mock(ComposeExecutor.class),
                     srcService,
                     mock(MessageBus.class));
