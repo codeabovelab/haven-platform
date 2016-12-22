@@ -29,6 +29,7 @@ import com.codeabovelab.dm.cluman.source.ContainerSourceFactory;
 import com.codeabovelab.dm.cluman.model.ApplicationSource;
 import com.codeabovelab.dm.cluman.ds.DockerServiceRegistry;
 import com.codeabovelab.dm.common.kv.KeyValueStorage;
+import com.codeabovelab.dm.common.kv.KvUtils;
 import com.codeabovelab.dm.common.kv.WriteOptions;
 import com.codeabovelab.dm.cluman.model.Application;
 import com.codeabovelab.dm.cluman.model.ApplicationImpl;
@@ -90,7 +91,9 @@ public class ApplicationServiceImpl implements ApplicationService {
         }
         List<Application> apps = new ArrayList<>();
         appKeys.forEach((k) -> {
-            ApplicationImpl app = map.get(k);
+            String name = KvUtils.suffix(appPrefix, k);
+            // name has 'cluster/appName'
+            ApplicationImpl app = map.get(name);
             apps.add(app);
         });
         return apps;
