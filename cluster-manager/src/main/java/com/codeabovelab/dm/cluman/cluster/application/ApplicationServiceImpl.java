@@ -250,7 +250,7 @@ public class ApplicationServiceImpl implements ApplicationService {
     }
 
     private String buildKey(String cluster, String id) {
-        return appPrefix + cluster + "/" + id;
+        return cluster + "/" + id;
     }
 
 }
