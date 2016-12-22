@@ -32,6 +32,13 @@ public interface ContainerStorage {
      */
     ContainerRegistration findContainer(String name);
     List<ContainerRegistration> getContainersByNode(String nodeName);
-    ContainerRegistration getOrCreateContainer(ContainerBaseIface container, String node);
+
+    /**
+     * It also create container if it unexists.
+     * @param container container
+     * @param node node
+     * @return container registration
+     */
+    ContainerRegistration updateAndGetContainer(ContainerBaseIface container, String node);
 
 }

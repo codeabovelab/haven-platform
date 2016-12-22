@@ -20,13 +20,12 @@ import com.codeabovelab.dm.cluman.cluster.compose.ComposeExecutor;
 import com.codeabovelab.dm.cluman.cluster.compose.ComposeResult;
 import com.codeabovelab.dm.cluman.cluster.compose.ComposeUtils;
 import com.codeabovelab.dm.cluman.cluster.compose.model.ComposeArg;
-import com.codeabovelab.dm.cluman.cluster.docker.management.ApplicationService;
+import com.codeabovelab.dm.cluman.cluster.application.ApplicationService;
 import com.codeabovelab.dm.cluman.cluster.docker.management.DockerService;
 import com.codeabovelab.dm.cluman.cluster.docker.model.ContainerConfig;
 import com.codeabovelab.dm.cluman.cluster.docker.model.ContainerDetails;
-import com.codeabovelab.dm.cluman.cluster.registry.RegistryRepository;
 import com.codeabovelab.dm.cluman.ds.DockerServiceRegistry;
-import com.codeabovelab.dm.cluman.model.ApplicationInstance;
+import com.codeabovelab.dm.cluman.model.ApplicationImpl;
 import com.google.common.io.Files;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -101,7 +100,7 @@ public class ClusterComposeApi {
         if (!collect.isEmpty()) {
             for (Map.Entry<String, List<String>> app : collect.entrySet()) {
 
-                ApplicationInstance application = ApplicationInstance.builder()
+                ApplicationImpl application = ApplicationImpl.builder()
                   .creatingDate(new Date())
                   .name(app.getKey())
                   .cluster(cluster)

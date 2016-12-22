@@ -16,6 +16,8 @@
 
 package com.codeabovelab.dm.common.kv;
 
+import com.google.common.base.Strings;
+
 import java.util.Arrays;
 
 /**
@@ -46,8 +48,8 @@ public class KvUtils {
         StringBuilder sb = new StringBuilder();
         for(int i = 0; i < components.length; ++i) {
             String component = components[i];
-            if(component == null) {
-                throw new IllegalArgumentException("Null component at " + i + " in " + Arrays.toString(components));
+            if(Strings.isNullOrEmpty(component)) {
+                throw new IllegalArgumentException("Null or empty component at " + i + " in " + Arrays.toString(components));
             }
             final int lastChar = sb.length() - 1;
             if(component.charAt(0) != '/' && (lastChar < 0 || sb.charAt(lastChar) != '/')) {
