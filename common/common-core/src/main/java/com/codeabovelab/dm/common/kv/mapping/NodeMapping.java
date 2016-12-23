@@ -37,13 +37,19 @@ class NodeMapping<T> extends AbstractMapping<T> {
     private final Map<Class, Map<String, KvProperty>> props = new HashMap<>();
     private final KvObjectFactory<T> factory;
 
-    NodeMapping(KvMapperFactory mapper, Class<T> type, KvObjectFactory<T> factory) {
+    private NodeMapping(KvMapperFactory mapper, Class<T> type, Map<String, KvProperty> map, KvObjectFactory<T> factory) {
         super(mapper, type);
-        Map<String, KvProperty> map = this.mapper.loadProps(type, p -> p);
         this.props.put(type, map);
         this.factory = factory;
     }
 
+    static <T> NodeMapping<T> makeIfHasProps(KvMapperFactory mapper, Class<T> type, KvObjectFactory<T> factory) {
+        Map<String, KvProperty> map = mapper.loadProps(type, p -> p);
+        if(map.isEmpty()) {
+            return null;
+        }
+        return new NodeMapping<>(mapper, type, map, factory);
+    }
 
     private Collection<KvProperty> getProps(T object) {
         Class<?> clazz = object.getClass();

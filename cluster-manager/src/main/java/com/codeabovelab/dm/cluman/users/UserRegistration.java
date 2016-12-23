@@ -17,6 +17,7 @@
 package com.codeabovelab.dm.cluman.users;
 
 import com.codeabovelab.dm.common.kv.mapping.KvClassMapper;
+import com.codeabovelab.dm.common.kv.mapping.KvMap;
 import com.codeabovelab.dm.common.kv.mapping.KvMapping;
 import com.codeabovelab.dm.common.security.Authorities;
 import com.codeabovelab.dm.common.security.ExtendedUserDetails;
@@ -39,12 +40,12 @@ public class UserRegistration {
     private final UsersStorage storage;
     @KvMapping
     private ExtendedUserDetailsImpl details;
-    private final KvClassMapper<UserRegistration> mapper;
+    private final KvMap<UserRegistration> map;
     private final String name;
 
     UserRegistration(UsersStorage storage, String name) {
         this.storage = storage;
-        this.mapper = storage.getMapper();
+        this.map = storage.getMap();
         this.name = name;
     }
 
@@ -64,6 +65,19 @@ public class UserRegistration {
             validate(changed);
             checkAccess(changed);
             this.details = changed;
+        }
+    }
+
+    /**
+     * load and normalise uer details
+     * @param details details
+     */
+    void loadDetails(ExtendedUserDetails details) {
+        synchronized (lock) {
+            if(details != null && !this.name.equals(details.getUsername())) {
+                details = ExtendedUserDetailsImpl.builder(details).username(name).build();
+            }
+            this.details = ExtendedUserDetailsImpl.from(details);
         }
     }
 
@@ -87,19 +101,6 @@ public class UserRegistration {
         }
     }
 
-    void load() {
-        synchronized (lock) {
-            this.mapper.load(name, this);
-            if(details != null && !this.name.equals(this.details.getUsername())) {
-                normalizeDetails();
-            }
-        }
-    }
-
-    private void normalizeDetails() {
-        this.details = ExtendedUserDetailsImpl.builder(this.details).username(name).build();
-    }
-
     /**
      * Invoke consumer in local lock.
      * @param consumer
@@ -107,7 +108,7 @@ public class UserRegistration {
     public void update(Consumer<UserRegistration> consumer) {
         synchronized (lock) {
             consumer.accept(this);
-            mapper.save(name, this);
+            map.flush(name);
         }
     }
 
