@@ -27,6 +27,7 @@ import org.springframework.util.Assert;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.BiConsumer;
+import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
@@ -197,10 +198,22 @@ public class KvMap<T> {
             return value;
         }
 
-        synchronized T computeIfAbsent(Function<String, T> func) {
+        synchronized T computeIfAbsent(Function<String, ? extends T> func) {
             get(); // we must try to load before compute
             if(value == null) {
                 save(func.apply(key));
+            }
+            // get - is load value if its present, but dirty
+            return get();
+        }
+
+        synchronized T compute(BiFunction<String, ? super T, ? extends T> func) {
+            get(); // we must try to load before compute
+            T newVal = func.apply(key, value);
+            if(newVal != null) {
+                save(newVal);
+            } else {
+                return null;
             }
             // get - is load value if its present, but dirty
             return get();
@@ -381,9 +394,26 @@ public class KvMap<T> {
         return null;
     }
 
-    public T computeIfAbsent(String key, Function<String, T> func) {
+    public T computeIfAbsent(String key, Function<String, ? extends T> func) {
         ValueHolder holder = getOrCreateHolder(key);
-        return holder.computeIfAbsent(func);
+        return  holder.computeIfAbsent(func);
+    }
+
+    /**
+     * Invoke on key. If value exystse then passed to fun, otherwise null. If funt return null value will be removed.
+     * @param key key
+     * @param func handler
+     * @return new value
+     */
+    public T compute(String key, BiFunction<String, ? super T, ? extends T> func) {
+        ValueHolder holder = getOrCreateHolder(key);
+        T newVal = holder.compute(func);
+        if(newVal == null) {
+            synchronized (map) {
+                map.remove(key, holder);
+            }
+        }
+        return newVal;
     }
 
     /**

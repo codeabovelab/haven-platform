@@ -146,9 +146,10 @@ public class KvMapperFactory {
     }
 
     <T> AbstractMapping<T> getMapping(Class<T> type, KvObjectFactory<T> factory) {
-        if(type.isAnnotationPresent(KvMapping.class)) {
-            return new LeafMapping<>(this, type);
+        AbstractMapping<T> mapping = NodeMapping.makeIfHasProps(this, type, factory);
+        if(mapping == null) {
+            mapping = new LeafMapping<>(this, type);
         }
-        return new NodeMapping<>(this, type, factory);
+        return mapping;
     }
 }
