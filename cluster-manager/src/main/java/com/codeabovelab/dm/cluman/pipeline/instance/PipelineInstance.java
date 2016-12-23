@@ -16,8 +16,6 @@
 
 package com.codeabovelab.dm.cluman.pipeline.instance;
 
-import com.codeabovelab.dm.common.kv.mapping.KvMapper;
-import com.codeabovelab.dm.common.kv.mapping.KvMapperFactory;
 import com.codeabovelab.dm.common.kv.mapping.KvMapping;
 import com.google.common.base.MoreObjects;
 import lombok.Data;
@@ -28,8 +26,6 @@ import java.util.concurrent.ConcurrentHashMap;
 
 @Data
 public class PipelineInstance {
-
-    private final KvMapper<PipelineInstance> mapper;
 
     @KvMapping
     private String id;
@@ -51,18 +47,11 @@ public class PipelineInstance {
     @KvMapping
     private String jobId;
 
-    public PipelineInstance(KvMapperFactory kvmf, String pipelinePrefix, String id) {
-        this.mapper = kvmf.createMapper(this, pipelinePrefix + id);
-        this.id = id;
-    }
-
     public void setId(String id) {
-        this.mapper.onSet("id", this.id, id);
         this.id = id;
     }
 
     public void setPipeline(String pipeline) {
-        this.mapper.onSet("pipeline", this.pipeline, pipeline);
         this.pipeline = pipeline;
     }
 
@@ -73,16 +62,13 @@ public class PipelineInstance {
     public void setHistories(Map<String, PipelineInstanceHistory> histories) {
         this.histories.clear();
         this.histories.putAll(histories);
-        this.mapper.onSet("histories", this.histories, histories);
     }
 
     public void addHistory(PipelineInstanceHistory history) {
         histories.put(history.getStage(), history);
-        this.mapper.onSet("histories", this.histories, histories);
     }
 
     public void setArgs(Map<String, String> args) {
-        this.mapper.onSet("args", this.args, args);
         this.args = args;
     }
 
@@ -96,33 +82,24 @@ public class PipelineInstance {
     }
 
     public void setRegistry(String registry) {
-        this.mapper.onSet("registry", this.registry, registry);
         this.registry = registry;
     }
 
     public void setName(String name) {
-        this.mapper.onSet("name", this.name, name);
         this.name = name;
     }
 
     public void setState(State state) {
-        this.mapper.onSet("state", this.state, state);
         this.state = state;
     }
 
     public void setJobId(String jobId) {
-        this.mapper.onSet("jobId", this.jobId, jobId);
         this.jobId = jobId;
-    }
-
-    public KvMapper<PipelineInstance> getMapper() {
-        return mapper;
     }
 
     @Override
     public String toString() {
         return MoreObjects.toStringHelper(this)
-                .add("mapper", mapper)
                 .add("id", id)
                 .add("pipeline", pipeline)
                 .add("state", state)

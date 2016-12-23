@@ -129,7 +129,7 @@ public class SecurityApi {
 
     @RequestMapping(value = "/users/{user}", method = RequestMethod.DELETE)
     public void deleteUser(@PathVariable("user") String username) {
-        usersStorage.delete(username);
+        usersStorage.remove(username);
     }
 
     @Secured(Authorities.USER_ROLE)

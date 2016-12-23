@@ -19,12 +19,13 @@ package com.codeabovelab.dm.common.kv.mapping;
 import com.codeabovelab.dm.common.kv.KvNode;
 
 /**
+ * Callback used for handle indexes from kv update requests
  */
-interface KvPropertySetCallback {
+interface KvSaveCallback {
     /**
      * Invoked after call set property to server
-     * @param property property
+     * @param name name of property, null for 'this'
      * @param res response from server
      */
-    void call(KvProperty property, KvNode res);
+    void call(String name, KvNode res);
 }
