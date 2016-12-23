@@ -1,6 +1,10 @@
-### Requirements
+# Haven Installation
 
-Haven is comprised of Master and Agent nodes. The standard requirements are: 
+Haven is comprised of Master and Agent components. The Master requires etcd and the Haven Server; both are installable as Docker containers as per instruction below.  Agent is a Python script which should be installed as a service on the other nodes. 
+
+## Requirements
+
+ The standard requirements are: 
  
  * Docker >= 1.10
  * Python >= 3.5
@@ -19,7 +23,7 @@ repositories we have setup to see the structure.
 * Repository for Haven configuration: https://github.com/codeabovelab/haven-example-configuration
 * Repository for containner configuration: https://github.com/codeabovelab/haven-example-container-configuration
 
-## Installation
+## Installation Steps
 
 The following installation instruction has been tested on Debian / Ubuntu.
 
