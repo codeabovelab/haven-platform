@@ -16,8 +16,6 @@
 
 package com.codeabovelab.dm.cluman.pipeline.schema;
 
-import com.codeabovelab.dm.common.kv.mapping.KvMapper;
-import com.codeabovelab.dm.common.kv.mapping.KvMapperFactory;
 import com.codeabovelab.dm.common.kv.mapping.KvMapping;
 import com.google.common.base.MoreObjects;
 import lombok.EqualsAndHashCode;
@@ -29,7 +27,6 @@ import java.util.List;
 @EqualsAndHashCode
 public class PipelineSchema {
 
-    private final KvMapper<PipelineSchema> mapper;
     @KvMapping
     private String name;
     @KvMapping
@@ -41,9 +38,8 @@ public class PipelineSchema {
     @KvMapping
     private List<String> recipients;
 
-    public PipelineSchema(KvMapperFactory kmf, String prefix, String name) {
-        this.mapper = kmf.createMapper(this, prefix + name);
-        this.name = name;
+
+    public PipelineSchema() {
     }
 
     public String getName() {
@@ -51,7 +47,6 @@ public class PipelineSchema {
     }
 
     public void setName(String name) {
-        this.mapper.onSet("name", this.name, name);
         this.name = name;
     }
 
@@ -60,7 +55,6 @@ public class PipelineSchema {
     }
 
     public void setFilter(String filter) {
-        this.mapper.onSet("filter", this.filter, filter);
         this.filter = filter;
     }
 
@@ -69,7 +63,6 @@ public class PipelineSchema {
     }
 
     public void setRegistry(String registry) {
-        this.mapper.onSet("registry", this.registry, registry);
         this.registry = registry;
     }
 
@@ -78,7 +71,6 @@ public class PipelineSchema {
     }
 
     public void setPipelineStages(List<PipelineStageSchema> pipelineStages) {
-        this.mapper.onSet("pipelineStages", this.pipelineStages, pipelineStages);
         this.pipelineStages = pipelineStages;
     }
 
@@ -97,18 +89,12 @@ public class PipelineSchema {
     }
 
     public void setRecipients(List<String> recipients) {
-        this.mapper.onSet("recipients", this.recipients, recipients);
         this.recipients = recipients;
-    }
-
-    public KvMapper<PipelineSchema> getMapper() {
-        return mapper;
     }
 
     @Override
     public String toString() {
         return MoreObjects.toStringHelper(this)
-                .add("mapper", mapper)
                 .add("name", name)
                 .add("filter", filter)
                 .add("registry", registry)
