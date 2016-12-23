@@ -38,5 +38,5 @@ WORKDIR /data
 VOLUME  /data
 
 ADD ./@artifactId@-*-boot.jar /@artifactId@-@version@.jar
-ENTRYPOINT java -server $JAVA_OPTS -Djava.security.egd=file:/dev/./urandom -jar /@artifactId@-@version@.jar \
+ENTRYPOINT java -server -noverify $JAVA_OPTS -Djava.security.egd=file:/dev/./urandom -jar /@artifactId@-@version@.jar \
    --spring.profiles.active=staging  --dm.swarm-exec.path=/gocode/bin/swarm
