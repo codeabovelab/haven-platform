@@ -64,7 +64,7 @@ class LeafMapping<T> extends AbstractMapping<T> {
         try {
             return getObjectMapper().readValue(str, type);
         } catch (Exception e) {
-            throw new RuntimeException("Can not save object at path: " + path, e);
+            throw new RuntimeException("Can not load object at path: " + path, e);
         }
     }
 }

@@ -22,6 +22,7 @@ import com.google.common.base.MoreObjects;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import lombok.Data;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.util.Assert;
 
 import java.util.*;
@@ -36,6 +37,7 @@ import java.util.function.Function;
  * It has internal cache on plain map, without timeouts, and also update it on KV events. We do not using
  * guava cache because want to add keys into map without loading values.
  */
+@Slf4j
 public class KvMap<T> {
 
     @Data
@@ -455,7 +457,7 @@ public class KvMap<T> {
         ImmutableList.Builder<T> b = ImmutableList.builder();
         synchronized (map) {
             this.map.values().forEach(valueHolder -> {
-                T element = valueHolder.get();
+                T element = safeGet(valueHolder);
                 // map does not contain holders with null elements, but sometime it happen
                 // due to multithread access , for example in `put()` method
                 if(element != null) {
@@ -473,10 +475,20 @@ public class KvMap<T> {
             copy = new LinkedHashMap<>(this.map);
         }
         copy.forEach((key, holder) -> {
-            T value = holder.get();
+            T value = safeGet(holder);
             if(value != null) {
                 action.accept(key, value);
             }
         });
+    }
+
+    private T safeGet(ValueHolder valueHolder) {
+        T element = null;
+        try {
+            element = valueHolder.get();
+        } catch (Exception e) {
+            log.error("Can not load {}", valueHolder.key, e);
+        }
+        return element;
     }
 }
