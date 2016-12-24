@@ -18,7 +18,6 @@ package com.codeabovelab.dm.cluman.cluster.docker.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.google.common.base.MoreObjects;
 import lombok.Data;
 
 import java.util.Map;
@@ -91,9 +90,6 @@ public class NetworkSettings {
         @JsonProperty("IPAMConfig")
         private String ipamConfig;
 
-        /**
-         * @since {@link RemoteApiVersion#VERSION_1_22}
-         */
         @JsonProperty("NetworkID")
         private String networkID;
 
@@ -121,20 +117,5 @@ public class NetworkSettings {
         @JsonProperty("MacAddress")
         private String macAddress;
 
-        @Override
-        public String toString() {
-            return MoreObjects.toStringHelper(this)
-                    .add("ipamConfig", ipamConfig)
-                    .add("networkID", networkID)
-                    .add("endpointId", endpointId)
-                    .add("gateway", gateway)
-                    .add("ipAddress", ipAddress)
-                    .add("ipPrefixLen", ipPrefixLen)
-                    .add("ipV6Gateway", ipV6Gateway)
-                    .add("globalIPv6Address", globalIPv6Address)
-                    .add("globalIPv6PrefixLen", globalIPv6PrefixLen)
-                    .add("macAddress", macAddress)
-                    .omitNullValues().toString();
-        }
     }
 }

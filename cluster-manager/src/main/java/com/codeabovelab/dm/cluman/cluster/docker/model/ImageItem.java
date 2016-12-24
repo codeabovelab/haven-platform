@@ -31,13 +31,6 @@ import java.util.Map;
 @Data
 public class ImageItem {
 
-    private static final String CREATED = "Created";
-    private static final String ID = "Id";
-    private static final String REPO_TAGS = "RepoTags";
-    private static final String SIZE = "Size";
-    private static final String VIRTUAL_SIZE = "VirtualSize";
-    private static final String LABELS = "Labels";
-
     private final Date created;
     private final String id;
     private final List<String> repoTags;
@@ -46,12 +39,12 @@ public class ImageItem {
     private final Map<String, String> labels;
 
     @Builder
-    public ImageItem(@JsonProperty(ID) String id,
-                     @JsonProperty(CREATED) long created,
-                     @JsonProperty(REPO_TAGS) List<String> repoTags,
-                     @JsonProperty(SIZE) long size,
-                     @JsonProperty(VIRTUAL_SIZE) long virtualSize,
-                     @JsonProperty(LABELS) Map<String, String> labels
+    public ImageItem(@JsonProperty("Id") String id,
+                     @JsonProperty("Created") long created,
+                     @JsonProperty("RepoTags") List<String> repoTags,
+                     @JsonProperty("Size") long size,
+                     @JsonProperty("VirtualSize") long virtualSize,
+                     @JsonProperty("Labels") Map<String, String> labels
     ) {
         this.id = id;
         // docker's date is in seconds

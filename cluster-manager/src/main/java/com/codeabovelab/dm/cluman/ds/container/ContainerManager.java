@@ -320,7 +320,7 @@ public class ContainerManager {
 
         Long mem = arg.getMemoryLimit();
         RestartPolicy restartPolicy = getRestartPolicy(cc, arg);
-        HostConfig.Builder builder = HostConfig.newHostConfig()
+        HostConfig.HostConfigBuilder builder = HostConfig.builder()
                 .memory(mem)
                 .blkioWeight(arg.getBlkioWeight())
                 .cpuQuota(arg.getCpuQuota())

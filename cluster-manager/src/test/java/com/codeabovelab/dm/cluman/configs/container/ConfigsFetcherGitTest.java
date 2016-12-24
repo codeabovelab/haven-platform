@@ -24,7 +24,7 @@ public class ConfigsFetcherGitTest {
         ContainerSource nc = new ContainerSource();
         nc.setBlkioWeight(512);
 
-        ContainerConfig.Builder config = ContainerConfig.builder();
+        ContainerConfig.ContainerConfigBuilder config = ContainerConfig.builder();
         config.labels(Collections.singletonMap("arg.publish", "8761:8761"));
         Image image = Image.builder().containerConfig(config.build()).build();
 

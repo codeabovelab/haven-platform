@@ -18,6 +18,7 @@ package com.codeabovelab.dm.cluman.cluster.docker.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import lombok.Data;
 
 /**
  * Used in {@link Container}
@@ -26,20 +27,9 @@ import com.fasterxml.jackson.annotation.JsonProperty;
  * @author Kanstantsin Shautsou
  */
 @JsonIgnoreProperties(ignoreUnknown = true)
+@Data
 public class ContainerHostConfig {
     @JsonProperty("NetworkMode")
     private String networkMode;
-
-    public String getNetworkMode() {
-        return networkMode;
-    }
-
-    /**
-     * @see #networkMode
-     */
-    public ContainerHostConfig withNetworkMode(String networkMode) {
-        this.networkMode = networkMode;
-        return this;
-    }
 
 }

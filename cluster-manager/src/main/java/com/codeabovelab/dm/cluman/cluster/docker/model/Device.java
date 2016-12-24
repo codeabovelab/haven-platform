@@ -19,10 +19,12 @@ package com.codeabovelab.dm.cluman.cluster.docker.model;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import lombok.Data;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
 @JsonInclude(Include.NON_NULL)
+@Data
 public class Device {
 
     @JsonProperty("CgroupPermissions")
@@ -45,18 +47,5 @@ public class Device {
         this.pathInContainer = pathInContainer;
         this.pathOnHost = pathOnHost;
     }
-
-    public String getcGroupPermissions() {
-        return cGroupPermissions;
-    }
-
-    public String getPathInContainer() {
-        return pathInContainer;
-    }
-
-    public String getPathOnHost() {
-        return pathOnHost;
-    }
-
 
 }

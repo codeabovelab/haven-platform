@@ -20,12 +20,10 @@ import com.codahale.metrics.*;
 import com.codahale.metrics.json.HealthCheckModule;
 import com.codahale.metrics.json.MetricsModule;
 import com.codeabovelab.dm.common.json.JacksonUtils;
+import com.codeabovelab.dm.common.utils.*;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.codeabovelab.dm.common.utils.*;
-import com.codeabovelab.dm.common.log.AmqpAppender;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.core.Exchange;
 import org.springframework.amqp.core.Message;
 import org.springframework.amqp.core.MessageDeliveryMode;
@@ -45,6 +43,7 @@ import java.util.concurrent.TimeUnit;
 /**
  * Metric reporter for rabbitmq
  */
+@Slf4j
 public class AmqpReporter extends ScheduledReporter {
 
     /**
@@ -174,7 +173,6 @@ public class AmqpReporter extends ScheduledReporter {
 
     }
 
-    private static final Logger LOG = LoggerFactory.getLogger(AmqpAppender.class);
     private final ObjectMapper objectMapper = JacksonUtils.objectMapperBuilder();
     private final ObjectFactory<ConnectionFactory> connectionFactoryProvider;
     private final LazyInitializer<RabbitTemplate> templateFuture = new LazyInitializer<>(new Callable<RabbitTemplate>() {
@@ -244,7 +242,7 @@ public class AmqpReporter extends ScheduledReporter {
             Message message = new Message(body, messageProperties);
             rabbitTemplate.send(exchangeName, routingKey, message);
         } catch (JsonProcessingException e) {
-            LOG.error("on serialize metrics report", e);
+            log.error("on serialize metrics report", e);
         }
     }
 
