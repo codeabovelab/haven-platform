@@ -18,13 +18,12 @@ package com.codeabovelab.dm.cluman.cluster.docker.model;
 
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.ObjectCodec;
 import com.fasterxml.jackson.databind.*;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.fasterxml.jackson.databind.node.NullNode;
-import com.google.common.base.MoreObjects;
+import lombok.Data;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -34,6 +33,7 @@ import java.util.Map;
 
 @JsonSerialize(using = Volumes.Serializer.class)
 @JsonDeserialize(using = Volumes.Deserializer.class)
+@Data
 public class Volumes {
 
     private Volume[] volumes;
@@ -44,10 +44,6 @@ public class Volumes {
 
     public Volumes(List<Volume> volumes) {
         this.volumes = volumes.toArray(new Volume[volumes.size()]);
-    }
-
-    public Volume[] getVolumes() {
-        return volumes;
     }
 
     public static class Serializer extends JsonSerializer<Volumes> {
@@ -88,11 +84,4 @@ public class Volumes {
         }
     }
 
-    @Override
-    public String toString() {
-        return MoreObjects.toStringHelper(this)
-                .add("volumes", volumes)
-                .omitNullValues()
-                .toString();
-    }
 }

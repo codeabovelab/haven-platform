@@ -17,7 +17,6 @@
 package com.codeabovelab.dm.cluman.cluster.compose.model;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.google.common.base.MoreObjects;
 import lombok.Data;
 
 import javax.validation.constraints.NotNull;
@@ -173,52 +172,5 @@ public class ComposeModel {
         setPublish(ports);
     }
 
-    @Override
-    public String toString() {
-        return toStringHelper().toString();
-    }
-
-    protected MoreObjects.ToStringHelper toStringHelper() {
-        return MoreObjects.toStringHelper(this)
-                .add("containerName", containerName)
-                .add("cpuShares", cpuShares)
-                .add("cpuQuota", cpuQuota)
-                .add("cpuset", cpuset)
-                .add("dependsOn", dependsOn)
-                .add("devices", devices)
-                .add("dns", dns)
-                .add("dnsSearch", dnsSearch)
-                .add("domainName", domainname)
-                .add("envFile", envFile)
-                .add("environment", environment)
-                .add("extend", extend)
-                .add("externalLinks", externalLinks)
-                .add("extraHosts", extraHosts)
-                .add("hostname", hostname)
-                .add("image", image)
-                .add("ipc", ipc)
-                .add("labels", labels)
-                .add("links", links)
-                .add("logging", logging)
-                .add("macAddress", macAddress)
-                .add("memory", memory)
-                .add("networkMode", networkMode)
-                .add("networks", networks)
-                .add("pid", pid)
-                .add("publish", publish)
-                .add("privileged", privileged)
-                .add("readOnly", readOnly)
-                .add("restart", restart)
-                .add("securityOpt", securityOpt)
-                .add("shmSize", shmSize)
-                .add("stdinOpen", stdinOpen)
-                .add("stopSignal", stopSignal)
-                .add("user", user)
-                .add("volumes", volumes)
-                .add("volumeDriver", volumeDriver)
-                .add("volumesFrom", volumesFrom)
-                .add("workingDir", workingDir)
-                .omitNullValues();
-    }
 }
 

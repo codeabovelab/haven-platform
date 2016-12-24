@@ -20,7 +20,6 @@ import com.codeabovelab.dm.cluman.model.ContainerBaseIface;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.google.common.base.MoreObjects;
 import lombok.Data;
 
 import java.util.Date;
@@ -74,9 +73,6 @@ public class ContainerDetails implements ContainerBaseIface {
     @JsonProperty("NetworkSettings")
     private NetworkSettings networkSettings;
 
-    /**
-     * @since {@link RemoteApiVersion#VERSION_1_17}
-     */
     @JsonProperty("RestartCount")
     private Integer restartCount;
 
@@ -117,98 +113,27 @@ public class ContainerDetails implements ContainerBaseIface {
         return config.getLabels();
     }
 
-    @Override
-    public String toString() {
-        return MoreObjects.toStringHelper(this)
-                .add("args", args)
-                .add("config", config)
-                .add("created", created)
-                .add("driver", driver)
-                .add("execDriver", execDriver)
-                .add("hostConfig", hostConfig)
-                .add("hostnamePath", hostnamePath)
-                .add("hostsPath", hostsPath)
-                .add("id", id)
-                .add("imageId", imageId)
-                .add("mountLabel", mountLabel)
-                .add("name", name)
-                .add("restartCount", restartCount)
-                .add("networkSettings", networkSettings)
-                .add("path", path)
-                .add("processLabel", processLabel)
-                .add("resolvConfPath", resolvConfPath)
-                .add("execIds", execIds)
-                .add("state", state)
-                .add("volumes", volumes)
-                .add("volumesRW", volumesRW)
-                .add("mounts", mounts)
-                .add("node", node)
-                .omitNullValues()
-                .toString();
-    }
-
     @JsonIgnoreProperties(ignoreUnknown = true)
+    @Data
     public static class Mount {
 
-        /**
-         * @since {@link RemoteApiVersion#VERSION_1_20}
-         */
         @JsonProperty("Name")
         private String name;
 
-        /**
-         * @since {@link RemoteApiVersion#VERSION_1_20}
-         */
         @JsonProperty("Source")
         private String source;
 
-        /**
-         * @since {@link RemoteApiVersion#VERSION_1_20}
-         */
         @JsonProperty("Destination")
         private Volume destination;
 
-        /**
-         * @since {@link RemoteApiVersion#VERSION_1_20}
-         */
         @JsonProperty("Driver")
         private String driver;
 
-        /**
-         * @since {@link RemoteApiVersion#VERSION_1_20}
-         */
         @JsonProperty("Mode")
         private String mode;
 
-        /**
-         * @since {@link RemoteApiVersion#VERSION_1_20}
-         */
         @JsonProperty("RW")
         private Boolean rw;
-
-        public String getName() {
-            return name;
-        }
-
-        public String getSource() {
-            return source;
-        }
-
-        public Volume getDestination() {
-            return destination;
-        }
-
-        public String getDriver() {
-            return driver;
-        }
-
-        public String getMode() {
-            return mode;
-        }
-
-        public Boolean getRW() {
-            return rw;
-        }
 
     }
 }

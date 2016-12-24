@@ -19,8 +19,7 @@ package com.codeabovelab.dm.cluman.cluster.docker.model;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.google.common.base.MoreObjects;
-import com.google.common.base.Objects;
+import lombok.Data;
 
 import java.util.List;
 import java.util.Map;
@@ -32,6 +31,7 @@ import java.util.Map;
  */
 @JsonIgnoreProperties(ignoreUnknown = true)
 @JsonInclude(JsonInclude.Include.NON_NULL)
+@Data
 public class Container {
 
     @JsonProperty("Command")
@@ -46,9 +46,6 @@ public class Container {
     @JsonProperty("Image")
     private String image;
 
-    /**
-     * @since since {@link RemoteApiVersion#VERSION_1_21}
-     */
     @JsonProperty("ImageID")
     private String imageId;
 
@@ -71,23 +68,16 @@ public class Container {
     @JsonProperty("State")
     private String state;
 
-    /**
-     * @since ~{@link RemoteApiVersion#VERSION_1_19}
-     */
     @JsonProperty("SizeRw")
     private Long sizeRw;
 
     /**
      * Returns only when {@link ListContainersCmd#withShowSize(java.lang.Boolean)} set
      *
-     * @since ~{@link RemoteApiVersion#VERSION_1_19}
      */
     @JsonProperty("SizeRootFs")
     private Long sizeRootFs;
 
-    /**
-     * @since ~{@link RemoteApiVersion#VERSION_1_20}
-     */
     @JsonProperty("HostConfig")
     private ContainerHostConfig hostConfig;
 
@@ -95,126 +85,8 @@ public class Container {
      * Docker API docs says "list of networks", but json names `networkSettings`.
      * So, reusing existed NetworkSettings model object.
      *
-     * @since ~{@link RemoteApiVersion#VERSION_1_22}
      */
     @JsonProperty("NetworkSettings")
     private ContainerNetworkSettings networkSettings;
 
-    public String getId() {
-        return id;
-    }
-
-    public String getCommand() {
-        return command;
-    }
-
-    public String getImage() {
-        return image;
-    }
-
-    public String getImageId() {
-        return imageId;
-    }
-
-    public Long getCreated() {
-        return created;
-    }
-
-    public String getStatus() {
-        return status;
-    }
-
-    public List<Port> getPorts() {
-        return ports;
-    }
-
-    public Map<String, String> getLabels() {
-        return labels;
-    }
-
-    public String[] getNames() {
-        return names;
-    }
-
-    /**
-     * @see #sizeRw
-     */
-    public Long getSizeRw() {
-        return sizeRw;
-    }
-
-    /**
-     * @see #sizeRootFs
-     */
-    public Long getSizeRootFs() {
-        return sizeRootFs;
-    }
-
-    /**
-     * @see #networkSettings
-     */
-    public ContainerNetworkSettings getNetworkSettings() {
-        return networkSettings;
-    }
-
-    /**
-     * @see #hostConfig
-     */
-    public ContainerHostConfig getHostConfig() {
-        return hostConfig;
-    }
-
-    public String getState() {
-        return state;
-    }
-
-    @Override
-    public String toString() {
-        return MoreObjects.toStringHelper(this)
-          .add("command", command)
-          .add("created", created)
-          .add("id", id)
-          .add("image", image)
-          .add("imageId", imageId)
-          .add("names", names)
-          .add("ports", ports)
-          .add("labels", labels)
-          .add("status", status)
-          .add("state", state)
-          .add("sizeRw", sizeRw)
-          .add("sizeRootFs", sizeRootFs)
-          .add("hostConfig", hostConfig)
-          .add("networkSettings", networkSettings)
-          .toString();
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) {
-            return true;
-        }
-        if (!(o instanceof Container)) {
-            return false;
-        }
-        Container container = (Container) o;
-        return Objects.equal(command, container.command) &&
-          Objects.equal(created, container.created) &&
-          Objects.equal(id, container.id) &&
-          Objects.equal(image, container.image) &&
-          Objects.equal(imageId, container.imageId) &&
-          Objects.equal(names, container.names) &&
-          Objects.equal(ports, container.ports) &&
-          Objects.equal(labels, container.labels) &&
-          Objects.equal(status, container.status) &&
-          Objects.equal(state, container.state) &&
-          Objects.equal(sizeRw, container.sizeRw) &&
-          Objects.equal(sizeRootFs, container.sizeRootFs) &&
-          Objects.equal(hostConfig, container.hostConfig) &&
-          Objects.equal(networkSettings, container.networkSettings);
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hashCode(command, created, id, image, imageId, names, ports, labels, status, state, sizeRw, sizeRootFs, hostConfig, networkSettings);
-    }
 }

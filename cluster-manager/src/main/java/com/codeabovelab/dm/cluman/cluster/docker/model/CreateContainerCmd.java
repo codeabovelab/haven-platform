@@ -17,7 +17,6 @@
 package com.codeabovelab.dm.cluman.cluster.docker.model;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.google.common.base.MoreObjects;
 import lombok.Data;
 
 import java.util.Map;
@@ -93,32 +92,4 @@ public class CreateContainerCmd {
     @JsonProperty("Labels")
     private Map<String, String> labels;
 
-    @Override
-    public String toString() {
-        return MoreObjects.toStringHelper(this)
-                .add("name", name)
-                .add("hostName", hostName)
-                .add("domainName", domainName)
-                .add("user", user)
-                .add("attachStdin", attachStdin)
-                .add("attachStdout", attachStdout)
-                .add("attachStderr", attachStderr)
-                .add("portSpecs", portSpecs)
-                .add("tty", tty)
-                .add("stdinOpen", stdinOpen)
-                .add("stdInOnce", stdInOnce)
-                .add("env", env)
-                .add("cmd", cmd)
-                .add("entrypoint", entrypoint)
-                .add("image", image)
-                .add("volumes", volumes)
-                .add("workingDir", workingDir)
-                .add("macAddress", macAddress)
-                .add("networkDisabled", networkDisabled)
-                .add("exposedPorts", exposedPorts)
-                .add("hostConfig", hostConfig)
-                .add("labels", labels)
-                .omitNullValues()
-                .toString();
-    }
 }

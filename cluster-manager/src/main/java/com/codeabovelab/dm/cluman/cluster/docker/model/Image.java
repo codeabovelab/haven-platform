@@ -17,8 +17,9 @@
 package com.codeabovelab.dm.cluman.cluster.docker.model;
 
 import com.codeabovelab.dm.cluman.model.ImageDescriptor;
+import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.google.common.collect.ImmutableList;
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -31,57 +32,24 @@ import java.util.List;
  */
 @EqualsAndHashCode
 @Data
+@AllArgsConstructor(onConstructor = @__(@JsonCreator))
+@Builder
 public class Image implements ImageDescriptor {
 
-    private static final String CREATED = "Created";
-    private static final String ID = "Id";
-    private static final String PARENT = "Parent";
-    private static final String CONTAINER_CONFIG = "ContainerConfig";
-    private static final String REPO_TAGS = "RepoTags";
-    private static final String SIZE = "Size";
-    private static final String VIRTUAL_SIZE = "VirtualSize";
 
-    @JsonProperty(CREATED)
+    @JsonProperty("Created")
     private final Date created;
-    @JsonProperty(ID)
+    @JsonProperty("Id")
     private final String id;
-    @JsonProperty(PARENT)
+    @JsonProperty("Parent")
     private final String parent;
-    @JsonProperty(REPO_TAGS)
+    @JsonProperty("RepoTags")
     private final List<String> repoTags;
-    @JsonProperty(CONTAINER_CONFIG)
+    @JsonProperty("ContainerConfig")
     private final ContainerConfig containerConfig;
-    @JsonProperty(SIZE)
+    @JsonProperty("Size")
     private final long size;
-    @JsonProperty(VIRTUAL_SIZE)
+    @JsonProperty("VirtualSize")
     private final long virtualSize;
 
-    @Builder
-    public Image(@JsonProperty(CONTAINER_CONFIG) ContainerConfig containerConfig,
-                 @JsonProperty(PARENT) String parent,
-                 @JsonProperty(ID) String id,
-                 @JsonProperty(CREATED) Date created,
-                 @JsonProperty(REPO_TAGS) List<String> repoTags,
-                 @JsonProperty(SIZE) long size,
-                 @JsonProperty(VIRTUAL_SIZE) long virtualSize
-    ) {
-        this.containerConfig = containerConfig;
-        this.parent = parent;
-        this.id = id;
-        this.created = created;
-        this.repoTags = repoTags == null? ImmutableList.of() : ImmutableList.copyOf(repoTags);
-        this.size = size;
-        this.virtualSize = virtualSize;
-    }
-
-
-    @Override
-    public String toString() {
-        return "Image{" +
-                "created=" + created +
-                ", id='" + id + '\'' +
-                ", parent='" + parent + '\'' +
-                ", containerConfig=" + containerConfig +
-                '}';
-    }
 }
