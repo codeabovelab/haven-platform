@@ -144,7 +144,7 @@ public class UsersStorage implements UserIdentifiersDetailsService {
             if(source == null) {
                 source = new UserRegistration(UsersStorage.this, key);
             }
-            source.setDetails((ExtendedUserDetails) value);
+            source.loadDetails((ExtendedUserDetails) value);
             return source;
         }
     }
