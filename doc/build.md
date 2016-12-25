@@ -26,19 +26,20 @@ Change directory into the local repo:
 
     cd haven-platform
 
-Build the backend (note that it downloads ~370MB of dependencies to '~/.m2/repository'):
+Build the backend (note that it downloads ~150MB of dependencies to '~/.m2/repository'):
 
     mvn -Dmaven.test.skip=true clean package
 
-For embedding frontend into backend, you must run build again but with 'staging' profile. It consumes more time 
+For embedding frontend into backend run build with 'staging' profile. It consumes more time 
 therefore disabled by default:
 
     mvn -P staging -Dmaven.test.skip=true clean package
 
 ## Running ##
 
-For running the build, you need to install etcd and Swarm. Note that if your Swarm has different binary name then you 
+For running the build, you need to install etcd and [Swarm](https://github.com/docker/swarm/blob/master/CONTRIBUTING.md). Note that if your Swarm has different binary name then you 
 must specify full path to it as `--dm.swarm-exec.path=$FULL_PATH_TO_SWARM/swarm` argument.
+Also see [Dockerfile](https://github.com/codeabovelab/haven-platform/blob/master/cluster-manager/Dockerfile#L11)
 
 So on command line for running the server: 
 
@@ -46,7 +47,7 @@ So on command line for running the server:
 
 After startup, it will be available by browsing to:
 * API: http://localhost:8761/swagger-ui.html
-* UI (if staging profile was activated): http://localhost:8761/
+* UI (if "staging" profile was activated): http://localhost:8761/
 
 for accessing the UI, use the credential -  
 
