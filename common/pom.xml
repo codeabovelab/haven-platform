@@ -7,11 +7,10 @@
     <parent>
         <groupId>com.codeabovelab.dm</groupId>
         <artifactId>dm-parent</artifactId>
-        <version>1.1.1-SNAPSHOT</version>
+        <version>1.1.2-SNAPSHOT</version>
     </parent>
     <packaging>pom</packaging>
     <modules>
-        <module>gateway-balancer-common</module>
         <module>common-core</module>
         <module>common-utils</module>
         <module>gateway-common</module>

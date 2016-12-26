@@ -4,6 +4,7 @@ jdk:
 
 cache:
   directories:
+  - .autoconf
   - $HOME/.m2
 
 services:
@@ -16,4 +17,6 @@ addons:
       # Getting compile errors on javac 1.8.0_31-b13
       - oracle-java8-installer
 
-install: "mvn clean deploy --settings settings.xml -Pstaging"
+install: true
+script:
+  - mvn clean deploy -U -Pstaging --settings settings.xml

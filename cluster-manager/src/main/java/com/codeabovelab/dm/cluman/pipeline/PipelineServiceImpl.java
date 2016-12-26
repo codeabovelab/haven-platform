@@ -47,14 +47,12 @@ import com.codeabovelab.dm.cluman.utils.ContainerUtils;
 import com.codeabovelab.dm.common.kv.DeleteDirOptions;
 import com.codeabovelab.dm.common.kv.KeyValueStorage;
 import com.codeabovelab.dm.common.kv.KvUtils;
+import com.codeabovelab.dm.common.kv.mapping.KvMap;
 import com.codeabovelab.dm.common.kv.mapping.KvMapperFactory;
 import com.codeabovelab.dm.common.mb.MessageBus;
 import com.codeabovelab.dm.common.utils.Throwables;
 import com.codeabovelab.dm.common.utils.Uuids;
 import com.google.common.base.MoreObjects;
-import com.google.common.cache.CacheBuilder;
-import com.google.common.cache.CacheLoader;
-import com.google.common.cache.LoadingCache;
 import com.google.common.collect.ImmutableMap;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -65,8 +63,8 @@ import org.springframework.stereotype.Component;
 import org.springframework.util.Assert;
 import org.springframework.util.StringUtils;
 
+import javax.annotation.PostConstruct;
 import java.util.*;
-import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
 
 import static com.codeabovelab.dm.cluman.batch.BatchUtils.*;
@@ -75,8 +73,8 @@ import static com.codeabovelab.dm.cluman.batch.BatchUtils.*;
 @Slf4j
 public class PipelineServiceImpl implements PipelineService {
 
-    private final LoadingCache<String, PipelineSchema> pipelineSchemas;
-    private final LoadingCache<String, PipelineInstance> pipelineInstances;
+    private final KvMap<PipelineSchema> pipelineSchemas;
+    private final KvMap<PipelineInstance> pipelineInstances;
     private final KvMapperFactory kvmf;
     private final MessageBus<PipelineEvent> pipelineEventBus;
     private final String pipelinePrefix;
@@ -106,63 +104,42 @@ public class PipelineServiceImpl implements PipelineService {
         this.updateCronExpression = updateCronExpression;
         this.pipelinePrefix = storage.getPrefix() + "/pipelines/";
         this.pipelineInstancePrefix = storage.getPrefix() + "/pipelineInstances/";
-        this.pipelineSchemas = CacheBuilder.newBuilder().build(new CacheLoader<String, PipelineSchema>() {
-            @Override
-            public PipelineSchema load(String name) throws Exception {
-                PipelineSchema nr = makeNewPipelineSchema(name);
-                return nr;
-            }
-        });
-
-        pipelineInstances = CacheBuilder.newBuilder().build(new CacheLoader<String, PipelineInstance>() {
-            @Override
-            public PipelineInstance load(String name) throws Exception {
-                PipelineInstance nr = makeNewPipelineInstance(name);
-                return nr;
-            }
-
-        });
+        this.pipelineSchemas = KvMap.builder(PipelineSchema.class)
+          .path(pipelinePrefix)
+          .mapper(kvmf)
+          .build();
+        this.pipelineInstances = KvMap.builder(PipelineInstance.class)
+          .path(pipelineInstancePrefix)
+          .mapper(kvmf)
+          .build();
     }
 
-    private PipelineInstance makeNewPipelineInstance(String id) {
-        try {
-            PipelineInstance pipelineInstance = new PipelineInstance(kvmf, pipelineInstancePrefix, id);
-            pipelineInstance.getMapper().load();
-            return pipelineInstance;
-        } catch (Exception e) {
-            log.error("Can't load pipelineSchema by key {}", pipelineInstancePrefix + id);
-//            kvmf.getStorage().delete(pipelineInstancePrefix + id, WriteOptions.builder().build());
-            throw Throwables.asRuntime(e);
-        }
-    }
-
-    private PipelineSchema makeNewPipelineSchema(String name) {
-        try {
-            PipelineSchema pipelineSchema = new PipelineSchema(kvmf, pipelinePrefix, name);
-            pipelineSchema.getMapper().load();
-            return pipelineSchema;
-        } catch (Exception e) {
-            log.error("Can't load pipelineSchema by key {}", pipelinePrefix + name);
-//            kvmf.getStorage().delete(pipelinePrefix + name, WriteOptions.builder().build());
-            throw Throwables.asRuntime(e);
-        }
+    @PostConstruct
+    public void initialize() {
+        pipelineInstances.load();
+        pipelineSchemas.load();
     }
 
     @Override
-    public void getOrUpdatePipeline(PipelineSchemaArg pipelineSchemaArg) {
-        PipelineSchema pipelineSchema = makeNewPipelineSchema(pipelineSchemaArg.getName());
-        pipelineSchema.setRecipients(pipelineSchemaArg.getRecipients());
-        pipelineSchema.setRegistry(pipelineSchemaArg.getRegistry());
-        pipelineSchema.setFilter(pipelineSchemaArg.getFilter());
-        pipelineSchema.setPipelineStages(toStagesSchema(pipelineSchemaArg.getPipelineStages()));
-        checkPipeline(pipelineSchema);
-        pipelineSchema.getMapper().save();
-        riseEvent(pipelineSchema, "create");
+    public void getOrUpdatePipeline(PipelineSchemaArg arg) {
+        PipelineSchema schema = pipelineSchemas.compute(arg.getName(), (k, old) -> {
+            if(old == null) {
+                old = new PipelineSchema();
+            }
+            old.setName(arg.getName());
+            old.setRecipients(arg.getRecipients());
+            old.setRegistry(arg.getRegistry());
+            old.setFilter(arg.getFilter());
+            old.setPipelineStages(toStagesSchema(arg.getPipelineStages()));
+            return old;
+        });
+        checkPipeline(schema);
+        riseEvent(schema, "create");
     }
 
     //TODO: change approach
     @Scheduled(fixedDelay = Long.MAX_VALUE, initialDelay = 60_000)
-    public void init() {
+    public void load() {
         try (TempAuth ta = TempAuth.asSystem()) {
             log.debug("init pipelines");
             Map<String, PipelineSchema> pipelinesMap = getPipelinesMap();
@@ -233,7 +210,7 @@ public class PipelineServiceImpl implements PipelineService {
             JobInstance jobInstance = jobsManager.create(jobParameters);
             jobInstance.start();
             instance.setJobId(jobInstance.getInfo().getId());
-            instance.getMapper().save();
+            pipelineInstances.flush(instance.getId());
             log.info("added new job {}", jobInstance);
         }
     }
@@ -281,7 +258,8 @@ public class PipelineServiceImpl implements PipelineService {
                                                    PipelineStageSchema pipelineStageName) {
 
         Assert.notNull(id, "Pipeline id can't be null");
-        PipelineInstance instance = makeNewPipelineInstance(id);
+        PipelineInstance instance = new PipelineInstance();
+        instance.setId(id);
         instance.setPipeline(pipelineSchema.getName());
         instance.setName(name);
         instance.getOrCreateHistoryByStage(pipelineStageName.getName());
@@ -289,7 +267,7 @@ public class PipelineServiceImpl implements PipelineService {
 
         checkCreateJobs(pipelineSchema, pipelineStageName, instance);
 
-        instance.getMapper().save();
+        pipelineInstances.put(id, instance);
         return instance;
 
     }
@@ -333,7 +311,7 @@ public class PipelineServiceImpl implements PipelineService {
                 PipelineInstanceHistory nextHistory = instance.getOrCreateHistoryByStage(nextStage.getName());
                 String tag = createTag(currentStage, nextStage, instance, pipelineSchema);
                 nextHistory.setTag(tag);
-                instance.getMapper().save();
+                pipelineInstances.flush(instance.getId());
                 break;
             case REJECT:
                 instance.setState(State.INTERRUPTED);
@@ -363,7 +341,7 @@ public class PipelineServiceImpl implements PipelineService {
         labels.putAll(getRequiredLabels(pipelineSchema, pipelineStages));
         labels.put(PIPELINE_ID, pipelineInstanceId);
         containerManager.createContainer(createContainerArg);
-        instance.getMapper().save();
+        pipelineInstances.flush(instance.getId());
         riseEvent(pipelineSchema, "deploy");
 
     }
@@ -397,27 +375,15 @@ public class PipelineServiceImpl implements PipelineService {
             job.cancel();
         }
 
-        pipelineInstances.invalidate(instance.getId());
-        final String path = KvUtils.join(pipelineInstancePrefix, instance.getId());
-        kvmf.getStorage().deletedir(path, DeleteDirOptions.builder().recursive(true).build());
+        pipelineInstances.remove(instance.getId());
     }
 
 
     @Override
     public Map<String, PipelineSchema> getPipelinesMap() {
-        List<String> allPipelines = getAllPipelines();
-        return allPipelines.stream().map(s -> makeNewPipelineSchema(s.substring(pipelinePrefix.length())))
-                .collect(Collectors.toMap(s -> s.getName(), s -> s));
-    }
-
-    private List<String> getAllPipelines() {
-        try {
-            List<String> list = kvmf.getStorage().list(pipelinePrefix);
-            return MoreObjects.firstNonNull(list, Collections.emptyList());
-        } catch (Exception e) {
-            log.warn(e.getMessage());
-            return Collections.emptyList();
-        }
+        Map<String, PipelineSchema> target = new HashMap<>();
+        pipelineSchemas.forEach(target::put);
+        return target;
     }
 
     @Override
@@ -428,18 +394,9 @@ public class PipelineServiceImpl implements PipelineService {
 
     @Override
     public Map<String, PipelineInstance> getInstancesMap() {
-        List<String> allPipelineInstances = getAllPipelineInstances();
-        return allPipelineInstances.stream().map(s -> makeNewPipelineInstance(s.substring(pipelineInstancePrefix.length())))
-                .collect(Collectors.toMap(s -> s.getId(), s -> s));
-    }
-
-    private List<String> getAllPipelineInstances() {
-        try {
-            return kvmf.getStorage().list(pipelineInstancePrefix);
-        } catch (Exception e) {
-            log.warn(e.getMessage());
-            return Collections.emptyList();
-        }
+        Map<String, PipelineInstance> target = new HashMap<>();
+        pipelineInstances.forEach(target::put);
+        return target;
     }
 
     @Override
@@ -461,23 +418,15 @@ public class PipelineServiceImpl implements PipelineService {
     }
 
     public PipelineInstance getPipelineInstance(String id) {
-        try {
-            PipelineInstance instance = pipelineInstances.get(id);
-            Assert.notNull(instance, "can't find instance " + id);
-            return instance;
-        } catch (ExecutionException e) {
-            throw Throwables.asRuntime(e);
-        }
+        PipelineInstance instance = pipelineInstances.get(id);
+        Assert.notNull(instance, "can't find instance " + id);
+        return instance;
     }
 
     public PipelineSchema getPipelineSchema(String id) {
-        try {
-            PipelineSchema instance = pipelineSchemas.get(id);
-            Assert.notNull(instance, "can't find instance " + id);
-            return instance;
-        } catch (ExecutionException e) {
-            throw Throwables.asRuntime(e);
-        }
+        PipelineSchema instance = pipelineSchemas.get(id);
+        Assert.notNull(instance, "can't find instance " + id);
+        return instance;
     }
 
     protected String createTag(PipelineStageSchema stage, PipelineStageSchema nextStage,

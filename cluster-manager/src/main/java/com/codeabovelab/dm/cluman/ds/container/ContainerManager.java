@@ -157,7 +157,7 @@ public class ContainerManager {
                         LOG.error("Container '{}' has null node.", containerId);
                     }
                     container.setName(ContainerUtils.fixContainerName(container.getName()));
-                    ContainerRegistration orCreateContainer = containerStorage.getOrCreateContainer(container, node);
+                    ContainerRegistration orCreateContainer = containerStorage.updateAndGetContainer(container, node);
                     orCreateContainer.setAdditionalLabels(cc.arg.getContainer().getLabels());
                 } else {
                     LOG.error("Can't receive container '{}' from service.", containerId);
@@ -320,7 +320,7 @@ public class ContainerManager {
 
         Long mem = arg.getMemoryLimit();
         RestartPolicy restartPolicy = getRestartPolicy(cc, arg);
-        HostConfig.Builder builder = HostConfig.newHostConfig()
+        HostConfig.HostConfigBuilder builder = HostConfig.builder()
                 .memory(mem)
                 .blkioWeight(arg.getBlkioWeight())
                 .cpuQuota(arg.getCpuQuota())

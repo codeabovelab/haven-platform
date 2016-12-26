@@ -3,17 +3,17 @@
 import argparse
 import configparser
 import copy
+import datetime
 import http.client
 import json
 import logging
 import os
 import pwd
-import subprocess
-import sys
 import shutil
 import stat
+import subprocess
+import sys
 import time
-import datetime
 
 # default values set by preprocessor on server
 default_value = {
@@ -247,7 +247,7 @@ class Bootstrap:
 
         self.sample_config = '''[main]
  docker = 172.31.0.12:2375
- master = 172.31.0.3:8762
+ master = 172.31.0.3:8761
  timeout = 10
  secret = secr3t
  log_level = 2'''

@@ -17,11 +17,12 @@
 package com.codeabovelab.dm.cluman.users;
 
 import com.codeabovelab.dm.cluman.validate.ExtendedAssert;
-import com.codeabovelab.dm.common.kv.KvStorageEvent;
 import com.codeabovelab.dm.common.kv.KvUtils;
-import com.codeabovelab.dm.common.kv.mapping.KvClassMapper;
+import com.codeabovelab.dm.common.kv.mapping.KvMap;
+import com.codeabovelab.dm.common.kv.mapping.KvMapAdapter;
 import com.codeabovelab.dm.common.kv.mapping.KvMapperFactory;
 import com.codeabovelab.dm.common.security.ExtendedUserDetails;
+import com.codeabovelab.dm.common.security.ExtendedUserDetailsImpl;
 import com.codeabovelab.dm.common.security.UserIdentifiers;
 import com.codeabovelab.dm.common.security.UserIdentifiersDetailsService;
 import lombok.extern.slf4j.Slf4j;
@@ -34,9 +35,6 @@ import org.springframework.stereotype.Component;
 
 import javax.annotation.PostConstruct;
 import java.util.Collection;
-import java.util.List;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
@@ -48,8 +46,7 @@ import java.util.stream.Collectors;
 public class UsersStorage implements UserIdentifiersDetailsService {
 
     private final KvMapperFactory mapperFactory;
-    private final KvClassMapper<UserRegistration> mapper;
-    private final ConcurrentMap<String, UserRegistration> map = new ConcurrentHashMap<>();
+    private final KvMap<UserRegistration> map;
     private final String prefix;
     private final AccessDecisionManager adm;
 
@@ -58,52 +55,24 @@ public class UsersStorage implements UserIdentifiersDetailsService {
         this.mapperFactory = mapperFactory;
         this.adm = accessDecisionManager;
         this.prefix = KvUtils.join(this.mapperFactory.getStorage().getPrefix(), "users");
-        this.mapper = mapperFactory.createClassMapper(prefix, UserRegistration.class);
+        this.map = KvMap.builder(UserRegistration.class, ExtendedUserDetailsImpl.class)
+          .mapper(mapperFactory)
+          .path(prefix)
+          .adapter(new KvMapAdapterImpl())
+          .build();
     }
 
     @PostConstruct
     public void init() {
-        this.mapperFactory.getStorage().subscriptions().subscribeOnKey(this::onKvEvent, prefix);
         load();
     }
 
     private void load() {
-        List<String> list = mapper.list();
-        for(String name: list) {
-            internalLoadUser(name);
-        }
-    }
-
-    private void onKvEvent(KvStorageEvent event) {
-        KvStorageEvent.Crud action = event.getAction();
-        final String name = KvUtils.name(prefix, event.getKey());
-        if(name == null) {// it can be at empty KV
-            return;
-        }
-        switch (action) {
-            case UPDATE:
-            case CREATE:
-                internalLoadUser(name);
-                break;
-            case DELETE:
-                remove(name);
-                break;
-        }
+        map.load();
     }
 
     public UserRegistration remove(String name) {
         return map.remove(name);
-    }
-
-    void remove(String name, UserRegistration reg) {
-        map.remove(name, reg);
-    }
-
-    private UserRegistration internalLoadUser(String name) {
-        ExtendedAssert.matchAz09Hyp(name, "user name");
-        UserRegistration ur = map.computeIfAbsent(name, s -> new UserRegistration(this, name));
-        ur.load();
-        return ur;
     }
 
     /**
@@ -113,24 +82,23 @@ public class UsersStorage implements UserIdentifiersDetailsService {
      * @return updated registration
      */
     public UserRegistration update(String name, Consumer<UserRegistration> consumer) {
-        UserRegistration ur = internalLoadUser(name);
-        try {
-            ur.update(consumer);
-        } finally {
-            //when update is end without details
-            if(ur.getDetails() == null) {
-                remove(name, ur);
+        return map.compute(name, (k, ur) -> {
+            if(ur == null) {
+                ur = new UserRegistration(this, k);
             }
-        }
-        return ur;
+            ur.update(consumer);
+            //when update is end without details
+            if (ur.getDetails() == null) {
+                // we remove it
+                return null;
+            }
+            return ur;
+        });
     }
 
     public UserRegistration get(String name) {
+        ExtendedAssert.matchAz09Hyp(name, "user name");
         return map.get(name);
-    }
-
-    public UserRegistration getOrCreate(String name) {
-        return internalLoadUser(name);
     }
 
     @Override
@@ -157,15 +125,27 @@ public class UsersStorage implements UserIdentifiersDetailsService {
         return ur.getDetails();
     }
 
-    KvClassMapper<UserRegistration> getMapper() {
-        return mapper;
-    }
-
-    public void delete(String username) {
-        this.mapper.delete(username);
+    KvMap<UserRegistration> getMap() {
+        return map;
     }
 
     AccessDecisionManager getAdm() {
         return adm;
+    }
+
+    private class KvMapAdapterImpl implements KvMapAdapter<UserRegistration> {
+        @Override
+        public Object get(String key, UserRegistration source) {
+            return source.getDetails();
+        }
+
+        @Override
+        public UserRegistration set(String key, UserRegistration source, Object value) {
+            if(source == null) {
+                source = new UserRegistration(UsersStorage.this, key);
+            }
+            source.loadDetails((ExtendedUserDetails) value);
+            return source;
+        }
     }
 }

@@ -4,7 +4,7 @@
 ## Setup and Build
 
 * [Installation](installation.md)
-* [Building](building.md)
+* [Building](build.md)
 * [Cluster Configuration Format](cluster-config-format.md)
 
 ## Component Documentation 

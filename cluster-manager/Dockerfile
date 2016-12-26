@@ -5,7 +5,7 @@ MAINTAINER docker@codeabovelab.com
 RUN apt-get update && apt-get install -y --no-install-recommends \
   curl git golang openjdk-8-jdk-headless
 
-RUN curl -L https://github.com/docker/compose/releases/download/1.8.1/docker-compose-`uname -s`-`uname -m` > /usr/local/bin/docker-compose && \
+RUN curl -L https://github.com/docker/compose/releases/download/1.9.0/docker-compose-`uname -s`-`uname -m` > /usr/local/bin/docker-compose && \
   chmod +x /usr/local/bin/docker-compose
 
 RUN export GOPATH=/gocode && \
@@ -38,5 +38,5 @@ WORKDIR /data
 VOLUME  /data
 
 ADD ./@artifactId@-*-boot.jar /@artifactId@-@version@.jar
-ENTRYPOINT java -server $JAVA_OPTS -Djava.security.egd=file:/dev/./urandom -jar /@artifactId@-@version@.jar \
+ENTRYPOINT java -server -noverify $JAVA_OPTS -Djava.security.egd=file:/dev/./urandom -jar /@artifactId@-@version@.jar \
    --spring.profiles.active=staging  --dm.swarm-exec.path=/gocode/bin/swarm

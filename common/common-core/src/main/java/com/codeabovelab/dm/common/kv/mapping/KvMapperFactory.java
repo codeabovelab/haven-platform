@@ -144,4 +144,12 @@ public class KvMapperFactory {
         }
         return validity;
     }
+
+    <T> AbstractMapping<T> getMapping(Class<T> type, KvObjectFactory<T> factory) {
+        AbstractMapping<T> mapping = NodeMapping.makeIfHasProps(this, type, factory);
+        if(mapping == null) {
+            mapping = new LeafMapping<>(this, type);
+        }
+        return mapping;
+    }
 }

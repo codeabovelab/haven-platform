@@ -11,7 +11,6 @@ import com.codeabovelab.dm.cluman.cluster.docker.management.result.ServiceCallRe
 import com.codeabovelab.dm.cluman.cluster.docker.model.*;
 import com.codeabovelab.dm.cluman.model.*;
 import com.codeabovelab.dm.cluman.model.Node;
-import com.codeabovelab.dm.common.utils.Consumers;
 import com.codeabovelab.dm.common.utils.PojoBeanUtils;
 import com.google.common.collect.ImmutableMap;
 import org.springframework.beans.BeanUtils;
@@ -361,7 +360,7 @@ public class DockerServiceMock implements DockerService {
               .build();
             ch = new ContainerHolder(dc);
             ch.setHostConfig(cmd.getHostConfig());
-            ContainerConfig.Builder cc = ContainerConfig.builder();
+            ContainerConfig.ContainerConfigBuilder cc = ContainerConfig.builder();
             PojoBeanUtils.copyToBuilder(cmd, cc);
             ch.setConfig(cc.build());
             containers.put(ch.getId(), ch);

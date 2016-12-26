@@ -35,8 +35,8 @@ public class DiagnosticInfoTest {
     @Test
     public void test() throws Exception {
         try (AutoCloseable ctx = diagnosticInfo.injectToContext(UUID.randomUUID().toString(), null)) {
-            String object = MDC.get(AmqpAppender.REQUEST_UUID);
-            System.out.println(AmqpAppender.REQUEST_UUID + ":\t" + object);
+            String object = MDC.get(DiagnosticInfo.REQUEST_UUID);
+            System.out.println(DiagnosticInfo.REQUEST_UUID + ":\t" + object);
             Assert.assertNotNull(object);
             //some properties may be null therefore we cannot test it for null
         }

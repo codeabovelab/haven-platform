@@ -29,6 +29,9 @@ import org.springframework.stereotype.Component;
 @Component
 public class DiagnosticInfo {
 
+    public static final String KEY_USER = "KEY_USER";
+    public static final String REQUEST_UUID = "REQUEST_UUID";
+
     @Autowired
     private UUIDGenerator uuidGenerator;
 
@@ -46,21 +49,14 @@ public class DiagnosticInfo {
      * @param requestUid
      */
     public final AutoCloseable injectToContext(String requestUid, String description) {
-        // AMQP appender sets KEY_HOST and KEY_APPLICATION + KEY_APPLICATION_VERSION fields
-//        MDC.put(KEY_HOST, VALUE_HOST);
-//        MDC.put(KEY_APPLICATION, AppInfo.getApplicationName());
         if (requestUid == null) {
             requestUid = uuidGenerator.generate();
         }
-        MDC.put(AmqpAppender.KEY_USER, getCurrentUser());
-        MDC.put(AmqpAppender.REQUEST_UUID, requestUid);
-        MDC.put(AmqpAppender.REQUEST_DESCRIPTION, description);
+        MDC.put(KEY_USER, getCurrentUser());
+        MDC.put(REQUEST_UUID, requestUid);
         return () -> {
-//                MDC.remove(KEY_HOST);
-//                MDC.remove(KEY_APPLICATION);
-            MDC.remove(AmqpAppender.KEY_USER);
-            MDC.remove(AmqpAppender.REQUEST_UUID);
-            MDC.remove(AmqpAppender.REQUEST_DESCRIPTION);
+            MDC.remove(KEY_USER);
+            MDC.remove(REQUEST_UUID);
         };
     }
 }

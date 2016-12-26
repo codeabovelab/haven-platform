@@ -70,7 +70,7 @@ public class SwarmUtils {
                     //the node eq constraint is granted by node name, we must skip this restoring
                     continue;
                 }
-                env.add("constraints:" + constraint);
+                env.add("constraint:" + constraint);
             }
         } catch (Exception e) {
             log.error("Can not parse constraints '{}' of '{}'", constraintStr, containerSource, e);

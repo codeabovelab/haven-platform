@@ -1,4 +1,4 @@
-[![Build Status](https://travis-ci.org/codeabovelab/haven-platform.svg?branch=master)](https://travis-ci.org/codeabovelab/haven-platform)
+[![Build Status](https://travis-ci.org/codeabovelab/haven-platform.svg?branch=master)](https://travis-ci.org/codeabovelab/haven-platform) [![codebeat badge](https://codebeat.co/badges/3c0e5ad9-8f24-4c41-bddc-2221a3b05f7b)](https://codebeat.co/projects/github-com-codeabovelab-haven-platform)
 
 # Haven: Container Management Simplified
  
@@ -10,11 +10,8 @@ License
 -------
 Copyright 2016 Code Above Lab LLC
 
-Licensed under the Apache License, Version 2.0 (the "License");
+Licensed under the [Apache License, Version 2.0](http://www.apache.org/licenses/LICENSE-2.0) (the "License");
 you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
 
 Unless required by applicable law or agreed to in writing, software
 distributed under the License is distributed on an "AS IS" BASIS,

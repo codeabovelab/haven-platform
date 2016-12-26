@@ -1,7 +1,10 @@
 package com.codeabovelab.dm.cluman.update;
 
 import com.codeabovelab.dm.cluman.DockerServiceMock;
+import com.codeabovelab.dm.cluman.batch.BatchUtils;
+import com.codeabovelab.dm.cluman.batch.HealthCheckContainerTasklet;
 import com.codeabovelab.dm.cluman.batch.ImagesForUpdate;
+import com.codeabovelab.dm.cluman.batch.LoadContainersOfImageTasklet;
 import com.codeabovelab.dm.cluman.cluster.docker.management.DockerService;
 import com.codeabovelab.dm.cluman.cluster.docker.management.argument.GetContainersArg;
 import com.codeabovelab.dm.cluman.cluster.docker.model.CreateContainerCmd;
@@ -17,9 +20,6 @@ import com.codeabovelab.dm.cluman.model.DiscoveryStorage;
 import com.codeabovelab.dm.cluman.model.DockerContainer;
 import com.codeabovelab.dm.cluman.model.DockerServiceInfo;
 import com.codeabovelab.dm.cluman.model.NodeRegistry;
-import com.codeabovelab.dm.cluman.batch.BatchUtils;
-import com.codeabovelab.dm.cluman.batch.HealthCheckContainerTasklet;
-import com.codeabovelab.dm.cluman.batch.LoadContainersOfImageTasklet;
 import com.codeabovelab.dm.cluman.source.ContainerSourceFactory;
 import com.codeabovelab.dm.cluman.ui.health.HealthCheckService;
 import com.codeabovelab.dm.cluman.ui.update.UpdateContainersConfiguration;
@@ -53,9 +53,7 @@ import java.util.function.Consumer;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
-import static org.mockito.Matchers.anyLong;
-import static org.mockito.Matchers.anyObject;
-import static org.mockito.Matchers.anyString;
+import static org.mockito.Matchers.*;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -113,7 +111,7 @@ public class UpdateTest {
               .then((i) -> i.getArgumentAt(3, Object.class));
 
             ContainerStorage contStorage = mock(ContainerStorage.class);
-            when(contStorage.getOrCreateContainer(anyObject(), anyString())).thenReturn(mock(ContainerRegistration.class));
+            when(contStorage.updateAndGetContainer(anyObject(), anyString())).thenReturn(mock(ContainerRegistration.class));
 
             ContainerManager cm = new ContainerManager(discoveryStorage,
               mock(NodeRegistry.class),
@@ -151,7 +149,7 @@ public class UpdateTest {
         CreateContainerCmd cc = new CreateContainerCmd();
         cc.setName(name);
         cc.setImage(image);
-        HostConfig.Builder hc = HostConfig.newHostConfig();
+        HostConfig.HostConfigBuilder hc = HostConfig.builder();
         hc.blkioWeight(1);
         hc.cpuShares(1);
         hc.cpuPeriod(1);

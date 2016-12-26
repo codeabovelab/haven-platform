@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *      http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -14,12 +14,13 @@
  * limitations under the License.
  */
 
-package com.codeabovelab.dm.cluman.cluster.docker.management;
+package com.codeabovelab.dm.cluman.cluster.application;
 
 import com.codeabovelab.dm.cluman.cluster.compose.ComposeExecutor;
 import com.codeabovelab.dm.cluman.cluster.compose.ComposeResult;
 import com.codeabovelab.dm.cluman.cluster.compose.model.ApplicationEvent;
 import com.codeabovelab.dm.cluman.cluster.compose.model.ComposeArg;
+import com.codeabovelab.dm.cluman.cluster.docker.management.DockerService;
 import com.codeabovelab.dm.cluman.cluster.docker.management.argument.StopContainerArg;
 import com.codeabovelab.dm.cluman.cluster.docker.management.result.CreateApplicationResult;
 import com.codeabovelab.dm.cluman.cluster.docker.management.result.ResultCode;
@@ -28,17 +29,17 @@ import com.codeabovelab.dm.cluman.source.ContainerSourceFactory;
 import com.codeabovelab.dm.cluman.model.ApplicationSource;
 import com.codeabovelab.dm.cluman.ds.DockerServiceRegistry;
 import com.codeabovelab.dm.common.kv.KeyValueStorage;
+import com.codeabovelab.dm.common.kv.KvUtils;
 import com.codeabovelab.dm.common.kv.WriteOptions;
 import com.codeabovelab.dm.cluman.model.Application;
-import com.codeabovelab.dm.cluman.model.ApplicationInstance;
+import com.codeabovelab.dm.cluman.model.ApplicationImpl;
 import com.codeabovelab.dm.cluman.model.ContainerSource;
 import com.codeabovelab.dm.cluman.model.Severity;
 import com.codeabovelab.dm.cluman.validate.ExtendedAssert;
+import com.codeabovelab.dm.common.kv.mapping.KvMap;
+import com.codeabovelab.dm.common.kv.mapping.KvMapperFactory;
 import com.codeabovelab.dm.common.mb.MessageBus;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
@@ -55,27 +56,28 @@ import static com.google.common.base.MoreObjects.firstNonNull;
 @Slf4j
 public class ApplicationServiceImpl implements ApplicationService {
 
-    private static final Logger LOG = LoggerFactory.getLogger(ApplicationServiceImpl.class);
-
     private final KeyValueStorage keyValueStorage;
     private final DockerServiceRegistry dockerServiceRegistry;
     private final String appPrefix;
     private final ComposeExecutor composeExecutor;
 
-    private final ObjectMapper objectMapper;
     private final MessageBus<ApplicationEvent> applicationBus;
     private final ContainerSourceFactory sourceService;
+    private final KvMap<ApplicationImpl> map;
 
     @Autowired
-    public ApplicationServiceImpl(KeyValueStorage keyValueStorage, ObjectMapper objectMapper,
+    public ApplicationServiceImpl(KvMapperFactory mapper,
                                   DockerServiceRegistry dockerServiceRegistry,
                                   ComposeExecutor composeExecutor,
                                   ContainerSourceFactory sourceService,
                                   @Qualifier(ApplicationEvent.BUS) MessageBus<ApplicationEvent> applicationBus) {
-        this.keyValueStorage = keyValueStorage;
-        this.dockerServiceRegistry = dockerServiceRegistry;
+        this.keyValueStorage = mapper.getStorage();
         this.appPrefix = keyValueStorage.getPrefix() + "/applications/";
-        this.objectMapper = objectMapper;
+        this.map = KvMap.builder(ApplicationImpl.class)
+          .mapper(mapper)
+          .path(this.appPrefix)
+          .build();
+        this.dockerServiceRegistry = dockerServiceRegistry;
         this.composeExecutor = composeExecutor;
         this.applicationBus = applicationBus;
         this.sourceService = sourceService;
@@ -83,28 +85,22 @@ public class ApplicationServiceImpl implements ApplicationService {
 
     @Override
     public List<Application> getApplications(String cluster) {
-        Map<String, String> appsStrings = keyValueStorage.map(appPrefix + cluster);
-        if(appsStrings == null) {
+        List<String> appKeys = keyValueStorage.list(appPrefix + cluster);
+        if(appKeys == null) {
             return Collections.emptyList();
         }
-        return appsStrings.values().stream().map(str -> {
-            try {
-                return objectMapper.readValue(str, ApplicationInstance.class);
-            } catch (Exception e) {
-                LOG.error("can't parse Applications", e);
-                return null;
-            }
-        }).collect(Collectors.toList());
+        List<Application> apps = new ArrayList<>();
+        appKeys.forEach((k) -> {
+            String name = KvUtils.suffix(appPrefix, k);
+            // name has 'cluster/appName'
+            ApplicationImpl app = map.get(name);
+            apps.add(app);
+        });
+        return apps;
     }
 
-    private ApplicationInstance readApplication(String cluster, String appId) {
-        try {
-            String value = keyValueStorage.get(buildKey(cluster, appId)).getValue();
-            return objectMapper.readValue(value, ApplicationInstance.class);
-        } catch (Exception e) {
-            LOG.error("can't parse Applications", e);
-            return null;
-        }
+    private ApplicationImpl readApplication(String cluster, String appId) {
+        return map.get(buildKey(cluster, appId));
     }
 
     @Override
@@ -123,7 +119,7 @@ public class ApplicationServiceImpl implements ApplicationService {
         fireEndEvent(composeResult, composeArg);
         List<ContainerDetails> containerDetails = firstNonNull(composeResult.getContainerDetails(), Collections.emptyList());
 
-        ApplicationInstance application = ApplicationInstance.builder()
+        ApplicationImpl application = ApplicationImpl.builder()
                 .creatingDate(new Date())
                 .initFile(composeArg.getFile().getCanonicalPath())
                 .name(composeArg.getAppName())
@@ -188,13 +184,13 @@ public class ApplicationServiceImpl implements ApplicationService {
 
     @Override
     public Application getApplication(String cluster, String appId) {
-        ApplicationInstance applicationInstance = readApplication(cluster, appId);
+        ApplicationImpl applicationInstance = readApplication(cluster, appId);
         ExtendedAssert.notFound(applicationInstance, "application was not found " + appId);
         DockerService service = dockerServiceRegistry.getService(cluster);
-        ApplicationInstance.ApplicationInstanceBuilder clone = applicationInstance.cloneToBuilder();
+        ApplicationImpl.Builder clone = ApplicationImpl.builder().from(applicationInstance);
         List<String> existedContainers = applicationInstance.getContainers().stream()
                 .filter(c -> service.getContainer(c) != null).collect(Collectors.toList());
-        ApplicationInstance result = clone.containers(existedContainers).build();
+        ApplicationImpl result = clone.containers(existedContainers).build();
         return result;
     }
 
@@ -208,10 +204,8 @@ public class ApplicationServiceImpl implements ApplicationService {
         List<String> containers = application.getContainers();
         List<String> existedContainers = containers.stream().filter(c -> service.getContainer(c) != null).collect(Collectors.toList());
         Assert.isTrue(!CollectionUtils.isEmpty(existedContainers), "Application doesn't have containers " + application);
-//        Assert.isTrue(existedContainers.size() == containers.size());
-        String value = objectMapper.writeValueAsString(application);
-        keyValueStorage.set(buildKey(application.getCluster(), appName), value, WriteOptions.builder()
-                .failIfExists(false).failIfAbsent(false).build());
+        String key = buildKey(application.getCluster(), appName);
+        map.put(key, ApplicationImpl.from(application));
     }
 
     @Override
@@ -220,7 +214,7 @@ public class ApplicationServiceImpl implements ApplicationService {
         Application application = getApplication(cluster, id);
         DockerService service = dockerServiceRegistry.getService(application.getCluster());
         composeExecutor.rm(application, service);
-        keyValueStorage.delete(buildKey(cluster, id), WriteOptions.builder().build());
+        map.remove(buildKey(cluster, id));
 
     }
 
@@ -247,7 +241,7 @@ public class ApplicationServiceImpl implements ApplicationService {
     @Override
     public File getInitComposeFile(String cluster, String appId) {
 
-        ApplicationInstance applicationInstance = readApplication(cluster, appId);
+        ApplicationImpl applicationInstance = readApplication(cluster, appId);
         ExtendedAssert.notFound(applicationInstance, "application was not found " + appId);
         File file = new File(applicationInstance.getInitFile());
         ExtendedAssert.notFound(file.exists(), "can't find file for " + appId);
@@ -255,7 +249,7 @@ public class ApplicationServiceImpl implements ApplicationService {
     }
 
     private String buildKey(String cluster, String id) {
-        return appPrefix + cluster + "/" + id;
+        return cluster + "/" + id;
     }
 
 }

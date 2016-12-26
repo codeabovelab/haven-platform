@@ -17,7 +17,7 @@
 package com.codeabovelab.dm.cluman.ui;
 
 import com.codeabovelab.dm.cluman.utils.ContainerUtils;
-import com.codeabovelab.dm.cluman.cluster.docker.management.ApplicationService;
+import com.codeabovelab.dm.cluman.cluster.application.ApplicationService;
 import com.codeabovelab.dm.cluman.cluster.docker.management.result.ResultCode;
 import com.codeabovelab.dm.cluman.cluster.docker.management.result.ServiceCallResult;
 import com.codeabovelab.dm.cluman.cluster.docker.model.*;

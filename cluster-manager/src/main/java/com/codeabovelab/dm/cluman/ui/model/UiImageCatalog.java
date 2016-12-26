@@ -23,6 +23,9 @@ import lombok.AccessLevel;
 import lombok.Data;
 
 import java.util.*;
+import java.util.stream.Collectors;
+
+import static java.util.Collections.reverseOrder;
 
 /**
  */
@@ -42,17 +45,8 @@ public class UiImageCatalog implements Comparable<UiImageCatalog> {
     }
 
     @JsonProperty
-    public Collection<UiImageData> getIds() {
-        ArrayList<UiImageData> list = new ArrayList<>(ids.values());
-        list.sort((l, r) -> {
-            Date lc = l.getCreated();
-            Date rc = r.getCreated();
-            if(lc == null || rc == null) {
-                return lc != null? 1 : (rc != null? -1 : 0);
-            }
-            return lc.compareTo(rc);
-        });
-        return list;
+    public List<UiImageData> getIds() {
+        return ids.values().stream().sorted(reverseOrder(UiImageData::compareTo)).collect(Collectors.toList());
     }
 
     public UiImageData getOrAddId(String id) {
