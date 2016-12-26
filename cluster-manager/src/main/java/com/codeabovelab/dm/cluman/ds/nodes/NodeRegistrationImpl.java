@@ -178,6 +178,12 @@ class NodeRegistrationImpl implements NodeRegistration {
         }
     }
 
+    public String getCluster() {
+        synchronized (lock) {
+            return this.builder.getCluster();
+        }
+    }
+
     public String getName() {
         return name;
     }

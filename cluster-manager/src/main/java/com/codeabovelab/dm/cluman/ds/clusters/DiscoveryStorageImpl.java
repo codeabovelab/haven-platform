@@ -232,20 +232,14 @@ public class DiscoveryStorageImpl implements DiscoveryStorage {
     }
 
 
-    private NodesGroup findNodeCluster(String nodeId) {
+    private NodesGroup findNodeCluster(String node) {
+        Assert.notNull(node, "node is null");
         //we need resolve real cluster or orphans otherwise
-        NodesGroup candidate = clusters.get(GROUP_ID_ORPHANS);
-        for (NodesGroup cluster : clusters.values()) {
-            if ((candidate == null || (isVirtual(candidate) && !isVirtual(cluster))) &&
-                  cluster.hasNode(nodeId)) {
-                candidate = cluster;
-            }
+        String nodeCluster = nodeStorage.getNodeCluster(node);
+        if(nodeCluster == null) {
+            return null;
         }
-        return candidate;
-    }
-
-    private boolean isVirtual(NodesGroup cluster) {
-        return cluster instanceof NodesGroupImpl;
+        return clusters.get(nodeCluster);
     }
 
     /**
