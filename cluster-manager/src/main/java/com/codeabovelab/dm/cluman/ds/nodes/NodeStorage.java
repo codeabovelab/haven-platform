@@ -259,6 +259,15 @@ public class NodeStorage implements NodeInfoProvider {
         }
     }
 
+    @Override
+    public String getNodeCluster(String node) {
+        NodeRegistrationImpl nr = getNodeRegistrationInternal(node);
+        if (nr == null) {
+            return null;
+        }
+        return nr.getCluster();
+    }
+
     private void updateSwarmRegistration(NodeRegistrationImpl nr) {
         NodeInfo ni = nr.getNodeInfo();
         String cluster = ni.getCluster();

@@ -25,6 +25,12 @@ import org.springframework.security.acls.model.ObjectIdentity;
  */
 public interface NodeRegistration {
     NodeInfo getNodeInfo();
+
+    /**
+     * Name of cluster, can be null.
+     * @return name or null
+     */
+    String getCluster();
     Subscriptions<NodeHealthEvent> getHealthSubscriptions();
 
     ObjectIdentity getOid();

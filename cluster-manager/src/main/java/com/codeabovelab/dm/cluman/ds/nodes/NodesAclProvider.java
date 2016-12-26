@@ -41,10 +41,10 @@ public class NodesAclProvider extends VirtualAclProvider {
     @Override
     protected String getCluster(Serializable id) {
         String strId = (String) id;
-        NodeRegistration nr = nodeStorage.getNodeRegistrationInternal(strId);
+        NodeRegistrationImpl nr = nodeStorage.getNodeRegistrationInternal(strId);
         if (nr == null) {
             throw new NotFoundException("Node '" + id + "' is not registered.");
         }
-        return nr.getNodeInfo().getCluster();
+        return nr.getCluster();
     }
 }
