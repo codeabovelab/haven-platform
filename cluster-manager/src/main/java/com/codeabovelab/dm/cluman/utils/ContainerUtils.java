@@ -16,7 +16,6 @@
 
 package com.codeabovelab.dm.cluman.utils;
 
-import com.codeabovelab.dm.cluman.model.ContainerBase;
 import com.codeabovelab.dm.cluman.model.ContainerBaseIface;
 import com.codeabovelab.dm.cluman.model.ImageName;
 import com.codeabovelab.dm.common.utils.ContainerDetector;
@@ -200,7 +199,7 @@ public final class ContainerUtils {
 
     public static boolean isOurContainer(ContainerBaseIface cont) {
         if (!ContainerDetector.isContainer()) {
-            // we not in container and do not need to protect our container
+            // haven was not started in container, skipping protection
             return false;
         }
         // depend of some options container can have hostname equal with name or part of container id
