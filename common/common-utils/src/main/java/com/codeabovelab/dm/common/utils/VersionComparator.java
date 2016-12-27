@@ -190,6 +190,11 @@ public final class VersionComparator implements Comparator<String> {
         if(left.equals(right)) {
             return 0;
         }
+        final int llen = left.length();
+        final int rlen = right.length();
+        if (llen == 0 || rlen == 0) {
+            return Integer.compare(llen, rlen);
+        }
         Integer lo = latestMap.get(left);
         Integer ro = latestMap.get(right);
         if(lo != null || ro != null) {
@@ -198,44 +203,39 @@ public final class VersionComparator implements Comparator<String> {
         int lpp = 0, rpp = 0, llp = 0, rlp = 0;
         while(true) {
             llp = left.indexOf('.', llp);
+            if(llp < 0) {
+                llp = llen;
+            }
             rlp = right.indexOf('.', rlp);
-            if(llp < 0 || rlp  < 0) {
-                if(llp >= 0 || rlp >= 0) {
-                    // when one has dot, then we must try to compare number
-                    // before dot, and other numbers on same level
-                    if(llp < 0) {
-                        llp = getNumEnd(left, lpp);
-                    }
-                    if(rlp < 0) {
-                        rlp = getNumEnd(right, rpp);
-                    }
-                    if(llp >= 0 && rlp >= 0) {
-                        int res = compareTokens(left.substring(lpp, llp), right.substring(rpp, rlp));
-                        if(res != 0) {
-                            return res;
-                        }
-                        lpp = llp;
-                        if(left.length() > lpp && left.charAt(lpp) == '.') {
-                            lpp++;
-                        }
-                        rpp = rlp;
-                        if(right.length() > rpp && right.charAt(rpp) == '.') {
-                            rpp++;
-                        }
-                    }
+            if(rlp < 0) {
+                rlp = rlen;
+            }
+            // sometime tokens may contains some differs than number, then we must try to compare only numbers
+            // before dot, and other numbers on same level
+            // calc num ends
+            int lne = getNumEnd(left, lpp);
+            int rne = getNumEnd(right, rpp);
+            // token not always full with number, so we compare in in two steps - numbers,
+            if (lne > 0 && rne > 0) {
+                int res = compareTokens(left.substring(lpp, lne), right.substring(rpp, rne));
+                if(res != 0) {
+                    return res;
                 }
-                String ltoken = left.substring(lpp);
-                String rtoken = right.substring(rpp);
-                return compareEnds(ltoken, rtoken);
+                lpp = lne;
+                rpp = rne;
             }
-            String ltoken = left.substring(lpp, llp);
-            String rtoken = right.substring(rpp, rlp);
-            int res= compareTokens(ltoken, rtoken);
-            if (res != 0) {
-                return res;
+            // and then strings
+            boolean end = llp == llen && rlp == rlen;
+            if(lpp < llp || rpp < rlp || end) {
+                String ltoken = left.substring(lpp, llp);
+                String rtoken = right.substring(rpp, rlp);
+                int res = compareEnds(ltoken, rtoken);
+                if (res != 0 || end) {
+                    return res;
+                }
             }
-            lpp = ++llp;
-            rpp = ++rlp;
+            lpp = Math.min(++llp, llen);
+            rpp = Math.min(++rlp, rlen);
         }
     }
 
@@ -297,17 +297,17 @@ public final class VersionComparator implements Comparator<String> {
     }
 
     private int getNumEnd(String token, int from) {
-        int pos = token.indexOf(suffixDelimiter, from);
-        if(pos >= 0) {
-            return pos;
-        }
-        for(int i = from; i < token.length(); ++i) {
+        int len = token.length();
+        for(int i = from; i < len; ++i) {
             char c = token.charAt(i);
             if(c < '0' || c > '9') {
                 return i;
             }
         }
-        return token.length();
+        if(len < from) {
+            return -1;
+        }
+        return len;
     }
 
     private int compareTokens(String ltoken, String rtoken) {
