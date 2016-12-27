@@ -222,9 +222,9 @@ public class ImagesApi {
                                  @RequestParam(value = "filter", required = false) String filter,
                                  @RequestParam(value = "cluster", required = false) String cluster) {
         Filter imageFilter = calculateImageFilter(filter, cluster);
-        String name = ContainerUtils.getImageNameWithoutPrefix(imageName);
         RegistryService registry = registryRepository.getRegistryByImageName(imageName);
-        Tags tgs = registry.getTags(name);
+        Tags tgs = registry.getTags(imageName);
+        String name = registry.toRelative(imageName);
         return filter(tgs, name, registry, imageFilter);
     }
 
