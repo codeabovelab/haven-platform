@@ -14,20 +14,27 @@
  * limitations under the License.
  */
 
-package com.codeabovelab.dm.common.log;
+package com.codeabovelab.dm.common.meter;
 
+import com.codeabovelab.dm.common.log.BasicLogRecord;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
 
-@Data
-@ToString(callSuper = true)
-@EqualsAndHashCode(callSuper = true)
-public class UUIDLogRecord extends BasicLogRecord {
+import java.util.Map;
 
-    /**
-     * UUID of request: uses for merging log entries
-     */
-    private String requestUID;
+/**
+ * object which contain metric report data with additional fields
+ */
+@EqualsAndHashCode(callSuper = true)
+@ToString(callSuper = true)
+@Data
+class MetricReport extends BasicLogRecord {
+    public static final String TYPE = "metric";
+    private Map<String, Object> metrics;
+
+    public MetricReport() {
+        setType(TYPE);
+    }
 
 }
