@@ -99,7 +99,6 @@ public class NetworkManager implements Consumer<NodeEvent> {
         if (node == null) {
             return;
         }
-        //TODO we need auth for node agent, after it we must remove below lines
         try(TempAuth ta = TempAuth.asSystem()) {
             NodesGroup cluster = discoveryStorage.getClusterForNode(node.getName());
             if (cluster == null) {
