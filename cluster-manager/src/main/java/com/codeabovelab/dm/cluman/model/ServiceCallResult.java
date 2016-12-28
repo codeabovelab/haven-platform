@@ -14,15 +14,25 @@
  * limitations under the License.
  */
 
-package com.codeabovelab.dm.cluman.cluster.docker.management.result;
+package com.codeabovelab.dm.cluman.model;
 
-import com.codeabovelab.dm.cluman.model.Application;
 import lombok.Data;
-import lombok.EqualsAndHashCode;
 
+/**
+ * Result of call service
+ */
 @Data
-@EqualsAndHashCode(callSuper = true)
-public class CreateApplicationResult extends ServiceCallResult {
+public class ServiceCallResult {
+    private String message;
+    private ResultCode code;
 
-    Application application;
+    public ServiceCallResult code(ResultCode code) {
+        setCode(code);
+        return this;
+    }
+
+    public ServiceCallResult message(String message) {
+        setMessage(message);
+        return this;
+    }
 }

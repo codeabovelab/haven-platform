@@ -16,15 +16,15 @@
 
 package com.codeabovelab.dm.cluman.cluster.docker.management;
 
+import com.codeabovelab.dm.cluman.cluster.docker.management.result.*;
+import com.codeabovelab.dm.cluman.cluster.docker.management.result.ResultCode;
+import com.codeabovelab.dm.cluman.cluster.docker.management.result.ServiceCallResult;
+import com.codeabovelab.dm.cluman.cluster.docker.model.swarm.SwarmConfig;
 import com.codeabovelab.dm.cluman.utils.ContainerUtils;
 import com.codeabovelab.dm.cluman.cluster.docker.ClusterConfig;
 import com.codeabovelab.dm.cluman.cluster.docker.ClusterConfigImpl;
 import com.codeabovelab.dm.cluman.cluster.docker.HttpAuthInterceptor;
 import com.codeabovelab.dm.cluman.cluster.docker.management.argument.*;
-import com.codeabovelab.dm.cluman.cluster.docker.management.result.ProcessEvent;
-import com.codeabovelab.dm.cluman.cluster.docker.management.result.RemoveImageResult;
-import com.codeabovelab.dm.cluman.cluster.docker.management.result.ResultCode;
-import com.codeabovelab.dm.cluman.cluster.docker.management.result.ServiceCallResult;
 import com.codeabovelab.dm.cluman.cluster.docker.model.*;
 import com.codeabovelab.dm.cluman.model.*;
 import com.codeabovelab.dm.common.utils.Consumers;
@@ -833,11 +833,12 @@ public class DockerServiceImpl implements DockerService {
         }
     }
 
+    @Override
     public ClusterConfig getClusterConfig() {
         return clusterConfig;
     }
 
-    public UriComponentsBuilder getUrlContainer(String id, String suffix) {
+    private UriComponentsBuilder getUrlContainer(String id, String suffix) {
         if (id.contains("/")) {
             throw new IllegalArgumentException("Bad id format: '" + id + "'");
         }
@@ -847,6 +848,22 @@ public class DockerServiceImpl implements DockerService {
             sb.append("/").append(suffix);
         }
         return makeUrl(sb.toString());
+    }
+
+    @Override
+    public SwarmConfig getSwarm() {
+        ResponseEntity<SwarmConfig> configResult = getFast(() -> restTemplate.getForEntity(makeUrl("/swarm").toUriString(), SwarmConfig.class));
+        return configResult.getBody();
+    }
+
+    @Override
+    public InitSwarmResult initSwarm(SwarmConfig config) {
+        Assert.notNull(config, "swarm config is null");
+        ResponseEntity<InitSwarmResult> res = getFast(() -> {
+            HttpEntity<SwarmConfig> req = new HttpEntity<>(config);
+            return restTemplate.postForEntity(makeUrl("/swarm/init").toUriString(), req, InitSwarmResult.class);
+        });
+        return res.getBody();
     }
 
     @Override

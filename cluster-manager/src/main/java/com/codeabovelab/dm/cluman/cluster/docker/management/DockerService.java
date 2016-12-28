@@ -18,10 +18,12 @@ package com.codeabovelab.dm.cluman.cluster.docker.management;
 
 import com.codeabovelab.dm.cluman.cluster.docker.ClusterConfig;
 import com.codeabovelab.dm.cluman.cluster.docker.management.argument.*;
+import com.codeabovelab.dm.cluman.cluster.docker.management.result.InitSwarmResult;
 import com.codeabovelab.dm.cluman.cluster.docker.management.result.ProcessEvent;
 import com.codeabovelab.dm.cluman.cluster.docker.management.result.RemoveImageResult;
 import com.codeabovelab.dm.cluman.cluster.docker.management.result.ServiceCallResult;
 import com.codeabovelab.dm.cluman.cluster.docker.model.*;
+import com.codeabovelab.dm.cluman.cluster.docker.model.swarm.SwarmConfig;
 import com.codeabovelab.dm.cluman.model.DockerContainer;
 import com.codeabovelab.dm.cluman.model.DockerServiceInfo;
 import com.codeabovelab.dm.cluman.model.ImageDescriptor;
@@ -163,4 +165,19 @@ public interface DockerService {
     ClusterConfig getClusterConfig();
 
     RemoveImageResult removeImage(RemoveImageArg arg);
+
+    /**
+     * Inspect swarm.
+     * <code>GET /swarm</code>
+     * @return swarm config
+     */
+    SwarmConfig getSwarm();
+
+    /**
+     * Initialize a new swarm. The body of the HTTP response includes the node ID.
+     * <code>POST /swarm/init</code>
+     * @param config config of swarm
+     * @return result with node id
+     */
+    InitSwarmResult initSwarm(SwarmConfig config);
 }

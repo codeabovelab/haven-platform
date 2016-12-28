@@ -17,7 +17,6 @@
 package com.codeabovelab.dm.cluman.cluster.application;
 
 import com.codeabovelab.dm.cluman.cluster.compose.model.ComposeArg;
-import com.codeabovelab.dm.cluman.cluster.docker.management.result.CreateApplicationResult;
 import com.codeabovelab.dm.cluman.model.ApplicationSource;
 import com.codeabovelab.dm.cluman.model.Application;
 

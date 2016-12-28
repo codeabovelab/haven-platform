@@ -20,11 +20,11 @@ import com.codeabovelab.dm.cluman.cluster.docker.ClusterConfig;
 import com.codeabovelab.dm.cluman.cluster.docker.ClusterConfigImpl;
 import com.codeabovelab.dm.cluman.cluster.docker.management.DockerService;
 import com.codeabovelab.dm.cluman.cluster.docker.management.argument.*;
-import com.codeabovelab.dm.cluman.cluster.docker.management.result.ProcessEvent;
-import com.codeabovelab.dm.cluman.cluster.docker.management.result.RemoveImageResult;
+import com.codeabovelab.dm.cluman.cluster.docker.management.result.*;
 import com.codeabovelab.dm.cluman.cluster.docker.management.result.ResultCode;
 import com.codeabovelab.dm.cluman.cluster.docker.management.result.ServiceCallResult;
 import com.codeabovelab.dm.cluman.cluster.docker.model.*;
+import com.codeabovelab.dm.cluman.cluster.docker.model.swarm.SwarmConfig;
 import com.codeabovelab.dm.cluman.ds.swarm.DockerServices;
 import com.codeabovelab.dm.cluman.model.*;
 import com.codeabovelab.dm.cluman.model.Node;
@@ -318,8 +318,18 @@ class VirtualDockerService implements DockerService {
         return image;
     }
 
+    @Override
     public ClusterConfig getClusterConfig() {
         return config;
     }
 
+    @Override
+    public SwarmConfig getSwarm() {
+        throw new UnsupportedOperationException("Virtual cluster does not support.");
+    }
+
+    @Override
+    public InitSwarmResult initSwarm(SwarmConfig config) {
+        throw new UnsupportedOperationException("Virtual cluster does not support.");
+    }
 }

@@ -19,10 +19,12 @@ package com.codeabovelab.dm.cluman.security;
 import com.codeabovelab.dm.cluman.cluster.docker.ClusterConfig;
 import com.codeabovelab.dm.cluman.cluster.docker.management.DockerService;
 import com.codeabovelab.dm.cluman.cluster.docker.management.argument.*;
+import com.codeabovelab.dm.cluman.cluster.docker.management.result.InitSwarmResult;
 import com.codeabovelab.dm.cluman.cluster.docker.management.result.ProcessEvent;
 import com.codeabovelab.dm.cluman.cluster.docker.management.result.RemoveImageResult;
 import com.codeabovelab.dm.cluman.cluster.docker.management.result.ServiceCallResult;
 import com.codeabovelab.dm.cluman.cluster.docker.model.*;
+import com.codeabovelab.dm.cluman.cluster.docker.model.swarm.SwarmConfig;
 import com.codeabovelab.dm.cluman.model.DockerContainer;
 import com.codeabovelab.dm.cluman.model.DockerServiceInfo;
 import com.codeabovelab.dm.cluman.model.ImageDescriptor;
@@ -261,5 +263,17 @@ public class DockerServiceSecurityWrapper implements DockerService {
     public RemoveImageResult removeImage(RemoveImageArg arg) {
         checkImageAccess(aclContextFactory.getContext(), arg.getImageId(), Action.DELETE);
         return service.removeImage(arg);
+    }
+
+    @Override
+    public SwarmConfig getSwarm() {
+        checkServiceAccess(Action.READ);
+        return service.getSwarm();
+    }
+
+    @Override
+    public InitSwarmResult initSwarm(SwarmConfig config) {
+        checkServiceAccess(Action.UPDATE);
+        return service.initSwarm(config);
     }
 }
