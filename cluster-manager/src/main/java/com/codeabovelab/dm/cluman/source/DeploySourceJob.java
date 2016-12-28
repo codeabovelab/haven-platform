@@ -24,9 +24,6 @@ import com.codeabovelab.dm.cluman.cluster.docker.management.result.CreateAndStar
 import com.codeabovelab.dm.cluman.cluster.docker.management.result.ResultCode;
 import com.codeabovelab.dm.cluman.cluster.docker.management.result.ServiceCallResult;
 import com.codeabovelab.dm.cluman.ds.SwarmUtils;
-import com.codeabovelab.dm.cluman.ds.clusters.NodesGroupConfig;
-import com.codeabovelab.dm.cluman.ds.clusters.RealCluster;
-import com.codeabovelab.dm.cluman.ds.clusters.SwarmNodesGroupConfig;
 import com.codeabovelab.dm.cluman.ds.container.ContainerManager;
 import com.codeabovelab.dm.cluman.ds.container.ContainerRegistration;
 import com.codeabovelab.dm.cluman.ds.container.ContainerStorage;
@@ -141,11 +138,10 @@ public class DeploySourceJob implements Runnable {
         String cluster = clusterSource.getName();
         jobContext.fire("Begin create cluster: {0}", cluster);
         NodesGroup ng = discoveryStorage.getOrCreateCluster(cluster, ccc -> {
-            RealCluster rc = ccc.getCluster();
-            SwarmNodesGroupConfig cc = rc.getConfig();
-            NodesGroupConfig.copy(clusterSource, cc);
-            cc.setConfig(clusterSource.getConfig());
-            jobContext.fire("Create cluster: {0}, with config: {1}", cluster, cc);
+            ccc.setBeforeClusterInit((c) -> {
+                jobContext.fire("Create cluster: {0}, with config: {1}", cluster, c.getConfig());
+            });
+            return ccc.createConfig(clusterSource.getType());
         });
         dc.setService(ng.getDocker());
         addNodes(dc, clusterSource);

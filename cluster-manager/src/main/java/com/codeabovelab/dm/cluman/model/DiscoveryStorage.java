@@ -19,6 +19,7 @@ package com.codeabovelab.dm.cluman.model;
 import com.codeabovelab.dm.cluman.cluster.filter.Filter;
 import com.codeabovelab.dm.cluman.ds.DockerServiceRegistry;
 import com.codeabovelab.dm.cluman.ds.clusters.AbstractNodesGroupConfig;
+import com.codeabovelab.dm.cluman.ds.clusters.ClusterConfigFactory;
 
 import java.util.Arrays;
 import java.util.Collection;
@@ -56,10 +57,17 @@ public interface DiscoveryStorage extends DockerServiceRegistry {
      * @return exists cluster or null
      */
     NodesGroup getCluster(String clusterId);
-    NodesGroup getOrCreateCluster(String clusterId, Consumer<ClusterCreationContext> onNewCluster);
 
     /**
-     * Register new group, or return already registered. Like {@link #getOrCreateCluster(String, Consumer)} but allow to
+     *  Return existed cluster or create new.
+     * @param clusterId name of cluster
+     * @param factory factory or null
+     * @return NodesGroup, never null
+     */
+    NodesGroup getOrCreateCluster(String clusterId, ClusterConfigFactory factory);
+
+    /**
+     * Register new group, or return already registered. Like {@link #getOrCreateCluster(String, ClusterConfigFactory)} but allow to
      * create node group and real clusters too.
      * @param config
      * @return registered node group.

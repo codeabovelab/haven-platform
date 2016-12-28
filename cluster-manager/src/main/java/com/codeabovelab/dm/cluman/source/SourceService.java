@@ -20,7 +20,7 @@ import com.codeabovelab.dm.cluman.cluster.docker.management.DockerService;
 import com.codeabovelab.dm.cluman.cluster.docker.management.argument.GetContainersArg;
 import com.codeabovelab.dm.cluman.cluster.docker.model.*;
 import com.codeabovelab.dm.cluman.ds.clusters.NodesGroupConfig;
-import com.codeabovelab.dm.cluman.ds.clusters.RealCluster;
+import com.codeabovelab.dm.cluman.ds.clusters.SwarmCluster;
 import com.codeabovelab.dm.cluman.ds.clusters.SwarmNodesGroupConfig;
 import com.codeabovelab.dm.cluman.job.JobInstance;
 import com.codeabovelab.dm.cluman.job.JobParameters;
@@ -50,15 +50,15 @@ public class SourceService {
      */
     public RootSource getClusterSource(String name) {
         NodesGroup cluster = discoveryStorage.getCluster(name);
-        if(cluster == null || !(cluster instanceof RealCluster)) {
+        if(cluster == null || !(cluster instanceof SwarmCluster)) {
             return null;
         }
         RootSource root = new RootSource();
-        root.getClusters().add(getClusterSourceInternal((RealCluster) cluster));
+        root.getClusters().add(getClusterSourceInternal((SwarmCluster) cluster));
         return root;
     }
 
-    private ClusterSource getClusterSourceInternal(RealCluster cluster) {
+    private ClusterSource getClusterSourceInternal(SwarmCluster cluster) {
         DockerService service = cluster.getDocker();
         ClusterSource clusterSrc = new ClusterSource();
         clusterSrc.setName(cluster.getName());
@@ -101,10 +101,10 @@ public class SourceService {
         List<NodesGroup> clusters = discoveryStorage.getClusters();
         List<ClusterSource> clustersSrc = root.getClusters();
         for(NodesGroup group: clusters) {
-            if(!(group instanceof RealCluster)) {
+            if(!(group instanceof SwarmCluster)) {
                 continue;
             }
-            ClusterSource cs = getClusterSourceInternal((RealCluster) group);
+            ClusterSource cs = getClusterSourceInternal((SwarmCluster) group);
             clustersSrc.add(cs);
         }
         clustersSrc.sort(null);

@@ -31,11 +31,12 @@ import org.springframework.util.Assert;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Set;
+import java.util.function.Consumer;
 
 /**
  */
 @ToString
-abstract class AbstractNodesGroup<T extends AbstractNodesGroup<T, C>, C extends AbstractNodesGroupConfig<C>> implements NodesGroup {
+public abstract class AbstractNodesGroup<C extends AbstractNodesGroupConfig<C>> implements NodesGroup {
 
     private final Class<C> configClazz;
     private final Set<Feature> features;
@@ -192,6 +193,17 @@ abstract class AbstractNodesGroup<T extends AbstractNodesGroup<T, C>, C extends 
         validateConfig(config);
         synchronized (lock) {
             this.config = (C) config.clone();
+        }
+        flush();
+    }
+
+    @Override
+    public void updateConfig(Consumer<AbstractNodesGroupConfig<?>> consumer) {
+        synchronized (lock) {
+            C clone = (C) config.clone();
+            consumer.accept(clone);
+            validateConfig(clone);
+            this.config = clone;
         }
         flush();
     }

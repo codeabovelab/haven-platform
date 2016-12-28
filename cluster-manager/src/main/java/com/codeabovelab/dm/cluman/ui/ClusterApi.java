@@ -23,8 +23,7 @@ import com.codeabovelab.dm.cluman.cluster.docker.management.DockerUtils;
 import com.codeabovelab.dm.cluman.cluster.docker.management.argument.GetContainersArg;
 import com.codeabovelab.dm.cluman.cluster.registry.RegistryRepository;
 import com.codeabovelab.dm.cluman.ds.DockerServiceRegistry;
-import com.codeabovelab.dm.cluman.ds.clusters.RealCluster;
-import com.codeabovelab.dm.cluman.ds.clusters.SwarmNodesGroupConfig;
+import com.codeabovelab.dm.cluman.ds.clusters.*;
 import com.codeabovelab.dm.cluman.ds.container.ContainerStorage;
 import com.codeabovelab.dm.cluman.ds.nodes.NodeStorage;
 import com.codeabovelab.dm.cluman.job.JobInstance;
@@ -291,15 +290,23 @@ public class ClusterApi {
         log.info("about to create cluster: [{}], {}", name, data);
         AtomicBoolean flag = new AtomicBoolean(false);// we can not use primitives in closure
         NodesGroup cluster = discoveryStorage.getOrCreateCluster(name, (ccc) -> {
+            String type = null;
+            if (data != null) {
+                type = data.getType();
+            }
+            if (type == null) {
+                type = NodesGroupConfig.TYPE_SWARM;
+            }
+            AbstractNodesGroupConfig<?> gc = ccc.createConfig(type);
             if(data != null) {
-                RealCluster rc = ccc.getCluster();
                 ClusterConfigImpl.Builder config = data.getConfig();
-                if(config != null) {
-                    rc.setClusterConfig(config);
+                if(gc instanceof DockerBasedClusterConfig && config != null) {
+                    ((DockerBasedClusterConfig)gc).setConfig(config.build());
                 }
-                data.toCluster(rc);
+                data.toCluster(gc);
             }
             flag.set(true);
+            return gc;
         });
         if(!flag.get()) {
             throw new HttpException(HttpStatus.NOT_MODIFIED, "Cluster '" + name + "' is already exists.");
@@ -314,14 +321,16 @@ public class ClusterApi {
         log.info("Begin update cluster: [{}], {}", name, data);
         NodesGroup cluster = discoveryStorage.getCluster(name);
         ExtendedAssert.notFound(cluster, "can not find cluster: " + name);
-        if (cluster instanceof RealCluster) {
-            RealCluster rc = (RealCluster) cluster;
-            ClusterConfigImpl.Builder ccib = ClusterConfigImpl.builder(rc.getClusterConfig());
-            ccib.merge(data.getConfig());
-            // update config
-            rc.setClusterConfig(ccib);
-        }
-        data.toCluster(cluster);
+        cluster.updateConfig((cc) -> {
+            if(cc instanceof DockerBasedClusterConfig) {
+                DockerBasedClusterConfig dbcc = (DockerBasedClusterConfig) cc;
+                ClusterConfigImpl.Builder ccib = ClusterConfigImpl.builder(dbcc.getConfig());
+                ccib.merge(data.getConfig());
+                // update config
+                dbcc.setConfig(ccib.build());
+            }
+            data.toCluster(cc);
+        });
         cluster.flush();
         log.info("Cluster updated: {}", cluster);
     }

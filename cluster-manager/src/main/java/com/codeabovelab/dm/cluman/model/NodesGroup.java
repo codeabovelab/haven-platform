@@ -22,6 +22,7 @@ import com.codeabovelab.dm.cluman.security.WithAcl;
 
 import java.util.Collection;
 import java.util.Set;
+import java.util.function.Consumer;
 
 /**
  * Interface represents node group
@@ -32,12 +33,17 @@ public interface NodesGroup extends Named, WithAcl {
 
     AbstractNodesGroupConfig<?> getConfig();
     void setConfig(AbstractNodesGroupConfig<?> config);
+    void updateConfig(Consumer<AbstractNodesGroupConfig<?>> consumer);
 
     enum Feature {
         /**
          * Feature mean than nodes in group is united by single 'swarm' service.
          */
         SWARM,
+        /**
+         * Mean that nodes in group which is united by docker in swarm mode.
+         */
+        SWARM_MODE,
         /**
          * Disallow node addition, usually applied on clusters which use filter for node list.
          */

@@ -17,7 +17,7 @@
 package com.codeabovelab.dm.cluman.ui.model;
 
 import com.codeabovelab.dm.cluman.cluster.docker.ClusterConfigImpl;
-import com.codeabovelab.dm.cluman.ds.clusters.RealCluster;
+import com.codeabovelab.dm.cluman.ds.clusters.NodesGroupConfig;
 import com.codeabovelab.dm.cluman.model.NodesGroup;
 import com.codeabovelab.dm.common.utils.Keeper;
 import com.codeabovelab.dm.common.utils.Sugar;
@@ -38,10 +38,11 @@ public class UiClusterEditablePart {
     @ApiModelProperty("SpEL string which applied to images. It evaluated over object with 'tag(name)' and 'label(key, val)' functions,\n" +
       "also it has 'r(regexp)' function which can combined with other, like: <code>'spel:tag(r(\".*_dev\")) or label(\"dev\", \"true\")'</code>.")
     private final Keeper<String> filter = new Keeper<>();
+    private String type;
 
     private ClusterConfigImpl.Builder config;
 
-    public void toCluster(NodesGroup ng) {
+    public void toCluster(NodesGroupConfig ng) {
         Sugar.setIfChanged(ng::setDescription, getDescription());
         Sugar.setIfChanged(ng::setTitle, getTitle());
         Sugar.setIfChanged(ng::setImageFilter, getFilter());

@@ -135,7 +135,7 @@ public class ClusterConfigFetcherTest {
 
     @Before
     public void before() {
-        discoveryStorage.getOrCreateCluster(MOCK, (c) -> {});
+        discoveryStorage.getOrCreateCluster(MOCK, null);
     }
 
     @Test

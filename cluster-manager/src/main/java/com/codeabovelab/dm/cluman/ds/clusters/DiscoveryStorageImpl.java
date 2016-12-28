@@ -26,7 +26,6 @@ import com.codeabovelab.dm.cluman.reconfig.ReConfigurable;
 import com.codeabovelab.dm.cluman.security.*;
 import com.codeabovelab.dm.cluman.validate.ExtendedAssert;
 import com.codeabovelab.dm.common.kv.KeyValueStorage;
-import com.codeabovelab.dm.common.kv.KvStorageEvent;
 import com.codeabovelab.dm.common.kv.mapping.KvMap;
 import com.codeabovelab.dm.common.kv.mapping.KvMapAdapter;
 import com.codeabovelab.dm.common.kv.mapping.KvMapLocalEvent;
@@ -167,15 +166,15 @@ public class DiscoveryStorageImpl implements DiscoveryStorage {
     /**
      * get or create cluster. Consumer will be invoked before cluster process start and allow modification of swarm parameters
      * @param clusterId
-     * @param consumer consumer or null
+     * @param factory consumer or null
      * @return
      */
     @Override
-    public NodesGroup getOrCreateCluster(String clusterId, Consumer<ClusterCreationContext> consumer) {
+    public NodesGroup getOrCreateCluster(String clusterId, ClusterConfigFactory factory) {
         ExtendedAssert.matchAz09Hyp(clusterId, "clusterId");
         NodesGroup ng = clusters.computeIfAbsent(clusterId, (cid) -> {
             checkThatCanCreate();
-            return RealCluster.factory(this, null, consumer).apply(cid);
+            return clusterFactory().configFactory(factory).build(cid);
         });
         // we place it after creation, because check it for not created cluster is not good
         checkThatCanRead(ng);
@@ -217,11 +216,15 @@ public class DiscoveryStorageImpl implements DiscoveryStorage {
               .feature(NodesGroup.Feature.FORBID_NODE_ADDITION)
               .build();
         } else if (config instanceof SwarmNodesGroupConfig) {
-            cluster = RealCluster.factory(this, (SwarmNodesGroupConfig) config, null).apply(cid);
+            cluster = clusterFactory().config((SwarmNodesGroupConfig) config).build(cid);
         } else {
             throw new IllegalArgumentException("Unsupported config: " + config);
         }
         return cluster;
+    }
+
+    private ClusterFactory clusterFactory() {
+        return new ClusterFactory(this);
     }
 
     @Override
@@ -263,7 +266,7 @@ public class DiscoveryStorageImpl implements DiscoveryStorage {
     public void deleteCluster(String clusterId) {
         NodesGroup cluster = clusters.get(clusterId);
         ExtendedAssert.notFound(cluster, "Cluster: " + clusterId + " is not found.");
-        Assert.isTrue(cluster instanceof RealCluster, "Can not delete non real cluster: " + clusterId);
+        Assert.isTrue(cluster instanceof SwarmCluster, "Can not delete non real cluster: " + clusterId);
         deleteGroup(clusterId);
     }
 
@@ -277,7 +280,7 @@ public class DiscoveryStorageImpl implements DiscoveryStorage {
 
         NodesGroup cluster = clusters.get(clusterId);
         Assert.notNull(cluster, "GroupId: " + clusterId + " is not found.");
-        Assert.isTrue(!(cluster instanceof RealCluster), "Can not delete a real cluster: " + clusterId);
+        Assert.isTrue(!(cluster instanceof SwarmCluster), "Can not delete a real cluster: " + clusterId);
         Assert.isTrue(!SYSTEM_GROUPS.contains(clusterId), "Can't delete system group");
         deleteGroup(clusterId);
     }

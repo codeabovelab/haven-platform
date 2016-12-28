@@ -14,20 +14,10 @@
  * limitations under the License.
  */
 
-package com.codeabovelab.dm.cluman.model;
-
-import com.codeabovelab.dm.cluman.ds.clusters.RealCluster;
+package com.codeabovelab.dm.cluman.ds.clusters;
 
 /**
  */
-public class ClusterCreationContext {
-    private final RealCluster cluster;
-
-    public ClusterCreationContext(RealCluster cluster) {
-        this.cluster = cluster;
-    }
-
-    public RealCluster getCluster() {
-        return cluster;
-    }
+public interface ClusterConfigFactory {
+    AbstractNodesGroupConfig<?> create(ClusterCreationContext ccc);
 }

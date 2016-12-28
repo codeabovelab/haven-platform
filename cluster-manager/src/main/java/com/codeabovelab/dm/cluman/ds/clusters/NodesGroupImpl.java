@@ -37,7 +37,7 @@ import java.util.Set;
  * Node group managed 'manually'. It allow to view multiple nodes as single entity.
  */
 @ToString(callSuper = true)
-class NodesGroupImpl extends AbstractNodesGroup<NodesGroupImpl, DefaultNodesGroupConfig> {
+class NodesGroupImpl extends AbstractNodesGroup<DefaultNodesGroupConfig> {
 
     private final DockerServices dockerServices;
     private final VirtualDockerService service;

@@ -22,32 +22,25 @@ import com.codeabovelab.dm.cluman.cluster.docker.management.DockerService;
 import com.codeabovelab.dm.cluman.cluster.docker.management.argument.GetContainersArg;
 import com.codeabovelab.dm.cluman.ds.nodes.NodeRegistration;
 import com.codeabovelab.dm.cluman.ds.swarm.DockerServices;
-import com.codeabovelab.dm.cluman.ds.swarm.Strategies;
 import com.codeabovelab.dm.cluman.model.*;
 import lombok.Builder;
 import lombok.ToString;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.*;
-import java.util.function.Consumer;
-import java.util.function.Function;
 
 /**
  * A kind of nodegroup which is managed by 'swarm'
  */
 @Slf4j
 @ToString(callSuper = true)
-public final class RealCluster extends AbstractNodesGroup<RealCluster, SwarmNodesGroupConfig> {
+public final class SwarmCluster extends AbstractNodesGroup<SwarmNodesGroupConfig> {
 
     private DockerService docker;
 
     @Builder
-    RealCluster(DiscoveryStorageImpl storage, SwarmNodesGroupConfig config) {
+    SwarmCluster(DiscoveryStorageImpl storage, SwarmNodesGroupConfig config) {
         super(config, storage, Collections.singleton(Feature.SWARM));
-    }
-
-    public static ClusterConfigImpl getDefaultConfig(String clusterId) {
-        return ClusterConfigImpl.builder().cluster(clusterId).build();
     }
 
 
@@ -81,16 +74,7 @@ public final class RealCluster extends AbstractNodesGroup<RealCluster, SwarmNode
         return docker;
     }
 
-    public Strategies getStrategy() {
-        return getClusterConfig().getStrategy();
-    }
-
     protected void init() {
-        try {
-            //TODO remove after test getMapper().loadOrCreate();
-        } catch (Exception e) {
-            log.error("Can not load cluster from KV.", e);
-        }
         DockerServices dses = this.getDiscoveryStorage().getDockerServices();
         this.docker = dses.getOrCreateCluster(getClusterConfig(), (dsb) -> {
             dsb.setInfoInterceptor(this::dockerInfoModifier);
@@ -136,27 +120,6 @@ public final class RealCluster extends AbstractNodesGroup<RealCluster, SwarmNode
         } catch (Exception e) {
             log.warn("Can not list containers on {}, due to error {}", getName(), e.toString());
         }
-    }
-
-    static Function<String, NodesGroup> factory(DiscoveryStorageImpl discoveryStorage,
-                                                SwarmNodesGroupConfig config,
-                                                Consumer<ClusterCreationContext> consumer) {
-        return (clusterId) -> {
-            SwarmNodesGroupConfig localConfig = config;
-            if (localConfig == null) {
-                localConfig = new SwarmNodesGroupConfig();
-                localConfig.setName(clusterId);
-                localConfig.setConfig(getDefaultConfig(clusterId));
-            }
-            RealCluster cluster = RealCluster.builder().storage(discoveryStorage).config(localConfig).build();
-
-            if (consumer != null) {
-                ClusterCreationContext ccc = new ClusterCreationContext(cluster);
-                consumer.accept(ccc);
-            }
-            cluster.init();
-            return cluster;
-        };
     }
 
     public void setClusterConfig(ClusterConfig cc) {

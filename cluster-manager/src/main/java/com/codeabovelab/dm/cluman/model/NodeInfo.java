@@ -16,6 +16,8 @@
 
 package com.codeabovelab.dm.cluman.model;
 
+import com.codeabovelab.dm.cluman.ds.clusters.SwarmCluster;
+
 /**
  */
 public interface NodeInfo extends Node, Labels, WithCluster {
@@ -27,7 +29,7 @@ public interface NodeInfo extends Node, Labels, WithCluster {
     boolean isOn();
 
     /**
-     * {@link com.codeabovelab.dm.cluman.ds.clusters.RealCluster Real cluster} which own this node. <p/>
+     * {@link SwarmCluster Real cluster} which own this node. <p/>
      * Note that it may be null, also, over time it may not reflect actual state. So this value
      * is actual only when this object was created.
      * @return name of real cluster or null.

@@ -22,10 +22,11 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 
 /**
+ * Do not confuse with {@link SwarmNodesGroupConfig} because it may contain part of {@link com.codeabovelab.dm.cluman.cluster.docker.model.swarm.SwarmConfig}.
  */
-@EqualsAndHashCode(callSuper = true)
 @Data
-public class SwarmNodesGroupConfig extends AbstractNodesGroupConfig<SwarmNodesGroupConfig> implements DockerBasedClusterConfig {
+@EqualsAndHashCode(callSuper = true)
+public class DockerClusterConfig extends AbstractNodesGroupConfig<DockerClusterConfig> implements DockerBasedClusterConfig {
     @KvMapping
     private ClusterConfigImpl config;
 }
