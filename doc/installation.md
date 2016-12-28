@@ -79,7 +79,8 @@ a DOCKER_OPTS="--cluster-store=etcd://$MASTER_IP:2379/dn --cluster-advertise=$SE
 **Step 4:** Install the Haven container by executing the following command:
  
 ```sh
- docker run -d --name=cluman -p 8761:8761 --restart=always -e "dm_kv_etcd_urls=http://$MASTER_IP:2379" codeabovelab/cluster-manager
+ docker run -d --name=cluman -p 8761:8761 --restart=always \
+         -e "dm_kv_etcd_urls=http://$MASTER_IP:2379" codeabovelab/cluster-manager
 
 ```
 For storing data use:

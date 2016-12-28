@@ -16,9 +16,13 @@
 
 package com.codeabovelab.dm.cluman.batch;
 
-import com.codeabovelab.dm.cluman.utils.ContainerUtils;
+import com.codeabovelab.dm.cluman.cluster.registry.RegistryRepository;
+import com.codeabovelab.dm.cluman.cluster.registry.RegistryService;
 import com.codeabovelab.dm.cluman.job.JobComponent;
 import com.codeabovelab.dm.cluman.job.JobParam;
+import com.codeabovelab.dm.cluman.model.ImageDescriptor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 
 import static com.codeabovelab.dm.cluman.batch.LoadContainersOfImageTasklet.JP_IMAGE;
 
@@ -26,22 +30,41 @@ import static com.codeabovelab.dm.cluman.batch.LoadContainersOfImageTasklet.JP_I
  * Test that container version is not same as target version and match source version.
  */
 @JobComponent
+@Slf4j
 public class ContainerNeedUpdatedPredicate implements ContainerPredicate {
 
     @JobParam(value = JP_IMAGE, required = true)
     private ImagesForUpdate images;
 
+    @Autowired
+    private RegistryRepository registryRepository;
+
     @Override
     public boolean test(ProcessedContainer processedContainer) {
         String image = processedContainer.getImage();
-        ImagesForUpdate.Image img = images.findImage(processedContainer.getImage(), processedContainer.getImageId());
-        if(img == null) {
-            // when happens is a bug
+        ImagesForUpdate.Image img = images.findImage(image, processedContainer.getImageId());
+        if (img == null) {
             throw new IllegalStateException(processedContainer + " does not has an appropriate record in images.");
         }
         return img.matchFrom(image, processedContainer.getImageId()) &&
-          // when allTo == true, then matchTo - return true anyway, an we need to ignore it and
-          // filter container in other place
-          (img.isAllTo() || !img.matchTo(image, processedContainer.getImageId()));
+                (!img.matchTo(image, processedContainer.getImageId()) || checkImageIdsDifferent(image, processedContainer.getImageId()));
+        //TODO:
+        // additionally check isAll(to) as checkImageIdsDifferent(imageName + latest, processedContainer.getImageId()))
+
+
+
+    }
+
+    private boolean checkImageIdsDifferent(String image, String imageId) {
+        // pulling latest imageInformation
+        RegistryService registryByImageName = registryRepository.getRegistryByImageName(image);
+        ImageDescriptor descriptor = registryByImageName.getImage(image);
+        if (descriptor == null) {
+//            throw new IllegalArgumentException("ImageDescriptor was not found for " + image);
+            log.warn("ImageDescriptor was not found for " + image);
+            return false;
+        }
+        log.debug("ImageDescriptor for {}: {}, container imageId: {}", image, descriptor, imageId);
+        return !imageId.equals(descriptor.getId());
     }
 }

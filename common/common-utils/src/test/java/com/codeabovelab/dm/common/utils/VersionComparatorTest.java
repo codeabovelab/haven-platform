@@ -37,11 +37,15 @@ public class VersionComparatorTest {
         compare(-1,  "1.9_ga", "1.19_ga");
         compare(-1,    "1.8a",    "1.10");
         compare(-1,    "1.8a",     "1.8");
+        compare(-1,"0.2-dev.1-sha.23f4399.dirty", "0.12-dev.10-sha.9984399");
     }
 
     @Test
     public void sort() {
         String[] src = new String[]{
+          "0.12-dev.2-sha.9984399",
+          "0.2-dev.1-sha.23f4399.dirty",
+          "0.12-dev.10-sha.9984399",
           "1",
           "1-alpine",
           "0.10",
@@ -49,21 +53,15 @@ public class VersionComparatorTest {
           "1.10-alpine",
           "1.8.1",
           "1.8.1-alpine",
-          "1.10.0-alpine",
-          "1.10.1",
-          "1.10.1-alpine",
-          "1.10.2",
-          "1.10.2-alpine",
           "1.8",
-          "1.11",
-          "1.11-alpine",
-          "1.11.0-alpine",
-          "1.11.1-alpine",
           "1.8-alpine",
           "latest"
         };
         String[] exp = new String[]{
+          "0.2-dev.1-sha.23f4399.dirty",
           "0.10",
+          "0.12-dev.2-sha.9984399",
+          "0.12-dev.10-sha.9984399",
           "1-alpine",
           "1",
           "1.8-alpine",
@@ -72,15 +70,6 @@ public class VersionComparatorTest {
           "1.8.1",
           "1.10-alpine",
           "1.10",
-          "1.10.0-alpine",
-          "1.10.1-alpine",
-          "1.10.1",
-          "1.10.2-alpine",
-          "1.10.2",
-          "1.11-alpine",
-          "1.11",
-          "1.11.0-alpine",
-          "1.11.1-alpine",
           "latest"
         };
         VersionComparator vc = VersionComparator.builder()

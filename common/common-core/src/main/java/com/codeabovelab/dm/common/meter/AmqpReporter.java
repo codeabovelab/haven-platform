@@ -221,7 +221,7 @@ public class AmqpReporter extends ScheduledReporter {
                        SortedMap<String, Meter> meters,
                        SortedMap<String, Timer> timers) {
         RabbitTemplate rabbitTemplate = this.templateFuture.get();
-        AmqpMetricReport report = new AmqpMetricReport();
+        MetricReport report = new MetricReport();
         Map<String, Object> data = new HashMap<>();
         report.setMetrics(data);
         // we note that in MetricRegistry all data persisted into single map, and therefore it's keys unique per registry

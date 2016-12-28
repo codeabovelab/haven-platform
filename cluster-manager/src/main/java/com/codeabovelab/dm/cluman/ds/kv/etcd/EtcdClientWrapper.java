@@ -17,7 +17,10 @@
 package com.codeabovelab.dm.cluman.ds.kv.etcd;
 
 import com.codeabovelab.dm.common.kv.*;
-import com.codeabovelab.dm.common.mb.*;
+import com.codeabovelab.dm.common.mb.ConditionalMessageBusWrapper;
+import com.codeabovelab.dm.common.mb.ConditionalSubscriptions;
+import com.codeabovelab.dm.common.mb.MessageBus;
+import com.codeabovelab.dm.common.mb.MessageBusImpl;
 import com.codeabovelab.dm.common.utils.Throwables;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import lombok.extern.slf4j.Slf4j;
@@ -26,6 +29,7 @@ import mousio.etcd4j.promises.EtcdResponsePromise;
 import mousio.etcd4j.requests.EtcdKeyDeleteRequest;
 import mousio.etcd4j.requests.EtcdKeyGetRequest;
 import mousio.etcd4j.requests.EtcdKeyPutRequest;
+import mousio.etcd4j.requests.EtcdKeyRequest;
 import mousio.etcd4j.responses.EtcdException;
 import mousio.etcd4j.responses.EtcdKeysResponse;
 import org.slf4j.Logger;
@@ -161,8 +165,7 @@ public class EtcdClientWrapper implements KeyValueStorage {
         EtcdKeyPutRequest req = etcd.put(key, value);
         fillPutReq(ops, req);
         try {
-            EtcdResponsePromise<EtcdKeysResponse> send = req.send();
-            EtcdKeysResponse resp = send.get();
+            EtcdKeysResponse resp = executeRequest(req);
             log.debug("set value {} for key {}, ops {}", resp.node.value, resp.node.key, ops);
             return toNode(resp);
         } catch (Exception e) {
@@ -177,13 +180,19 @@ public class EtcdClientWrapper implements KeyValueStorage {
         EtcdKeyDeleteRequest req = etcd.delete(key);
         fillDeleteReq(ops, req);
         try {
-            EtcdResponsePromise<EtcdKeysResponse> send = req.send();
-            EtcdKeysResponse resp = send.get();
+            EtcdKeysResponse resp = executeRequest(req);
+
             log.debug("deleted key {}", resp.node.key);
             return toNode(resp);
         } catch (Exception e) {
             throw Throwables.asRuntime(e);
         }
+    }
+
+    private EtcdKeysResponse executeRequest(EtcdKeyRequest req) throws Exception {
+        EtcdResponsePromise<EtcdKeysResponse> send = req.send();
+        EtcdKeysResponse resp = send.get();
+        return resp;
     }
 
     private void fillPutReq(WriteOptions ops, EtcdKeyPutRequest req) {
@@ -222,8 +231,7 @@ public class EtcdClientWrapper implements KeyValueStorage {
         EtcdKeyPutRequest req = etcd.putDir(key);
         fillPutReq(ops, req);
         try {
-            EtcdResponsePromise<EtcdKeysResponse> send = req.send();
-            EtcdKeysResponse resp = send.get();
+            EtcdKeysResponse resp = executeRequest(req);
             log.debug("make dir at key {}", resp.node.key);
             return toNode(resp);
         } catch (EtcdException e) {
@@ -250,8 +258,7 @@ public class EtcdClientWrapper implements KeyValueStorage {
         }
         fillDeleteReq(ops, req);
         try {
-            EtcdResponsePromise<EtcdKeysResponse> send = req.send();
-            EtcdKeysResponse resp = send.get();
+            EtcdKeysResponse resp = executeRequest(req);
             log.debug("deleted key {}", resp.node.key);
             return toNode(resp);
         } catch (EtcdException e) {

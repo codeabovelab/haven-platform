@@ -16,7 +16,6 @@
 
 package com.codeabovelab.dm.cluman.batch;
 
-import com.codeabovelab.dm.cluman.utils.ContainerUtils;
 import com.codeabovelab.dm.cluman.cluster.filter.Filter;
 import com.codeabovelab.dm.cluman.cluster.registry.RegistryRepository;
 import com.codeabovelab.dm.cluman.cluster.registry.RegistryService;
@@ -24,8 +23,9 @@ import com.codeabovelab.dm.cluman.cluster.registry.data.Tags;
 import com.codeabovelab.dm.cluman.job.JobBean;
 import com.codeabovelab.dm.cluman.job.JobContext;
 import com.codeabovelab.dm.cluman.job.JobParam;
-import com.codeabovelab.dm.cluman.model.ImageDescriptor;
 import com.codeabovelab.dm.cluman.model.ContainerSource;
+import com.codeabovelab.dm.cluman.model.ImageDescriptor;
+import com.codeabovelab.dm.cluman.utils.ContainerUtils;
 import com.codeabovelab.dm.common.utils.VersionComparator;
 import lombok.Data;
 import lombok.ToString;
@@ -73,6 +73,9 @@ public class UpdateToTagOrCreateScheduledJob implements Runnable {
     @JobParam(value = JP_CLUSTER, required = true)
     private String cluster;
 
+    @JobParam(value = "createIfNotExist", required = true)
+    private boolean createIfNotExist;
+
     @Autowired
     private JobContext context;
 
@@ -95,7 +98,7 @@ public class UpdateToTagOrCreateScheduledJob implements Runnable {
                 ProcessedContainer build = ProcessedContainer.builder().image(image).cluster(cluster).src(new ContainerSource()).build();
                 containerCreator.execute(build);
                 return;
-            } else {
+            } else if (createIfNotExist) {
                 strategy.run(this::filter, this::update);
             }
         }

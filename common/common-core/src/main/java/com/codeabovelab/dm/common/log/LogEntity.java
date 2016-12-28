@@ -14,24 +14,28 @@
  * limitations under the License.
  */
 
-package com.codeabovelab.dm.common.meter;
+package com.codeabovelab.dm.common.log;
 
-import com.codeabovelab.dm.common.log.BasicLogRecord;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
-
-import java.util.Map;
+import lombok.ToString;
 
 /**
- * object which contain metric report data with additional fields
+ * Entity for serializing to logs to JSON
+ *
  */
-@EqualsAndHashCode(callSuper = true)
 @Data
-class AmqpMetricReport extends BasicLogRecord {
-    public static final String TYPE = "metric";
-    private Map<String, Object> metrics;
+@ToString(callSuper = true)
+@EqualsAndHashCode(callSuper = true)
+class LogEntity extends UUIDLogRecord {
+    public static final String TYPE = "log";
+    private String user;
+    private String loggerName;
+    private String level;
+    private String threadName;
+    private String throwable;
 
-    public AmqpMetricReport() {
+    public LogEntity() {
         setType(TYPE);
     }
 
