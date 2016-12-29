@@ -20,11 +20,12 @@ import com.codeabovelab.dm.common.kv.KeyValueStorage;
 import com.codeabovelab.dm.common.kv.KvNode;
 import com.codeabovelab.dm.common.kv.KvUtils;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
+import com.fasterxml.jackson.annotation.JsonTypeId;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.annotation.AnnotationUtils;
-import org.springframework.util.CollectionUtils;
 
+import java.lang.annotation.Annotation;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
@@ -54,13 +55,12 @@ class NodeMapping<T> extends AbstractMapping<T> {
     private Collection<KvProperty> getProps(T object) {
         Class<?> clazz = object.getClass();
         Map<String, KvProperty> p = this.props.get(clazz);
-        if (p == null || CollectionUtils.isEmpty(this.props.get(clazz).values())) {
-            Map<String, KvProperty> map = this.mapper.loadProps(clazz, t ->  t);
-            this.props.put(clazz, map);
-            return map.values();
-        } else {
-            return this.props.get(clazz).values();
+        if (p != null) {
+            return p.values();
         }
+        Map<String, KvProperty> map = this.mapper.loadProps(clazz, t ->  t);
+        this.props.put(clazz, map);
+        return map.values();
     }
 
     @Override
@@ -74,7 +74,7 @@ class NodeMapping<T> extends AbstractMapping<T> {
         }
         //store type of object
         KeyValueStorage storage = getStorage();
-        storage.set(KvUtils.join(path, PROP_TYPE), object.getClass().getName());
+        saveType(path, object, storage);
         //store properties
         for(KvProperty property: props) {
             String strval = property.get(object);
@@ -96,15 +96,17 @@ class NodeMapping<T> extends AbstractMapping<T> {
         KeyValueStorage storage = getStorage();
         for(KvProperty property: getProps(object)) {
             String proppath = KvUtils.join(path, property.getKey());
-            String str = null;
+            KvNode node;
             try {
-                KvNode node = storage.get(proppath);
-                if(node != null) {
-                    str = node.getValue();
+                node = storage.get(proppath);
+                if(node == null) {
+                    // when node is absent we must not invoke setter
+                    continue;
                 }
             } catch (Exception e) {
                 throw new RuntimeException("Error at path: " + proppath, e);
             }
+            String str = node.getValue();
             property.set(object, str);
         }
     }
@@ -119,13 +121,15 @@ class NodeMapping<T> extends AbstractMapping<T> {
 
 
     private <S extends T> Class<S> resolveType(String path, Class<S> actualType) {
-        Class<S> savedType = loadType(path);
-        if(savedType != null) {
-            actualType = savedType;
-        }
+        // we prefer json type mapping, and try load custom type only when no json mapping
         Class<S> jsonType = resolveJsonType(path, actualType);
         if(jsonType != null) {
             actualType = jsonType;
+        } else {
+            Class<S> savedType = loadType(path);
+            if(savedType != null) {
+                actualType = savedType;
+            }
         }
         return actualType;
     }
@@ -156,14 +160,14 @@ class NodeMapping<T> extends AbstractMapping<T> {
         if (typeInfo == null) {
             return null;
         }
-        String property = typeInfo.property();
+        String property = getPropertyName(typeInfo);
         String proppath = KvUtils.join(path, property);
         try {
             KvNode node = getStorage().get(proppath);
             if(node == null) {
                 return null;
             }
-            String str = fromJsonString(node.getValue());
+            String str = node.getValue();
             JsonSubTypes subTypes = AnnotationUtils.findAnnotation(type, JsonSubTypes.class);
             for (JsonSubTypes.Type t : subTypes.value()) {
                 if (t.name().equals(str)) {
@@ -176,16 +180,60 @@ class NodeMapping<T> extends AbstractMapping<T> {
         return null;
     }
 
-    private String fromJsonString(String value) {
-        if(value == null) {
-            return null;
+    private void saveType(String path, T object, KeyValueStorage storage) {
+        Class<?> clazz = object.getClass();
+        String name = PROP_TYPE;
+        String value = clazz.getName();
+        JsonTypeInfo typeInfo = AnnotationUtils.findAnnotation(clazz, JsonTypeInfo.class);
+        if (typeInfo != null && !clazz.equals(typeInfo.defaultImpl())) {
+            JsonTypeInfo.As include = typeInfo.include();
+            if(include != JsonTypeInfo.As.PROPERTY &&
+               include != JsonTypeInfo.As.EXTERNAL_PROPERTY /* it for capability with jackson oddities */) {
+                throw new IllegalArgumentException("On " + clazz + " mapping support only " + JsonTypeInfo.As.PROPERTY + " but find: " + include);
+            }
+            name = getPropertyName(typeInfo);
+            value = getJsonType(clazz, typeInfo);
         }
-        int end = value.length() - 1;
-        // note that it method used only for type names, it does not support escape sequences and etc.
-        if(value.charAt(0) != '"' || value.charAt(end) != '"') {
-            throw new IllegalArgumentException("Invalid json string: " + value);
+        storage.set(KvUtils.join(path, name), value);
+    }
+
+    private String getJsonType(Class<?> clazz, JsonTypeInfo typeInfo) {
+        String value;
+        JsonTypeInfo.Id use = typeInfo.use();
+        switch (use) {
+            case CLASS:
+                value = clazz.getName();
+                break;
+            case NAME: {
+                JsonSubTypes.Type needed = null;
+                JsonSubTypes subTypes = AnnotationUtils.findAnnotation(clazz, JsonSubTypes.class);
+                if(subTypes != null) {
+                    for(JsonSubTypes.Type type: subTypes.value()) {
+                        if(type.value().equals(clazz)) {
+                            needed = type;
+                            break;
+                        }
+                    }
+                }
+                if(needed == null) {
+                    throw new IllegalArgumentException("On " + clazz + " can not find 'JsonSubTypes' record for current type.");
+                }
+                value = needed.name();
+                break;
+            }
+            default:
+                throw new IllegalArgumentException("On " + clazz + " find unexpected 'JsonTypeInfo.use' value: " + use);
         }
-        return value.substring(1, end);
+        return value;
+    }
+
+    private String getPropertyName(JsonTypeInfo typeInfo) {
+        String property = typeInfo.property();
+        if (property.isEmpty()) {
+            JsonTypeInfo.Id use = typeInfo.use();
+            property = use.getDefaultPropertyName();
+        }
+        return property;
     }
 
 }
