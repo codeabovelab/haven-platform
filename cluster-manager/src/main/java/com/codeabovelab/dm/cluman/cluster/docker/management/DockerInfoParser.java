@@ -200,7 +200,7 @@ class DockerInfoParser {
             parseStatusList(statusList);
         }
         InfoSwarm swarm = info.getSwarm();
-        if(swarm != null) {
+        if(swarm != null && swarm.getCluster() != null) {
             result.setSwarm(convertSwarm(swarm));
         }
         return result;
