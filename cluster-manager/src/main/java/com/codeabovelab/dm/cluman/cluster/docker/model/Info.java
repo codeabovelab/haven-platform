@@ -16,33 +16,32 @@
 
 package com.codeabovelab.dm.cluman.cluster.docker.model;
 
-import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import lombok.AllArgsConstructor;
 import lombok.Data;
 
 import java.util.List;
 
-@AllArgsConstructor(onConstructor = @__(@JsonCreator))
 @Data
 public class Info {
 
     @JsonProperty("Id")
-    private final String id;
+    private String id;
     @JsonProperty("Containers")
-    private final Integer containers;
+    private Integer containers;
     @JsonProperty("Images")
-    private final Integer images;
+    private Integer images;
     @JsonProperty("NCPU")
-    private final Integer ncpu;
+    private Integer ncpu;
     @JsonProperty("MemTotal")
-    private final Long memory;
+    private Long memory;
     @JsonProperty("Name")
-    private final String name;
+    private String name;
 
     @JsonProperty("DriverStatus")
-    private final List<List<String>> driverStatus;
+    private List<List<String>> driverStatus;
     @JsonProperty("SystemStatus")
-    private final List<List<String>> systemStatus;
+    private List<List<String>> systemStatus;
 
+    @JsonProperty("Swarm")
+    private InfoSwarm swarm;
 }

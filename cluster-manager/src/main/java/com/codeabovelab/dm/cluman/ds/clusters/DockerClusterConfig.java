@@ -17,7 +17,7 @@
 package com.codeabovelab.dm.cluman.ds.clusters;
 
 import com.codeabovelab.dm.cluman.cluster.docker.ClusterConfigImpl;
-import com.codeabovelab.dm.cluman.cluster.docker.model.swarm.SwarmConfig;
+import com.codeabovelab.dm.cluman.cluster.docker.model.swarm.SwarmSpec;
 import com.codeabovelab.dm.common.kv.mapping.KvMapping;
 import com.codeabovelab.dm.common.utils.Cloneables;
 import lombok.Data;
@@ -26,7 +26,7 @@ import lombok.EqualsAndHashCode;
 import java.util.List;
 
 /**
- * Do not confuse with {@link SwarmNodesGroupConfig} because it may contain part of {@link SwarmConfig}.
+ * Do not confuse with {@link SwarmNodesGroupConfig} because it may contain part of {@link SwarmSpec}.
  */
 @Data
 @EqualsAndHashCode(callSuper = true)

@@ -17,23 +17,24 @@
 package com.codeabovelab.dm.cluman.cluster.docker.management;
 
 import com.codeabovelab.dm.cluman.cluster.docker.model.Info;
+import com.codeabovelab.dm.cluman.cluster.docker.model.InfoSwarm;
 import com.codeabovelab.dm.cluman.model.DockerServiceInfo;
 import com.codeabovelab.dm.cluman.model.NodeMetrics;
 import com.codeabovelab.dm.cluman.model.NodeInfoImpl;
+import com.codeabovelab.dm.cluman.model.SwarmInfo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.util.CollectionUtils;
 
-import java.time.LocalDateTime;
 import java.util.List;
 
 import static com.codeabovelab.dm.cluman.ui.UiUtils.convertToGB;
 
 /**
  */
-class SwarmInfoParser {
+class DockerInfoParser {
 
-    private static final Logger LOG = LoggerFactory.getLogger(SwarmInfoParser.class);
+    private static final Logger LOG = LoggerFactory.getLogger(DockerInfoParser.class);
 
     //an part of ugly swarm info DriverStatus entries
     private static final char NODE_ATTR_PREFIX = '└';
@@ -50,7 +51,7 @@ class SwarmInfoParser {
     private NodeInfoImpl.Builder nib = null;
     private NodeMetrics.Builder nhb = null;
 
-    private SwarmInfoParser(Info info) {
+    private DockerInfoParser(Info info) {
         this.info = info;
         this.result = DockerServiceInfo.builder();
     }
@@ -62,7 +63,7 @@ class SwarmInfoParser {
      * @return
      */
     static DockerServiceInfo.Builder parse(Info info) {
-        SwarmInfoParser parser = new SwarmInfoParser(info);
+        DockerInfoParser parser = new DockerInfoParser(info);
         return parser.parse();
     }
 
@@ -198,6 +199,19 @@ class SwarmInfoParser {
         if (statusList != null) {
             parseStatusList(statusList);
         }
+        InfoSwarm swarm = info.getSwarm();
+        if(swarm != null) {
+            result.setSwarm(convertSwarm(swarm));
+        }
         return result;
+    }
+
+    private SwarmInfo convertSwarm(InfoSwarm src) {
+        SwarmInfo.Builder sib = SwarmInfo.builder();
+        sib.setClusterId(src.getCluster().getId());
+        // is not sure that it mean 'is manager'
+        sib.setManager(src.isControlAvailable());
+        sib.setNodeId(src.getNodeId());
+        return sib.build();
     }
 }

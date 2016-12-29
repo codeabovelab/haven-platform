@@ -20,16 +20,24 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Data;
 
 /**
+ * <pre>
  "Spec": {
      "Orchestration": {},
      "Raft": {},
      "Dispatcher": {},
      "CAConfig": {}
     }
+ * </pre>
  Also can be used for update command
  */
 @Data
-public class SwarmConfig {
+public class SwarmSpec {
+
+    /**
+     * Now undocumented, and we not known what it mean. Usual value "default".
+     */
+    @JsonProperty("Name")
+    private String name;
 
     @JsonProperty("Orchestration")
     private OrchestrationConfig orchestration;

@@ -19,7 +19,7 @@ package com.codeabovelab.dm.cluman.ds.clusters;
 import com.codeabovelab.dm.cluman.cluster.docker.management.DockerService;
 import com.codeabovelab.dm.cluman.cluster.docker.management.result.*;
 import com.codeabovelab.dm.cluman.cluster.docker.management.result.ResultCode;
-import com.codeabovelab.dm.cluman.cluster.docker.model.swarm.SwarmConfig;
+import com.codeabovelab.dm.cluman.cluster.docker.model.swarm.SwarmSpec;
 import com.codeabovelab.dm.cluman.cluster.docker.model.swarm.SwarmInitCmd;
 import com.codeabovelab.dm.cluman.ds.nodes.NodeRegistration;
 import com.codeabovelab.dm.cluman.ds.swarm.DockerServices;
@@ -110,7 +110,7 @@ public class DockerCluster extends AbstractNodesGroup<DockerClusterConfig> {
         Manager manager = managers.get(leader);
         log.info("Begin initialize swarm-mode cluster on '{}'", manager.name);
         SwarmInitCmd cmd = new SwarmInitCmd();
-        cmd.setConfig(getSwarmConfig());
+        cmd.setSpec(getSwarmConfig());
         String address = manager.service.getAddress();
         address = AddressUtils.setPort(address, config.getSwarmPort());
         cmd.setListenAddr(address);
@@ -149,8 +149,8 @@ public class DockerCluster extends AbstractNodesGroup<DockerClusterConfig> {
         return manager.service;
     }
 
-    private SwarmConfig getSwarmConfig() {
-        SwarmConfig sc = new SwarmConfig();
+    private SwarmSpec getSwarmConfig() {
+        SwarmSpec sc = new SwarmSpec();
         return sc;
     }
 }

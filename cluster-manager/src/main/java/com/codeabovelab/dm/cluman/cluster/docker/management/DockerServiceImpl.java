@@ -19,7 +19,7 @@ package com.codeabovelab.dm.cluman.cluster.docker.management;
 import com.codeabovelab.dm.cluman.cluster.docker.management.result.*;
 import com.codeabovelab.dm.cluman.cluster.docker.management.result.ResultCode;
 import com.codeabovelab.dm.cluman.cluster.docker.management.result.ServiceCallResult;
-import com.codeabovelab.dm.cluman.cluster.docker.model.swarm.SwarmConfig;
+import com.codeabovelab.dm.cluman.cluster.docker.model.swarm.SwarmSpec;
 import com.codeabovelab.dm.cluman.cluster.docker.model.swarm.SwarmInitCmd;
 import com.codeabovelab.dm.cluman.utils.ContainerUtils;
 import com.codeabovelab.dm.cluman.cluster.docker.ClusterConfig;
@@ -471,7 +471,7 @@ public class DockerServiceImpl implements DockerService {
 
     private DockerServiceInfo getInfoForCache() {
         Info info = getFast(() -> restTemplate.getForEntity(makeBaseUrl().path("/info").build().toUri(), Info.class)).getBody();
-        DockerServiceInfo.Builder dib = SwarmInfoParser.parse(info);
+        DockerServiceInfo.Builder dib = DockerInfoParser.parse(info);
         ListIterator<NodeInfo> i = dib.getNodeList().listIterator();
         while (i.hasNext()) {
             NodeInfo dockerNode = i.next();
@@ -858,8 +858,8 @@ public class DockerServiceImpl implements DockerService {
     }
 
     @Override
-    public SwarmConfig getSwarm() {
-        ResponseEntity<SwarmConfig> configResult = getFast(() -> restTemplate.getForEntity(makeUrl("/swarm").toUriString(), SwarmConfig.class));
+    public SwarmSpec getSwarm() {
+        ResponseEntity<SwarmSpec> configResult = getFast(() -> restTemplate.getForEntity(makeUrl("/swarm").toUriString(), SwarmSpec.class));
         return configResult.getBody();
     }
 

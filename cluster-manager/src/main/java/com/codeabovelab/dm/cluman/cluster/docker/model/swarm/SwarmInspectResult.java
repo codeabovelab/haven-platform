@@ -19,9 +19,13 @@ package com.codeabovelab.dm.cluman.cluster.docker.model.swarm;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Data;
 
+/**
+ * Result of 'GET /swarm'
+ */
 @Data
-public class Version {
+public class SwarmInspectResult extends Cluster {
 
-    @JsonProperty("Index")
-    private Long index;
+    @JsonProperty("JoinTokens")
+    private JoinTokens joinTokens;
+
 }
