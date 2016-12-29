@@ -29,7 +29,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.util.Assert;
 
 import java.util.*;
-import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * A kind of nodegroup which is managed by 'docker' in 'swarm mode'.
@@ -37,11 +37,11 @@ import java.util.concurrent.CopyOnWriteArrayList;
 @Slf4j
 public class DockerCluster extends AbstractNodesGroup<DockerClusterConfig> {
 
-    private final class SwarmNode {
+    private final class Manager {
         private final String name;
         private DockerService service;
 
-        SwarmNode(String name) {
+        Manager(String name) {
             this.name = name;
         }
 
@@ -49,24 +49,14 @@ public class DockerCluster extends AbstractNodesGroup<DockerClusterConfig> {
             DockerServices dses = getDiscoveryStorage().getDockerServices();
             service = dses.getNodeService(name);
             Assert.notNull(service, "Can not find docker service for '" + name + "' node.");
-            SwarmInitCmd cmd = new SwarmInitCmd();
-            cmd.setConfig(getSwarmConfig());
-            String address = service.getAddress();
-            address = AddressUtils.setPort(address, config.getSwarmPort());
-            cmd.setListenAddr(address);
-            SwarmInitResult res = service.initSwarm(cmd);
-            if(res.getCode() == ResultCode.OK) {
-                return;
-            }
-            log.error("Can not initialize swarm-mode cluster on '{}' due to error: {}", name, res.getMessage());
         }
 
     }
 
     /**
-     * List of cluster master nodes.
+     * List of cluster manager nodes.
      */
-    private final List<SwarmNode> swarmNodes = new CopyOnWriteArrayList<>();
+    private final Map<String, Manager> managers = new ConcurrentHashMap<>();
 
     @lombok.Builder(builderClassName = "Builder")
     DockerCluster(DockerClusterConfig config, DiscoveryStorageImpl storage) {
@@ -74,10 +64,62 @@ public class DockerCluster extends AbstractNodesGroup<DockerClusterConfig> {
     }
 
     protected void init() {
-        Collection<String> hosts = Collections.singleton(this.config.getConfig().getHost());
-        Assert.isTrue(!hosts.isEmpty(), "Cluster config '" + getName() + "' must contains at lest one host.");
-        hosts.forEach(host -> swarmNodes.add(new SwarmNode(host)));
-        swarmNodes.forEach(SwarmNode::init);
+        List<String> hosts = this.config.getManagers();
+        Assert.notEmpty(hosts, "Cluster config '" + getName() + "' must contains at least one manager host.");
+        hosts.forEach(host -> {
+            Manager old = managers.putIfAbsent(host, new Manager(host));
+            if(old != null) {
+                throw new IllegalStateException("Cluster contains multiple hosts with same name: " + host);
+            }
+        });
+        managers.values().forEach(Manager::init);
+        initCluster(hosts.get(0));
+    }
+
+    private void initCluster(String leaderName) {
+        //first we must find if one of nodes has exists cluster
+        Map<String, List<String>> clusters = new HashMap<>();
+        Manager selectedManager = null;
+        for(Manager node: managers.values()) {
+            DockerServiceInfo info = node.service.getInfo();
+            SwarmInfo swarm = info.getSwarm();
+            if(swarm != null) {
+                clusters.computeIfAbsent(swarm.getClusterId(), (k) -> new ArrayList<>()).add(node.name);
+                if(swarm.isManager()) {
+                    selectedManager = node;
+                }
+            }
+        }
+        if(clusters.size() > 1) {
+            throw new IllegalStateException("Managers nodes already united into different cluster: " + clusters);
+        }
+        if(clusters.isEmpty()) {
+            //we must create cluster if no one found
+            selectedManager = createCluster(leaderName);
+        }
+        //and the we must join all managers to created cluster
+        for(Manager node: managers.values()) {
+            if(node == selectedManager) {
+                continue;
+            }
+            //TODO node.service.joinSwarm();
+        }
+    }
+
+    private Manager createCluster(String leader) {
+        Manager manager = managers.get(leader);
+        log.info("Begin initialize swarm-mode cluster on '{}'", manager.name);
+        SwarmInitCmd cmd = new SwarmInitCmd();
+        cmd.setConfig(getSwarmConfig());
+        String address = manager.service.getAddress();
+        address = AddressUtils.setPort(address, config.getSwarmPort());
+        cmd.setListenAddr(address);
+        SwarmInitResult res = manager.service.initSwarm(cmd);
+        if(res.getCode() != ResultCode.OK) {
+            throw new IllegalStateException("Can not initialize swarm-mode cluster on '" + manager.name + "' due to error: " + res.getMessage());
+        }
+        log.info("Initialize swarm-mode cluster on '{}' at address {}", manager.name, address);
+        return manager;
     }
 
     @Override
@@ -86,7 +128,7 @@ public class DockerCluster extends AbstractNodesGroup<DockerClusterConfig> {
     }
 
     private boolean isFromSameCluster(NodeRegistration nr) {
-        return nr != null && getName().equals(nr.getNodeInfo().getCluster());
+        return nr != null && getName().equals(nr.getCluster());
     }
 
     @Override
@@ -102,9 +144,9 @@ public class DockerCluster extends AbstractNodesGroup<DockerClusterConfig> {
 
     @Override
     public DockerService getDocker() {
-        SwarmNode swarmNode = swarmNodes.get(0);
+        Manager manager = managers.get(0);
         //TODO we must check that node is online, also return leader is better
-        return swarmNode.service;
+        return manager.service;
     }
 
     private SwarmConfig getSwarmConfig() {

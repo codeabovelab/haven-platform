@@ -24,7 +24,7 @@ import java.util.Collection;
 import java.util.List;
 
 /**
- * Information about Doker service and its nodes. <p/>
+ * Information about Docker service and its nodes. <p/>
  * Be careful with fields, because they can be used in js ui.
  *
  */
@@ -40,8 +40,11 @@ public class DockerServiceInfo {
     private final Double memory;
     private final Integer nodeCount;
     private final Integer offNodeCount;
-
     private final List<NodeInfo> nodeList;
+    /**
+     * Info about swarm mode, can be null.
+     */
+    private final SwarmInfo swarm;
 
     private DockerServiceInfo(Builder builder) {
         this.id = builder.id;
@@ -54,6 +57,7 @@ public class DockerServiceInfo {
         this.nodeCount = builder.nodeCount;
         this.offNodeCount = builder.offNodeCount;
         this.nodeList = ImmutableList.copyOf(builder.nodeList);
+        this.swarm = builder.swarm;
     }
 
     public static Builder builder() {
@@ -72,6 +76,7 @@ public class DockerServiceInfo {
         private Integer nodeCount;
         private Integer offNodeCount;
         private final List<NodeInfo> nodeList = new ArrayList<>();
+        private SwarmInfo swarm;
 
         private Builder() {
         }
@@ -91,6 +96,7 @@ public class DockerServiceInfo {
             setNodeList(o.getNodeList());
             setNodeCount(o.getNodeCount());
             setOffNodeCount(o.getOffNodeCount());
+            setSwarm(o.getSwarm());
             return this;
         }
 
@@ -149,6 +155,11 @@ public class DockerServiceInfo {
             if(nodeList != null) {
                 this.nodeList.addAll(nodeList);
             }
+        }
+
+        public Builder swarm(SwarmInfo swarm) {
+            setSwarm(swarm);
+            return this;
         }
     }
 }
