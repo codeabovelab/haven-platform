@@ -96,15 +96,17 @@ class NodeMapping<T> extends AbstractMapping<T> {
         KeyValueStorage storage = getStorage();
         for(KvProperty property: getProps(object)) {
             String proppath = KvUtils.join(path, property.getKey());
-            String str = null;
+            KvNode node;
             try {
-                KvNode node = storage.get(proppath);
-                if(node != null) {
-                    str = node.getValue();
+                node = storage.get(proppath);
+                if(node == null) {
+                    // when node is absent we must not invoke setter
+                    continue;
                 }
             } catch (Exception e) {
                 throw new RuntimeException("Error at path: " + proppath, e);
             }
+            String str = node.getValue();
             property.set(object, str);
         }
     }
