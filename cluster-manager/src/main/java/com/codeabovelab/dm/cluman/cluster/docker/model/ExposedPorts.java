@@ -19,13 +19,14 @@ package com.codeabovelab.dm.cluman.cluster.docker.model;
 import com.codeabovelab.dm.common.utils.Sugar;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.ObjectCodec;
 import com.fasterxml.jackson.databind.*;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.fasterxml.jackson.databind.node.NullNode;
 import lombok.EqualsAndHashCode;
+import lombok.Getter;
+import lombok.ToString;
 
 import java.io.IOException;
 import java.util.*;
@@ -33,6 +34,8 @@ import java.util.*;
 @JsonSerialize(using = ExposedPorts.Serializer.class)
 @JsonDeserialize(using = ExposedPorts.Deserializer.class)
 @EqualsAndHashCode
+@ToString
+@Getter
 public class ExposedPorts {
 
     private final List<ExposedPort> exposedPorts;
@@ -41,12 +44,8 @@ public class ExposedPorts {
         this.exposedPorts = Sugar.immutableList(Arrays.asList(exposedPorts));
     }
 
-    public ExposedPorts(List<ExposedPort> exposedPorts) {
+    public ExposedPorts(Collection<ExposedPort> exposedPorts) {
         this.exposedPorts = Sugar.immutableList(exposedPorts);
-    }
-
-    public List<ExposedPort> getExposedPorts() {
-        return exposedPorts;
     }
 
     public static class Serializer extends JsonSerializer<ExposedPorts> {
@@ -71,10 +70,10 @@ public class ExposedPorts {
         public ExposedPorts deserialize(JsonParser jsonParser, DeserializationContext deserializationContext)
                 throws IOException {
 
-            List<ExposedPort> exposedPorts = new ArrayList<ExposedPort>();
+            List<ExposedPort> exposedPorts = new ArrayList<>();
             ObjectCodec oc = jsonParser.getCodec();
             JsonNode node = oc.readTree(jsonParser);
-            for (Iterator<Map.Entry<String, JsonNode>> it = node.fields(); it.hasNext();) {
+            for (Iterator<Map.Entry<String, JsonNode>> it = node.fields(); it.hasNext(); ) {
 
                 Map.Entry<String, JsonNode> field = it.next();
                 if (!field.getValue().equals(NullNode.getInstance())) {
@@ -83,12 +82,5 @@ public class ExposedPorts {
             }
             return new ExposedPorts(exposedPorts.toArray(new ExposedPort[0]));
         }
-    }
-
-    @Override
-    public String toString() {
-        return "ExposedPorts{" +
-                "exposedPorts=" + exposedPorts +
-                '}';
     }
 }

@@ -18,7 +18,6 @@ package com.codeabovelab.dm.cluman.cluster.docker.model;
 
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.ObjectCodec;
 import com.fasterxml.jackson.databind.*;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
@@ -33,9 +32,9 @@ import static com.codeabovelab.dm.cluman.cluster.docker.model.InternetProtocol.T
 import static com.codeabovelab.dm.cluman.cluster.docker.model.InternetProtocol.UDP;
 
 /**
- * Represents a container port that Docker exposes to external clients. The port is defined by its {@link #getPort()
- * port number} and an {@link InternetProtocol}. It can be published by Docker by
- * {@link Ports#bind(ExposedPort, Binding) binding} it to a host port, represented by a {@link Binding}.
+ * Represents a container port that Docker exposes to external clients. The port is defined by its {@link #getPort() port number} and an
+ * {@link InternetProtocol}. It can be published by Docker by {@link Ports#bind(ExposedPort, Binding) binding} it to a host port,
+ * represented by a {@link Binding}.
  */
 @JsonDeserialize(using = ExposedPort.Deserializer.class)
 @JsonSerialize(using = ExposedPort.Serializer.class)
@@ -134,9 +133,9 @@ public class ExposedPort {
             String[] parts = serialized.split("/");
             switch (parts.length) {
                 case 1:
-                    return new ExposedPort(Integer.valueOf(parts[0]));
+                    return new ExposedPort(Integer.parseInt(parts[0]));
                 case 2:
-                    return new ExposedPort(Integer.valueOf(parts[0]), InternetProtocol.parse(parts[1]));
+                    return new ExposedPort(Integer.parseInt(parts[0]), InternetProtocol.parse(parts[1]));
                 default:
                     throw new IllegalArgumentException();
             }
@@ -146,8 +145,8 @@ public class ExposedPort {
     }
 
     /**
-     * Returns a string representation of this {@link ExposedPort} suitable for inclusion in a JSON message. The format
-     * is <code>port/protocol</code>, like the argument in {@link #parse(String)}.
+     * Returns a string representation of this {@link ExposedPort} suitable for inclusion in a JSON message. The format is
+     * <code>port/protocol</code>, like the argument in {@link #parse(String)}.
      *
      * @return a string representation of this {@link ExposedPort}
      */
