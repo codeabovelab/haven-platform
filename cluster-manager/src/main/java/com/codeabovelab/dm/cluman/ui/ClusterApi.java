@@ -107,9 +107,9 @@ public class ClusterApi {
         uc.getDescription().accept(cluster.getDescription());
         uc.getFilter().accept(cluster.getImageFilter());
         uc.setFeatures(cluster.getFeatures());
-        if (cluster.getConfig() instanceof SwarmNodesGroupConfig) {
-            SwarmNodesGroupConfig swarmNodesGroupConfig = (SwarmNodesGroupConfig) cluster.getConfig();
-            uc.setConfig(ClusterConfigImpl.builder(swarmNodesGroupConfig.getConfig()));
+        if (cluster.getConfig() instanceof DockerBasedClusterConfig) {
+            DockerBasedClusterConfig cfg = (DockerBasedClusterConfig) cluster.getConfig();
+            uc.setConfig(ClusterConfigImpl.builder(cfg.getConfig()));
         }
         try {
             DockerServiceInfo info = cluster.getDocker().getInfo();

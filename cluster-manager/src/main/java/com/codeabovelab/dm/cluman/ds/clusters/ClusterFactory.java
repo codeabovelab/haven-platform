@@ -29,7 +29,7 @@ class ClusterFactory {
     private String type;
     private ClusterConfigFactory configFactory;
 
-    public ClusterFactory config(SwarmNodesGroupConfig config) {
+    public ClusterFactory config(AbstractNodesGroupConfig<?> config) {
         setConfig(config);
         return this;
     }

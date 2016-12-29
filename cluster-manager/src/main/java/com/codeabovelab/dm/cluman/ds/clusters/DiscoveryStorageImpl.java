@@ -215,10 +215,8 @@ public class DiscoveryStorageImpl implements DiscoveryStorage {
               .dockerServices(services)
               .feature(NodesGroup.Feature.FORBID_NODE_ADDITION)
               .build();
-        } else if (config instanceof SwarmNodesGroupConfig) {
-            cluster = clusterFactory().config((SwarmNodesGroupConfig) config).build(cid);
         } else {
-            throw new IllegalArgumentException("Unsupported config: " + config);
+            cluster = clusterFactory().config(config).build(cid);
         }
         return cluster;
     }
