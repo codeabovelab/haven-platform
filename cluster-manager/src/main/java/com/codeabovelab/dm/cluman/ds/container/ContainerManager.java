@@ -286,8 +286,11 @@ public class ContainerManager {
             cmd.setCmd(command.toArray(new String[command.size()]));
         }
         cmd.setHostConfig(getHostConfig(cc, result));
-
-
+        Ports portBindings = cmd.getHostConfig().getPortBindings();
+        if (portBindings != null) {
+            Map<ExposedPort, Ports.Binding[]> bindings = portBindings.getBindings();
+            cmd.setExposedPorts(new ExposedPorts(bindings.keySet()));
+        }
         LOG.info("Command for execution: {}", cmd);
         ProcessEvent.watch(cc.watcher, "Command for execution: {0}", cmd);
         return cmd;
@@ -325,7 +328,7 @@ public class ContainerManager {
                 .blkioWeight(arg.getBlkioWeight())
                 .cpuQuota(arg.getCpuQuota())
                 .cpuShares(arg.getCpuShares())
-                .binds(getHostBindings(cc, arg))
+                .binds(getHostBindings(arg))
                 .portBindings(getBindings(arg.getPorts()))
                 .publishAllPorts(arg.isPublishAllPorts())
                 .restartPolicy(restartPolicy);
@@ -352,7 +355,7 @@ public class ContainerManager {
     }
 
 
-    private List<String> getHostBindings(CreateContainerContext cc, ContainerSource arg) {
+    private List<String> getHostBindings(ContainerSource arg) {
         List<String> volumeBinds = arg.getVolumeBinds();
         if(volumeBinds == null) {
             return Collections.emptyList();
