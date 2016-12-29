@@ -23,12 +23,14 @@ import com.google.common.collect.ImmutableList;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import org.springframework.util.Assert;
+import org.springframework.util.CollectionUtils;
 
 import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Configuration for docker service api config
+ * Configuration for docker service api config. <p/>
+ * TODO rename to DockerConfig
  */
 @EqualsAndHashCode
 @Data
@@ -57,10 +59,9 @@ public class ClusterConfigImpl implements ClusterConfig {
 
 
         /**
-         * List of docker/swarm 'host:port'
-         * @return host
+         * docker/swarm 'host:port'
          */
-        private final List<String> hosts = new ArrayList<>();
+        private String host;
         private int maxCountOfInstances = 1;
         private String dockerRestart;
         private String cluster;
@@ -80,7 +81,7 @@ public class ClusterConfigImpl implements ClusterConfig {
             if(orig == null) {
                 return this;
             }
-            setHosts(orig.getHosts());
+            setHost(orig.getHost());
             setMaxCountOfInstances(orig.getMaxCountOfInstances());
             setDockerRestart(orig.getDockerRestart());
             setCluster(orig.getCluster());
@@ -100,7 +101,7 @@ public class ClusterConfigImpl implements ClusterConfig {
                 return this;
             }
             Smelter<ClusterConfig> s = new Smelter<>(src, DEFAULT);
-            s.set(this::setHosts, ClusterConfig::getHosts);
+            s.set(this::setHost, ClusterConfig::getHost);
             s.setInt(this::setMaxCountOfInstances, ClusterConfig::getMaxCountOfInstances);
             s.set(this::setDockerRestart, ClusterConfig::getDockerRestart);
             s.set(this::setCluster, ClusterConfig::getCluster);
@@ -116,27 +117,22 @@ public class ClusterConfigImpl implements ClusterConfig {
             return this;
         }
 
-        public Builder addHost(String host) {
-            checkHost(host);
-            this.hosts.add(host);
+        public void setHost(String host) {
+            this.host = host;
+        }
+
+        public Builder host(String host) {
+            setHost(host);
             return this;
         }
 
-        private void checkHost(String host) {
-            Assert.hasText(host, "Host is null or empty");
-        }
-
-        public Builder hosts(List<String> hosts) {
-            setHosts(hosts);
-            return this;
-        }
-
+        // remain only for capability for old serialized JSON data
+        @Deprecated
         public void setHosts(List<String> hosts) {
-            this.hosts.clear();
-            if(hosts != null) {
-                hosts.forEach(this::checkHost);
-                this.hosts.addAll(hosts);
+            if(!CollectionUtils.isEmpty(hosts)) {
+                setHost(hosts.get(0));
             }
+            // we must not to do anything when 'hosts' is empty
         }
 
         public Builder maxCountOfInstances(int maxCountOfInstances) {
@@ -185,10 +181,9 @@ public class ClusterConfigImpl implements ClusterConfig {
     }
 
     /**
-     * List of docker/swarm 'host:port'
-     * @return host
+     * docker/swarm 'host:port'
      */
-    private final List<String> hosts;
+    private final String host;
     private final int maxCountOfInstances;
     private final String dockerRestart;
     private final String cluster;
@@ -206,7 +201,7 @@ public class ClusterConfigImpl implements ClusterConfig {
 
     @JsonCreator
     public ClusterConfigImpl(Builder builder) {
-        this.hosts = ImmutableList.copyOf(builder.hosts);
+        this.host = builder.host;
         this.maxCountOfInstances = builder.maxCountOfInstances;
         this.strategy = builder.strategy;
         this.dockerRestart = builder.dockerRestart;
@@ -221,7 +216,7 @@ public class ClusterConfigImpl implements ClusterConfig {
      * @return this
      */
     public ClusterConfigImpl validate() {
-        Assert.notEmpty(this.hosts, "Hosts is empty or null");
+        Assert.hasText(this.host, "Hosts is empty or null");
         return this;
     }
 

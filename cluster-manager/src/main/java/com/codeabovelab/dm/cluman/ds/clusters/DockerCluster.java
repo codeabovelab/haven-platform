@@ -16,7 +16,6 @@
 
 package com.codeabovelab.dm.cluman.ds.clusters;
 
-import com.codeabovelab.dm.cluman.cluster.docker.ClusterConfigImpl;
 import com.codeabovelab.dm.cluman.cluster.docker.management.DockerService;
 import com.codeabovelab.dm.cluman.cluster.docker.management.result.*;
 import com.codeabovelab.dm.cluman.cluster.docker.management.result.ResultCode;
@@ -75,8 +74,7 @@ public class DockerCluster extends AbstractNodesGroup<DockerClusterConfig> {
     }
 
     protected void init() {
-        ClusterConfigImpl cc = this.config.getConfig();
-        List<String> hosts = cc.getHosts();
+        Collection<String> hosts = Collections.singleton(this.config.getConfig().getHost());
         Assert.isTrue(!hosts.isEmpty(), "Cluster config '" + getName() + "' must contains at lest one host.");
         hosts.forEach(host -> swarmNodes.add(new SwarmNode(host)));
         swarmNodes.forEach(SwarmNode::init);

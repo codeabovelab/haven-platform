@@ -297,7 +297,7 @@ public class DockerServices implements DockerServiceRegistry, NodeRegistry {
         int i = 10;
         while (i > 0) {
             DockerService service = nodes.computeIfAbsent(name, factory);
-            if (config.getHosts().equals(service.getClusterConfig().getHosts())) {
+            if (config.getHost().equals(service.getClusterConfig().getHost())) {
                 break;
             }
             nodes.remove(name, service);
@@ -335,13 +335,13 @@ public class DockerServices implements DockerServiceRegistry, NodeRegistry {
     public DockerService getOrCreateCluster(ClusterConfig clusterConfig, Consumer<DockerServiceImpl.Builder> dockerConsumer) {
         return clusters.computeIfAbsent(clusterConfig.getCluster(), (cid) -> {
             ClusterConfig instanceConfig = clusterConfig;
-            if (CollectionUtils.isEmpty(clusterConfig.getHosts())) {
+            if (clusterConfig.getHost() == null) {
                 // if no defined swarm hosts then we must create own swarm instance and run it
                 SwarmProcesses.SwarmProcess process = swarmProcesses.addCluster(clusterConfig);
                 process.waitStart();
                 // so, we create new swarm process and now need to modify config with process address
                 ClusterConfigImpl.Builder ccib = ClusterConfigImpl.builder(clusterConfig);
-                ccib.addHost(process.getAddress());
+                ccib.host(process.getAddress());
                 instanceConfig = ccib.build();
             }
             DockerService dockerService = createDockerService(instanceConfig, dockerConsumer);
@@ -360,7 +360,7 @@ public class DockerServices implements DockerServiceRegistry, NodeRegistry {
      */
     private ClusterConfigImpl.Builder configForNode(DockerServiceAddress addr) {
         return ClusterConfigImpl.builder()
-                .addHost(addr.getAddress());
+                .host(addr.getAddress());
     }
 
 

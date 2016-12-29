@@ -815,12 +815,7 @@ public class DockerServiceImpl implements DockerService {
 
     @Override
     public String getAddress() {
-        List<String> hosts = clusterConfig.getHosts();
-        Assert.notEmpty(hosts, "No hosts in config");
-        if (hosts.size() > 1) {
-            log.warn("We  currently support only one host, use firts item: {}", hosts);
-        }
-        String address = hosts.get(0);
+        String address = clusterConfig.getHost();
         Assert.hasText(address, "host in config has null or empty address");
         return address;
     }
@@ -887,6 +882,6 @@ public class DockerServiceImpl implements DockerService {
 
     @Override
     public String toString() {
-        return getClass().getSimpleName() + "{" + getClusterConfig().getHosts() + "}";
+        return getClass().getSimpleName() + "{" + getClusterConfig().getHost() + "}";
     }
 }

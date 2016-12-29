@@ -23,7 +23,7 @@ import java.util.List;
 /**
  */
 public interface ClusterConfig {
-    List<String> getHosts();
+    String getHost();
 
     int getMaxCountOfInstances();
 

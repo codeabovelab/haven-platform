@@ -44,7 +44,7 @@ public class DockerServiceImplTest {
     @SuppressWarnings("unchecked")
     DockerServiceImpl dockerService() {
         ClusterConfig config = ClusterConfigImpl.builder()
-                .addHost("localhost:2375").build();
+                .host("localhost:2375").build();
         AsyncRestTemplate restTemplate = new AsyncRestTemplate();
         RegistryRepository registryRepository = mock(RegistryRepository.class);
         restTemplate.setInterceptors(

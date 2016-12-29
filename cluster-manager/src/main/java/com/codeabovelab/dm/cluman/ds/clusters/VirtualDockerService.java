@@ -47,7 +47,7 @@ class VirtualDockerService implements DockerService {
     // we need empty config for prevent NPE
     private final ClusterConfig config = ClusterConfigImpl.builder()
       //workaround, possibly we must to create config runtime
-      .addHost("<virtual host>")
+      .host("<virtual host>")
       .build();
 
     VirtualDockerService(NodesGroupImpl cluster) {

@@ -33,7 +33,7 @@ public class ComposeExecutorTest {
     @SuppressWarnings("unchecked")
     @Ignore
     public void testLaunchTask() throws Exception {
-        ClusterConfig config = ClusterConfigImpl.builder().addHost("localhost:2375").build();
+        ClusterConfig config = ClusterConfigImpl.builder().host("localhost:2375").build();
         DockerService dockerService = DockerServiceImpl.builder()
           .config(config)
           .restTemplate(new AsyncRestTemplate())
