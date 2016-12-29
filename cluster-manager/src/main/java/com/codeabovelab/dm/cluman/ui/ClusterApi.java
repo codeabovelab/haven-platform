@@ -110,6 +110,9 @@ public class ClusterApi {
         if (cluster.getConfig() instanceof DockerBasedClusterConfig) {
             DockerBasedClusterConfig cfg = (DockerBasedClusterConfig) cluster.getConfig();
             uc.setConfig(ClusterConfigImpl.builder(cfg.getConfig()));
+            if(cfg instanceof DockerClusterConfig) {
+                uc.setManagers(((DockerClusterConfig)cfg).getManagers());
+            }
         }
         try {
             DockerServiceInfo info = cluster.getDocker().getInfo();

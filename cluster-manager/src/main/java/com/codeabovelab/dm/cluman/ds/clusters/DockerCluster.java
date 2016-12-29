@@ -45,12 +45,15 @@ public class DockerCluster extends AbstractNodesGroup<DockerClusterConfig> {
             this.name = name;
         }
 
-        void init() {
+        synchronized void init() {
             DockerServices dses = getDiscoveryStorage().getDockerServices();
             service = dses.getNodeService(name);
             Assert.notNull(service, "Can not find docker service for '" + name + "' node.");
         }
 
+        synchronized DockerService getService() {
+            return service;
+        }
     }
 
     /**
@@ -128,6 +131,7 @@ public class DockerCluster extends AbstractNodesGroup<DockerClusterConfig> {
     }
 
     private boolean isFromSameCluster(NodeRegistration nr) {
+        // it work wrong, because must also check nodes act as manager
         return nr != null && getName().equals(nr.getCluster());
     }
 
@@ -144,9 +148,13 @@ public class DockerCluster extends AbstractNodesGroup<DockerClusterConfig> {
 
     @Override
     public DockerService getDocker() {
-        Manager manager = managers.get(0);
-        //TODO we must check that node is online, also return leader is better
-        return manager.service;
+        for (Manager node : managers.values()) {
+            DockerService service = node.getService();
+            if (service != null) {
+                return service;
+            }
+        }
+        throw new IllegalStateException("Cluster " + getName() + " has not any alive manager node.");
     }
 
     private SwarmSpec getSwarmConfig() {
