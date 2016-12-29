@@ -16,11 +16,11 @@
 
 package com.codeabovelab.dm.cluman.source;
 
-import com.codeabovelab.dm.cluman.model.ImageName;
-import com.codeabovelab.dm.cluman.utils.ContainerUtils;
 import com.codeabovelab.dm.cluman.cluster.docker.model.*;
 import com.codeabovelab.dm.cluman.ds.SwarmUtils;
 import com.codeabovelab.dm.cluman.model.ContainerSource;
+import com.codeabovelab.dm.cluman.model.ImageName;
+import com.codeabovelab.dm.cluman.utils.ContainerUtils;
 import com.codeabovelab.dm.common.utils.Sugar;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.AllArgsConstructor;
@@ -120,7 +120,7 @@ public class ContainerSourceFactory {
                 ExposedPort key = exposedPortEntry.getKey();
                 Ports.Binding[] value = exposedPortEntry.getValue();
                 for (Ports.Binding binding : value) {
-                    map.put(Integer.toString(key.getPort()), binding.getHostPort().toString());
+                    map.put(Integer.toString(key.getPort()), binding.getHostPortSpec().toString());
                 }
             }
             return map;
