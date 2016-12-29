@@ -115,7 +115,7 @@ public class ClusterApi {
             DockerServiceInfo info = cluster.getDocker().getInfo();
             uc.setContainers(new UiCluster.Entry(info.getContainers(), info.getOffContainers()));
             uc.setNodes(new UiCluster.Entry(info.getNodeCount(), info.getOffNodeCount()));
-        } catch (AccessDeniedException e) {
+        } catch (Exception e) {
             uc.setContainers(new UiCluster.Entry(0, 0));
             uc.setNodes(new UiCluster.Entry(0, 0));
             //nothing
