@@ -25,6 +25,7 @@ import com.codeabovelab.dm.cluman.cluster.docker.management.result.ResultCode;
 import com.codeabovelab.dm.cluman.cluster.docker.management.result.ServiceCallResult;
 import com.codeabovelab.dm.cluman.cluster.docker.model.*;
 import com.codeabovelab.dm.cluman.cluster.docker.model.swarm.SwarmConfig;
+import com.codeabovelab.dm.cluman.cluster.docker.model.swarm.SwarmInitCmd;
 import com.codeabovelab.dm.cluman.ds.swarm.DockerServices;
 import com.codeabovelab.dm.cluman.model.*;
 import com.codeabovelab.dm.cluman.model.Node;
@@ -71,6 +72,12 @@ class VirtualDockerService implements DockerService {
 
     @Override
     public String getNode() {
+        return null;
+    }
+
+    @Override
+    public String getAddress() {
+        // virtual service not has address
         return null;
     }
 
@@ -329,7 +336,7 @@ class VirtualDockerService implements DockerService {
     }
 
     @Override
-    public InitSwarmResult initSwarm(SwarmConfig config) {
+    public SwarmInitResult initSwarm(SwarmInitCmd cmd) {
         throw new UnsupportedOperationException("Virtual cluster does not support.");
     }
 }

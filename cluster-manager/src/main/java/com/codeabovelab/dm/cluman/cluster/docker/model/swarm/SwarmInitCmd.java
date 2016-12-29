@@ -41,5 +41,5 @@ public class SwarmInitCmd {
     @JsonProperty("ForceNewCluster")
     private String forceNewCluster;
     @JsonProperty("Spec")
-    private SwarmConfig swarmSpec;
+    private SwarmConfig config;
 }

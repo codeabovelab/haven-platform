@@ -16,10 +16,17 @@
 
 package com.codeabovelab.dm.cluman.cluster.docker.management.result;
 
+import lombok.Data;
 import lombok.EqualsAndHashCode;
 
 /**
  */
+@Data
 @EqualsAndHashCode(callSuper = true)
-public class InitSwarmResult extends ServiceCallResult {
+public class SwarmInitResult extends ServiceCallResult {
+    /**
+     * Swarm-mode Node id, do not confuse with docker node id, and node name. It value changed ant each join to
+     * swarm or swarm init operation.
+     */
+    private String nodeId;
 }

@@ -19,8 +19,6 @@ package com.codeabovelab.dm.cluman.cluster.docker.model.swarm;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Data;
 
-import java.util.Map;
-
 /**
  "Spec": {
      "Orchestration": {},
@@ -32,12 +30,6 @@ import java.util.Map;
  */
 @Data
 public class SwarmConfig {
-
-    @JsonProperty("Name")
-    private String name;
-
-    @JsonProperty("Labels")
-    private Map<String, String> labels;
 
     @JsonProperty("Orchestration")
     private OrchestrationConfig orchestration;

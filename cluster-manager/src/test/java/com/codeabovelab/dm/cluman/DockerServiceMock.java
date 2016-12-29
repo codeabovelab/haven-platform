@@ -9,6 +9,7 @@ import com.codeabovelab.dm.cluman.cluster.docker.management.result.ResultCode;
 import com.codeabovelab.dm.cluman.cluster.docker.management.result.ServiceCallResult;
 import com.codeabovelab.dm.cluman.cluster.docker.model.*;
 import com.codeabovelab.dm.cluman.cluster.docker.model.swarm.SwarmConfig;
+import com.codeabovelab.dm.cluman.cluster.docker.model.swarm.SwarmInitCmd;
 import com.codeabovelab.dm.cluman.model.*;
 import com.codeabovelab.dm.cluman.model.Node;
 import com.codeabovelab.dm.common.utils.PojoBeanUtils;
@@ -138,6 +139,12 @@ public class DockerServiceMock implements DockerService {
 
     public DockerServiceMock(DockerServiceInfo info) {
         this.info = info;
+    }
+
+    @Override
+    public String getAddress() {
+        // add default docker port to hostname
+        return "127.0.0.1:2375";
     }
 
     @Override
@@ -486,7 +493,7 @@ public class DockerServiceMock implements DockerService {
     }
 
     @Override
-    public InitSwarmResult initSwarm(SwarmConfig config) {
+    public SwarmInitResult initSwarm(SwarmInitCmd cmd) {
         return null;
     }
 }

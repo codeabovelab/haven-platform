@@ -179,24 +179,6 @@ public final class ContainerUtils {
         return image.substring(0, i + 1) + version;
     }
 
-    public static int getPort(String addr) {
-        if (addr == null) {
-            return -1;
-        }
-        int portStart = addr.lastIndexOf(':');
-        String portStr = addr.substring(portStart + 1);
-        return Integer.parseInt(portStr);
-    }
-
-    public static String getHost(String addr) {
-        if (addr == null) {
-            return null;
-        }
-        int portStart = addr.lastIndexOf(':');
-        return addr.substring(0, portStart);
-    }
-
-
     public static boolean isOurContainer(ContainerBaseIface cont) {
         if (!ContainerDetector.isContainer()) {
             // haven was not started in container, skipping protection

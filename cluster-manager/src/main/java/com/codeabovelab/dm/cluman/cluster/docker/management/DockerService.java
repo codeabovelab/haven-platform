@@ -18,12 +18,13 @@ package com.codeabovelab.dm.cluman.cluster.docker.management;
 
 import com.codeabovelab.dm.cluman.cluster.docker.ClusterConfig;
 import com.codeabovelab.dm.cluman.cluster.docker.management.argument.*;
-import com.codeabovelab.dm.cluman.cluster.docker.management.result.InitSwarmResult;
+import com.codeabovelab.dm.cluman.cluster.docker.management.result.SwarmInitResult;
 import com.codeabovelab.dm.cluman.cluster.docker.management.result.ProcessEvent;
 import com.codeabovelab.dm.cluman.cluster.docker.management.result.RemoveImageResult;
 import com.codeabovelab.dm.cluman.cluster.docker.management.result.ServiceCallResult;
 import com.codeabovelab.dm.cluman.cluster.docker.model.*;
 import com.codeabovelab.dm.cluman.cluster.docker.model.swarm.SwarmConfig;
+import com.codeabovelab.dm.cluman.cluster.docker.model.swarm.SwarmInitCmd;
 import com.codeabovelab.dm.cluman.model.DockerContainer;
 import com.codeabovelab.dm.cluman.model.DockerServiceInfo;
 import com.codeabovelab.dm.cluman.model.ImageDescriptor;
@@ -70,6 +71,12 @@ public interface DockerService {
         }
         return sb.toString();
     }
+
+    /**
+     * Address of docker service in 'ip:port' format, sometime it can be null.
+     * @return address or null
+     */
+    String getAddress();
 
     boolean isOnline();
 
@@ -176,8 +183,8 @@ public interface DockerService {
     /**
      * Initialize a new swarm. The body of the HTTP response includes the node ID.
      * <code>POST /swarm/init</code>
-     * @param config config of swarm
+     * @param cmd command to init swarm
      * @return result with node id
      */
-    InitSwarmResult initSwarm(SwarmConfig config);
+    SwarmInitResult initSwarm(SwarmInitCmd cmd);
 }

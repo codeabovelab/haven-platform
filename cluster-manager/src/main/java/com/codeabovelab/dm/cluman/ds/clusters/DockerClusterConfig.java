@@ -17,16 +17,19 @@
 package com.codeabovelab.dm.cluman.ds.clusters;
 
 import com.codeabovelab.dm.cluman.cluster.docker.ClusterConfigImpl;
+import com.codeabovelab.dm.cluman.cluster.docker.model.swarm.SwarmConfig;
 import com.codeabovelab.dm.common.kv.mapping.KvMapping;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
 /**
- * Do not confuse with {@link SwarmNodesGroupConfig} because it may contain part of {@link com.codeabovelab.dm.cluman.cluster.docker.model.swarm.SwarmConfig}.
+ * Do not confuse with {@link SwarmNodesGroupConfig} because it may contain part of {@link SwarmConfig}.
  */
 @Data
 @EqualsAndHashCode(callSuper = true)
 public class DockerClusterConfig extends AbstractNodesGroupConfig<DockerClusterConfig> implements DockerBasedClusterConfig {
     @KvMapping
     private ClusterConfigImpl config;
+    @KvMapping
+    private int swarmPort = 4375;
 }

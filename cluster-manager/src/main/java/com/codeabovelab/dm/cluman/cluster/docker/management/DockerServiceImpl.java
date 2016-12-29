@@ -20,6 +20,7 @@ import com.codeabovelab.dm.cluman.cluster.docker.management.result.*;
 import com.codeabovelab.dm.cluman.cluster.docker.management.result.ResultCode;
 import com.codeabovelab.dm.cluman.cluster.docker.management.result.ServiceCallResult;
 import com.codeabovelab.dm.cluman.cluster.docker.model.swarm.SwarmConfig;
+import com.codeabovelab.dm.cluman.cluster.docker.model.swarm.SwarmInitCmd;
 import com.codeabovelab.dm.cluman.utils.ContainerUtils;
 import com.codeabovelab.dm.cluman.cluster.docker.ClusterConfig;
 import com.codeabovelab.dm.cluman.cluster.docker.ClusterConfigImpl;
@@ -812,21 +813,32 @@ public class DockerServiceImpl implements DockerService {
           .build();
     }
 
+    @Override
+    public String getAddress() {
+        List<String> hosts = clusterConfig.getHosts();
+        Assert.notEmpty(hosts, "No hosts in config");
+        if (hosts.size() > 1) {
+            log.warn("We  currently support only one host, use firts item: {}", hosts);
+        }
+        String address = hosts.get(0);
+        Assert.hasText(address, "host in config has null or empty address");
+        return address;
+    }
+
     private UriComponentsBuilder makeUrl(String part) {
         return makeBaseUrl().path("/" + part);
     }
 
     private UriComponentsBuilder makeBaseUrl() {
-        List<String> hosts = clusterConfig.getHosts();
         try {
-            Assert.notEmpty(hosts, "No hosts in config");
-            if (hosts.size() > 1) {
-                log.warn("We  currently support only one host, use firts item: {}", hosts);
+            String address = getAddress();
+            UriComponentsBuilder ucb = newInstance().scheme("http");
+            String arr[] = StringUtils.splitLast(address, ':');
+            if(arr == null) {
+                return ucb.host(address);
             }
-            String hostAndPort = hosts.get(0);
-            String hostAndPortArr[] = StringUtils.splitLast(hostAndPort, ':');
-            int port = Integer.parseInt(hostAndPortArr[1]);
-            return newInstance().scheme("http").host(hostAndPortArr[0]).port(port);
+            int port = Integer.parseInt(arr[1]);
+            return ucb.host(arr[0]).port(port);
         } catch (Exception e) {
             log.error("error during creating rest request to docker " + clusterConfig.toString(), e);
             throw Throwables.asRuntime(e);
@@ -857,13 +869,20 @@ public class DockerServiceImpl implements DockerService {
     }
 
     @Override
-    public InitSwarmResult initSwarm(SwarmConfig config) {
-        Assert.notNull(config, "swarm config is null");
-        ResponseEntity<InitSwarmResult> res = getFast(() -> {
-            HttpEntity<SwarmConfig> req = new HttpEntity<>(config);
-            return restTemplate.postForEntity(makeUrl("/swarm/init").toUriString(), req, InitSwarmResult.class);
-        });
-        return res.getBody();
+    public SwarmInitResult initSwarm(SwarmInitCmd cmd) {
+        Assert.notNull(cmd, "cmd is null");
+        SwarmInitResult res = new SwarmInitResult();
+        try {
+            ResponseEntity<String> e = getFast(() -> {
+                return restTemplate.postForEntity(makeUrl("/swarm/init").toUriString(), wrapEntity(cmd), String.class);
+            });
+            res.setNodeId(e.getBody());
+            res.code(ResultCode.OK);
+        } catch (HttpStatusCodeException e) {
+            log.error("can't init swarm: {} {}", cmd, e);
+            processStatusCodeException(e, res);
+        }
+        return res;
     }
 
     @Override

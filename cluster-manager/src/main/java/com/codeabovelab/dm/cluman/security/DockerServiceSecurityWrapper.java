@@ -19,12 +19,13 @@ package com.codeabovelab.dm.cluman.security;
 import com.codeabovelab.dm.cluman.cluster.docker.ClusterConfig;
 import com.codeabovelab.dm.cluman.cluster.docker.management.DockerService;
 import com.codeabovelab.dm.cluman.cluster.docker.management.argument.*;
-import com.codeabovelab.dm.cluman.cluster.docker.management.result.InitSwarmResult;
+import com.codeabovelab.dm.cluman.cluster.docker.management.result.SwarmInitResult;
 import com.codeabovelab.dm.cluman.cluster.docker.management.result.ProcessEvent;
 import com.codeabovelab.dm.cluman.cluster.docker.management.result.RemoveImageResult;
 import com.codeabovelab.dm.cluman.cluster.docker.management.result.ServiceCallResult;
 import com.codeabovelab.dm.cluman.cluster.docker.model.*;
 import com.codeabovelab.dm.cluman.cluster.docker.model.swarm.SwarmConfig;
+import com.codeabovelab.dm.cluman.cluster.docker.model.swarm.SwarmInitCmd;
 import com.codeabovelab.dm.cluman.model.DockerContainer;
 import com.codeabovelab.dm.cluman.model.DockerServiceInfo;
 import com.codeabovelab.dm.cluman.model.ImageDescriptor;
@@ -108,6 +109,11 @@ public class DockerServiceSecurityWrapper implements DockerService {
     @Override
     public String getNode() {
         return service.getNode();
+    }
+
+    @Override
+    public String getAddress() {
+        return service.getAddress();
     }
 
     @Override
@@ -272,8 +278,8 @@ public class DockerServiceSecurityWrapper implements DockerService {
     }
 
     @Override
-    public InitSwarmResult initSwarm(SwarmConfig config) {
+    public SwarmInitResult initSwarm(SwarmInitCmd cmd) {
         checkServiceAccess(Action.UPDATE);
-        return service.initSwarm(config);
+        return service.initSwarm(cmd);
     }
 }
