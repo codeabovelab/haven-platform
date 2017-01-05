@@ -17,7 +17,6 @@
 package com.codeabovelab.dm.cluman.model;
 
 import com.codeabovelab.dm.common.json.JtMemory;
-import com.google.common.base.MoreObjects;
 import lombok.Data;
 
 /**
@@ -74,21 +73,4 @@ public class EditableContainerSource implements Cloneable {
         }
     }
 
-    @Override
-    public String toString() {
-        return MoreObjects.toStringHelper(this)
-                .add("cpuShares", cpuShares)
-                .add("cpuQuota", cpuQuota)
-                .add("blkioWeight", blkioWeight)
-                .add("cpuPeriod", cpuPeriod)
-                .add("cpusetCpus", cpusetCpus)
-                .add("cpusetMems", cpusetMems)
-                .add("restart", restart)
-                .add("memoryLimit", memoryLimit)
-                .add("memorySwap", memorySwap)
-                .add("memoryReservation", memoryReservation)
-                .add("kernelMemory", kernelMemory)
-                .omitNullValues()
-                .toString();
-    }
 }

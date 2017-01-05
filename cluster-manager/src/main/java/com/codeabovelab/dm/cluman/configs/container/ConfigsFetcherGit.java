@@ -59,8 +59,8 @@ public class ConfigsFetcherGit implements ConfigsFetcher {
         this.gitSettings = gitSettings;
         this.parser = parser;
         this.gitDirPath = new File(location.getLocation(), "git-container-configs").toPath();
-        this.git = initGitRepo();
         this.cp = hasText(gitSettings.getPassword()) ? new UsernamePasswordCredentialsProvider(gitSettings.getUsername(), gitSettings.getPassword()) : null;
+        this.git = initGitRepo();
     }
 
     @Override

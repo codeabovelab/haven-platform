@@ -63,7 +63,6 @@ public class DiscoveryStorageImpl implements DiscoveryStorage {
     private final DockerServices services;
     private final NodeStorage nodeStorage;
     private final KvMap<NodesGroup> clusters;
-    private final KvMapperFactory kvmf;
     private final String prefix;
     private final FilterFactory filterFactory;
     private final AccessContextFactory aclContextFactory;
@@ -76,7 +75,6 @@ public class DiscoveryStorageImpl implements DiscoveryStorage {
                                 NodeStorage nodeStorage,
                                 AccessContextFactory aclContextFactory,
                                 @Qualifier(NodesGroupEvent.BUS) MessageBus<NodesGroupEvent> messageBus) {
-        this.kvmf = kvmf;
         this.services = dockerServices;
         this.nodeStorage = nodeStorage;
         this.messageBus = messageBus;
@@ -143,10 +141,6 @@ public class DiscoveryStorageImpl implements DiscoveryStorage {
         } catch (Exception  e) {
             log.error("Can not load clusters from storage", e);
         }
-    }
-
-    String getPrefix() {
-        return prefix;
     }
 
     KvMap<NodesGroup> getKvMap() {

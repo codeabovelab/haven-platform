@@ -16,9 +16,10 @@
 
 package com.codeabovelab.dm.cluman.ds.container;
 
+import com.codeabovelab.dm.cluman.model.ContainerBase;
+import com.codeabovelab.dm.cluman.model.ContainerBaseIface;
 import com.codeabovelab.dm.common.kv.mapping.KvMap;
 import com.codeabovelab.dm.common.kv.mapping.KvMapperFactory;
-import com.codeabovelab.dm.cluman.model.*;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -28,7 +29,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
-import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -36,15 +36,11 @@ import java.util.stream.Stream;
 @Slf4j
 public class ContainerStorageImpl implements ContainerStorage, InitializingBean {
 
-    private final KvMapperFactory kvmf;
-
     final KvMap<ContainerRegistration> map;
-    private final String prefix;
 
     @Autowired
     public ContainerStorageImpl(KvMapperFactory kvmf) {
-        this.kvmf = kvmf;
-        this.prefix = kvmf.getStorage().getPrefix() + "/containers/";
+        String prefix = kvmf.getStorage().getPrefix() + "/containers/";
         this.map = KvMap.builder(ContainerRegistration.class)
           .mapper(kvmf)
           .path(prefix)

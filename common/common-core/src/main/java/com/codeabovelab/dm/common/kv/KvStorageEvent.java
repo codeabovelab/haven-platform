@@ -16,21 +16,22 @@
 
 package com.codeabovelab.dm.common.kv;
 
+import lombok.Data;
+
 /**
  * DockerEvent of key value storage.
  */
+@Data
 public class KvStorageEvent {
 
-    public enum Crud {
-        CREATE, READ, UPDATE, DELETE
-    }
-
+    /**
+     * Index of node
+     */
     private final long index;
     private final String key;
     private final String value;
     private final long ttl;
     private final Crud action;
-
     public KvStorageEvent(long index, String key, String value, long ttl, Crud action) {
         this.index = index;
         this.key = key;
@@ -39,69 +40,8 @@ public class KvStorageEvent {
         this.action = action;
     }
 
-    /**
-     * Index of node
-     * @return index of node
-     */
-    public long getIndex() {
-        return index;
+    public enum Crud {
+        CREATE, READ, UPDATE, DELETE
     }
 
-    public String getKey() {
-        return key;
-    }
-
-    public String getValue() {
-        return value;
-    }
-
-    public long getTtl() {
-        return ttl;
-    }
-
-    public Crud getAction() {
-        return action;
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) {
-            return true;
-        }
-        if (!(o instanceof KvStorageEvent)) {
-            return false;
-        }
-
-        KvStorageEvent that = (KvStorageEvent) o;
-
-        if (ttl != that.ttl) {
-            return false;
-        }
-        if (key != null ? !key.equals(that.key) : that.key != null) {
-            return false;
-        }
-        if (value != null ? !value.equals(that.value) : that.value != null) {
-            return false;
-        }
-        return action == that.action;
-
-    }
-
-    @Override
-    public int hashCode() {
-        int result = key != null ? key.hashCode() : 0;
-        result = 31 * result + (value != null ? value.hashCode() : 0);
-        result = 31 * result + (int) (ttl ^ (ttl >>> 32));
-        result = 31 * result + (action != null ? action.hashCode() : 0);
-        return result;
-    }
-
-    @Override
-    public String toString() {
-        return "KVE[" + index + "]{" +
-          "'" + key + "\'=\'" + value + '\'' +
-          ", ttl=" + ttl +
-          ", action=" + action +
-          '}';
-    }
 }

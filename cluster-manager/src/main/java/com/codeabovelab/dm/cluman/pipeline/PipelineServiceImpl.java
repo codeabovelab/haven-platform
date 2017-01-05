@@ -50,9 +50,7 @@ import com.codeabovelab.dm.common.kv.KvUtils;
 import com.codeabovelab.dm.common.kv.mapping.KvMap;
 import com.codeabovelab.dm.common.kv.mapping.KvMapperFactory;
 import com.codeabovelab.dm.common.mb.MessageBus;
-import com.codeabovelab.dm.common.utils.Throwables;
 import com.codeabovelab.dm.common.utils.Uuids;
-import com.google.common.base.MoreObjects;
 import com.google.common.collect.ImmutableMap;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -78,7 +76,6 @@ public class PipelineServiceImpl implements PipelineService {
     private final KvMapperFactory kvmf;
     private final MessageBus<PipelineEvent> pipelineEventBus;
     private final String pipelinePrefix;
-    private final String pipelineInstancePrefix;
     private final DockerServiceRegistry dockerServiceRegistry;
     private final JobsManager jobsManager;
     private final RegistryRepository registryRepository;
@@ -103,7 +100,7 @@ public class PipelineServiceImpl implements PipelineService {
         KeyValueStorage storage = kvmf.getStorage();
         this.updateCronExpression = updateCronExpression;
         this.pipelinePrefix = storage.getPrefix() + "/pipelines/";
-        this.pipelineInstancePrefix = storage.getPrefix() + "/pipelineInstances/";
+        String pipelineInstancePrefix = storage.getPrefix() + "/pipelineInstances/";
         this.pipelineSchemas = KvMap.builder(PipelineSchema.class)
           .path(pipelinePrefix)
           .mapper(kvmf)

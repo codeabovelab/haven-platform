@@ -17,9 +17,9 @@
 package com.codeabovelab.dm.common.kv.mapping;
 
 import com.codeabovelab.dm.common.kv.KeyValueStorage;
+import com.codeabovelab.dm.common.utils.FindHandlerUtil;
 import com.codeabovelab.dm.common.validate.JsrValidityImpl;
 import com.codeabovelab.dm.common.validate.Validity;
-import com.codeabovelab.dm.common.utils.FindHandlerUtil;
 import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.type.TypeFactory;
@@ -57,7 +57,7 @@ public class KvMapperFactory {
         this.storage = storage;
         this.validator = validator;
 
-        ImmutableMap.Builder<Class<?>, FieldSetter> builder = ImmutableMap.<Class<?>, FieldSetter>builder();
+        ImmutableMap.Builder<Class<?>, FieldSetter> builder = ImmutableMap.builder();
         builder.put(Map.class, (field, value) -> {
             Map fieldMap = (Map) field;
             fieldMap.clear();
