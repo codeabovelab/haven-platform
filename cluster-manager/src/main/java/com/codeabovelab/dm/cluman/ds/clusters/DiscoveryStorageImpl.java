@@ -45,6 +45,7 @@ import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Component;
 import org.springframework.util.Assert;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 import java.util.function.Consumer;
@@ -127,7 +128,18 @@ public class DiscoveryStorageImpl implements DiscoveryStorage {
 
     public void load() {
         try(TempAuth ta = TempAuth.asSystem()) {
+            log.info("Begin clusters from storage");
+            // load keys, and then init values
             clusters.load();
+            Collection<NodesGroup> values = clusters.values();
+            StringBuilder sb = new StringBuilder();
+            values.forEach((ng) -> {
+                sb.append("\n");
+                sb.append(ng.getName()).append(":\n\t title:");
+                sb.append(ng.getTitle()).append("\n\tconfig:");
+                sb.append(ng.getConfig());
+            });
+            log.warn("Loaded clusters from storage: {}", sb);
         } catch (Exception  e) {
             log.error("Can not load clusters from storage", e);
         }

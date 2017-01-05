@@ -30,12 +30,18 @@ import org.springframework.util.Assert;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * A kind of nodegroup which is managed by 'docker' in 'swarm mode'.
  */
 @Slf4j
 public class DockerCluster extends AbstractNodesGroup<DockerClusterConfig> {
+
+    private static final int S_BEGIN = 0;
+    private static final int S_INITING = 1;
+    private static final int S_INITED = 2;
+    private static final int S_FAILED = 99;
 
     private final class Manager {
         private final String name;
@@ -45,14 +51,16 @@ public class DockerCluster extends AbstractNodesGroup<DockerClusterConfig> {
             this.name = name;
         }
 
-        synchronized void init() {
-            DockerServices dses = getDiscoveryStorage().getDockerServices();
-            service = dses.getNodeService(name);
-            Assert.notNull(service, "Can not find docker service for '" + name + "' node.");
+        synchronized DockerService getService() {
+            loadService();
+            return service;
         }
 
-        synchronized DockerService getService() {
-            return service;
+        private synchronized void loadService() {
+            if(service == null) {
+                DockerServices dses = getDiscoveryStorage().getDockerServices();
+                service = dses.getNodeService(name);
+            }
         }
     }
 
@@ -60,6 +68,7 @@ public class DockerCluster extends AbstractNodesGroup<DockerClusterConfig> {
      * List of cluster manager nodes.
      */
     private final Map<String, Manager> managers = new ConcurrentHashMap<>();
+    private final AtomicInteger state = new AtomicInteger(S_BEGIN);
 
     @lombok.Builder(builderClassName = "Builder")
     DockerCluster(DockerClusterConfig config, DiscoveryStorageImpl storage) {
@@ -67,24 +76,36 @@ public class DockerCluster extends AbstractNodesGroup<DockerClusterConfig> {
     }
 
     protected void init() {
-        List<String> hosts = this.config.getManagers();
-        Assert.notEmpty(hosts, "Cluster config '" + getName() + "' must contains at least one manager host.");
-        hosts.forEach(host -> {
-            Manager old = managers.putIfAbsent(host, new Manager(host));
-            if(old != null) {
-                throw new IllegalStateException("Cluster contains multiple hosts with same name: " + host);
-            }
-        });
-        managers.values().forEach(Manager::init);
-        initCluster(hosts.get(0));
+        if(!state.compareAndSet(S_BEGIN, S_INITING)) {
+            return;
+        }
+        try {
+            List<String> hosts = this.config.getManagers();
+            Assert.notEmpty(hosts, "Cluster config '" + getName() + "' must contains at least one manager host.");
+            hosts.forEach(host -> {
+                Manager old = managers.putIfAbsent(host, new Manager(host));
+                if(old != null) {
+                    throw new IllegalStateException("Cluster contains multiple hosts with same name: " + host);
+                }
+            });
+            initCluster(hosts.get(0));
+        } finally {
+            state.compareAndSet(S_INITING, S_FAILED);
+        }
     }
 
     private void initCluster(String leaderName) {
         //first we must find if one of nodes has exists cluster
         Map<String, List<String>> clusters = new HashMap<>();
         Manager selectedManager = null;
+        int onlineManagers = 0;
         for(Manager node: managers.values()) {
-            DockerServiceInfo info = node.service.getInfo();
+            DockerService service = node.getService();
+            if(service == null) {
+                continue;
+            }
+            onlineManagers++;
+            DockerServiceInfo info = service.getInfo();
             SwarmInfo swarm = info.getSwarm();
             if(swarm != null) {
                 clusters.computeIfAbsent(swarm.getClusterId(), (k) -> new ArrayList<>()).add(node.name);
@@ -92,6 +113,11 @@ public class DockerCluster extends AbstractNodesGroup<DockerClusterConfig> {
                     selectedManager = node;
                 }
             }
+        }
+        if(onlineManagers == 0) {
+            log.warn("cluster '{}' is not inited because no online masters", getName());
+            state.compareAndSet(S_INITING, S_BEGIN);
+            return;
         }
         if(clusters.size() > 1) {
             throw new IllegalStateException("Managers nodes already united into different cluster: " + clusters);
@@ -107,6 +133,7 @@ public class DockerCluster extends AbstractNodesGroup<DockerClusterConfig> {
             }
             //TODO node.service.joinSwarm();
         }
+        state.compareAndSet(S_INITING, S_INITED);
     }
 
     private Manager createCluster(String leader) {
@@ -114,10 +141,11 @@ public class DockerCluster extends AbstractNodesGroup<DockerClusterConfig> {
         log.info("Begin initialize swarm-mode cluster on '{}'", manager.name);
         SwarmInitCmd cmd = new SwarmInitCmd();
         cmd.setSpec(getSwarmConfig());
-        String address = manager.service.getAddress();
+        DockerService service = manager.getService();
+        String address = service.getAddress();
         address = AddressUtils.setPort(address, config.getSwarmPort());
         cmd.setListenAddr(address);
-        SwarmInitResult res = manager.service.initSwarm(cmd);
+        SwarmInitResult res = service.initSwarm(cmd);
         if(res.getCode() != ResultCode.OK) {
             throw new IllegalStateException("Can not initialize swarm-mode cluster on '" + manager.name + "' due to error: " + res.getMessage());
         }
