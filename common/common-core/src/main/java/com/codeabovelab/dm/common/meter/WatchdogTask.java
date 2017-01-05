@@ -51,7 +51,7 @@ public final class WatchdogTask {
         this.metric = metric;
         this.name = name;
         // stub state mean that all limits in normal state
-        this.state = new WatchdogTaskState(name, System.currentTimeMillis(), Collections.<LimitExcess>emptyList());
+        this.state = new WatchdogTaskState(name, System.currentTimeMillis(), Collections.emptyList());
     }
 
     /**
@@ -124,6 +124,15 @@ public final class WatchdogTask {
         return limitCheckers.isEmpty();
     }
 
+    private void updateState(LimitCheckContext context, List<LimitExcess> excesses) {
+        final List<LimitExcess> unmodifiableList = Collections.unmodifiableList(excesses);
+        this.state = new WatchdogTaskState(this.name, System.currentTimeMillis(), unmodifiableList);
+        if(!excesses.isEmpty()) {
+            LimitExcessEvent event = new LimitExcessEvent(context, unmodifiableList);
+            this.watchdog.fireLimitExcess(event);
+        }
+    }
+
     private static class WatchdogTaskRunnable implements Runnable {
 
         private final WatchdogTask watchdogTask;
@@ -148,15 +157,6 @@ public final class WatchdogTask {
                 }
             }
             this.watchdogTask.updateState(limitCheckContext, excesses);
-        }
-    }
-
-    private void updateState(LimitCheckContext context, List<LimitExcess> excesses) {
-        final List<LimitExcess> unmodifiableList = Collections.unmodifiableList(excesses);
-        this.state = new WatchdogTaskState(this.name, System.currentTimeMillis(), unmodifiableList);
-        if(!excesses.isEmpty()) {
-            LimitExcessEvent event = new LimitExcessEvent(context, unmodifiableList);
-            this.watchdog.fireLimitExcess(event);
         }
     }
 }

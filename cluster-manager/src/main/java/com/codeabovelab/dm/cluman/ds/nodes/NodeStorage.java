@@ -17,21 +17,23 @@
 package com.codeabovelab.dm.cluman.ds.nodes;
 
 import com.codeabovelab.dm.cluman.cluster.docker.management.DockerServiceEvent;
-import com.codeabovelab.dm.cluman.security.AccessContext;
-import com.codeabovelab.dm.cluman.security.AccessContextFactory;
-import com.codeabovelab.dm.cluman.security.SecuredType;
-import com.codeabovelab.dm.cluman.validate.ExtendedAssert;
-import com.codeabovelab.dm.common.kv.*;
-import com.codeabovelab.dm.common.kv.mapping.*;
 import com.codeabovelab.dm.cluman.model.*;
 import com.codeabovelab.dm.cluman.persistent.PersistentBusFactory;
 import com.codeabovelab.dm.cluman.reconfig.ReConfigObject;
 import com.codeabovelab.dm.cluman.reconfig.ReConfigurable;
+import com.codeabovelab.dm.cluman.security.AccessContext;
+import com.codeabovelab.dm.cluman.security.AccessContextFactory;
+import com.codeabovelab.dm.cluman.security.SecuredType;
+import com.codeabovelab.dm.cluman.security.TempAuth;
 import com.codeabovelab.dm.cluman.ui.HttpException;
+import com.codeabovelab.dm.cluman.validate.ExtendedAssert;
+import com.codeabovelab.dm.common.kv.KeyValueStorage;
+import com.codeabovelab.dm.common.kv.KvStorageEvent;
+import com.codeabovelab.dm.common.kv.WriteOptions;
+import com.codeabovelab.dm.common.kv.mapping.*;
+import com.codeabovelab.dm.common.mb.MessageBus;
 import com.codeabovelab.dm.common.security.Action;
 import com.codeabovelab.dm.common.validate.ValidityException;
-import com.codeabovelab.dm.common.mb.MessageBus;
-import com.codeabovelab.dm.cluman.security.TempAuth;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -58,7 +60,6 @@ public class NodeStorage implements NodeInfoProvider {
     private final KvMapperFactory kvmf;
     private final KvMap<NodeRegistrationImpl> nodes;
     private final MessageBus<NodeEvent> nodeEventBus;
-    private final String nodesPrefix;
     private final PersistentBusFactory persistentBusFactory;
     private final ExecutorService executorService;
 
@@ -72,7 +73,7 @@ public class NodeStorage implements NodeInfoProvider {
         this.nodeEventBus = nodeEventBus;
         this.persistentBusFactory = persistentBusFactory;
         KeyValueStorage storage = kvmf.getStorage();
-        nodesPrefix = storage.getPrefix() + "/nodes/";
+        String nodesPrefix = storage.getPrefix() + "/nodes/";
         this.nodes = KvMap.builder(NodeRegistrationImpl.class, NodeInfoImpl.Builder.class)
           .path(nodesPrefix)
           .adapter(new KvMapAdapterImpl())

@@ -45,16 +45,13 @@ import java.util.stream.Collectors;
 @Order(Ordered.HIGHEST_PRECEDENCE)
 public class UsersStorage implements UserIdentifiersDetailsService {
 
-    private final KvMapperFactory mapperFactory;
     private final KvMap<UserRegistration> map;
-    private final String prefix;
     private final AccessDecisionManager adm;
 
     @Autowired
     public UsersStorage(KvMapperFactory mapperFactory, AccessDecisionManager accessDecisionManager) {
-        this.mapperFactory = mapperFactory;
         this.adm = accessDecisionManager;
-        this.prefix = KvUtils.join(this.mapperFactory.getStorage().getPrefix(), "users");
+        String prefix = KvUtils.join(mapperFactory.getStorage().getPrefix(), "users");
         this.map = KvMap.builder(UserRegistration.class, ExtendedUserDetailsImpl.class)
           .mapper(mapperFactory)
           .path(prefix)

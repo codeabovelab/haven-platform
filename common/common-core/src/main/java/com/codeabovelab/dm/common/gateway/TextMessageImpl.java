@@ -18,11 +18,13 @@ package com.codeabovelab.dm.common.gateway;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import lombok.Data;
 
 /**
  * Simple implementation of server text messages.
  * @see ClientConnection#send(Object)
  */
+@Data
 public final class TextMessageImpl implements TextMessage {
     private final String title;
     private final String message;
@@ -34,49 +36,4 @@ public final class TextMessageImpl implements TextMessage {
         this.message = message;
     }
 
-    @Override
-    public String getTitle() {
-        return title;
-    }
-
-    @Override
-    public String getMessage() {
-        return message;
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) {
-            return true;
-        }
-        if (!(o instanceof TextMessageImpl)) {
-            return false;
-        }
-
-        TextMessageImpl that = (TextMessageImpl) o;
-
-        if (message != null ? !message.equals(that.message) : that.message != null) {
-            return false;
-        }
-        if (title != null ? !title.equals(that.title) : that.title != null) {
-            return false;
-        }
-
-        return true;
-    }
-
-    @Override
-    public int hashCode() {
-        int result = title != null ? title.hashCode() : 0;
-        result = 31 * result + (message != null ? message.hashCode() : 0);
-        return result;
-    }
-
-    @Override
-    public String toString() {
-        return "TextMessage{" +
-          "title='" + title + '\'' +
-          ", message='" + message + '\'' +
-          '}';
-    }
 }
