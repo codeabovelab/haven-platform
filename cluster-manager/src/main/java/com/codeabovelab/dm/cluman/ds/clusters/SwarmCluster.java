@@ -74,7 +74,7 @@ public final class SwarmCluster extends AbstractNodesGroup<SwarmNodesGroupConfig
         return docker;
     }
 
-    protected void init() {
+    protected void initImpl() {
         DockerServices dses = this.getDiscoveryStorage().getDockerServices();
         this.docker = dses.getOrCreateCluster(getClusterConfig(), (dsb) -> {
             dsb.setInfoInterceptor(this::dockerInfoModifier);

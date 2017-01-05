@@ -21,10 +21,7 @@ import com.codeabovelab.dm.cluman.cluster.docker.management.result.ResultCode;
 import com.codeabovelab.dm.cluman.cluster.docker.management.result.ServiceCallResult;
 import com.codeabovelab.dm.cluman.cluster.docker.model.CreateNetworkCmd;
 import com.codeabovelab.dm.cluman.cluster.docker.model.Network;
-import com.codeabovelab.dm.cluman.model.NodesGroup;
-import com.codeabovelab.dm.cluman.model.DiscoveryStorage;
-import com.codeabovelab.dm.cluman.model.NodeEvent;
-import com.codeabovelab.dm.cluman.model.NodeInfo;
+import com.codeabovelab.dm.cluman.model.*;
 import com.codeabovelab.dm.common.mb.MessageBus;
 import com.codeabovelab.dm.cluman.security.TempAuth;
 import org.slf4j.Logger;
@@ -106,6 +103,12 @@ public class NetworkManager implements Consumer<NodeEvent> {
                 return;
             }
             String clusterName = cluster.getName();
+            cluster.init();
+            NodeGroupState state = cluster.getState();
+            if (!state.isOk()) {
+                LOG.warn("Can not create network due cluster '{}' in '{}' state.", clusterName, state.getMessage());
+                return;
+            }
             List<Network> networks = cluster.getDocker().getNetworks();
             LOG.debug("Networks {}", networks);
             Optional<Network> any = networks.stream().filter(n -> n.getName().equals(clusterName)).findAny();

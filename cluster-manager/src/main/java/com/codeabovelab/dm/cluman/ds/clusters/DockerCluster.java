@@ -30,18 +30,12 @@ import org.springframework.util.Assert;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * A kind of nodegroup which is managed by 'docker' in 'swarm mode'.
  */
 @Slf4j
 public class DockerCluster extends AbstractNodesGroup<DockerClusterConfig> {
-
-    private static final int S_BEGIN = 0;
-    private static final int S_INITING = 1;
-    private static final int S_INITED = 2;
-    private static final int S_FAILED = 99;
 
     private final class Manager {
         private final String name;
@@ -74,30 +68,18 @@ public class DockerCluster extends AbstractNodesGroup<DockerClusterConfig> {
      * List of cluster manager nodes.
      */
     private final Map<String, Manager> managers = new ConcurrentHashMap<>();
-    private final AtomicInteger state = new AtomicInteger(S_BEGIN);
+
 
     @lombok.Builder(builderClassName = "Builder")
     DockerCluster(DockerClusterConfig config, DiscoveryStorageImpl storage) {
         super(config, storage, Collections.singleton(Feature.SWARM_MODE));
     }
 
-    protected void init() {
-        if(!state.compareAndSet(S_BEGIN, S_INITING)) {
-            return;
-        }
-        try {
-            List<String> hosts = this.config.getManagers();
-            Assert.notEmpty(hosts, "Cluster config '" + getName() + "' must contains at least one manager host.");
-            hosts.forEach(host -> {
-                Manager old = managers.putIfAbsent(host, new Manager(host));
-                if(old != null) {
-                    throw new IllegalStateException("Cluster contains multiple hosts with same name: " + host);
-                }
-            });
-            initCluster(hosts.get(0));
-        } finally {
-            state.compareAndSet(S_INITING, S_FAILED);
-        }
+    protected void initImpl() {
+        List<String> hosts = this.config.getManagers();
+        Assert.notEmpty(hosts, "Cluster config '" + getName() + "' must contains at least one manager host.");
+        hosts.forEach(host -> managers.putIfAbsent(host, new Manager(host)));
+        initCluster(hosts.get(0));
     }
 
     private void initCluster(String leaderName) {
@@ -139,7 +121,6 @@ public class DockerCluster extends AbstractNodesGroup<DockerClusterConfig> {
             }
             //TODO node.service.joinSwarm();
         }
-        state.compareAndSet(S_INITING, S_INITED);
     }
 
     private Manager createCluster(String leader) {

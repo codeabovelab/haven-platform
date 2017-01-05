@@ -35,6 +35,19 @@ public interface NodesGroup extends Named, WithAcl {
     void setConfig(AbstractNodesGroupConfig<?> config);
     void updateConfig(Consumer<AbstractNodesGroupConfig<?>> consumer);
 
+    /**
+     * Try to init cluster if it not inited already.
+     * @see #getState()
+     */
+    void init();
+
+    /**
+     * State of cluster.
+     * @see #init()
+     * @return state, can not be null.
+     */
+    NodeGroupState getState();
+
     enum Feature {
         /**
          * Feature mean than nodes in group is united by single 'swarm' service.

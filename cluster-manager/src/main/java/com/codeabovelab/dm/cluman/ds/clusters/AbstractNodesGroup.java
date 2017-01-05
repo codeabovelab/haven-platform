@@ -16,6 +16,7 @@
 
 package com.codeabovelab.dm.cluman.ds.clusters;
 
+import com.codeabovelab.dm.cluman.model.NodeGroupState;
 import com.codeabovelab.dm.cluman.security.AclModifier;
 import com.codeabovelab.dm.cluman.security.SecuredType;
 import com.codeabovelab.dm.cluman.ds.nodes.NodeStorage;
@@ -26,11 +27,14 @@ import com.codeabovelab.dm.common.security.acl.AclSource;
 import com.codeabovelab.dm.common.security.dto.ObjectIdentityData;
 import com.google.common.collect.ImmutableSet;
 import lombok.ToString;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.util.Assert;
 
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 
 /**
@@ -38,6 +42,12 @@ import java.util.function.Consumer;
 @ToString
 public abstract class AbstractNodesGroup<C extends AbstractNodesGroupConfig<C>> implements NodesGroup {
 
+    protected static final int S_BEGIN = 0;
+    protected static final int S_INITING = 1;
+    protected static final int S_INITED = 2;
+    protected static final int S_FAILED = 99;
+    // not use static or @Slf4j annotaion in this case
+    private final Logger log = LoggerFactory.getLogger(getClass());
     private final Class<C> configClazz;
     private final Set<Feature> features;
     private final DiscoveryStorageImpl storage;
@@ -45,6 +55,7 @@ public abstract class AbstractNodesGroup<C extends AbstractNodesGroupConfig<C>> 
     protected volatile C config;
     protected final Object lock = new Object();
     private final ObjectIdentityData oid;
+    protected final AtomicInteger state = new AtomicInteger(S_BEGIN);
 
     @SuppressWarnings("unchecked")
     public AbstractNodesGroup(C config,
@@ -61,8 +72,54 @@ public abstract class AbstractNodesGroup<C extends AbstractNodesGroupConfig<C>> 
         setConfig(config.clone());
     }
 
-    protected void init() {
+    /**
+     * Try to init cluster if it not inited already.
+     * @see #getState()
+     */
+    public final void init() {
+        if(!state.compareAndSet(S_BEGIN, S_INITING)) {
+            return;
+        }
+        try {
+            log.info("Begin init of cluster '{}'", getName());
+            initImpl();
+            if(state.compareAndSet(S_INITING, S_INITED)) {
+                log.info("Success init of cluster '{}'", getName());
+            }
+        } finally {
+            if(state.compareAndSet(S_INITING, S_FAILED)) {
+                log.error("Fail to init of cluster '{}'", getName());
+            }
+        }
+    }
+
+    protected void initImpl() {
         //none
+    }
+
+    @Override
+    public NodeGroupState getState() {
+        NodeGroupState.Builder b = NodeGroupState.builder();
+        b.inited(true);
+        switch (state.get()) {
+            case S_BEGIN:
+            case S_INITING:
+                b.message("Not inited.");
+                b.ok(false);
+                b.inited(false);
+                break;
+            case S_FAILED:
+                b.message("Failed.");
+                b.ok(false);
+                break;
+            case S_INITED:
+                b.ok(true);
+                break;
+            default:
+                b.ok(false);
+                b.message("Unknown state.");
+        }
+        return b.build();
     }
 
     @Override
