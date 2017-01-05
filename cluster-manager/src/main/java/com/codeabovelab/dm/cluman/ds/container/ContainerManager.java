@@ -62,44 +62,6 @@ import static com.google.common.base.MoreObjects.firstNonNull;
 @Component
 @RequiredArgsConstructor(onConstructor = @__(@Autowired))
 public class ContainerManager {
-    private class CreateContainerContext {
-        final CreateContainerArg arg;
-        final Consumer<ProcessEvent> watcher;
-        /**
-         * Service instance of concrete node or cluster on which do creation .
-         */
-        final DockerService dockerService;
-        private String name;
-
-        CreateContainerContext(CreateContainerArg arg, DockerService service) {
-            this.arg = arg;
-            Assert.notNull(arg.getContainer(), "arg.container is null");
-            this.watcher = firstNonNull(arg.getWatcher(), Consumers.<ProcessEvent>nop());
-            if (service != null) {
-                this.dockerService = service;
-            } else {
-                this.dockerService = getDocker(arg);
-            }
-        }
-
-        private DockerService getDocker(CreateContainerArg arg) {
-            //we create container only on node, ignore swarm and virtual service
-            String node = arg.getContainer().getNode();
-            Assert.hasText(node, "Node is null or empty");
-            DockerService service = nodeRegistry.getNodeService(node);
-            Assert.notNull(service, "Can not fins service for node: " + node);
-            return service;
-        }
-
-        public String getName() {
-            return name;
-        }
-
-        public void setName(String name) {
-            this.name = name;
-        }
-    }
-
     private static final Logger LOG = LoggerFactory.getLogger(DockerServiceImpl.class);
     private static final int CREATE_CONTAINER_TRIES = 3;
     private final DockerServiceRegistry dockerServiceRegistry;
@@ -285,6 +247,10 @@ public class ContainerManager {
         if(!CollectionUtils.isEmpty(command)) {
             cmd.setCmd(command.toArray(new String[command.size()]));
         }
+        List<String> entrypoint = nc.getEntrypoint();
+        if(!CollectionUtils.isEmpty(entrypoint)) {
+            cmd.setEntrypoint(entrypoint.toArray(new String[entrypoint.size()]));
+        }
         cmd.setHostConfig(getHostConfig(cc, result));
         Ports portBindings = cmd.getHostConfig().getPortBindings();
         if (portBindings != null) {
@@ -354,7 +320,6 @@ public class ContainerManager {
         return restartPolicyString == null ? RestartPolicy.noRestart() : parse(restartPolicyString);
     }
 
-
     private List<String> getHostBindings(ContainerSource arg) {
         List<String> volumeBinds = arg.getVolumeBinds();
         if(volumeBinds == null) {
@@ -380,6 +345,44 @@ public class ContainerManager {
             }
         }
         return ports;
+    }
+
+    private class CreateContainerContext {
+        final CreateContainerArg arg;
+        final Consumer<ProcessEvent> watcher;
+        /**
+         * Service instance of concrete node or cluster on which do creation .
+         */
+        final DockerService dockerService;
+        private String name;
+
+        CreateContainerContext(CreateContainerArg arg, DockerService service) {
+            this.arg = arg;
+            Assert.notNull(arg.getContainer(), "arg.container is null");
+            this.watcher = firstNonNull(arg.getWatcher(), Consumers.<ProcessEvent>nop());
+            if (service != null) {
+                this.dockerService = service;
+            } else {
+                this.dockerService = getDocker(arg);
+            }
+        }
+
+        private DockerService getDocker(CreateContainerArg arg) {
+            //we create container only on node, ignore swarm and virtual service
+            String node = arg.getContainer().getNode();
+            Assert.hasText(node, "Node is null or empty");
+            DockerService service = nodeRegistry.getNodeService(node);
+            Assert.notNull(service, "Can not fins service for node: " + node);
+            return service;
+        }
+
+        public String getName() {
+            return name;
+        }
+
+        public void setName(String name) {
+            this.name = name;
+        }
     }
 
 

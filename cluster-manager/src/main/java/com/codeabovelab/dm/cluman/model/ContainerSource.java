@@ -20,11 +20,7 @@ import com.codeabovelab.dm.cluman.cluster.docker.management.argument.Reschedule;
 import com.codeabovelab.dm.common.utils.Cloneables;
 import com.codeabovelab.dm.common.utils.Comparables;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
-import com.google.common.base.MoreObjects;
-import lombok.AccessLevel;
-import lombok.Data;
-import lombok.EqualsAndHashCode;
-import lombok.Setter;
+import lombok.*;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -37,6 +33,7 @@ import java.util.Map;
 @JsonPropertyOrder({"name", "hostname", "image", "cluster", "application", "node", "labels", "ports"})
 @EqualsAndHashCode(callSuper = true)
 @Data
+@ToString(callSuper = true)
 public class ContainerSource extends EditableContainerSource implements Cloneable, ContainerBaseIface, Comparable<ContainerSource> {
 
     private String id;
@@ -108,6 +105,7 @@ public class ContainerSource extends EditableContainerSource implements Cloneabl
     private Map<String, String> links = new HashMap<>();
     @Setter(AccessLevel.NONE)
     private List<String> command = new ArrayList<>();
+    private List<String> entrypoint = new ArrayList<>();
     /**
      * List of dependencies, note that deps may be in reverse order (mean that specified
      * container must be depended from this). Also, system consider dependencies placed as {@link #links }
@@ -160,6 +158,7 @@ public class ContainerSource extends EditableContainerSource implements Cloneabl
         clone.labels = Cloneables.clone(clone.labels);
         clone.links = Cloneables.clone(clone.links);
         clone.dns = Cloneables.clone(clone.dns);
+        clone.entrypoint = Cloneables.clone(clone.entrypoint);
         clone.dnsSearch = Cloneables.clone(clone.dnsSearch);
         clone.networks = Cloneables.clone(clone.networks);
         clone.extraHosts = Cloneables.clone(clone.extraHosts);
@@ -173,42 +172,5 @@ public class ContainerSource extends EditableContainerSource implements Cloneabl
         return Comparables.compare(this.name, o.name);
     }
 
-    /**
-     * toString with omitting nulls for simplifying reading
-     * @return
-     */
-    @Override
-    public String toString() {
-        return MoreObjects.toStringHelper(this)
-                .add("id", id)
-                .add("image", image)
-                .add("imageId", imageId)
-                .add("cluster", cluster)
-                .add("node", node)
-                .add("application", application)
-                .add("environment", environment)
-                .add("include", include)
-                .add("volumes", volumes)
-                .add("volumeBinds", volumeBinds)
-                .add("volumeDriver", volumeDriver)
-                .add("volumesFrom", volumesFrom)
-                .add("name", name)
-                .add("hostname", hostname)
-                .add("domainname", domainname)
-                .add("ports", ports)
-                .add("labels", labels)
-                .add("reschedule", reschedule)
-                .add("publishAllPorts", publishAllPorts)
-                .add("links", links)
-                .add("command", command)
-                .add("dns", dns)
-                .add("dnsSearch", dnsSearch)
-                .add("network", network)
-                .add("networks", networks)
-                .add("extraHosts", extraHosts)
-                .add("securityOpt", securityOpt)
-                .add("", super.toString())
-                .omitNullValues()
-                .toString();
-    }
+
 }
