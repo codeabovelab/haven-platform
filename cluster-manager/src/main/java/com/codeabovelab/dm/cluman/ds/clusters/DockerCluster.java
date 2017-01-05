@@ -58,8 +58,14 @@ public class DockerCluster extends AbstractNodesGroup<DockerClusterConfig> {
 
         private synchronized void loadService() {
             if(service == null) {
-                DockerServices dses = getDiscoveryStorage().getDockerServices();
+                DiscoveryStorageImpl ds = getDiscoveryStorage();
+                DockerServices dses = ds.getDockerServices();
                 service = dses.getNodeService(name);
+                if(service != null) {
+                    // in some cases node may has different cluster, it cause undefined behaviour
+                    // therefore we must force node to new cluster
+                    ds.getNodeStorage().setNodeCluster(name, DockerCluster.this.getName());
+                }
             }
         }
     }
@@ -159,8 +165,11 @@ public class DockerCluster extends AbstractNodesGroup<DockerClusterConfig> {
     }
 
     private boolean isFromSameCluster(NodeRegistration nr) {
-        // it work wrong, because must also check nodes act as manager
-        return nr != null && getName().equals(nr.getCluster());
+        if (nr == null) {
+            return false;
+        }
+        return this.managers.containsKey(nr.getNodeInfo().getName()) ||
+            getName().equals(nr.getCluster());
     }
 
     @Override
