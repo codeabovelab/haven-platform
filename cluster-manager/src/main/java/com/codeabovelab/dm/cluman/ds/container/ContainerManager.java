@@ -245,11 +245,13 @@ public class ContainerManager {
         cmd.getLabels().put(ContainerUtils.LABEL_IMAGE_NAME, imageName);
         List<String> command = nc.getCommand();
         if(!CollectionUtils.isEmpty(command)) {
-            cmd.setCmd(command.toArray(new String[command.size()]));
+//            TODO: check for empty strings
+//            cmd.setCmd(command.toArray(new String[command.size()]));
         }
         List<String> entrypoint = nc.getEntrypoint();
         if(!CollectionUtils.isEmpty(entrypoint)) {
-            cmd.setEntrypoint(entrypoint.toArray(new String[entrypoint.size()]));
+//            TODO: check for empty strings
+//            cmd.setEntrypoint(entrypoint.toArray(new String[entrypoint.size()]));
         }
         cmd.setHostConfig(getHostConfig(cc, result));
         Ports portBindings = cmd.getHostConfig().getPortBindings();
