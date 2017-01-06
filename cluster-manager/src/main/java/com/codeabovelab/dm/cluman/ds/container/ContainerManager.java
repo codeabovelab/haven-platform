@@ -50,6 +50,7 @@ import org.springframework.util.StringUtils;
 
 import java.util.*;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
 
 import static com.codeabovelab.dm.cluman.cluster.docker.management.DockerUtils.SCALABLE;
 import static com.codeabovelab.dm.cluman.cluster.docker.model.RestartPolicy.parse;
@@ -243,25 +244,28 @@ public class ContainerManager {
         cmd.setImage(imageName);
         cmd.setLabels(result.getLabels());
         cmd.getLabels().put(ContainerUtils.LABEL_IMAGE_NAME, imageName);
-        List<String> command = nc.getCommand();
-        if(!CollectionUtils.isEmpty(command)) {
-//            TODO: check for empty strings
-//            cmd.setCmd(command.toArray(new String[command.size()]));
-        }
-        List<String> entrypoint = nc.getEntrypoint();
-        if(!CollectionUtils.isEmpty(entrypoint)) {
-//            TODO: check for empty strings
-//            cmd.setEntrypoint(entrypoint.toArray(new String[entrypoint.size()]));
-        }
+        cmd.setCmd(convertAndFilter(nc.getCommand()));
+        cmd.setEntrypoint(convertAndFilter(nc.getEntrypoint()));
         cmd.setHostConfig(getHostConfig(cc, result));
         Ports portBindings = cmd.getHostConfig().getPortBindings();
-        if (portBindings != null) {
+        if (portBindings != null && !CollectionUtils.isEmpty(portBindings.getPorts())) {
             Map<ExposedPort, Ports.Binding[]> bindings = portBindings.getBindings();
             cmd.setExposedPorts(new ExposedPorts(bindings.keySet()));
         }
         LOG.info("Command for execution: {}", cmd);
         ProcessEvent.watch(cc.watcher, "Command for execution: {0}", cmd);
         return cmd;
+    }
+
+    private String[] convertAndFilter(List<String> strings) {
+        if (CollectionUtils.isEmpty(strings)) {
+            return null;
+        }
+        List<String> collect = strings.stream().filter(s -> StringUtils.hasText(s)).collect(Collectors.toList());
+        if (CollectionUtils.isEmpty(collect)) {
+            return null;
+        }
+        return collect.toArray(new String[collect.size()]);
     }
 
     private Map<String, Integer> getContainersPerNodeForImage(CreateContainerContext cc, String imageName) {
