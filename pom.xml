@@ -11,7 +11,27 @@
     <artifactId>dm-parent</artifactId>
     <version>1.1.2</version>
     <packaging>pom</packaging>
-    <name>DockerMaster</name>
+    <name>Haven platform</name>
+
+    <description>Haven is a Docker container management system.
+        It integrates container, application, cluster, image, and registry management in one single place.</description>
+    <url>https://github.com/codeabovelab/haven-platform</url>
+
+    <licenses>
+        <license>
+            <name>The Apache License, Version 2.0</name>
+            <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
+        </license>
+    </licenses>
+
+    <developers>
+        <developer>
+            <name>https://github.com/codeabovelab/haven-platform/issues</name>
+            <email>info@codeabovelab.com</email>
+            <organization>codeabovelab</organization>
+            <organizationUrl>https://codeabovelab.com</organizationUrl>
+        </developer>
+    </developers>
 
     <scm>
         <connection>scm:git:git@github.com:codeabovelab/haven-platform.git</connection>
