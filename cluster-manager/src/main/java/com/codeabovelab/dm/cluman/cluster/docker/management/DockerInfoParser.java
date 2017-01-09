@@ -202,6 +202,7 @@ class DockerInfoParser {
         InfoSwarm swarm = info.getSwarm();
         if(swarm != null && swarm.getCluster() != null) {
             result.setSwarm(convertSwarm(swarm));
+            result.setNodeCount(swarm.getNodes());
         }
         return result;
     }
