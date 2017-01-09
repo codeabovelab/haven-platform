@@ -24,6 +24,7 @@ import com.codeabovelab.dm.cluman.cluster.docker.management.result.ProcessEvent;
 import com.codeabovelab.dm.cluman.cluster.docker.management.result.RemoveImageResult;
 import com.codeabovelab.dm.cluman.cluster.docker.management.result.ServiceCallResult;
 import com.codeabovelab.dm.cluman.cluster.docker.model.*;
+import com.codeabovelab.dm.cluman.cluster.docker.model.swarm.SwarmNode;
 import com.codeabovelab.dm.cluman.cluster.docker.model.swarm.SwarmSpec;
 import com.codeabovelab.dm.cluman.cluster.docker.model.swarm.SwarmInitCmd;
 import com.codeabovelab.dm.cluman.model.DockerContainer;
@@ -281,5 +282,11 @@ public class DockerServiceSecurityWrapper implements DockerService {
     public SwarmInitResult initSwarm(SwarmInitCmd cmd) {
         checkServiceAccess(Action.UPDATE);
         return service.initSwarm(cmd);
+    }
+
+    @Override
+    public List<SwarmNode> getNodes(GetNodesArg cmd) {
+        checkServiceAccess(Action.READ);
+        return service.getNodes(cmd);
     }
 }

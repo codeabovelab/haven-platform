@@ -17,14 +17,18 @@
 package com.codeabovelab.dm.cluman.ds.clusters;
 
 import com.codeabovelab.dm.cluman.cluster.docker.management.DockerService;
+import com.codeabovelab.dm.cluman.cluster.docker.management.argument.GetNodesArg;
 import com.codeabovelab.dm.cluman.cluster.docker.management.result.*;
 import com.codeabovelab.dm.cluman.cluster.docker.management.result.ResultCode;
+import com.codeabovelab.dm.cluman.cluster.docker.model.swarm.SwarmNode;
 import com.codeabovelab.dm.cluman.cluster.docker.model.swarm.SwarmSpec;
 import com.codeabovelab.dm.cluman.cluster.docker.model.swarm.SwarmInitCmd;
 import com.codeabovelab.dm.cluman.ds.nodes.NodeRegistration;
+import com.codeabovelab.dm.cluman.ds.nodes.NodeStorage;
 import com.codeabovelab.dm.cluman.ds.swarm.DockerServices;
 import com.codeabovelab.dm.cluman.model.*;
 import com.codeabovelab.dm.cluman.utils.AddressUtils;
+import com.google.common.collect.ImmutableList;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.util.Assert;
 
@@ -142,7 +146,17 @@ public class DockerCluster extends AbstractNodesGroup<DockerClusterConfig> {
 
     @Override
     public Collection<NodeInfo> getNodes() {
-        return getNodeStorage().getNodes(this::isFromSameCluster);
+        List<SwarmNode> nodes = getDocker().getNodes(null);
+        NodeStorage ns = getNodeStorage();
+        ImmutableList.Builder<NodeInfo> nis = ImmutableList.builder();
+        nodes.forEach(sn -> {
+            NodeInfo ni = ns.getNodeInfo(sn.getDescription().getHostname());
+            if(ni != null) {
+                nis.add(ni);
+            }
+            // when node is not in storage we must add it, but not here
+        });
+        return nis.build();
     }
 
     private boolean isFromSameCluster(NodeRegistration nr) {
