@@ -25,6 +25,7 @@ import com.codeabovelab.dm.cluman.model.SwarmInfo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.util.CollectionUtils;
+import org.springframework.util.StringUtils;
 
 import java.util.List;
 
@@ -200,7 +201,7 @@ class DockerInfoParser {
             parseStatusList(statusList);
         }
         InfoSwarm swarm = info.getSwarm();
-        if(swarm != null && swarm.getCluster() != null) {
+        if(swarm != null && StringUtils.hasText(swarm.getNodeId())) {
             result.setSwarm(convertSwarm(swarm));
             result.setNodeCount(swarm.getNodes());
         }

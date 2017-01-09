@@ -117,8 +117,10 @@ public class DockerCluster extends AbstractNodesGroup<DockerClusterConfig> {
         if(clusters.isEmpty()) {
             //we must create cluster if no one found
             selectedManager = createCluster(leaderName);
+        } else if(selectedManager == null) {
+            throw new IllegalStateException("We has cluster: " + clusters + " but no one managers.");
         }
-        //and the we must join all managers to created cluster
+        //and then we must join all managers to created cluster
         for(Manager node: managers.values()) {
             if(node == selectedManager) {
                 continue;
