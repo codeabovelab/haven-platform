@@ -24,6 +24,7 @@ import com.codeabovelab.dm.cluman.cluster.docker.management.result.*;
 import com.codeabovelab.dm.cluman.cluster.docker.management.result.ResultCode;
 import com.codeabovelab.dm.cluman.cluster.docker.management.result.ServiceCallResult;
 import com.codeabovelab.dm.cluman.cluster.docker.model.*;
+import com.codeabovelab.dm.cluman.cluster.docker.model.swarm.SwarmInspectResponse;
 import com.codeabovelab.dm.cluman.cluster.docker.model.swarm.SwarmNode;
 import com.codeabovelab.dm.cluman.cluster.docker.model.swarm.SwarmSpec;
 import com.codeabovelab.dm.cluman.cluster.docker.model.swarm.SwarmInitCmd;
@@ -332,7 +333,7 @@ class VirtualDockerService implements DockerService {
     }
 
     @Override
-    public SwarmSpec getSwarm() {
+    public SwarmInspectResponse getSwarm() {
         return null;
     }
 

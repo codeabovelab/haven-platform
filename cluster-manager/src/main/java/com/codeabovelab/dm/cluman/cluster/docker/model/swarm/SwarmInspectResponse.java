@@ -23,7 +23,7 @@ import lombok.Data;
  * Result of 'GET /swarm'
  */
 @Data
-public class SwarmInspectResult extends Cluster {
+public class SwarmInspectResponse extends Cluster {
 
     @JsonProperty("JoinTokens")
     private JoinTokens joinTokens;

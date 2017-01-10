@@ -20,6 +20,7 @@ import com.codeabovelab.dm.cluman.cluster.docker.ClusterConfig;
 import com.codeabovelab.dm.cluman.cluster.docker.management.argument.*;
 import com.codeabovelab.dm.cluman.cluster.docker.management.result.*;
 import com.codeabovelab.dm.cluman.cluster.docker.model.*;
+import com.codeabovelab.dm.cluman.cluster.docker.model.swarm.SwarmInspectResponse;
 import com.codeabovelab.dm.cluman.cluster.docker.model.swarm.SwarmNode;
 import com.codeabovelab.dm.cluman.cluster.docker.model.swarm.SwarmSpec;
 import com.codeabovelab.dm.cluman.cluster.docker.model.swarm.SwarmInitCmd;
@@ -176,7 +177,7 @@ public interface DockerService {
      * <code>GET /swarm</code>
      * @return swarm config or null when not supported
      */
-    SwarmSpec getSwarm();
+    SwarmInspectResponse getSwarm();
 
     /**
      * Initialize a new swarm. The body of the HTTP response includes the node ID.

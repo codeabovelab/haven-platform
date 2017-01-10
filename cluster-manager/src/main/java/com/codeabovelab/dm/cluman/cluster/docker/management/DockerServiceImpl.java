@@ -19,6 +19,7 @@ package com.codeabovelab.dm.cluman.cluster.docker.management;
 import com.codeabovelab.dm.cluman.cluster.docker.management.result.*;
 import com.codeabovelab.dm.cluman.cluster.docker.management.result.ResultCode;
 import com.codeabovelab.dm.cluman.cluster.docker.management.result.ServiceCallResult;
+import com.codeabovelab.dm.cluman.cluster.docker.model.swarm.SwarmInspectResponse;
 import com.codeabovelab.dm.cluman.cluster.docker.model.swarm.SwarmNode;
 import com.codeabovelab.dm.cluman.cluster.docker.model.swarm.SwarmSpec;
 import com.codeabovelab.dm.cluman.cluster.docker.model.swarm.SwarmInitCmd;
@@ -859,8 +860,8 @@ public class DockerServiceImpl implements DockerService {
     }
 
     @Override
-    public SwarmSpec getSwarm() {
-        ResponseEntity<SwarmSpec> configResult = getFast(() -> restTemplate.getForEntity(makeUrl("/swarm").toUriString(), SwarmSpec.class));
+    public SwarmInspectResponse getSwarm() {
+        ResponseEntity<SwarmInspectResponse> configResult = getFast(() -> restTemplate.getForEntity(makeUrl("/swarm").toUriString(), SwarmInspectResponse.class));
         return configResult.getBody();
     }
 
