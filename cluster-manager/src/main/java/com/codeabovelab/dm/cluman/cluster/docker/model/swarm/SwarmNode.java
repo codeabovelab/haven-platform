@@ -17,6 +17,8 @@
 package com.codeabovelab.dm.cluman.cluster.docker.model.swarm;
 
 import com.codeabovelab.dm.cluman.cluster.docker.model.Node;
+import com.codeabovelab.dm.common.json.JtEnumLower;
+import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Data;
 
@@ -92,10 +94,10 @@ public class SwarmNode {
         private final String name;
 
         @JsonProperty("Role")
-        private final String role;
+        private final NodeRole role;
 
         @JsonProperty("Availability")
-        private final String availability;
+        private final NodeAvailability availability;
 
         @JsonProperty("Labels")
         private final Map<String, String> labels;
@@ -107,9 +109,11 @@ public class SwarmNode {
         @JsonProperty("Hostname")
         private final String hostname;
 
-        //@JsonProperty("Platform") { "Architecture": "x86_64", "OS": "linux" }
+        @JsonProperty("Platform")
+        private final Platform platform;
 
-        //@JsonProperty("Resources") { "NanoCPUs": 4000000000, "MemoryBytes": 8272408576 }
+        @JsonProperty("Resources")
+        private final Resources resources;
 
         @JsonProperty("Engine")
         private final Engine engine;
@@ -142,7 +146,7 @@ public class SwarmNode {
     public static class State {
 
         @JsonProperty("State")
-        private final String state;
+        private final NodeState state;
     }
 
     @Data
@@ -151,9 +155,73 @@ public class SwarmNode {
         private final boolean leader;
 
         @JsonProperty("Reachability")
-        private final String reachability;
+        private final Reachability reachability;
 
         @JsonProperty("Addr")
         private final String address;
+    }
+
+    @Data
+    public static class Platform {
+
+        @JsonProperty("Architecture")
+        private final String arch;
+
+        @JsonProperty("OS")
+        private final String os;
+    }
+
+    /**
+     * https://github.com/docker/docker/blob/a5da9f5cc911da603a41bb77ca1ccbb0848d6260/api/types/swarm/task.go#L70
+     */
+    @Data
+    public static class Resources {
+
+        @JsonProperty("NanoCPUs")
+        private final long nanoCPUs;
+
+        @JsonProperty("MemoryBytes")
+        private final long memory;
+    }
+
+    /**
+     *
+     * see https://github.com/docker/docker/blob/38f766ae0e4b80d452a3825c42a7ac9fee965790/api/types/swarm/node.go#L103
+     */
+    @JtEnumLower
+    public enum NodeState {
+        UNKNOWN,
+        DOWN,
+        READY,
+        DISCONNECTED;
+    }
+
+    /**
+     * https://github.com/docker/docker/blob/38f766ae0e4b80d452a3825c42a7ac9fee965790/api/types/swarm/node.go#L84
+     */
+    @JtEnumLower
+    public enum Reachability {
+        UNKNOWN,
+        UNREACHABLE,
+        REACHABLE;
+    }
+
+    /**
+     * https://github.com/docker/docker/blob/38f766ae0e4b80d452a3825c42a7ac9fee965790/api/types/swarm/node.go#L38
+     */
+    @JtEnumLower
+    public enum NodeAvailability {
+        ACTIVE,
+        PAUSE,
+        DRAIN;
+    }
+
+    /**
+     * https://github.com/docker/docker/blob/38f766ae0e4b80d452a3825c42a7ac9fee965790/api/types/swarm/node.go#L28
+     */
+    @JtEnumLower
+    public enum NodeRole {
+        WORKER,
+        MANAGER;
     }
 }
