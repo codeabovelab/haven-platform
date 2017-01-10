@@ -17,6 +17,7 @@
 package com.codeabovelab.dm.cluman.ds.clusters;
 
 import com.codeabovelab.dm.cluman.model.NodesGroup;
+import com.codeabovelab.dm.common.kv.mapping.KvMapperFactory;
 import lombok.Data;
 import org.springframework.util.Assert;
 
@@ -28,6 +29,12 @@ class ClusterFactory {
     private AbstractNodesGroupConfig<?> config;
     private String type;
     private ClusterConfigFactory configFactory;
+    private KvMapperFactory kvmf;
+
+    public ClusterFactory kvmf(KvMapperFactory kvmf) {
+        setKvmf(kvmf);
+        return this;
+    }
 
     public ClusterFactory config(AbstractNodesGroupConfig<?> config) {
         setConfig(config);
@@ -45,7 +52,7 @@ class ClusterFactory {
         AbstractNodesGroup<?> cluster;
         if(config instanceof SwarmNodesGroupConfig) {
             SwarmNodesGroupConfig localConfig = (SwarmNodesGroupConfig) config;
-            cluster = SwarmCluster.builder().storage(storage).config(localConfig).build();
+            cluster = SwarmCluster.builder().kvmf(kvmf).storage(storage).config(localConfig).build();
         } else if(config instanceof DockerClusterConfig) {
             DockerClusterConfig localConfig = (DockerClusterConfig) config;
             cluster = DockerCluster.builder().storage(storage).config(localConfig).build();

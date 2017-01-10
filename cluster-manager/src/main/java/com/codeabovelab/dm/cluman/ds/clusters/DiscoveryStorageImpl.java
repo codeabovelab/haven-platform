@@ -67,6 +67,7 @@ public class DiscoveryStorageImpl implements DiscoveryStorage {
     private final FilterFactory filterFactory;
     private final AccessContextFactory aclContextFactory;
     private final MessageBus<NodesGroupEvent> messageBus;
+    private final KvMapperFactory kvmf;
 
     @Autowired
     public DiscoveryStorageImpl(KvMapperFactory kvmf,
@@ -75,6 +76,7 @@ public class DiscoveryStorageImpl implements DiscoveryStorage {
                                 NodeStorage nodeStorage,
                                 AccessContextFactory aclContextFactory,
                                 @Qualifier(NodesGroupEvent.BUS) MessageBus<NodesGroupEvent> messageBus) {
+        this.kvmf = kvmf;
         this.services = dockerServices;
         this.nodeStorage = nodeStorage;
         this.messageBus = messageBus;
@@ -228,7 +230,7 @@ public class DiscoveryStorageImpl implements DiscoveryStorage {
     }
 
     private ClusterFactory clusterFactory() {
-        return new ClusterFactory(this);
+        return new ClusterFactory(this).kvmf(this.kvmf);
     }
 
     @Override

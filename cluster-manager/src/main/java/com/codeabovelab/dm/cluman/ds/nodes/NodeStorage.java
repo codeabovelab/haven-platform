@@ -29,9 +29,9 @@ import com.codeabovelab.dm.cluman.ui.HttpException;
 import com.codeabovelab.dm.cluman.validate.ExtendedAssert;
 import com.codeabovelab.dm.common.kv.KeyValueStorage;
 import com.codeabovelab.dm.common.kv.KvStorageEvent;
-import com.codeabovelab.dm.common.kv.WriteOptions;
 import com.codeabovelab.dm.common.kv.mapping.*;
 import com.codeabovelab.dm.common.mb.MessageBus;
+import com.codeabovelab.dm.common.mb.Subscriptions;
 import com.codeabovelab.dm.common.security.Action;
 import com.codeabovelab.dm.common.validate.ValidityException;
 import org.slf4j.Logger;
@@ -42,7 +42,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import org.springframework.util.Assert;
-import org.springframework.util.StringUtils;
 
 import javax.annotation.PostConstruct;
 import java.util.*;
@@ -57,7 +56,6 @@ import java.util.function.Predicate;
 public class NodeStorage implements NodeInfoProvider {
 
     private final Logger log = LoggerFactory.getLogger(getClass());
-    private final KvMapperFactory kvmf;
     private final KvMap<NodeRegistrationImpl> nodes;
     private final MessageBus<NodeEvent> nodeEventBus;
     private final PersistentBusFactory persistentBusFactory;
@@ -69,7 +67,6 @@ public class NodeStorage implements NodeInfoProvider {
                        @Qualifier(DockerServiceEvent.BUS) MessageBus<DockerServiceEvent> dockerBus,
                        PersistentBusFactory persistentBusFactory,
                        ExecutorService executorService) {
-        this.kvmf = kvmf;
         this.nodeEventBus = nodeEventBus;
         this.persistentBusFactory = persistentBusFactory;
         KeyValueStorage storage = kvmf.getStorage();
@@ -88,6 +85,10 @@ public class NodeStorage implements NodeInfoProvider {
         this.executorService = executorService;
 
         dockerBus.asSubscriptions().subscribe(this::onDockerServiceEvent);
+    }
+
+    public Subscriptions<NodeEvent> getNodeEventSubscriptions() {
+        return nodeEventBus.asSubscriptions();
     }
 
     @PostConstruct
@@ -226,7 +227,6 @@ public class NodeStorage implements NodeInfoProvider {
             b.labels(node.getLabels());
             b.mergeHealth(node.getHealth());
         });
-        updateSwarmRegistration(nr);
         save(nr);
     }
 
@@ -249,15 +249,6 @@ public class NodeStorage implements NodeInfoProvider {
             nr.setCluster(cluster);
             save(nr);
         }
-        updateSwarmRegistration(nr);
-        if(StringUtils.hasText(oldCluster) && !oldCluster.equals(cluster)) {
-            //it optional but reduce time when node appear in two clusters in same time
-            try {
-                kvmf.getStorage().delete(getDiscoveryKey(oldCluster, nr.getNodeInfo().getAddress()), null);
-            } catch (Exception e) {
-                log.error("Can not remove node {} swarm-registration from cluster {} due: {}", nodeName, cluster, e.getMessage());
-            }
-        }
     }
 
     @Override
@@ -267,28 +258,6 @@ public class NodeStorage implements NodeInfoProvider {
             return null;
         }
         return nr.getCluster();
-    }
-
-    private void updateSwarmRegistration(NodeRegistrationImpl nr) {
-        NodeInfo ni = nr.getNodeInfo();
-        String cluster = ni.getCluster();
-        if(!StringUtils.hasText(cluster)) {
-            return;
-        }
-        Assert.doesNotContain(cluster, "/", "Bad cluster name: " + cluster);
-        checkAccess(nr, Action.UPDATE);
-        String address = ni.getAddress();
-        try {
-            kvmf.getStorage().set(getDiscoveryKey(cluster, address),
-              address,
-              WriteOptions.builder().ttl(nr.getTtl()).build());
-        } catch (Exception e) {
-            log.error("Can not update swarm registration: of node {} from cluster {}", address, cluster, e);
-        }
-    }
-
-    private String getDiscoveryKey(String cluster, String address) {
-        return "/discovery/" + cluster + "/docker/swarm/nodes/" + address;
     }
 
     @Override
