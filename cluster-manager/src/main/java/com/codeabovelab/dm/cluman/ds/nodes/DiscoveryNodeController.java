@@ -76,15 +76,16 @@ public class DiscoveryNodeController {
         if(this.nodeSecret != null && !this.nodeSecret.equals(nodeSecret)) {
             return new ResponseEntity<>("Server required node auth, need correct value of '" + HEADER + "' header.", HttpStatus.UNAUTHORIZED);
         }
-        NodeInfoImpl.Builder builder = NodeInfoImpl.builder()
-          .from(data)
-          .name(name);
-        builder.health(createNodeHealth(data));
-        NodeInfo node = builder.build();
+        NodeMetrics health = createNodeHealth(data);
+
         try (TempAuth ta = TempAuth.asSystem()) {
-            storage.updateNode(NodeUpdate.builder().node(node).build(), ttl);
+            storage.updateNode(name, ttl, b -> {
+                b.address(data.getAddress());
+                b.labels(data.getLabels());
+                b.mergeHealth(health);
+            });
         }
-        log.info("Update node {}", node.getName());
+        log.info("Update node {}", name);
         return new ResponseEntity<>(HttpStatus.OK);
     }
 

@@ -35,6 +35,7 @@ import com.codeabovelab.dm.common.security.Action;
 import com.codeabovelab.dm.common.security.Authorities;
 import com.codeabovelab.dm.common.security.TenantGrantedAuthoritySid;
 import com.codeabovelab.dm.common.security.acl.AceSource;
+import com.codeabovelab.dm.common.utils.Closeables;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import org.slf4j.Logger;
@@ -102,8 +103,14 @@ public class DiscoveryStorageImpl implements DiscoveryStorage {
               }
           })
           .localListener(e -> {
-              if(e.getAction() == KvMapLocalEvent.Action.CREATE) {
-                  checkThatCanCreate();
+              KvMapLocalEvent.Action action = e.getAction();
+              switch (action) {
+                  case CREATE:
+                      checkThatCanCreate();
+                      break;
+                  case DELETE:
+                      handleRemoved(e.getOldValue());
+                      break;
               }
           })
           .build();
@@ -278,8 +285,16 @@ public class DiscoveryStorageImpl implements DiscoveryStorage {
 
     private void deleteGroup(String clusterId) {
         aclContextFactory.getContext().assertGranted(SecuredType.CLUSTER.id(clusterId), Action.DELETE);
-        clusters.remove(clusterId);
+        NodesGroup ng = clusters.remove(clusterId);
+        handleRemoved(ng);
         log.error("Delete '{}' cluster.", clusterId);
+    }
+
+    private void handleRemoved(NodesGroup ng) {
+        if(ng == null) {
+            return;
+        }
+        Closeables.closeIfCloseable(ng);
     }
 
     public void deleteNodeGroup(String clusterId) {

@@ -147,6 +147,9 @@ public class SwarmNode {
 
         @JsonProperty("State")
         private final NodeState state;
+
+        @JsonProperty("Addr")
+        private final String address;
     }
 
     @Data

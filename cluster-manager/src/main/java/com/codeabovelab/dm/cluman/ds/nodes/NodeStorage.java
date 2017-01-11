@@ -46,6 +46,7 @@ import org.springframework.util.Assert;
 import javax.annotation.PostConstruct;
 import java.util.*;
 import java.util.concurrent.ExecutorService;
+import java.util.function.Consumer;
 import java.util.function.Predicate;
 
 /**
@@ -213,21 +214,16 @@ public class NodeStorage implements NodeInfoProvider {
 
     /**
      * Register or update node.
-
-     * @param nodeUpdate data with node update
-     * @param ttl
+     * @param name name of node
+     * @param ttl time while for node info is actual
+     * @param updater handler which do node update
      */
-    public void updateNode(NodeUpdate nodeUpdate, int ttl) {
-        NodeInfo node = nodeUpdate.getNode();
-
-        NodeRegistrationImpl nr = getOrCreateNodeRegistration(node.getName());
+    public NodeRegistration updateNode(String name, int ttl, Consumer<NodeInfoImpl.Builder> updater) {
+        NodeRegistrationImpl nr = getOrCreateNodeRegistration(name);
         nr.update(ttl);// important that it must be before other update methods
-        nr.updateNodeInfo(b -> {
-            b.address(node.getAddress());
-            b.labels(node.getLabels());
-            b.mergeHealth(node.getHealth());
-        });
+        nr.updateNodeInfo(updater);
         save(nr);
+        return nr;
     }
 
     private void save(NodeRegistrationImpl nr) {

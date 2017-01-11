@@ -17,7 +17,6 @@
 package com.codeabovelab.dm.cluman.ds.clusters;
 
 import com.codeabovelab.dm.cluman.cluster.docker.management.DockerService;
-import com.codeabovelab.dm.cluman.cluster.docker.management.argument.GetNodesArg;
 import com.codeabovelab.dm.cluman.cluster.docker.management.result.*;
 import com.codeabovelab.dm.cluman.cluster.docker.management.result.ResultCode;
 import com.codeabovelab.dm.cluman.cluster.docker.model.swarm.SwarmNode;
@@ -27,13 +26,19 @@ import com.codeabovelab.dm.cluman.ds.nodes.NodeRegistration;
 import com.codeabovelab.dm.cluman.ds.nodes.NodeStorage;
 import com.codeabovelab.dm.cluman.ds.swarm.DockerServices;
 import com.codeabovelab.dm.cluman.model.*;
+import com.codeabovelab.dm.cluman.security.TempAuth;
 import com.codeabovelab.dm.cluman.utils.AddressUtils;
 import com.google.common.collect.ImmutableList;
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.util.Assert;
+import org.springframework.util.StringUtils;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 /**
  * A kind of nodegroup which is managed by 'docker' in 'swarm mode'.
@@ -72,11 +77,21 @@ public class DockerCluster extends AbstractNodesGroup<DockerClusterConfig> {
      * List of cluster manager nodes.
      */
     private final Map<String, Manager> managers = new ConcurrentHashMap<>();
-
+    private final ScheduledExecutorService scheduledExecutor;
 
     @lombok.Builder(builderClassName = "Builder")
     DockerCluster(DockerClusterConfig config, DiscoveryStorageImpl storage) {
         super(config, storage, Collections.singleton(Feature.SWARM_MODE));
+        this.scheduledExecutor = Executors.newSingleThreadScheduledExecutor(new ThreadFactoryBuilder()
+          .setDaemon(true)
+          .setNameFormat(getClass().getSimpleName() + "-" + getName() + "-%d")
+          .build());
+        // so docker does not send any events about new coming nodes, and we must refresh list of them
+        this.scheduledExecutor.scheduleWithFixedDelay(this::updateNodes, 30L, 30L, TimeUnit.SECONDS);
+    }
+
+    protected void closeImpl() {
+        this.scheduledExecutor.shutdownNow();
     }
 
     protected void initImpl() {
@@ -149,16 +164,78 @@ public class DockerCluster extends AbstractNodesGroup<DockerClusterConfig> {
     @Override
     public Collection<NodeInfo> getNodes() {
         List<SwarmNode> nodes = getDocker().getNodes(null);
-        NodeStorage ns = getNodeStorage();
-        ImmutableList.Builder<NodeInfo> nis = ImmutableList.builder();
+        // docker may produce node duplicated
+        // see https://github.com/docker/docker/issues/24088
+        // therefore we must fina one actual node in duplicates
+        Map<String, SwarmNode> map = new HashMap<>();
         nodes.forEach(sn -> {
-            NodeInfo ni = ns.getNodeInfo(sn.getDescription().getHostname());
-            if(ni != null) {
-                nis.add(ni);
-            }
-            // when node is not in storage we must add it, but not here
+            String nodeName = getNodeName(sn);
+            map.compute(nodeName, (key, old) -> {
+                // use new node if old null or down
+                if(old == null || old.getStatus().getState() == SwarmNode.NodeState.DOWN) {
+                    old = sn;
+                }
+                return old;
+            });
         });
-        return nis.build();
+        ImmutableList.Builder<NodeInfo> b = ImmutableList.builder();
+        map.forEach((k, v) -> {
+            NodeInfo ni = updateNode(v);
+            if(ni != null) {
+                b.add(ni);
+            }
+        });
+        return b.build();
+    }
+
+    private void updateNodes() {
+        try (TempAuth ta = TempAuth.asSystem()) {
+            getNodes();
+        } catch (Exception e) {
+            log.error("Can not update list of nodes due to error.", e);
+        }
+    }
+
+    private String getNodeName(SwarmNode sn) {
+        return sn.getDescription().getHostname();
+    }
+
+    private NodeInfo updateNode(SwarmNode sn) {
+        String nodeName = getNodeName(sn);
+        String address = sn.getStatus().getAddress();
+        if(!StringUtils.hasText(address)) {
+            log.warn("Node {} does not has address, it usual for docker prior to 1.13 version.", nodeName);
+            return null;
+        }
+        NodeStorage ns = getNodeStorage();
+        NodeRegistration nr = ns.updateNode(nodeName, Integer.MAX_VALUE, b -> {
+            b.address(address);
+            b.cluster(getName());
+            NodeMetrics.Builder nmb = NodeMetrics.builder();
+            NodeMetrics.State state = getState(sn);
+            nmb.state(state);
+            nmb.healthy(state == NodeMetrics.State.HEALTHY);
+            b.mergeHealth(nmb.build());
+            Map<String, String> labels = sn.getDescription().getEngine().getLabels();
+            if(labels != null) {
+                b.labels(labels);
+            }
+        });
+        return nr.getNodeInfo();
+    }
+
+    private NodeMetrics.State getState(SwarmNode sn) {
+        SwarmNode.NodeAvailability availability = sn.getSpec().getAvailability();
+        SwarmNode.NodeState state = sn.getStatus().getState();
+        if (state == SwarmNode.NodeState.READY && availability == SwarmNode.NodeAvailability.ACTIVE) {
+            return NodeMetrics.State.HEALTHY;
+        }
+        if (state == SwarmNode.NodeState.DOWN ||
+          availability == SwarmNode.NodeAvailability.DRAIN ||
+          availability == SwarmNode.NodeAvailability.PAUSE) {
+            return NodeMetrics.State.MAINTENANCE;
+        }
+        return NodeMetrics.State.DISCONNECTED;
     }
 
     private boolean isFromSameCluster(NodeRegistration nr) {
