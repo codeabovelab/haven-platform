@@ -20,10 +20,7 @@ import com.codeabovelab.dm.cluman.cluster.docker.ClusterConfig;
 import com.codeabovelab.dm.cluman.cluster.docker.management.argument.*;
 import com.codeabovelab.dm.cluman.cluster.docker.management.result.*;
 import com.codeabovelab.dm.cluman.cluster.docker.model.*;
-import com.codeabovelab.dm.cluman.cluster.docker.model.swarm.SwarmInspectResponse;
-import com.codeabovelab.dm.cluman.cluster.docker.model.swarm.SwarmNode;
-import com.codeabovelab.dm.cluman.cluster.docker.model.swarm.SwarmSpec;
-import com.codeabovelab.dm.cluman.cluster.docker.model.swarm.SwarmInitCmd;
+import com.codeabovelab.dm.cluman.cluster.docker.model.swarm.*;
 import com.codeabovelab.dm.cluman.model.DockerContainer;
 import com.codeabovelab.dm.cluman.model.DockerServiceInfo;
 import com.codeabovelab.dm.cluman.model.ImageDescriptor;
@@ -186,6 +183,14 @@ public interface DockerService {
      * @return result with node id or null when not supported
      */
     SwarmInitResult initSwarm(SwarmInitCmd cmd);
+
+    /**
+     * Join into existing swarm. <p/>
+     * <code>POST /swarm/join</code>
+     * @param cmd command args
+     * @return result code
+     */
+    ServiceCallResult joinSwarm(SwarmJoinCmd cmd);
 
     /**
      * Get list of nodes. Work only for docker in swarm-mode.

@@ -19,10 +19,7 @@ package com.codeabovelab.dm.cluman.cluster.docker.management;
 import com.codeabovelab.dm.cluman.cluster.docker.management.result.*;
 import com.codeabovelab.dm.cluman.cluster.docker.management.result.ResultCode;
 import com.codeabovelab.dm.cluman.cluster.docker.management.result.ServiceCallResult;
-import com.codeabovelab.dm.cluman.cluster.docker.model.swarm.SwarmInspectResponse;
-import com.codeabovelab.dm.cluman.cluster.docker.model.swarm.SwarmNode;
-import com.codeabovelab.dm.cluman.cluster.docker.model.swarm.SwarmSpec;
-import com.codeabovelab.dm.cluman.cluster.docker.model.swarm.SwarmInitCmd;
+import com.codeabovelab.dm.cluman.cluster.docker.model.swarm.*;
 import com.codeabovelab.dm.cluman.utils.ContainerUtils;
 import com.codeabovelab.dm.cluman.cluster.docker.ClusterConfig;
 import com.codeabovelab.dm.cluman.cluster.docker.ClusterConfigImpl;
@@ -875,6 +872,22 @@ public class DockerServiceImpl implements DockerService {
             });
             res.setNodeId(e.getBody());
             res.code(ResultCode.OK);
+        } catch (HttpStatusCodeException e) {
+            log.error("can't init swarm: {} {}", cmd, e);
+            processStatusCodeException(e, res);
+        }
+        return res;
+    }
+
+    @Override
+    public ServiceCallResult joinSwarm(SwarmJoinCmd cmd) {
+        Assert.notNull(cmd, "cmd is null");
+        ServiceCallResult res = new ServiceCallResult();
+        try {
+            ResponseEntity<String> e = getFast(() -> {
+                return restTemplate.postForEntity(makeUrl("/swarm/join").toUriString(), wrapEntity(cmd), String.class);
+            });
+            DockerUtils.getServiceCallResult(e, res);
         } catch (HttpStatusCodeException e) {
             log.error("can't init swarm: {} {}", cmd, e);
             processStatusCodeException(e, res);
