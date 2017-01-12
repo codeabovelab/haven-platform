@@ -31,6 +31,14 @@ public class AddressUtils {
         return Integer.parseInt(portStr);
     }
 
+    public static boolean hasPort(String addr) {
+        if (addr == null) {
+            return false;
+        }
+        int portStart = addr.lastIndexOf(':');
+        return portStart > 0 && (addr.length() - portStart) > 1;
+    }
+
     public static String setPort(String address, int port) {
         Assert.notNull(address, "Address is null or empty");
         Assert.isTrue(port > 0 && port < Short.MAX_VALUE, "Invalid port number: " + port);
@@ -47,5 +55,4 @@ public class AddressUtils {
         }
         return addr.substring(0, portStart);
     }
-
 }

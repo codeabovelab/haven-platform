@@ -163,6 +163,18 @@ public class DockerCluster extends AbstractNodesGroup<DockerClusterConfig> {
 
     @Override
     public Collection<NodeInfo> getNodes() {
+        Map<String, SwarmNode> map = loadNodesMap();
+        ImmutableList.Builder<NodeInfo> b = ImmutableList.builder();
+        map.forEach((k, v) -> {
+            NodeInfo ni = updateNode(v);
+            if(ni != null && Objects.equals(ni.getCluster(), getName())) {
+                b.add(ni);
+            }
+        });
+        return b.build();
+    }
+
+    private Map<String, SwarmNode> loadNodesMap() {
         List<SwarmNode> nodes = getDocker().getNodes(null);
         // docker may produce node duplicated
         // see https://github.com/docker/docker/issues/24088
@@ -178,19 +190,32 @@ public class DockerCluster extends AbstractNodesGroup<DockerClusterConfig> {
                 return old;
             });
         });
-        ImmutableList.Builder<NodeInfo> b = ImmutableList.builder();
-        map.forEach((k, v) -> {
-            NodeInfo ni = updateNode(v);
-            if(ni != null && Objects.equals(ni.getCluster(), getName())) {
-                b.add(ni);
-            }
-        });
-        return b.build();
+        return map;
     }
 
     private void updateNodes() {
         try (TempAuth ta = TempAuth.asSystem()) {
-            getNodes();
+            Map<String, SwarmNode> map = loadNodesMap();
+            boolean[] modified = new boolean[]{false};
+            map.forEach((name, sn) -> {
+                SwarmNode.State status = sn.getStatus();
+                String address = status.getAddress();
+                if(!StringUtils.hasText(address) || status.getState() != SwarmNode.NodeState.DOWN) {
+                    return;
+                }
+                if(!AddressUtils.hasPort(address)) {
+                    address = AddressUtils.setPort(address, 2375);
+                }
+                touchNode(name, address);
+                modified[0] = true;
+            });
+            if(modified[0]) {
+                // we touch some 'down' nodes and must reload list for new status
+                map = loadNodesMap();
+            }
+            map.forEach((name, sn) -> {
+                NodeInfo ni = updateNode(sn);
+            });
         } catch (Exception e) {
             log.error("Can not update list of nodes due to error.", e);
         }
@@ -227,6 +252,15 @@ public class DockerCluster extends AbstractNodesGroup<DockerClusterConfig> {
             }
         });
         return nr.getNodeInfo();
+    }
+
+    private void touchNode(String node, String address) {
+        try {
+            DockerServices dses = getDiscoveryStorage().getDockerServices();
+            dses.registerNode(node, address);
+        } catch (Exception e) {
+            log.error("While register node '{}' at '{}'", node, address, e);
+        }
     }
 
     private NodeMetrics.State getState(SwarmNode sn) {
