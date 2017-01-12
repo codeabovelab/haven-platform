@@ -91,24 +91,25 @@ class NodeRegistrationImpl implements NodeRegistration {
     @Override
     public NodeInfoImpl getNodeInfo() {
         NodeInfoImpl ni;
+        NodeInfoImpl old;
         final boolean onlineChanged;
         synchronized (lock) {
             builder.name(name);
             boolean on = isOn();
             onlineChanged = on != builder.isOn();
-            ni = cache;
+            old = ni = cache;
             if(ni == null || onlineChanged) {
                 ni = cache = builder.on(on).build();
             }
         }
         if(onlineChanged) {
-            fireNodeChanged(ni.isOn() ? StandardActions.ONLINE : StandardActions.OFFLINE, ni);
+            fireNodeChanged(ni.isOn() ? StandardActions.ONLINE : StandardActions.OFFLINE, old, ni);
         }
         return ni;
     }
 
-    private void fireNodeChanged(String action, NodeInfoImpl ni) {
-        this.nuh.fireNodeModification(this, action, ni);
+    private void fireNodeChanged(String action, NodeInfoImpl old, NodeInfoImpl ni) {
+        this.nuh.fireNodeModification(this, action, old, ni);
     }
 
     NodeMetrics updateHealth(NodeMetrics metrics) {
@@ -156,7 +157,7 @@ class NodeRegistrationImpl implements NodeRegistration {
             ni = getNodeInfo();
         }
         if(!Objects.equals(oldni, ni)) {//we try to reduce count of unnecessary 'update' events
-            fireNodeChanged(StandardActions.UPDATE, ni);
+            fireNodeChanged(StandardActions.UPDATE, oldni, ni);
         }
         if(nmnew != null) {
             this.healthBus.accept(new NodeHealthEvent(this.name, cluster, nmnew));
@@ -165,7 +166,9 @@ class NodeRegistrationImpl implements NodeRegistration {
 
     public void setCluster(String cluster) {
         NodeInfoImpl ni = null;
+        NodeInfoImpl old = null;
         synchronized (lock) {
+            old = cache;
             String oldCluster = this.builder.getCluster();
             if(!Objects.equals(oldCluster, cluster)) {
                 this.builder.setCluster(cluster);
@@ -174,7 +177,7 @@ class NodeRegistrationImpl implements NodeRegistration {
             }
         }
         if(ni != null) {
-            fireNodeChanged(StandardActions.UPDATE, ni);
+            fireNodeChanged(StandardActions.UPDATE, old, ni);
         }
     }
 

@@ -19,17 +19,17 @@ package com.codeabovelab.dm.cluman.ds.clusters;
 import com.codeabovelab.dm.cluman.cluster.docker.management.DockerService;
 import com.codeabovelab.dm.cluman.cluster.docker.management.result.*;
 import com.codeabovelab.dm.cluman.cluster.docker.management.result.ResultCode;
-import com.codeabovelab.dm.cluman.cluster.docker.model.swarm.SwarmNode;
-import com.codeabovelab.dm.cluman.cluster.docker.model.swarm.SwarmSpec;
-import com.codeabovelab.dm.cluman.cluster.docker.model.swarm.SwarmInitCmd;
+import com.codeabovelab.dm.cluman.cluster.docker.model.swarm.*;
 import com.codeabovelab.dm.cluman.ds.nodes.NodeRegistration;
 import com.codeabovelab.dm.cluman.ds.nodes.NodeStorage;
 import com.codeabovelab.dm.cluman.ds.swarm.DockerServices;
 import com.codeabovelab.dm.cluman.model.*;
 import com.codeabovelab.dm.cluman.security.TempAuth;
 import com.codeabovelab.dm.cluman.utils.AddressUtils;
+import com.codeabovelab.dm.common.utils.SingleValueCache;
 import com.google.common.collect.ImmutableList;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
+import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.util.Assert;
 import org.springframework.util.StringUtils;
@@ -73,11 +73,28 @@ public class DockerCluster extends AbstractNodesGroup<DockerClusterConfig> {
         }
     }
 
+    @Data
+    @lombok.Builder(builderClassName = "Builder")
+    private static class ClusterData {
+        private final String workerToken;
+        private final String managerToken;
+    }
+
     /**
      * List of cluster manager nodes.
      */
     private final Map<String, Manager> managers = new ConcurrentHashMap<>();
     private final ScheduledExecutorService scheduledExecutor;
+    private final SingleValueCache<ClusterData> data = SingleValueCache.builder(() -> {
+        SwarmInspectResponse swarm = getDocker().getSwarm();
+        JoinTokens tokens = swarm.getJoinTokens();
+        return ClusterData.builder()
+          .managerToken(tokens.getManager())
+          .workerToken(tokens.getWorker())
+          .build();
+    })
+      .timeAfterWrite(Long.MAX_VALUE)// we cache for always, but must invalidate it at cluster reinitialization
+      .build();
 
     @lombok.Builder(builderClassName = "Builder")
     DockerCluster(DockerClusterConfig config, DiscoveryStorageImpl storage) {
@@ -88,7 +105,44 @@ public class DockerCluster extends AbstractNodesGroup<DockerClusterConfig> {
           .build());
         // so docker does not send any events about new coming nodes, and we must refresh list of them
         this.scheduledExecutor.scheduleWithFixedDelay(this::updateNodes, 30L, 30L, TimeUnit.SECONDS);
+        getNodeStorage().getNodeEventSubscriptions().subscribe(this::onNodeEvent);
     }
+
+    private void onNodeEvent(NodeEvent e) {
+        NodeInfo old = e.getOld();
+        NodeInfo curr = e.getCurrent();
+        final String thisCluster = getName();
+        final String nodeName = e.getNode().getName();
+        if(managers.containsKey(nodeName)) {
+            return;
+        }
+        // TODO we must persis list of cluster nodes,
+        // and only at node-update event move nodes between cluster,
+        // at node-event we must mark nodes cache as dirty
+        if(old != null && thisCluster.equals(old.getCluster()) &&
+          (curr == null || !thisCluster.equals(curr.getCluster()))) {
+            // when removed from cluster or deleted
+            DockerService ds = getDiscoveryStorage().getDockerServices().getNodeService(nodeName);
+            //TODO docker leave
+            //ds.leaveSwarm()
+            return;
+        }
+        if(curr != null && thisCluster.equals(curr.getCluster()) &&
+          (old == null || !thisCluster.equals(old.getCluster()))) {
+            // when added or moved to this cluster
+            //join to swarm
+            String workerToken = data.get().getWorkerToken();
+            DockerService ds = getDiscoveryStorage().getDockerServices().getNodeService(nodeName);
+            SwarmJoinCmd cmd = new SwarmJoinCmd();
+            cmd.setToken(workerToken);
+            this.managers.forEach((k, v) -> {
+                cmd.getManagers().add(v.getService().getAddress());
+            });
+            ds.joinSwarm(cmd);
+            return;
+        }
+    }
+
 
     protected void closeImpl() {
         this.scheduledExecutor.shutdownNow();

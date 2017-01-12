@@ -105,25 +105,25 @@ public class NodeStorage implements NodeInfoProvider {
                 case DELETE: {
                     NodeRegistrationImpl nr = getNodeRegistrationInternal(key);
                     NodeInfoImpl ni = nr == null? NodeInfoImpl.builder().name(key).build() : nr.getNodeInfo();
-                    fireNodeModification(nr, StandardActions.DELETE, ni);
+                    fireNodeModification(nr, StandardActions.DELETE, ni, null);
                     break;
                 }
                 default: {
                     NodeRegistrationImpl nr = this.nodes.getIfPresent(key);
                     // update events will send from node registration
                     if (nr != null && action == KvStorageEvent.Crud.CREATE) {
-                        fireNodeModification(nr, StandardActions.CREATE, nr.getNodeInfo());
+                        fireNodeModification(nr, StandardActions.CREATE, null, nr.getNodeInfo());
                     }
                 }
             }
         }
     }
 
-    private void fireNodeModification(NodeRegistrationImpl nr, String action, NodeInfoImpl ni) {
+    private void fireNodeModification(NodeRegistration nr, String action, NodeInfoImpl old, NodeInfoImpl current) {
         // NodeRegistrationImpl - may be null in some cases
         NodeEvent ne = NodeEvent.builder()
           .action(action)
-          .node(ni)
+          .current(current)
           .build();
         //we use async execution only from another event handler
         this.executorService.execute(() -> {

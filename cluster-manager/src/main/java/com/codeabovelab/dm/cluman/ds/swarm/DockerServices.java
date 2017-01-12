@@ -47,7 +47,6 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.client.AsyncClientHttpRequestFactory;
 import org.springframework.stereotype.Component;
 import org.springframework.util.Assert;
-import org.springframework.util.CollectionUtils;
 import org.springframework.web.client.AsyncRestTemplate;
 
 import javax.annotation.PreDestroy;
@@ -102,7 +101,7 @@ public class DockerServices implements DockerServiceRegistry, NodeRegistry {
             switch (e.getAction()) {
                 case StandardActions.UPDATE:
                 case StandardActions.CREATE: {
-                    registerNode(e.getNode());
+                    registerNode(e.getCurrent());
                     break;
                 }
                 case StandardActions.DELETE: {
