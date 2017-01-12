@@ -181,7 +181,7 @@ public class DockerCluster extends AbstractNodesGroup<DockerClusterConfig> {
         ImmutableList.Builder<NodeInfo> b = ImmutableList.builder();
         map.forEach((k, v) -> {
             NodeInfo ni = updateNode(v);
-            if(ni != null) {
+            if(ni != null && Objects.equals(ni.getCluster(), getName())) {
                 b.add(ni);
             }
         });
@@ -209,8 +209,13 @@ public class DockerCluster extends AbstractNodesGroup<DockerClusterConfig> {
         }
         NodeStorage ns = getNodeStorage();
         NodeRegistration nr = ns.updateNode(nodeName, Integer.MAX_VALUE, b -> {
+            String oldCluster = b.getCluster();
+            final String cluster = getName();
+            if(oldCluster != null && !cluster.equals(oldCluster)) {
+                return;
+            }
             b.address(address);
-            b.cluster(getName());
+            b.cluster(cluster);
             NodeMetrics.Builder nmb = NodeMetrics.builder();
             NodeMetrics.State state = getState(sn);
             nmb.state(state);
