@@ -87,8 +87,12 @@ public class DockerCluster extends AbstractNodesGroup<DockerClusterConfig> {
     private final Map<String, Manager> managers = new ConcurrentHashMap<>();
     private final ScheduledExecutorService scheduledExecutor;
     private final SingleValueCache<ClusterData> data = SingleValueCache.builder(() -> {
-        SwarmInspectResponse swarm = getDocker().getSwarm();
-        DockerServiceInfo info = getDocker().getInfo();
+        DockerService docker = getDockerOrNull();
+        if(docker == null) {
+            return null;
+        }
+        SwarmInspectResponse swarm = docker.getSwarm();
+        DockerServiceInfo info = docker.getInfo();
         JoinTokens tokens = swarm.getJoinTokens();
         return ClusterData.builder()
           .managerToken(tokens.getManager())
@@ -96,6 +100,7 @@ public class DockerCluster extends AbstractNodesGroup<DockerClusterConfig> {
           .managers(info.getSwarm().getManagers())
           .build();
     })
+      .nullStrategy(SingleValueCache.NullStrategy.DIRTY)
       .timeAfterWrite(Long.MAX_VALUE)// we cache for always, but must invalidate it at cluster reinitialization
       .build();
     private final SingleValueCache<Map<String, SwarmNode>> nodesMap;
@@ -107,6 +112,7 @@ public class DockerCluster extends AbstractNodesGroup<DockerClusterConfig> {
         nodesMap = SingleValueCache.builder(() -> {
             return loadNodesMap();
         }).timeAfterWrite(cacheTimeAfterWrite)
+          .nullStrategy(SingleValueCache.NullStrategy.DIRTY)
           .build();
         this.scheduledExecutor = Executors.newSingleThreadScheduledExecutor(new ThreadFactoryBuilder()
           .setDaemon(true)
@@ -125,7 +131,9 @@ public class DockerCluster extends AbstractNodesGroup<DockerClusterConfig> {
         boolean nowOur = curr != null && thisCluster.equals(curr.getCluster());
         boolean wasOur = old != null && thisCluster.equals(old.getCluster());
         if (wasOur != nowOur) {
-           nodesMap.invalidate();
+            nodesMap.invalidate();
+            // force update nodes
+            scheduledExecutor.execute(this::updateNodes);
         }
     }
 
@@ -215,7 +223,11 @@ public class DockerCluster extends AbstractNodesGroup<DockerClusterConfig> {
     }
 
     private Map<String, SwarmNode> loadNodesMap() {
-        List<SwarmNode> nodes = getDocker().getNodes(null);
+        DockerService docker = getDockerOrNull();
+        if(docker == null) {
+            return null;
+        }
+        List<SwarmNode> nodes = docker.getNodes(null);
         // docker may produce node duplicated
         // see https://github.com/docker/docker/issues/24088
         // therefore we must fina one actual node in duplicates
@@ -236,6 +248,10 @@ public class DockerCluster extends AbstractNodesGroup<DockerClusterConfig> {
     private void updateNodes() {
         try (TempAuth ta = TempAuth.asSystem()) {
             Map<String, SwarmNode> map = nodesMap.get();
+            if(map == null) {
+                log.error("Can not load map of cluster nodes.");
+                return;
+            }
             //check that all nodes marked 'our' is in map
             Collection<NodeInfo> nodes = getNodeStorage().getNodes(this::isFromSameCluster);
             Map<String, SwarmNode> localMap = map;
@@ -264,6 +280,10 @@ public class DockerCluster extends AbstractNodesGroup<DockerClusterConfig> {
             if(modified[0]) {
                 // we touch some 'down' nodes and must reload list for new status
                 map = loadNodesMap();
+            }
+            if(map == null) {
+                log.error("Can not load map of cluster nodes.");
+                return;
             }
             map.forEach((name, sn) -> {
                 NodeInfo ni = updateNode(sn);
@@ -407,13 +427,21 @@ public class DockerCluster extends AbstractNodesGroup<DockerClusterConfig> {
 
     @Override
     public DockerService getDocker() {
+        DockerService ds = getDockerOrNull();
+        if(ds == null) {
+            throw new IllegalStateException("Cluster " + getName() + " has not any alive manager node.");
+        }
+        return ds;
+    }
+
+    private DockerService getDockerOrNull() {
         for (Manager node : managers.values()) {
             DockerService service = node.getService();
             if (service != null) {
                 return service;
             }
         }
-        throw new IllegalStateException("Cluster " + getName() + " has not any alive manager node.");
+        return null;
     }
 
     private SwarmSpec getSwarmConfig() {
