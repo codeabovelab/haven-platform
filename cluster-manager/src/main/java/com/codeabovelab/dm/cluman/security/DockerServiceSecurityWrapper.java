@@ -292,6 +292,12 @@ public class DockerServiceSecurityWrapper implements DockerService {
     }
 
     @Override
+    public ServiceCallResult leaveSwarm(SwarmLeaveArg arg) {
+        checkServiceAccess(Action.UPDATE);
+        return service.leaveSwarm(arg);
+    }
+
+    @Override
     public List<SwarmNode> getNodes(GetNodesArg cmd) {
         checkServiceAccess(Action.READ);
         return service.getNodes(cmd);

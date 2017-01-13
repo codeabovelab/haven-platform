@@ -16,14 +16,17 @@
 
 package com.codeabovelab.dm.cluman.ds.clusters;
 
+import com.codeabovelab.dm.cluman.cluster.docker.ClusterConfigImpl;
 import com.codeabovelab.dm.cluman.model.NodesGroup;
 import com.codeabovelab.dm.common.kv.mapping.KvMapperFactory;
 import lombok.Data;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.util.Assert;
 
 /**
  */
 @Data
+@Slf4j
 class ClusterFactory {
     private final DiscoveryStorageImpl storage;
     private AbstractNodesGroupConfig<?> config;
@@ -47,7 +50,7 @@ class ClusterFactory {
     }
 
     NodesGroup build(String clusterId) {
-        ClusterCreationContext ccc = new ClusterCreationContext(clusterId);
+        ClusterCreationContext ccc = new ClusterCreationContext(this, clusterId);
         processConfig(ccc);
         AbstractNodesGroup<?> cluster;
         if(config instanceof SwarmNodesGroupConfig) {
@@ -64,6 +67,19 @@ class ClusterFactory {
         return cluster;
     }
 
+    private void fixConfig(DockerBasedClusterConfig localConfig) {
+        if(localConfig.getConfig() != null) {
+            return;
+        }
+        log.warn("Configuration of cluster '{}' contain null value of {}, set default instance. ",
+          localConfig.getName(), ClusterConfigImpl.class);
+        initDefaultConfig(localConfig);
+    }
+
+    void initDefaultConfig(DockerBasedClusterConfig localConfig) {
+        localConfig.setConfig(ClusterConfigImpl.builder().cluster(localConfig.getName()).build());
+    }
+
     private void processConfig(ClusterCreationContext ccc) {
         Assert.isTrue(type != null || config != null || configFactory != null,
           "Both 'type' and 'config' is null, we can not resolve type of created cluster.");
@@ -74,6 +90,9 @@ class ClusterFactory {
             } else {
                 config = ccc.createConfig(getType());
             }
+        }
+        if(config instanceof DockerBasedClusterConfig) {
+            fixConfig((DockerBasedClusterConfig)config);
         }
     }
 }

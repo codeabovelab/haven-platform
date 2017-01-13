@@ -873,7 +873,7 @@ public class DockerServiceImpl implements DockerService {
             res.setNodeId(e.getBody());
             res.code(ResultCode.OK);
         } catch (HttpStatusCodeException e) {
-            log.error("can't init swarm: {} {}", cmd, e);
+            log.error("can't init swarm, result: {} \n cmd:{}", cmd, e);
             processStatusCodeException(e, res);
         }
         return res;
@@ -889,8 +889,29 @@ public class DockerServiceImpl implements DockerService {
             });
             DockerUtils.getServiceCallResult(e, res);
         } catch (HttpStatusCodeException e) {
-            log.error("can't init swarm: {} {}", cmd, e);
             processStatusCodeException(e, res);
+            log.error("can't join swarm, result: {} \n cmd:{}", res.getMessage(), cmd, e);
+        }
+        return res;
+    }
+
+    @Override
+    public ServiceCallResult leaveSwarm(SwarmLeaveArg arg) {
+        Assert.notNull(arg, "arg is null");
+        ServiceCallResult res = new ServiceCallResult();
+        try {
+            UriComponentsBuilder ucb = makeUrl("/swarm/leave");
+            Boolean force = arg.getForce();
+            if(force != null) {
+                ucb.queryParam("force", force.toString());
+            }
+            ResponseEntity<String> e = getFast(() -> {
+                return restTemplate.postForEntity(ucb.toUriString(), null, String.class);
+            });
+            DockerUtils.getServiceCallResult(e, res);
+        } catch (HttpStatusCodeException e) {
+            processStatusCodeException(e, res);
+            log.error("can't leave swarm, result: {} \n arg:{}", res.getMessage(), arg, e);
         }
         return res;
     }

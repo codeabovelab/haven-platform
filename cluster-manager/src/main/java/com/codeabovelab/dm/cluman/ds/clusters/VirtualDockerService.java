@@ -345,6 +345,11 @@ class VirtualDockerService implements DockerService {
     }
 
     @Override
+    public ServiceCallResult leaveSwarm(SwarmLeaveArg arg) {
+        return null;
+    }
+
+    @Override
     public List<SwarmNode> getNodes(GetNodesArg cmd) {
         return null;
     }

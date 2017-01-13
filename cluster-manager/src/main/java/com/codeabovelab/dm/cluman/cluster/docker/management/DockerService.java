@@ -191,6 +191,7 @@ public interface DockerService {
      * @return result code
      */
     ServiceCallResult joinSwarm(SwarmJoinCmd cmd);
+    ServiceCallResult leaveSwarm(SwarmLeaveArg arg);
 
     /**
      * Get list of nodes. Work only for docker in swarm-mode.

@@ -26,10 +26,12 @@ import java.util.function.Consumer;
  */
 @Data
 public class ClusterCreationContext {
+    private final ClusterFactory factory;
     private final String cluster;
     private Consumer<AbstractNodesGroup<?>> beforeClusterInit;
 
-    ClusterCreationContext(String cluster) {
+    ClusterCreationContext(ClusterFactory factory, String cluster) {
+        this.factory = factory;
         this.cluster = cluster;
     }
 
@@ -46,17 +48,18 @@ public class ClusterCreationContext {
             case NodesGroupConfig.TYPE_SWARM: {
                 SwarmNodesGroupConfig local;
                 local = new SwarmNodesGroupConfig();
-                local.setConfig(ClusterConfigImpl.builder().cluster(getCluster()).build());
                 config = local;
                 break;
             }
             case NodesGroupConfig.TYPE_DOCKER: {
                 config = new DockerClusterConfig();
-                //local.setConfig(getDefaultConfig(clusterId));
                 break;
             }
             default:
                 throw new IllegalArgumentException("Unsupported type of cluster: " + type);
+        }
+        if(config instanceof DockerBasedClusterConfig) {
+            factory.initDefaultConfig((DockerBasedClusterConfig) config);
         }
         config.setName(getCluster());
         return config;
