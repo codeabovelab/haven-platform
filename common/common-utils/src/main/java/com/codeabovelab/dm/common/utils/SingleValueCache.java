@@ -116,4 +116,16 @@ public class SingleValueCache<T> implements Supplier<T> {
         Assert.notNull(value, "Supplier '" + supplier + "' return null value");
         return value;
     }
+
+    /**
+     * Mark cache as invalid. Next call of {@link #get()} will load new value.
+     */
+    public void invalidate() {
+        lock.lock();
+        try {
+            writeTime = 0L;
+        } finally {
+            lock.unlock();
+        }
+    }
 }
