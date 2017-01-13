@@ -77,6 +77,7 @@ public class DockerCluster extends AbstractNodesGroup<DockerClusterConfig> {
     private static class ClusterData {
         private final String workerToken;
         private final String managerToken;
+        private final List<String> managers;
     }
 
     /**
@@ -86,10 +87,12 @@ public class DockerCluster extends AbstractNodesGroup<DockerClusterConfig> {
     private final ScheduledExecutorService scheduledExecutor;
     private final SingleValueCache<ClusterData> data = SingleValueCache.builder(() -> {
         SwarmInspectResponse swarm = getDocker().getSwarm();
+        DockerServiceInfo info = getDocker().getInfo();
         JoinTokens tokens = swarm.getJoinTokens();
         return ClusterData.builder()
           .managerToken(tokens.getManager())
           .workerToken(tokens.getWorker())
+          .managers(info.getSwarm().getManagers())
           .build();
     })
       .timeAfterWrite(Long.MAX_VALUE)// we cache for always, but must invalidate it at cluster reinitialization
@@ -287,7 +290,8 @@ public class DockerCluster extends AbstractNodesGroup<DockerClusterConfig> {
     private void joinWorker(String name) {
         //join to swarm
         log.info("Begin join node '{}' to '{}'", name, getName());
-        String workerToken = data.get().getWorkerToken();
+        ClusterData clusterData = data.get();
+        String workerToken = clusterData.getWorkerToken();
         DockerService ds = getDiscoveryStorage().getDockerServices().getNodeService(name);
         if(ds == null) {
             log.warn("Can not join node '{}', it does not have registered docker service", name);
@@ -296,7 +300,7 @@ public class DockerCluster extends AbstractNodesGroup<DockerClusterConfig> {
         SwarmJoinCmd cmd = new SwarmJoinCmd();
         cmd.setToken(workerToken);
         this.managers.forEach((k, v) -> {
-            cmd.getManagers().add(v.getService().getAddress());
+            cmd.getManagers().addAll(clusterData.getManagers());
         });
         cmd.setListen(ds.getAddress());
         ServiceCallResult res = ds.joinSwarm(cmd);

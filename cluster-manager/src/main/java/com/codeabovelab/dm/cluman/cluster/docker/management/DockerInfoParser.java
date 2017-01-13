@@ -214,6 +214,9 @@ class DockerInfoParser {
         // is not sure that it mean 'is manager'
         sib.setManager(src.isControlAvailable());
         sib.setNodeId(src.getNodeId());
+        src.getRemoteManagers().forEach(rm -> {
+            sib.getManagers().add(rm.getAddress());
+        });
         return sib.build();
     }
 }

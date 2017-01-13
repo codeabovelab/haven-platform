@@ -47,7 +47,8 @@ public class SwarmJoinCmd {
     private String advertise;
 
     /**
-     * 'Address of any manager node already participating in the swarm.'
+     * 'Address of any manager node already participating in the swarm.'<p/>
+     * Node that it not docker JSON API address!<p/>
      */
     @JsonProperty("RemoteAddrs")
     private final List<String> managers = new ArrayList<>();
