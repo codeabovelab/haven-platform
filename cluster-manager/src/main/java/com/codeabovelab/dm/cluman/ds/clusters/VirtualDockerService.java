@@ -353,4 +353,9 @@ class VirtualDockerService implements DockerService {
     public List<SwarmNode> getNodes(GetNodesArg cmd) {
         return null;
     }
+
+    @Override
+    public ServiceCallResult removeNode(RemoveNodeArg arg) {
+        return null;
+    }
 }

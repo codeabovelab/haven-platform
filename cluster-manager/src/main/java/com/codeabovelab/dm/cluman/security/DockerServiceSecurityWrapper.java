@@ -302,4 +302,10 @@ public class DockerServiceSecurityWrapper implements DockerService {
         checkServiceAccess(Action.READ);
         return service.getNodes(cmd);
     }
+
+    @Override
+    public ServiceCallResult removeNode(RemoveNodeArg arg) {
+        checkServiceAccess(Action.READ);
+        return service.removeNode(arg);
+    }
 }

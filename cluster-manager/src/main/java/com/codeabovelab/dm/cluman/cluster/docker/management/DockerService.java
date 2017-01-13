@@ -199,4 +199,6 @@ public interface DockerService {
      * @return list or null when not supported
      */
     List<SwarmNode> getNodes(GetNodesArg cmd);
+
+    ServiceCallResult removeNode(RemoveNodeArg arg);
 }

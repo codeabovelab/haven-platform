@@ -923,6 +923,27 @@ public class DockerServiceImpl implements DockerService {
     }
 
     @Override
+    public ServiceCallResult removeNode(RemoveNodeArg arg) {
+        Assert.notNull(arg, "arg is null");
+        ServiceCallResult res = new ServiceCallResult();
+        try {
+            UriComponentsBuilder ucb = makeUrl("/nodes/").path(arg.getNodeId());
+            Boolean force = arg.getForce();
+            if(force != null) {
+                ucb.queryParam("force", force.toString());
+            }
+            getFast(() -> {
+                return restTemplate.delete(ucb.toUriString());
+            });
+            res.code(ResultCode.OK);
+        } catch (HttpStatusCodeException e) {
+            processStatusCodeException(e, res);
+            log.error("can't remove node, result: {} \n arg:{}", res.getMessage(), arg, e);
+        }
+        return res;
+    }
+
+    @Override
     public String toString() {
         return getClass().getSimpleName() + "{" + getClusterConfig().getHost() + "}";
     }

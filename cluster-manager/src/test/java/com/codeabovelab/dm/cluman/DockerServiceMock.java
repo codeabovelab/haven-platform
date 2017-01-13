@@ -510,4 +510,9 @@ public class DockerServiceMock implements DockerService {
     public List<SwarmNode> getNodes(GetNodesArg cmd) {
         return Collections.emptyList();
     }
+
+    @Override
+    public ServiceCallResult removeNode(RemoveNodeArg arg) {
+        return null;
+    }
 }

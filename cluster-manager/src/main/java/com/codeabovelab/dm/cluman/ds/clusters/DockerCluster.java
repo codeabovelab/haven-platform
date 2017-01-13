@@ -17,6 +17,7 @@
 package com.codeabovelab.dm.cluman.ds.clusters;
 
 import com.codeabovelab.dm.cluman.cluster.docker.management.DockerService;
+import com.codeabovelab.dm.cluman.cluster.docker.management.argument.RemoveNodeArg;
 import com.codeabovelab.dm.cluman.cluster.docker.management.argument.SwarmLeaveArg;
 import com.codeabovelab.dm.cluman.cluster.docker.management.result.*;
 import com.codeabovelab.dm.cluman.cluster.docker.management.result.ResultCode;
@@ -307,12 +308,19 @@ public class DockerCluster extends AbstractNodesGroup<DockerClusterConfig> {
         log.info("Result of joining node '{}': {} {}", name, res.getCode(), res.getMessage());
     }
 
-    private void leave(String node) {
+    private void leave(String node, String id) {
         log.info("Begin leave node '{}' from '{}'", node, getName());
         DockerService ds = getDiscoveryStorage().getDockerServices().getNodeService(node);
-        ServiceCallResult res = ds.leaveSwarm(new SwarmLeaveArg());
-        log.info("Result of leave node '{}' : {} {}", node, res.getCode(), res.getMessage());
-        //TODO remove node from cluster, otherwise it remain leak
+        if(ds == null) {
+            log.warn("Can not leave node '{}' from cluster, node does not have registered docker service", node);
+            return;
+        } else {
+            ServiceCallResult res = ds.leaveSwarm(new SwarmLeaveArg());
+            log.info("Result of leave node '{}' : {} {}", node, res.getCode(), res.getMessage());
+        }
+        DockerService docker = getDocker();
+        ServiceCallResult rmres = docker.removeNode(new RemoveNodeArg(id).force(true));
+        log.info("Result of remove node '{}' from cluster: {} {}", node, rmres.getCode(), rmres.getMessage());
     }
 
 
@@ -349,7 +357,7 @@ public class DockerCluster extends AbstractNodesGroup<DockerClusterConfig> {
         });
         if(!Objects.equals(getName(), nr.getCluster())) {
             log.info("Node {} is from another cluster: '{}', we remove it from our cluster: '{}'.", nodeName, nr.getCluster(), getName());
-            leave(nodeName);
+            leave(nodeName, sn.getId());
             return null;
         }
         return nr.getNodeInfo();
