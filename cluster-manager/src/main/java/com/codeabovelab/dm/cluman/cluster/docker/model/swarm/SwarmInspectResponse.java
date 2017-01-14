@@ -14,12 +14,20 @@
  * limitations under the License.
  */
 
-package com.codeabovelab.dm.cluman.ds.nodes;
+package com.codeabovelab.dm.cluman.cluster.docker.model.swarm;
 
-import com.codeabovelab.dm.cluman.model.NodeInfoImpl;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import lombok.Data;
+import lombok.EqualsAndHashCode;
 
 /**
+ * Result of 'GET /swarm'
  */
-interface NodeUpdateHandler {
-    void fireNodeModification(NodeRegistration nr, String action, NodeInfoImpl old, NodeInfoImpl curr);
+@Data
+@EqualsAndHashCode(callSuper = true)
+public class SwarmInspectResponse extends Cluster {
+
+    @JsonProperty("JoinTokens")
+    private JoinTokens joinTokens;
+
 }

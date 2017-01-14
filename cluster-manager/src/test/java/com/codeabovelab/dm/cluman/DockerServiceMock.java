@@ -8,8 +8,7 @@ import com.codeabovelab.dm.cluman.cluster.docker.management.result.*;
 import com.codeabovelab.dm.cluman.cluster.docker.management.result.ResultCode;
 import com.codeabovelab.dm.cluman.cluster.docker.management.result.ServiceCallResult;
 import com.codeabovelab.dm.cluman.cluster.docker.model.*;
-import com.codeabovelab.dm.cluman.cluster.docker.model.swarm.SwarmSpec;
-import com.codeabovelab.dm.cluman.cluster.docker.model.swarm.SwarmInitCmd;
+import com.codeabovelab.dm.cluman.cluster.docker.model.swarm.*;
 import com.codeabovelab.dm.cluman.model.*;
 import com.codeabovelab.dm.cluman.model.Node;
 import com.codeabovelab.dm.common.utils.PojoBeanUtils;
@@ -488,12 +487,32 @@ public class DockerServiceMock implements DockerService {
     }
 
     @Override
-    public SwarmSpec getSwarm() {
+    public SwarmInspectResponse getSwarm() {
         return null;
     }
 
     @Override
     public SwarmInitResult initSwarm(SwarmInitCmd cmd) {
+        return null;
+    }
+
+    @Override
+    public ServiceCallResult joinSwarm(SwarmJoinCmd cmd) {
+        return null;
+    }
+
+    @Override
+    public ServiceCallResult leaveSwarm(SwarmLeaveArg arg) {
+        return null;
+    }
+
+    @Override
+    public List<SwarmNode> getNodes(GetNodesArg cmd) {
+        return Collections.emptyList();
+    }
+
+    @Override
+    public ServiceCallResult removeNode(RemoveNodeArg arg) {
         return null;
     }
 }

@@ -19,6 +19,7 @@ package com.codeabovelab.dm.cluman.model;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
+import org.springframework.util.Assert;
 
 /**
  * Event of node changes. Usually clean different caches.
@@ -31,11 +32,17 @@ public final class NodeEvent extends Event implements WithCluster, WithAction {
     @Data
     public static class Builder extends Event.Builder<Builder, NodeEvent> {
 
-        private NodeInfo node;
+        private NodeInfo old;
+        private NodeInfo current;
         private String action;
 
-        public Builder node(NodeInfo node) {
-            setNode(node);
+        public Builder old(NodeInfo old) {
+            setOld(old);
+            return this;
+        }
+
+        public Builder current(NodeInfo node) {
+            setCurrent(node);
             return this;
         }
 
@@ -51,6 +58,7 @@ public final class NodeEvent extends Event implements WithCluster, WithAction {
 
         @Override
         public NodeEvent build() {
+            Assert.isTrue(this.current != null || this.old != null, "Old and current values is null.");
             return new NodeEvent(this);
         }
     }
@@ -59,13 +67,15 @@ public final class NodeEvent extends Event implements WithCluster, WithAction {
      * Id of message bus
      */
     public static final String BUS = "bus.cluman.node";
-    private final NodeInfo node;
+    private final NodeInfo old;
+    private final NodeInfo current;
     private final String action;
 
     @JsonCreator
     public NodeEvent(Builder b) {
         super(b);
-        this.node = b.node;
+        this.old = b.old;
+        this.current = b.current;
         this.action = b.action;
     }
 
@@ -73,8 +83,21 @@ public final class NodeEvent extends Event implements WithCluster, WithAction {
         return new Builder();
     }
 
+    /**
+     * Method leaved for backward capability and must never return null.
+     * @return current, or if it null then old, node info.
+     */
+    public NodeInfo getNode() {
+        NodeInfo ni = this.getCurrent();
+        if(ni == null) {
+            // old code does not has 'old', therefore current never been null
+            ni = this.getOld();
+        }
+        return ni;
+    }
+
     @Override
     public String getCluster() {
-        return node.getCluster();
+        return getNode().getCluster();
     }
 }

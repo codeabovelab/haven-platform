@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 Code Above Lab LLC
+ * Copyright 2017 Code Above Lab LLC
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,12 +14,15 @@
  * limitations under the License.
  */
 
-package com.codeabovelab.dm.cluman.ds.nodes;
+package com.codeabovelab.dm.cluman.cluster.docker.model.swarm;
 
-import com.codeabovelab.dm.cluman.model.NodeInfoImpl;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import lombok.Data;
 
 /**
  */
-interface NodeUpdateHandler {
-    void fireNodeModification(NodeRegistration nr, String action, NodeInfoImpl old, NodeInfoImpl curr);
+@Data
+public class SwarmVersion {
+    @JsonProperty("Index")
+    private final int index;
 }

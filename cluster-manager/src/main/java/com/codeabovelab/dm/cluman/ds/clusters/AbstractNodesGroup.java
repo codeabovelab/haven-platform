@@ -40,13 +40,13 @@ import java.util.function.Consumer;
 /**
  */
 @ToString
-public abstract class AbstractNodesGroup<C extends AbstractNodesGroupConfig<C>> implements NodesGroup {
+public abstract class AbstractNodesGroup<C extends AbstractNodesGroupConfig<C>> implements NodesGroup, AutoCloseable {
 
     protected static final int S_BEGIN = 0;
     protected static final int S_INITING = 1;
     protected static final int S_INITED = 2;
     protected static final int S_FAILED = 99;
-    // not use static or @Slf4j annotaion in this case
+    // not use static or @Slf4j annotation in this case
     private final Logger log = LoggerFactory.getLogger(getClass());
     private final Class<C> configClazz;
     private final Set<Feature> features;
@@ -94,6 +94,15 @@ public abstract class AbstractNodesGroup<C extends AbstractNodesGroupConfig<C>> 
     }
 
     protected void initImpl() {
+        //none
+    }
+
+    @Override
+    public void close() {
+        closeImpl();
+    }
+
+    protected void closeImpl() {
         //none
     }
 

@@ -19,8 +19,7 @@ package com.codeabovelab.dm.cluman.cluster.docker.management;
 import com.codeabovelab.dm.cluman.cluster.docker.management.result.*;
 import com.codeabovelab.dm.cluman.cluster.docker.management.result.ResultCode;
 import com.codeabovelab.dm.cluman.cluster.docker.management.result.ServiceCallResult;
-import com.codeabovelab.dm.cluman.cluster.docker.model.swarm.SwarmSpec;
-import com.codeabovelab.dm.cluman.cluster.docker.model.swarm.SwarmInitCmd;
+import com.codeabovelab.dm.cluman.cluster.docker.model.swarm.*;
 import com.codeabovelab.dm.cluman.utils.ContainerUtils;
 import com.codeabovelab.dm.cluman.cluster.docker.ClusterConfig;
 import com.codeabovelab.dm.cluman.cluster.docker.ClusterConfigImpl;
@@ -858,8 +857,8 @@ public class DockerServiceImpl implements DockerService {
     }
 
     @Override
-    public SwarmSpec getSwarm() {
-        ResponseEntity<SwarmSpec> configResult = getFast(() -> restTemplate.getForEntity(makeUrl("/swarm").toUriString(), SwarmSpec.class));
+    public SwarmInspectResponse getSwarm() {
+        ResponseEntity<SwarmInspectResponse> configResult = getFast(() -> restTemplate.getForEntity(makeUrl("/swarm").toUriString(), SwarmInspectResponse.class));
         return configResult.getBody();
     }
 
@@ -874,8 +873,72 @@ public class DockerServiceImpl implements DockerService {
             res.setNodeId(e.getBody());
             res.code(ResultCode.OK);
         } catch (HttpStatusCodeException e) {
-            log.error("can't init swarm: {} {}", cmd, e);
+            log.error("can't init swarm, result: {} \n cmd:{}", cmd, e);
             processStatusCodeException(e, res);
+        }
+        return res;
+    }
+
+    @Override
+    public ServiceCallResult joinSwarm(SwarmJoinCmd cmd) {
+        Assert.notNull(cmd, "cmd is null");
+        ServiceCallResult res = new ServiceCallResult();
+        try {
+            ResponseEntity<String> e = getFast(() -> {
+                return restTemplate.postForEntity(makeUrl("/swarm/join").toUriString(), wrapEntity(cmd), String.class);
+            });
+            DockerUtils.getServiceCallResult(e, res);
+        } catch (HttpStatusCodeException e) {
+            processStatusCodeException(e, res);
+            log.error("can't join swarm, result: {} \n cmd:{}", res.getMessage(), cmd, e);
+        }
+        return res;
+    }
+
+    @Override
+    public ServiceCallResult leaveSwarm(SwarmLeaveArg arg) {
+        Assert.notNull(arg, "arg is null");
+        ServiceCallResult res = new ServiceCallResult();
+        try {
+            UriComponentsBuilder ucb = makeUrl("/swarm/leave");
+            Boolean force = arg.getForce();
+            if(force != null) {
+                ucb.queryParam("force", force.toString());
+            }
+            ResponseEntity<String> e = getFast(() -> {
+                return restTemplate.postForEntity(ucb.toUriString(), null, String.class);
+            });
+            DockerUtils.getServiceCallResult(e, res);
+        } catch (HttpStatusCodeException e) {
+            processStatusCodeException(e, res);
+            log.error("can't leave swarm, result: {} \n arg:{}", res.getMessage(), arg, e);
+        }
+        return res;
+    }
+
+    @Override
+    public List<SwarmNode> getNodes(GetNodesArg cmd) {
+        ResponseEntity<SwarmNode[]> configResult = getFast(() -> restTemplate.getForEntity(makeUrl("/nodes").toUriString(), SwarmNode[].class));
+        return Arrays.asList(configResult.getBody());
+    }
+
+    @Override
+    public ServiceCallResult removeNode(RemoveNodeArg arg) {
+        Assert.notNull(arg, "arg is null");
+        ServiceCallResult res = new ServiceCallResult();
+        try {
+            UriComponentsBuilder ucb = makeUrl("/nodes/").path(arg.getNodeId());
+            Boolean force = arg.getForce();
+            if(force != null) {
+                ucb.queryParam("force", force.toString());
+            }
+            getFast(() -> {
+                return restTemplate.delete(ucb.toUriString());
+            });
+            res.code(ResultCode.OK);
+        } catch (HttpStatusCodeException e) {
+            processStatusCodeException(e, res);
+            log.error("can't remove node, result: {} \n arg:{}", res.getMessage(), arg, e);
         }
         return res;
     }

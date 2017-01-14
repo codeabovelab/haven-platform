@@ -29,9 +29,9 @@ import com.codeabovelab.dm.cluman.ui.HttpException;
 import com.codeabovelab.dm.cluman.validate.ExtendedAssert;
 import com.codeabovelab.dm.common.kv.KeyValueStorage;
 import com.codeabovelab.dm.common.kv.KvStorageEvent;
-import com.codeabovelab.dm.common.kv.WriteOptions;
 import com.codeabovelab.dm.common.kv.mapping.*;
 import com.codeabovelab.dm.common.mb.MessageBus;
+import com.codeabovelab.dm.common.mb.Subscriptions;
 import com.codeabovelab.dm.common.security.Action;
 import com.codeabovelab.dm.common.validate.ValidityException;
 import org.slf4j.Logger;
@@ -42,11 +42,11 @@ import org.springframework.http.HttpStatus;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import org.springframework.util.Assert;
-import org.springframework.util.StringUtils;
 
 import javax.annotation.PostConstruct;
 import java.util.*;
 import java.util.concurrent.ExecutorService;
+import java.util.function.Consumer;
 import java.util.function.Predicate;
 
 /**
@@ -57,7 +57,6 @@ import java.util.function.Predicate;
 public class NodeStorage implements NodeInfoProvider {
 
     private final Logger log = LoggerFactory.getLogger(getClass());
-    private final KvMapperFactory kvmf;
     private final KvMap<NodeRegistrationImpl> nodes;
     private final MessageBus<NodeEvent> nodeEventBus;
     private final PersistentBusFactory persistentBusFactory;
@@ -69,7 +68,6 @@ public class NodeStorage implements NodeInfoProvider {
                        @Qualifier(DockerServiceEvent.BUS) MessageBus<DockerServiceEvent> dockerBus,
                        PersistentBusFactory persistentBusFactory,
                        ExecutorService executorService) {
-        this.kvmf = kvmf;
         this.nodeEventBus = nodeEventBus;
         this.persistentBusFactory = persistentBusFactory;
         KeyValueStorage storage = kvmf.getStorage();
@@ -90,6 +88,10 @@ public class NodeStorage implements NodeInfoProvider {
         dockerBus.asSubscriptions().subscribe(this::onDockerServiceEvent);
     }
 
+    public Subscriptions<NodeEvent> getNodeEventSubscriptions() {
+        return nodeEventBus.asSubscriptions();
+    }
+
     @PostConstruct
     public void init() {
         nodes.load();
@@ -103,25 +105,25 @@ public class NodeStorage implements NodeInfoProvider {
                 case DELETE: {
                     NodeRegistrationImpl nr = getNodeRegistrationInternal(key);
                     NodeInfoImpl ni = nr == null? NodeInfoImpl.builder().name(key).build() : nr.getNodeInfo();
-                    fireNodeModification(nr, StandardActions.DELETE, ni);
+                    fireNodeModification(nr, StandardActions.DELETE, ni, null);
                     break;
                 }
                 default: {
                     NodeRegistrationImpl nr = this.nodes.getIfPresent(key);
                     // update events will send from node registration
                     if (nr != null && action == KvStorageEvent.Crud.CREATE) {
-                        fireNodeModification(nr, StandardActions.CREATE, nr.getNodeInfo());
+                        fireNodeModification(nr, StandardActions.CREATE, null, nr.getNodeInfo());
                     }
                 }
             }
         }
     }
 
-    private void fireNodeModification(NodeRegistrationImpl nr, String action, NodeInfoImpl ni) {
+    private void fireNodeModification(NodeRegistration nr, String action, NodeInfoImpl old, NodeInfoImpl current) {
         // NodeRegistrationImpl - may be null in some cases
         NodeEvent ne = NodeEvent.builder()
           .action(action)
-          .node(ni)
+          .current(current)
           .build();
         //we use async execution only from another event handler
         this.executorService.execute(() -> {
@@ -212,22 +214,16 @@ public class NodeStorage implements NodeInfoProvider {
 
     /**
      * Register or update node.
-
-     * @param nodeUpdate data with node update
-     * @param ttl
+     * @param name name of node
+     * @param ttl time while for node info is actual
+     * @param updater handler which do node update
      */
-    public void updateNode(NodeUpdate nodeUpdate, int ttl) {
-        NodeInfo node = nodeUpdate.getNode();
-
-        NodeRegistrationImpl nr = getOrCreateNodeRegistration(node.getName());
+    public NodeRegistration updateNode(String name, int ttl, Consumer<NodeInfoImpl.Builder> updater) {
+        NodeRegistrationImpl nr = getOrCreateNodeRegistration(name);
         nr.update(ttl);// important that it must be before other update methods
-        nr.updateNodeInfo(b -> {
-            b.address(node.getAddress());
-            b.labels(node.getLabels());
-            b.mergeHealth(node.getHealth());
-        });
-        updateSwarmRegistration(nr);
+        nr.updateNodeInfo(updater);
         save(nr);
+        return nr;
     }
 
     private void save(NodeRegistrationImpl nr) {
@@ -249,15 +245,6 @@ public class NodeStorage implements NodeInfoProvider {
             nr.setCluster(cluster);
             save(nr);
         }
-        updateSwarmRegistration(nr);
-        if(StringUtils.hasText(oldCluster) && !oldCluster.equals(cluster)) {
-            //it optional but reduce time when node appear in two clusters in same time
-            try {
-                kvmf.getStorage().delete(getDiscoveryKey(oldCluster, nr.getNodeInfo().getAddress()), null);
-            } catch (Exception e) {
-                log.error("Can not remove node {} swarm-registration from cluster {} due: {}", nodeName, cluster, e.getMessage());
-            }
-        }
     }
 
     @Override
@@ -267,28 +254,6 @@ public class NodeStorage implements NodeInfoProvider {
             return null;
         }
         return nr.getCluster();
-    }
-
-    private void updateSwarmRegistration(NodeRegistrationImpl nr) {
-        NodeInfo ni = nr.getNodeInfo();
-        String cluster = ni.getCluster();
-        if(!StringUtils.hasText(cluster)) {
-            return;
-        }
-        Assert.doesNotContain(cluster, "/", "Bad cluster name: " + cluster);
-        checkAccess(nr, Action.UPDATE);
-        String address = ni.getAddress();
-        try {
-            kvmf.getStorage().set(getDiscoveryKey(cluster, address),
-              address,
-              WriteOptions.builder().ttl(nr.getTtl()).build());
-        } catch (Exception e) {
-            log.error("Can not update swarm registration: of node {} from cluster {}", address, cluster, e);
-        }
-    }
-
-    private String getDiscoveryKey(String cluster, String address) {
-        return "/discovery/" + cluster + "/docker/swarm/nodes/" + address;
     }
 
     @Override

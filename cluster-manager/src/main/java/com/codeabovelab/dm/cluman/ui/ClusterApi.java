@@ -49,6 +49,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.access.annotation.Secured;
+import org.springframework.util.Assert;
 import org.springframework.util.MimeTypeUtils;
 import org.springframework.web.bind.annotation.*;
 
@@ -188,15 +189,19 @@ public class ClusterApi {
                     MessageBusCacheInvalidator.BUS_KEY, NodeEvent.BUS
             }
     )
-    public List<NodeInfo> listNodesDetailed(@PathVariable("cluster") String cluster) {
-        DockerServiceInfo info = dockerServiceRegistry.getService(cluster).getInfo();
-        return info.getNodeList();
+    public Collection<NodeInfo> listNodesDetailed(@PathVariable("cluster") String cluster) {
+        return getNodesInternal(cluster);
+    }
+
+    private Collection<NodeInfo> getNodesInternal(String clusterName) {
+        NodesGroup cluster = discoveryStorage.getCluster(clusterName);
+        ExtendedAssert.notFound(cluster, "Can not find cluster: " + clusterName);
+        return cluster.getNodes();
     }
 
     @RequestMapping(value = "/clusters/{cluster}/nodes", method = GET)
     public List<String> listNodes(@PathVariable("cluster") String cluster) {
-        DockerServiceInfo info = dockerServiceRegistry.getService(cluster).getInfo();
-        return DockerUtils.listNodes(info);
+        return DockerUtils.listNodes(getNodesInternal(cluster));
     }
 
     @Secured(Authorities.ADMIN_ROLE)

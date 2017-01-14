@@ -217,6 +217,7 @@ public class ClusterConfigImpl implements ClusterConfig {
      */
     public ClusterConfigImpl validate() {
         Assert.hasText(this.host, "Hosts is empty or null");
+        Assert.isTrue(this.host.contains(":"), "Hosts does not has port: " + this.host);
         return this;
     }
 

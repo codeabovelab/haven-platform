@@ -16,6 +16,7 @@
 
 package com.codeabovelab.dm.common.utils;
 
+import org.slf4j.Logger;
 import org.springframework.util.Assert;
 
 import java.io.IOException;
@@ -93,5 +94,11 @@ public class Throwables {
             e = e.getCause();
         }
         return false;
+    }
+
+    public static Thread.UncaughtExceptionHandler uncaughtHandler(Logger log) {
+        return (thread, ex) -> {
+            log.error("Uncaught exception.", ex);
+        };
     }
 }

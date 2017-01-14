@@ -19,6 +19,9 @@ package com.codeabovelab.dm.cluman.cluster.docker.model.swarm;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Data;
 
+import java.util.ArrayList;
+import java.util.List;
+
 /**
      {
          "ListenAddr": "0.0.0.0:2377",
@@ -29,12 +32,30 @@ import lombok.Data;
  */
 @Data
 public class SwarmJoinCmd {
+    /**
+     * 'Listen address used for inter-manager communication if the node gets promoted to manager, as well as
+     * determining the networking interface used for the VXLAN Tunnel Endpoint (VTEP).'
+     */
     @JsonProperty("ListenAddr")
-    private String listenAddr;
+    private String listen;
+
+    /**
+     * 'Externally reachable address advertised to other nodes.
+     * If AdvertiseAddr is not specified, it will be automatically detected when possible.'
+     */
     @JsonProperty("AdvertiseAddr")
-    private String advertiseAddr;
+    private String advertise;
+
+    /**
+     * 'Address of any manager node already participating in the swarm.'<p/>
+     * Node that it not docker JSON API address!<p/>
+     */
     @JsonProperty("RemoteAddrs")
-    private String remoteAddrs;
+    private final List<String> managers = new ArrayList<>();
+
+    /**
+     * Secret token for joining this swarm.
+     */
     @JsonProperty("JoinToken")
-    private String swarmSpec;
+    private String token;
 }

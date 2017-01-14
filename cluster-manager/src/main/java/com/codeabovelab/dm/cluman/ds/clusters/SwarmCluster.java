@@ -23,9 +23,13 @@ import com.codeabovelab.dm.cluman.cluster.docker.management.argument.GetContaine
 import com.codeabovelab.dm.cluman.ds.nodes.NodeRegistration;
 import com.codeabovelab.dm.cluman.ds.swarm.DockerServices;
 import com.codeabovelab.dm.cluman.model.*;
+import com.codeabovelab.dm.common.kv.WriteOptions;
+import com.codeabovelab.dm.common.kv.mapping.KvMapperFactory;
 import lombok.Builder;
 import lombok.ToString;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.util.Assert;
+import org.springframework.util.StringUtils;
 
 import java.util.*;
 
@@ -36,13 +40,47 @@ import java.util.*;
 @ToString(callSuper = true)
 public final class SwarmCluster extends AbstractNodesGroup<SwarmNodesGroupConfig> {
 
+    private final KvMapperFactory kvmf;
     private DockerService docker;
 
     @Builder
-    SwarmCluster(DiscoveryStorageImpl storage, SwarmNodesGroupConfig config) {
+    SwarmCluster(DiscoveryStorageImpl storage, SwarmNodesGroupConfig config, KvMapperFactory kvmf) {
         super(config, storage, Collections.singleton(Feature.SWARM));
+        this.kvmf = kvmf;
+        storage.getNodeStorage().getNodeEventSubscriptions().subscribe(this::onNodeEvent);
     }
 
+    private void onNodeEvent(NodeEvent event) {
+        String action = event.getAction();
+        if(StandardActions.OFFLINE.equals(action)) {
+            return;
+        }
+        NodeInfo ni = event.getCurrent();
+        String nodeName = ni.getName();
+        String cluster = ni.getCluster();
+        if (!StringUtils.hasText(cluster) || !getName().equals(cluster)) {
+            return;
+        }
+        Assert.doesNotContain(cluster, "/", "Bad cluster name: " + cluster);
+        String address = ni.getAddress();
+        NodeRegistration nr = getNodeStorage().getNodeRegistration(nodeName);
+        int ttl = nr.getTtl();
+        if (ttl < 1) {
+            return;
+        }
+        // we update node record for swarm discovery in KV for each event
+        try {
+            kvmf.getStorage().set(getDiscoveryKey(cluster, address),
+              address,
+              WriteOptions.builder().ttl(ttl).build());
+        } catch (Exception e) {
+            log.error("Can not update swarm registration: of node {} from cluster {}", address, cluster, e);
+        }
+    }
+
+    private String getDiscoveryKey(String cluster, String address) {
+        return "/discovery/" + cluster + "/docker/swarm/nodes/" + address;
+    }
 
     @Override
     public boolean hasNode(String id) {

@@ -92,7 +92,7 @@ public class NetworkManager implements Consumer<NodeEvent> {
 
     @Override
     public void accept(NodeEvent nodeEvent) {
-        NodeInfo node = nodeEvent.getNode();
+        NodeInfo node = nodeEvent.getCurrent();
         if (node == null) {
             return;
         }

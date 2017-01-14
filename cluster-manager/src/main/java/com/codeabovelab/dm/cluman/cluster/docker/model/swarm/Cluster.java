@@ -38,18 +38,12 @@ public class Cluster {
     @JsonProperty("ID")
     private String id;
     @JsonProperty("Version")
-    private Version version;
+    private SwarmVersion version;
     @JsonProperty("CreatedAt")
     private LocalDateTime created;
     @JsonProperty("UpdatedAt")
     private LocalDateTime updated;
     @JsonProperty("Spec")
     private SwarmSpec spec;
-
-    @Data
-    public static class Version {
-        @JsonProperty("Index")
-        private int index;
-    }
 
 }

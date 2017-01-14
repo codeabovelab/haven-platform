@@ -24,7 +24,9 @@ import com.codeabovelab.dm.cluman.cluster.docker.management.result.ProcessEvent;
 import com.codeabovelab.dm.cluman.cluster.docker.management.result.RemoveImageResult;
 import com.codeabovelab.dm.cluman.cluster.docker.management.result.ServiceCallResult;
 import com.codeabovelab.dm.cluman.cluster.docker.model.*;
-import com.codeabovelab.dm.cluman.cluster.docker.model.swarm.SwarmSpec;
+import com.codeabovelab.dm.cluman.cluster.docker.model.swarm.SwarmInspectResponse;
+import com.codeabovelab.dm.cluman.cluster.docker.model.swarm.SwarmJoinCmd;
+import com.codeabovelab.dm.cluman.cluster.docker.model.swarm.SwarmNode;
 import com.codeabovelab.dm.cluman.cluster.docker.model.swarm.SwarmInitCmd;
 import com.codeabovelab.dm.cluman.model.DockerContainer;
 import com.codeabovelab.dm.cluman.model.DockerServiceInfo;
@@ -272,7 +274,7 @@ public class DockerServiceSecurityWrapper implements DockerService {
     }
 
     @Override
-    public SwarmSpec getSwarm() {
+    public SwarmInspectResponse getSwarm() {
         checkServiceAccess(Action.READ);
         return service.getSwarm();
     }
@@ -281,5 +283,29 @@ public class DockerServiceSecurityWrapper implements DockerService {
     public SwarmInitResult initSwarm(SwarmInitCmd cmd) {
         checkServiceAccess(Action.UPDATE);
         return service.initSwarm(cmd);
+    }
+
+    @Override
+    public ServiceCallResult joinSwarm(SwarmJoinCmd cmd) {
+        checkServiceAccess(Action.UPDATE);
+        return service.joinSwarm(cmd);
+    }
+
+    @Override
+    public ServiceCallResult leaveSwarm(SwarmLeaveArg arg) {
+        checkServiceAccess(Action.UPDATE);
+        return service.leaveSwarm(arg);
+    }
+
+    @Override
+    public List<SwarmNode> getNodes(GetNodesArg cmd) {
+        checkServiceAccess(Action.READ);
+        return service.getNodes(cmd);
+    }
+
+    @Override
+    public ServiceCallResult removeNode(RemoveNodeArg arg) {
+        checkServiceAccess(Action.READ);
+        return service.removeNode(arg);
     }
 }

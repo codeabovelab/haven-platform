@@ -18,13 +18,9 @@ package com.codeabovelab.dm.cluman.cluster.docker.management;
 
 import com.codeabovelab.dm.cluman.cluster.docker.ClusterConfig;
 import com.codeabovelab.dm.cluman.cluster.docker.management.argument.*;
-import com.codeabovelab.dm.cluman.cluster.docker.management.result.SwarmInitResult;
-import com.codeabovelab.dm.cluman.cluster.docker.management.result.ProcessEvent;
-import com.codeabovelab.dm.cluman.cluster.docker.management.result.RemoveImageResult;
-import com.codeabovelab.dm.cluman.cluster.docker.management.result.ServiceCallResult;
+import com.codeabovelab.dm.cluman.cluster.docker.management.result.*;
 import com.codeabovelab.dm.cluman.cluster.docker.model.*;
-import com.codeabovelab.dm.cluman.cluster.docker.model.swarm.SwarmSpec;
-import com.codeabovelab.dm.cluman.cluster.docker.model.swarm.SwarmInitCmd;
+import com.codeabovelab.dm.cluman.cluster.docker.model.swarm.*;
 import com.codeabovelab.dm.cluman.model.DockerContainer;
 import com.codeabovelab.dm.cluman.model.DockerServiceInfo;
 import com.codeabovelab.dm.cluman.model.ImageDescriptor;
@@ -176,15 +172,33 @@ public interface DockerService {
     /**
      * Inspect swarm.
      * <code>GET /swarm</code>
-     * @return swarm config
+     * @return swarm config or null when not supported
      */
-    SwarmSpec getSwarm();
+    SwarmInspectResponse getSwarm();
 
     /**
      * Initialize a new swarm. The body of the HTTP response includes the node ID.
      * <code>POST /swarm/init</code>
      * @param cmd command to init swarm
-     * @return result with node id
+     * @return result with node id or null when not supported
      */
     SwarmInitResult initSwarm(SwarmInitCmd cmd);
+
+    /**
+     * Join into existing swarm. <p/>
+     * <code>POST /swarm/join</code>
+     * @param cmd command args
+     * @return result code
+     */
+    ServiceCallResult joinSwarm(SwarmJoinCmd cmd);
+    ServiceCallResult leaveSwarm(SwarmLeaveArg arg);
+
+    /**
+     * Get list of nodes. Work only for docker in swarm-mode.
+     * @param cmd pass arg with filters or null
+     * @return list or null when not supported
+     */
+    List<SwarmNode> getNodes(GetNodesArg cmd);
+
+    ServiceCallResult removeNode(RemoveNodeArg arg);
 }

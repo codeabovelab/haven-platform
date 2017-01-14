@@ -216,7 +216,7 @@ public class ContainerManager {
             result = configProvider.resolveProperties(nc.getCluster(), image, imageName, nc);
         }
         Map<String, Integer> appCountPerNode = getContainersPerNodeForImage(cc, imageName);
-        List<String> existsNodes = DockerUtils.listNodes(dockerService.getInfo());
+        List<String> existsNodes = DockerUtils.listNodes(dockerService.getInfo().getNodeList());
         // we want to save order of entries, but skip duplicates
         LinkedHashSet<String> env = new LinkedHashSet<>();
         env.addAll(result.getEnvironment());

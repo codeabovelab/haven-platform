@@ -28,6 +28,7 @@ import org.springframework.web.util.NestedServletException;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.function.Consumer;
 
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
@@ -48,15 +49,19 @@ public class DiscoveryNodeControllerTest {
     public static class TestConfiguration {
         final Map<String, NodeInfo> nodes = new HashMap<>();
 
+        @SuppressWarnings("unchecked")
         @Bean
         NodeStorage nodeStorage() {
             NodeStorage ns = mock(NodeStorage.class);
             Mockito.doAnswer(invocation -> {
-                final NodeUpdate node = invocation.getArgumentAt(0, NodeUpdate.class);
-                NodeInfo nodeInfo = node.getNode();
-                nodes.put(nodeInfo.getAddress(), nodeInfo);
+                final String name = invocation.getArgumentAt(0, String.class);
+                final Consumer updater = invocation.getArgumentAt(2, Consumer.class);
+                NodeInfo ni = nodes.get(name);
+                NodeInfoImpl.Builder b = NodeInfoImpl.builder(ni);
+                updater.accept(b);
+                nodes.put(name, b.build());
                 return null;
-            }).when(ns).updateNode(anyObject(), anyInt());
+            }).when(ns).updateNode(anyString(), anyInt(), anyObject());
             return ns;
         }
 

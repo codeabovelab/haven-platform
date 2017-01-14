@@ -40,6 +40,7 @@ public class DockerServiceInfo {
     private final Double memory;
     private final Integer nodeCount;
     private final Integer offNodeCount;
+    //TODO deprecate this, due to new docker mode require different query for list nodes
     private final List<NodeInfo> nodeList;
     /**
      * Info about swarm mode, can be null.

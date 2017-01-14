@@ -31,6 +31,13 @@ public interface NodeRegistration {
      * @return name or null
      */
     String getCluster();
+
+    /**
+     * Time for node registration in seconds.
+     * @return seconds or negative value when is not applicable.
+     */
+    int getTtl();
+
     Subscriptions<NodeHealthEvent> getHealthSubscriptions();
 
     ObjectIdentity getOid();
