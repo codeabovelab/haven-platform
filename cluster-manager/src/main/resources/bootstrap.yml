@@ -2,7 +2,6 @@ server.port: ${dm.server.port}
 dm:
   config:
     git:
-      enabled: false
       uri: https://github.com/codeabovelab/haven-example-configuration.git
 spring:
   application:
@@ -10,7 +9,6 @@ spring:
   cloud:
     config:
       server:
-        bootstrap: ${dm.config.git.enabled}
         prefix: /config
         git:
           uri: ${dm.config.git.uri}
