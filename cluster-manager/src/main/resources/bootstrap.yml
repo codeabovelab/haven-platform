@@ -2,7 +2,7 @@ server.port: ${dm.server.port}
 dm:
   config:
     git:
-      uri: https://github.com/codeabovelab/haven-example-configuration.git
+      uri:
 spring:
   application:
     name: cluster-manager
