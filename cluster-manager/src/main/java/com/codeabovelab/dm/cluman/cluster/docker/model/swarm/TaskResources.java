@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 Code Above Lab LLC
+ * Copyright 2017 Code Above Lab LLC
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,25 +18,19 @@ package com.codeabovelab.dm.cluman.cluster.docker.model.swarm;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Data;
-import lombok.EqualsAndHashCode;
-
 
 /**
- * Base class for cluster info in 'GET /swarm' (this use subclass with tokens) and 'GET /info' requests. <p/>
- * <pre>
-   {
-     "ID":"6r...lt",
-     "Version":{"Index":11},
-     "CreatedAt":"2016-12-29T15:26:15.372810703Z",
-     "UpdatedAt":"2016-12-29T15:26:15.474602597Z",
-     "Spec": // see {@link SwarmSpec}
-   }
- * </pre>
+ * https://github.com/docker/docker/blob/a5da9f5cc911da603a41bb77ca1ccbb0848d6260/api/types/swarm/task.go#L70
  */
-@EqualsAndHashCode(callSuper = true)
 @Data
-public class Cluster extends MetaMutable {
-    @JsonProperty("Spec")
-    private SwarmSpec spec;
+public class TaskResources {
 
+    /**
+     * CPU limit in units of 10^-9 CPU shares.
+     */
+    @JsonProperty("NanoCPUs")
+    private final long nanoCPUs;
+
+    @JsonProperty("MemoryBytes")
+    private final long memory;
 }

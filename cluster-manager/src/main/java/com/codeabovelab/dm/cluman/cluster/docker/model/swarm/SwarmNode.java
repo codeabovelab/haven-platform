@@ -18,7 +18,6 @@ package com.codeabovelab.dm.cluman.cluster.docker.model.swarm;
 
 import com.codeabovelab.dm.cluman.cluster.docker.model.Node;
 import com.codeabovelab.dm.common.json.JtEnumLower;
-import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Data;
 
@@ -113,7 +112,7 @@ public class SwarmNode {
         private final Platform platform;
 
         @JsonProperty("Resources")
-        private final Resources resources;
+        private final TaskResources resources;
 
         @JsonProperty("Engine")
         private final Engine engine;
@@ -172,19 +171,6 @@ public class SwarmNode {
 
         @JsonProperty("OS")
         private final String os;
-    }
-
-    /**
-     * https://github.com/docker/docker/blob/a5da9f5cc911da603a41bb77ca1ccbb0848d6260/api/types/swarm/task.go#L70
-     */
-    @Data
-    public static class Resources {
-
-        @JsonProperty("NanoCPUs")
-        private final long nanoCPUs;
-
-        @JsonProperty("MemoryBytes")
-        private final long memory;
     }
 
     /**
