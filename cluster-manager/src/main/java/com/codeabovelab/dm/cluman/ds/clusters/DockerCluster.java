@@ -104,6 +104,7 @@ public class DockerCluster extends AbstractNodesGroup<DockerClusterConfig> {
       .timeAfterWrite(Long.MAX_VALUE)// we cache for always, but must invalidate it at cluster reinitialization
       .build();
     private final SingleValueCache<Map<String, SwarmNode>> nodesMap;
+    private ContainersManager containers;
 
     @lombok.Builder(builderClassName = "Builder")
     DockerCluster(DockerClusterConfig config, DiscoveryStorageImpl storage) {
@@ -447,5 +448,10 @@ public class DockerCluster extends AbstractNodesGroup<DockerClusterConfig> {
     private SwarmSpec getSwarmConfig() {
         SwarmSpec sc = new SwarmSpec();
         return sc;
+    }
+
+    @Override
+    public ContainersManager getContainers() {
+        return containers;
     }
 }

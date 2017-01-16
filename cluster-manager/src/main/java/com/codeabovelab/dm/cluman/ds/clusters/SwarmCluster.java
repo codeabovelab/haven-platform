@@ -20,6 +20,7 @@ import com.codeabovelab.dm.cluman.cluster.docker.ClusterConfig;
 import com.codeabovelab.dm.cluman.cluster.docker.ClusterConfigImpl;
 import com.codeabovelab.dm.cluman.cluster.docker.management.DockerService;
 import com.codeabovelab.dm.cluman.cluster.docker.management.argument.GetContainersArg;
+import com.codeabovelab.dm.cluman.ds.DockerContainersManager;
 import com.codeabovelab.dm.cluman.ds.nodes.NodeRegistration;
 import com.codeabovelab.dm.cluman.ds.swarm.DockerServices;
 import com.codeabovelab.dm.cluman.model.*;
@@ -42,12 +43,14 @@ public final class SwarmCluster extends AbstractNodesGroup<SwarmNodesGroupConfig
 
     private final KvMapperFactory kvmf;
     private DockerService docker;
+    private ContainersManager containers;
 
     @Builder
     SwarmCluster(DiscoveryStorageImpl storage, SwarmNodesGroupConfig config, KvMapperFactory kvmf) {
         super(config, storage, Collections.singleton(Feature.SWARM));
         this.kvmf = kvmf;
         storage.getNodeStorage().getNodeEventSubscriptions().subscribe(this::onNodeEvent);
+        this.containers = new DockerContainersManager(this::getDocker);
     }
 
     private void onNodeEvent(NodeEvent event) {
@@ -158,6 +161,11 @@ public final class SwarmCluster extends AbstractNodesGroup<SwarmNodesGroupConfig
         } catch (Exception e) {
             log.warn("Can not list containers on {}, due to error {}", getName(), e.toString());
         }
+    }
+
+    @Override
+    public ContainersManager getContainers() {
+        return containers;
     }
 
     public void setClusterConfig(ClusterConfig cc) {

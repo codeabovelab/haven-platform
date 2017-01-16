@@ -116,5 +116,9 @@ public interface NodesGroup extends Named, WithAcl {
 
     void setImageFilter(String imageFilter);
 
-
+    /**
+     * Tool for managing cluster containers, it replacer for direct access to docker service.
+     * @return non null value
+     */
+    ContainersManager getContainers();
 }

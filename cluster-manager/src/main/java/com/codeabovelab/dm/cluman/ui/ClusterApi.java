@@ -139,13 +139,10 @@ public class ClusterApi {
     public ResponseEntity<Collection<UiContainer>> listContainers(@PathVariable("cluster") String cluster) {
         AccessContext ac = aclContextFactory.getContext();
         List<UiContainer> list = new ArrayList<>();
-        GetContainersArg arg = new GetContainersArg(true);
         NodesGroup nodesGroup = discoveryStorage.getCluster(cluster);
         ExtendedAssert.notFound(nodesGroup, "Cluster was not found by " + cluster);
-        DockerService service = nodesGroup.getDocker();
+        Collection<DockerContainer> containers = nodesGroup.getContainers().getContainers();
         Map<String, String> apps = UiUtils.mapAppContainer(applicationService, nodesGroup);
-        ExtendedAssert.notFound(service, "Service for " + cluster + " is null.");
-        List<DockerContainer> containers = service.getContainers(arg);
         for (DockerContainer container : containers) {
             UiContainer uic = UiContainer.from(container);
             uic.enrich(discoveryStorage, containerStorage);

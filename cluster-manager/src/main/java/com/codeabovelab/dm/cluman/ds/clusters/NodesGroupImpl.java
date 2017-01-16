@@ -19,8 +19,9 @@ package com.codeabovelab.dm.cluman.ds.clusters;
 import com.codeabovelab.dm.cluman.cluster.docker.management.DockerService;
 import com.codeabovelab.dm.cluman.cluster.filter.Filter;
 import com.codeabovelab.dm.cluman.cluster.filter.FilterFactory;
+import com.codeabovelab.dm.cluman.ds.DockerContainersManager;
 import com.codeabovelab.dm.cluman.ds.swarm.DockerServices;
-import com.codeabovelab.dm.cluman.model.Node;
+import com.codeabovelab.dm.cluman.model.ContainersManager;
 import com.codeabovelab.dm.cluman.model.NodeInfo;
 import com.google.common.collect.ImmutableSet;
 import lombok.Builder;
@@ -41,6 +42,7 @@ class NodesGroupImpl extends AbstractNodesGroup<DefaultNodesGroupConfig> {
 
     private final DockerServices dockerServices;
     private final VirtualDockerService service;
+    private final ContainersManager containers;
     private Filter predicate;
     private final FilterFactory filterFactory;
 
@@ -57,6 +59,7 @@ class NodesGroupImpl extends AbstractNodesGroup<DefaultNodesGroupConfig> {
         this.dockerServices = dockerServices;
         Assert.notNull(this.dockerServices);
         this.service = new VirtualDockerService(this);
+        this.containers = new DockerContainersManager(this::getDocker);
         this.filterFactory = filterFactory;
         this.predicate = predicate;
         if(predicate != null) {
@@ -73,6 +76,11 @@ class NodesGroupImpl extends AbstractNodesGroup<DefaultNodesGroupConfig> {
     @Override
     public DockerService getDocker() {
         return this.service;
+    }
+
+    @Override
+    public ContainersManager getContainers() {
+        return this.containers;
     }
 
     @Override
