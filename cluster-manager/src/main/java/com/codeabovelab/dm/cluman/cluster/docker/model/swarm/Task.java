@@ -21,6 +21,8 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Data;
 
 import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Map;
 
 /**
  * Docker task representation. <p/>
@@ -41,8 +43,35 @@ public class Task {
     @JsonProperty("UpdatedAt")
     private final LocalDateTime updated;
 
+    @JsonProperty("Name")
+    private final String name;
+
+    @JsonProperty("Labels")
+    private final Map<String, String> labels;
+
+    @JsonProperty("Spec")
+    private final TaskSpec Spec;
+
+    @JsonProperty("ServiceID")
+    private final String serviceId;
+
+    @JsonProperty("Slot")
+    private final int slot;
+
+    @JsonProperty("NodeID")
+    private final String nodeId;
+
+    @JsonProperty("Status")
+    private final TaskStatus status;
+
+    @JsonProperty("DesiredState")
+    private final TaskState desiredState;
+
+    @JsonProperty("NetworksAttachments")
+    private final List<SwarmNetwork.NetworkAttachment> networksAttachments;
+
     @Data
-    public static class Spec {
+    public static class TaskSpec {
         @JsonProperty("ContainerSpec")
         private final ContainerSpec container;
         @JsonProperty("Resources")
@@ -95,7 +124,7 @@ public class Task {
     }
 
     @JtEnumLower
-    public enum State {
+    public enum TaskState {
         NEW,
         ALLOCATED,
         PENDING,
@@ -109,5 +138,46 @@ public class Task {
         SHUTDOWN,
         FAILED,
         REJECTED
+    }
+
+    /** TaskStatus represents the status of a task. */
+    @Data
+    public static class TaskStatus {
+        @JsonProperty("Timestamp")
+        private final LocalDateTime timestamp;
+
+        @JsonProperty("State")
+        private final TaskState state;
+
+        @JsonProperty("Message")
+        private final String message;
+
+        @JsonProperty("Err")
+        private final String error;
+
+        @JsonProperty("ContainerStatus")
+        private final ContainerStatus containerStatus;
+
+        @JsonProperty("PortStatus")
+        private final PortStatus portStatus;
+    }
+
+    /** ContainerStatus represents the status of a container. */
+    @Data
+    public static class ContainerStatus {
+        @JsonProperty("ContainerID")
+        private final String containerID;
+        @JsonProperty("PID")
+        private final int pid;
+        @JsonProperty("ExitCode")
+        private final int exitCode;
+    }
+
+    /** PortStatus represents the port status of a task's host ports whose
+    service has published host ports */
+    @Data
+    public static class PortStatus {
+        @JsonProperty("Ports")
+        private final List<Endpoint.PortConfig> ports;
     }
 }
