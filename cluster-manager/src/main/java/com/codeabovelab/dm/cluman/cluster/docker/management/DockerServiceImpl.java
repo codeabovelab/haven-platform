@@ -964,7 +964,7 @@ public class DockerServiceImpl implements DockerService {
         try {
             HttpHeaders headers = new HttpHeaders();
             AuthConfig.install(headers, arg.getRegistryAuth());
-            HttpEntity<ServiceSpec> req = new HttpEntity<>(arg.getSpec(), headers);
+            HttpEntity<Service.ServiceSpec> req = new HttpEntity<>(arg.getSpec(), headers);
             ResponseEntity<ServiceCreateResult> res = getSlow(() -> {
                 return restTemplate.postForEntity(makeUrl("/services/create").toUriString(), req, ServiceCreateResult.class);
             });
@@ -988,7 +988,7 @@ public class DockerServiceImpl implements DockerService {
             ucb.path("/update");
             HttpHeaders headers = new HttpHeaders();
             AuthConfig.install(headers, arg.getRegistryAuth());
-            HttpEntity<ServiceSpec> req = new HttpEntity<>(arg.getSpec(), headers);
+            HttpEntity<Service.ServiceSpec> req = new HttpEntity<>(arg.getSpec(), headers);
             ResponseEntity<ServiceCreateResult> res = getSlow(() -> {
                 return restTemplate.postForEntity(ucb.toUriString(), req, ServiceCreateResult.class);
             });

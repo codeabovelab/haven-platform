@@ -17,7 +17,7 @@
 package com.codeabovelab.dm.cluman.cluster.docker.management.argument;
 
 import com.codeabovelab.dm.cluman.cluster.docker.model.AuthConfig;
-import com.codeabovelab.dm.cluman.cluster.docker.model.swarm.ServiceSpec;
+import com.codeabovelab.dm.cluman.cluster.docker.model.swarm.Service;
 import lombok.Data;
 
 /**
@@ -28,5 +28,5 @@ import lombok.Data;
 @Data
 public class CreateServiceArg {
     private AuthConfig registryAuth;
-    private ServiceSpec spec;
+    private Service.ServiceSpec spec;
 }

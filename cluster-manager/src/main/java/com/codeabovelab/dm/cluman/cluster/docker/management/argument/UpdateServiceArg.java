@@ -17,7 +17,7 @@
 package com.codeabovelab.dm.cluman.cluster.docker.management.argument;
 
 import com.codeabovelab.dm.cluman.cluster.docker.model.AuthConfig;
-import com.codeabovelab.dm.cluman.cluster.docker.model.swarm.ServiceSpec;
+import com.codeabovelab.dm.cluman.cluster.docker.model.swarm.Service;
 import lombok.Data;
 
 /**
@@ -32,5 +32,5 @@ public class UpdateServiceArg {
      * id or name
      */
     private String service;
-    private ServiceSpec spec;
+    private Service.ServiceSpec spec;
 }
