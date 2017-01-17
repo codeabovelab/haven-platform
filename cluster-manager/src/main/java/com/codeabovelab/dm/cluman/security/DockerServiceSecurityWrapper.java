@@ -19,15 +19,9 @@ package com.codeabovelab.dm.cluman.security;
 import com.codeabovelab.dm.cluman.cluster.docker.ClusterConfig;
 import com.codeabovelab.dm.cluman.cluster.docker.management.DockerService;
 import com.codeabovelab.dm.cluman.cluster.docker.management.argument.*;
-import com.codeabovelab.dm.cluman.cluster.docker.management.result.SwarmInitResult;
-import com.codeabovelab.dm.cluman.cluster.docker.management.result.ProcessEvent;
-import com.codeabovelab.dm.cluman.cluster.docker.management.result.RemoveImageResult;
-import com.codeabovelab.dm.cluman.cluster.docker.management.result.ServiceCallResult;
+import com.codeabovelab.dm.cluman.cluster.docker.management.result.*;
 import com.codeabovelab.dm.cluman.cluster.docker.model.*;
-import com.codeabovelab.dm.cluman.cluster.docker.model.swarm.SwarmInspectResponse;
-import com.codeabovelab.dm.cluman.cluster.docker.model.swarm.SwarmJoinCmd;
-import com.codeabovelab.dm.cluman.cluster.docker.model.swarm.SwarmNode;
-import com.codeabovelab.dm.cluman.cluster.docker.model.swarm.SwarmInitCmd;
+import com.codeabovelab.dm.cluman.cluster.docker.model.swarm.*;
 import com.codeabovelab.dm.cluman.model.DockerContainer;
 import com.codeabovelab.dm.cluman.model.DockerServiceInfo;
 import com.codeabovelab.dm.cluman.model.ImageDescriptor;
@@ -305,7 +299,49 @@ public class DockerServiceSecurityWrapper implements DockerService {
 
     @Override
     public ServiceCallResult removeNode(RemoveNodeArg arg) {
-        checkServiceAccess(Action.READ);
+        checkServiceAccess(Action.ALTER_INSIDE);
         return service.removeNode(arg);
+    }
+
+    @Override
+    public Service getService(String service) {
+        checkServiceAccess(Action.READ);
+        return this.service.getService(service);
+    }
+
+    @Override
+    public ServiceCallResult deleteService(String service) {
+        checkServiceAccess(Action.ALTER_INSIDE);
+        return this.service.deleteService(service);
+    }
+
+    @Override
+    public ServiceCreateResult updateService(UpdateServiceArg arg) {
+        checkServiceAccess(Action.ALTER_INSIDE);
+        return service.updateService(arg);
+    }
+
+    @Override
+    public ServiceCreateResult createService(CreateServiceArg arg) {
+        checkServiceAccess(Action.ALTER_INSIDE);
+        return service.createService(arg);
+    }
+
+    @Override
+    public List<Service> getServices(GetServicesArg arg) {
+        checkServiceAccess(Action.READ);
+        return service.getServices(arg);
+    }
+
+    @Override
+    public List<Task> getTasks(GetTasksArg arg) {
+        checkServiceAccess(Action.READ);
+        return service.getTasks(arg);
+    }
+
+    @Override
+    public Task getTask(String taskId) {
+        checkServiceAccess(Action.READ);
+        return service.getTask(taskId);
     }
 }

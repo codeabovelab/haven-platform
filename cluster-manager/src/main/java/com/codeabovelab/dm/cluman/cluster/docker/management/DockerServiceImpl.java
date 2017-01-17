@@ -867,7 +867,7 @@ public class DockerServiceImpl implements DockerService {
         Assert.notNull(cmd, "cmd is null");
         SwarmInitResult res = new SwarmInitResult();
         try {
-            ResponseEntity<String> e = getFast(() -> {
+            ResponseEntity<String> e = getSlow(() -> {
                 return restTemplate.postForEntity(makeUrl("/swarm/init").toUriString(), wrapEntity(cmd), String.class);
             });
             res.setNodeId(e.getBody());
@@ -884,7 +884,7 @@ public class DockerServiceImpl implements DockerService {
         Assert.notNull(cmd, "cmd is null");
         ServiceCallResult res = new ServiceCallResult();
         try {
-            ResponseEntity<String> e = getFast(() -> {
+            ResponseEntity<String> e = getSlow(() -> {
                 return restTemplate.postForEntity(makeUrl("/swarm/join").toUriString(), wrapEntity(cmd), String.class);
             });
             DockerUtils.getServiceCallResult(e, res);
@@ -905,7 +905,7 @@ public class DockerServiceImpl implements DockerService {
             if(force != null) {
                 ucb.queryParam("force", force.toString());
             }
-            ResponseEntity<String> e = getFast(() -> {
+            ResponseEntity<String> e = getSlow(() -> {
                 return restTemplate.postForEntity(ucb.toUriString(), null, String.class);
             });
             DockerUtils.getServiceCallResult(e, res);
@@ -932,7 +932,7 @@ public class DockerServiceImpl implements DockerService {
             if(force != null) {
                 ucb.queryParam("force", force.toString());
             }
-            getFast(() -> {
+            getSlow(() -> {
                 return restTemplate.delete(ucb.toUriString());
             });
             res.code(ResultCode.OK);
@@ -941,6 +941,93 @@ public class DockerServiceImpl implements DockerService {
             log.error("can't remove node, result: {} \n arg:{}", res.getMessage(), arg, e);
         }
         return res;
+    }
+
+    @Override
+    public List<Service> getServices(GetServicesArg arg) {
+        Assert.notNull(arg, "arg is null");
+        ResponseEntity<Service[]> configResult = getFast(() -> restTemplate.getForEntity(makeUrl("/services").toUriString(), Service[].class));
+        return Arrays.asList(configResult.getBody());
+    }
+
+    @Override
+    public Service getService(String service) {
+        Assert.hasText(service, "service is null or empty");
+        UriComponentsBuilder ucb = makeUrl("/service/").path(service);
+        ResponseEntity<Service> configResult = getFast(() -> restTemplate.getForEntity(ucb.toUriString(), Service.class));
+        return configResult.getBody();
+    }
+
+    @Override
+    public ServiceCreateResult createService(CreateServiceArg arg) {
+        Assert.notNull(arg, "arg is null");
+        try {
+            HttpHeaders headers = new HttpHeaders();
+            AuthConfig.install(headers, arg.getRegistryAuth());
+            HttpEntity<ServiceSpec> req = new HttpEntity<>(arg.getSpec(), headers);
+            ResponseEntity<ServiceCreateResult> res = getSlow(() -> {
+                return restTemplate.postForEntity(makeUrl("/services/create").toUriString(), req, ServiceCreateResult.class);
+            });
+            return res.getBody();
+        } catch (HttpStatusCodeException e) {
+            ServiceCreateResult res = new ServiceCreateResult();
+            processStatusCodeException(e, res);
+            log.error("can't create service, result: {} \n arg:{}", res.getMessage(), arg, e);
+            return res;
+        }
+    }
+
+    @Override
+    public ServiceCreateResult updateService(UpdateServiceArg arg) {
+        Assert.notNull(arg, "arg is null");
+        try {
+            UriComponentsBuilder ucb = makeUrl("/services/");
+            String service = arg.getService();
+            Assert.hasText(service, "arg.service is null or empty");
+            ucb.path(service);
+            ucb.path("/update");
+            HttpHeaders headers = new HttpHeaders();
+            AuthConfig.install(headers, arg.getRegistryAuth());
+            HttpEntity<ServiceSpec> req = new HttpEntity<>(arg.getSpec(), headers);
+            ResponseEntity<ServiceCreateResult> res = getSlow(() -> {
+                return restTemplate.postForEntity(ucb.toUriString(), req, ServiceCreateResult.class);
+            });
+            return res.getBody();
+        } catch (HttpStatusCodeException e) {
+            ServiceCreateResult res = new ServiceCreateResult();
+            processStatusCodeException(e, res);
+            log.error("can't create service, result: {} \n arg:{}", res.getMessage(), arg, e);
+            return res;
+        }
+    }
+
+    @Override
+    public ServiceCallResult deleteService(String service) {
+        Assert.hasText(service, "service is null or empty");
+        UriComponentsBuilder ucb = makeUrl("/services/").path(service);
+        ServiceCallResult res = new ServiceCallResult();
+        try {
+            getSlow(() -> restTemplate.delete(ucb.toUriString()));
+        } catch (HttpStatusCodeException e) {
+            processStatusCodeException(e, res);
+            log.error("can't delete service '{}', result: {} ", service, res.getMessage(), e);
+        }
+        return res;
+    }
+
+
+    @Override
+    public List<Task> getTasks(GetTasksArg arg) {
+        ResponseEntity<Task[]> configResult = getFast(() -> restTemplate.getForEntity(makeUrl("/tasks").toUriString(), Task[].class));
+        return Arrays.asList(configResult.getBody());
+    }
+
+    @Override
+    public Task getTask(String taskId) {
+        Assert.hasText(taskId, "task is null or empty");
+        UriComponentsBuilder ucb = makeUrl("/tasks/").path(taskId);
+        ResponseEntity<Task> configResult = getFast(() -> restTemplate.getForEntity(ucb.toUriString(), Task.class));
+        return configResult.getBody();
     }
 
     @Override

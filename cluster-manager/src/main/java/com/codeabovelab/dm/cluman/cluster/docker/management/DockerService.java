@@ -201,4 +201,33 @@ public interface DockerService {
     List<SwarmNode> getNodes(GetNodesArg cmd);
 
     ServiceCallResult removeNode(RemoveNodeArg arg);
+
+    List<Service> getServices(GetServicesArg arg);
+    ServiceCreateResult createService(CreateServiceArg arg);
+
+    /**
+     * Update a service
+     * POST /services/(id or name)/update
+     * @param cmd
+     * @return
+     */
+    ServiceCreateResult updateService(UpdateServiceArg arg);
+
+    /**
+     * DELETE /services/(id or name)
+     * @param service id or name
+     * @return result
+     */
+    ServiceCallResult deleteService(String service);
+
+    /**
+     * GET /services/(id or name)
+     * Return information on the service id.
+     * @param service id or name
+     * @return service or null
+     */
+    Service getService(String service);
+
+    List<Task> getTasks(GetTasksArg arg);
+    Task getTask(String taskId);
 }

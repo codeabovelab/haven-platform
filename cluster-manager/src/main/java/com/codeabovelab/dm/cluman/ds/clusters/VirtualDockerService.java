@@ -358,4 +358,39 @@ class VirtualDockerService implements DockerService {
     public ServiceCallResult removeNode(RemoveNodeArg arg) {
         return null;
     }
+
+    @Override
+    public List<Service> getServices(GetServicesArg arg) {
+        return Collections.emptyList();
+    }
+
+    @Override
+    public ServiceCreateResult createService(CreateServiceArg arg) {
+        return null;
+    }
+
+    @Override
+    public ServiceCreateResult updateService(UpdateServiceArg arg) {
+        return null;
+    }
+
+    @Override
+    public ServiceCallResult deleteService(String service) {
+        return null;
+    }
+
+    @Override
+    public Service getService(String service) {
+        return null;
+    }
+
+    @Override
+    public List<Task> getTasks(GetTasksArg arg) {
+        return Collections.emptyList();
+    }
+
+    @Override
+    public Task getTask(String taskId) {
+        return null;
+    }
 }
