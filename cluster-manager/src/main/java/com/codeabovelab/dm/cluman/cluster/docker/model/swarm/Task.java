@@ -50,7 +50,7 @@ public class Task {
     private final Map<String, String> labels;
 
     @JsonProperty("Spec")
-    private final TaskSpec Spec;
+    private final TaskSpec spec;
 
     @JsonProperty("ServiceID")
     private final String serviceId;
@@ -72,21 +72,47 @@ public class Task {
 
     @Data
     public static class TaskSpec {
+
         @JsonProperty("ContainerSpec")
         private final ContainerSpec container;
+
         @JsonProperty("Resources")
         private final ResourceRequirements resources;
+
         @JsonProperty("RestartPolicy")
         private final RestartPolicy restartPolicy;
+
+        @JsonProperty("Placement")
+        private final Placement placement;
+
+        @JsonProperty("Networks")
+        private final List<SwarmNetwork.NetworkAttachmentConfig> networks;
+
+        /**
+         * LogDriver specifies the LogDriver to use for tasks created from this
+         * spec. If not present, the one on cluster default on swarm.Spec will be
+         * used, finally falling back to the engine default if not specified.
+         */
+        @JsonProperty("LogDriver")
+        private final Driver logDriver;
+
+        /**
+         * ForceUpdate is a counter that triggers an update even if no relevant
+         * parameters have been changed.
+         */
+        @JsonProperty("ForceUpdate")
+        private final long forceUpdate;
     }
 
     /**
-     *  Resource requirements which apply to each individual container created as part of the service.
+     * Resource requirements which apply to each individual container created as part of the service.
      */
     @Data
     public static class ResourceRequirements {
+
         @JsonProperty("Limits")
         private final TaskResources limits;
+
         @JsonProperty("Reservations")
         private final TaskResources reservations;
 
@@ -97,18 +123,22 @@ public class Task {
      */
     @Data
     public static class RestartPolicy {
+
         @JsonProperty("Condition")
         private final RestartPolicyCondition condition;
+
         /**
          * Maximum attempts to restart a given container before giving up (default value is 0, which is ignored).
          */
         @JsonProperty("MaxAttempts")
         private final long max;
+
         /**
          * Delay between restart attempts.
          */
         @JsonProperty("Delay")
         private final long delay;
+
         /**
          * Windows is the time window used to evaluate the restart policy (default value is 0, which is unbounded).
          */
@@ -140,9 +170,12 @@ public class Task {
         REJECTED
     }
 
-    /** TaskStatus represents the status of a task. */
+    /**
+     * TaskStatus represents the status of a task.
+     */
     @Data
     public static class TaskStatus {
+
         @JsonProperty("Timestamp")
         private final LocalDateTime timestamp;
 
@@ -162,22 +195,40 @@ public class Task {
         private final PortStatus portStatus;
     }
 
-    /** ContainerStatus represents the status of a container. */
+    /**
+     * ContainerStatus represents the status of a container.
+     */
     @Data
     public static class ContainerStatus {
+
         @JsonProperty("ContainerID")
         private final String containerID;
+
         @JsonProperty("PID")
         private final int pid;
+
         @JsonProperty("ExitCode")
         private final int exitCode;
     }
 
-    /** PortStatus represents the port status of a task's host ports whose
-    service has published host ports */
+    /**
+     * PortStatus represents the port status of a task's host ports whose
+     * service has published host ports
+     */
     @Data
     public static class PortStatus {
+
         @JsonProperty("Ports")
         private final List<Endpoint.PortConfig> ports;
+    }
+
+    /**
+     * Placement represents orchestration parameters.
+     */
+    @Data
+    public static class Placement {
+
+        @JsonProperty("Constraints")
+        private final List<String> constraints;
     }
 }

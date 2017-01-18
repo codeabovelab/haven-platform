@@ -4,11 +4,15 @@ import com.codeabovelab.dm.cluman.cluster.docker.ClusterConfig;
 import com.codeabovelab.dm.cluman.cluster.docker.ClusterConfigImpl;
 import com.codeabovelab.dm.cluman.cluster.docker.HttpAuthInterceptor;
 import com.codeabovelab.dm.cluman.cluster.docker.management.argument.GetContainersArg;
+import com.codeabovelab.dm.cluman.cluster.docker.management.argument.GetServicesArg;
+import com.codeabovelab.dm.cluman.cluster.docker.management.argument.GetTasksArg;
 import com.codeabovelab.dm.cluman.cluster.docker.management.argument.TagImageArg;
 import com.codeabovelab.dm.cluman.cluster.docker.management.result.ServiceCallResult;
 import com.codeabovelab.dm.cluman.cluster.docker.model.ContainerDetails;
 import com.codeabovelab.dm.cluman.cluster.docker.model.CreateNetworkCmd;
+import com.codeabovelab.dm.cluman.cluster.docker.model.swarm.Service;
 import com.codeabovelab.dm.cluman.cluster.docker.model.swarm.SwarmInspectResponse;
+import com.codeabovelab.dm.cluman.cluster.docker.model.swarm.Task;
 import com.codeabovelab.dm.cluman.cluster.registry.RegistryRepository;
 import com.codeabovelab.dm.cluman.configs.container.ConfigsFetcherImage;
 import com.codeabovelab.dm.cluman.configs.container.ContainerCreationContext;
@@ -116,5 +120,20 @@ public class DockerServiceImplTest {
         Assert.assertNotNull(swarm);
     }
 
+    @Test
+    @Ignore
+    public void testGetServices() {
+        List<Service> services = service.getServices(new GetServicesArg());
+        System.out.println(services);
+        Assert.assertNotNull(services);
+    }
+
+    @Test
+    @Ignore
+    public void testGetTasks() {
+        List<Task> tasks = service.getTasks(new GetTasksArg());
+        System.out.println(tasks);
+        Assert.assertNotNull(tasks);
+    }
 
 }
