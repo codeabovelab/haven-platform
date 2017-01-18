@@ -17,6 +17,7 @@
 package com.codeabovelab.dm.cluman.cluster.docker.model;
 
 
+import com.codeabovelab.dm.cluman.model.ProtocolType;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**

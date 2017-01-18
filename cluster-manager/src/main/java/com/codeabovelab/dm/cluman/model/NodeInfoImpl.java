@@ -41,6 +41,8 @@ public class NodeInfoImpl implements NodeInfo, Comparable<NodeInfoImpl> {
         private String address;
         @KvMapping
         private String cluster;
+        @KvMapping
+        private String idInCluster;
         private boolean on;
         private NodeMetrics health = DEFAULT_METRICS;
         @KvMapping
@@ -60,6 +62,7 @@ public class NodeInfoImpl implements NodeInfo, Comparable<NodeInfoImpl> {
                 labels(ni.getLabels());
                 setOn(ni.isOn());
                 setCluster(ni.getCluster());
+                setIdInCluster(ni.getIdInCluster());
                 setHealth(ni.getHealth());
             }
             return this;
@@ -122,12 +125,18 @@ public class NodeInfoImpl implements NodeInfo, Comparable<NodeInfoImpl> {
             setCluster(cluster);
             return this;
         }
+
+        public Builder idInCluster(String idInCluster) {
+            setIdInCluster(idInCluster);
+            return this;
+        }
     }
 
     private final String name;
     private final boolean on;
     private final String address;
     private final String cluster;
+    private final String idInCluster;
     private final Map<String, String> labels;
     private final NodeMetrics health;
 
@@ -137,6 +146,7 @@ public class NodeInfoImpl implements NodeInfo, Comparable<NodeInfoImpl> {
         this.on = builder.on;
         this.address = builder.address;
         this.cluster = builder.cluster;
+        this.idInCluster = builder.idInCluster;
         this.health = builder.health;
         this.labels = builder.labels;
     }

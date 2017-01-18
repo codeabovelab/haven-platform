@@ -104,7 +104,7 @@ public class DockerCluster extends AbstractNodesGroup<DockerClusterConfig> {
       .timeAfterWrite(Long.MAX_VALUE)// we cache for always, but must invalidate it at cluster reinitialization
       .build();
     private final SingleValueCache<Map<String, SwarmNode>> nodesMap;
-    private ContainersManager containers;
+    private final ContainersManager containers;
 
     @lombok.Builder(builderClassName = "Builder")
     DockerCluster(DockerClusterConfig config, DiscoveryStorageImpl storage) {
@@ -119,6 +119,7 @@ public class DockerCluster extends AbstractNodesGroup<DockerClusterConfig> {
           .setDaemon(true)
           .setNameFormat(getClass().getSimpleName() + "-" + getName() + "-%d")
           .build());
+        this.containers = new SmContainersManager(this);
         // so docker does not send any events about new coming nodes, and we must refresh list of them
         this.scheduledExecutor.scheduleWithFixedDelay(this::updateNodes, 30L, 30L, TimeUnit.SECONDS);
         getNodeStorage().getNodeEventSubscriptions().subscribe(this::onNodeEvent);
@@ -364,7 +365,7 @@ public class DockerCluster extends AbstractNodesGroup<DockerClusterConfig> {
             if(oldCluster != null && !cluster.equals(oldCluster)) {
                 return;
             }
-
+            b.idInCluster(sn.getId());
             b.address(address);
             NodeMetrics.Builder nmb = NodeMetrics.builder();
             NodeMetrics.State state = getState(sn);

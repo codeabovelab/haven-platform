@@ -76,24 +76,6 @@ public final class UiUtils {
         }
     }
 
-    public static String portsToString(List<Port> ports) {
-        StringBuilder sb = new StringBuilder();
-        for (Port port : ports) {
-            if (sb.length() > 0) {
-                sb.append(",  ");
-            }
-            sb.append(port.getType()).append('\u00A0');
-            sb.append(port.getIp()).append(':');
-            sb.append(port.getPrivatePort());
-            int publicPort = port.getPublicPort();
-            if (publicPort != 0) {
-                sb.append("\u00A0\u21D2\u00A0");
-                sb.append(publicPort);
-            }
-        }
-        return sb.toString();
-    }
-
     public static double convertToGB(long memory) {
         return Math.round(memory * 100 / (1024 * 1024 * 1024)) / 100d;
     }

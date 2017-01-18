@@ -102,7 +102,7 @@ public class SwarmNetwork {
         private final Driver driver;
 
         @JsonProperty("Configs")
-        private final IPAMConfig configs;
+        private final List<IPAMConfig> configs;
     }
 
     @Data

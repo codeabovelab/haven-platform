@@ -16,6 +16,7 @@
 
 package com.codeabovelab.dm.cluman.cluster.docker.model.swarm;
 
+import com.codeabovelab.dm.cluman.model.ProtocolType;
 import com.codeabovelab.dm.common.json.JtEnumLower;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Data;
@@ -72,7 +73,7 @@ public class Endpoint {
         private final String name;
 
         @JsonProperty("Protocol")
-        private final Protocol protocol;
+        private final ProtocolType protocol;
 
         /**
          * TargetPort is the port inside the container
@@ -105,11 +106,6 @@ public class Endpoint {
          * for direct host level access on the host where the task is running.
          */
         HOST
-    }
-
-    @JtEnumLower
-    public enum Protocol {
-        TCP, UDP
     }
 
     /**

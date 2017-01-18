@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 Code Above Lab LLC
+ * Copyright 2017 Code Above Lab LLC
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,18 +14,27 @@
  * limitations under the License.
  */
 
-package com.codeabovelab.dm.cluman.cluster.docker.model;
+package com.codeabovelab.dm.common.utils;
 
-import com.fasterxml.jackson.annotation.JsonValue;
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 
 /**
- * Enum of docker protocol types
  */
-public enum ProtocolType {
-    TCP, UDP;
+public final class TimeUtils {
 
-    @JsonValue
-    public String jsonValue() {
-        return name().toLowerCase();
+    private TimeUtils() {
+    }
+
+    /**
+     * Convert {@link LocalDateTime } to epoch milliseconds.
+     * @param dt date time or null
+     * @return milliseconds or Long.MIN_VALUE when argument is null
+     */
+    public static long toMillis(LocalDateTime dt) {
+        if(dt == null) {
+            return Long.MIN_VALUE;
+        }
+        return dt.toInstant(ZoneOffset.UTC).toEpochMilli();
     }
 }

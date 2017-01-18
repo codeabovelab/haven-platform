@@ -20,6 +20,7 @@ import com.codeabovelab.dm.cluman.cluster.docker.management.result.*;
 import com.codeabovelab.dm.cluman.cluster.docker.management.result.ResultCode;
 import com.codeabovelab.dm.cluman.cluster.docker.management.result.ServiceCallResult;
 import com.codeabovelab.dm.cluman.cluster.docker.model.swarm.*;
+import com.codeabovelab.dm.cluman.model.Port;
 import com.codeabovelab.dm.cluman.utils.ContainerUtils;
 import com.codeabovelab.dm.cluman.cluster.docker.ClusterConfig;
 import com.codeabovelab.dm.cluman.cluster.docker.ClusterConfigImpl;
@@ -345,7 +346,12 @@ public class DockerServiceImpl implements DockerService {
         dcb.setImageId(imageId);
         dcb.setCommand(c.getCommand());
         dcb.setCreated(c.getCreated() * 1000L);
-        dcb.setPorts(c.getPorts());
+        List<com.codeabovelab.dm.cluman.cluster.docker.model.Port> ports = c.getPorts();
+        if(ports != null) {
+            ports.forEach(p -> {
+                dcb.getPorts().add(new Port(p.getPrivatePort(), p.getPublicPort(), p.getType()));
+            });
+        }
         dcb.setLabels(c.getLabels());
         dcb.setStatus(c.getStatus());
         dcb.setState(DockerContainer.State.fromString(c.getState()));
