@@ -175,7 +175,7 @@ public class ClusterApi {
         for (ContainerService service : services) {
             UiContainerService uic = UiContainerService.from(service);
             uic.setApplication(apps.get(uic.getId()));
-            UiPermission.inject(uic, ac, SecuredType.CONTAINER.id(uic.getId()));
+            UiPermission.inject(uic, ac, SecuredType.SERVICE.id(uic.getId()));
             list.add(uic);
         }
         Collections.sort(list);
