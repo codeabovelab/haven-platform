@@ -333,7 +333,7 @@ public class ContainerApi {
     }
 
     @ApiOperation("this method allows to get container's id by name and cluster")
-    @RequestMapping(value = "/{cluster}/{name}", method = RequestMethod.GET)
+    @RequestMapping(value = "/{cluster}/{name:.*}", method = RequestMethod.GET)
     public UIContainerDetails getContainerDetailsByName(@PathVariable("cluster") String cluster, @PathVariable("name") String name) {
         ContainerRegistration cr = containerStorage.findContainer(name);
         ExtendedAssert.notFound(cr, "Can't find container by name " + name);
