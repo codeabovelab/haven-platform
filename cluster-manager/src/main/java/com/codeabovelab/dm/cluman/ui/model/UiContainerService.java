@@ -69,7 +69,7 @@ public class UiContainerService implements Comparable<UiContainerService>, WithU
         uic.setCreated(s.getCreated());
         uic.setUpdated(s.getUpdated());
         uic.setImage(s.getImage());
-        uic.setImageId(s.getId());
+        uic.setImageId(s.getImageId());
         uic.getLabels().putAll(s.getLabels());
         uic.getPorts().addAll(s.getPorts());
         uic.getCommand().addAll(s.getCommand());
