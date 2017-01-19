@@ -17,15 +17,13 @@
 package com.codeabovelab.dm.cluman.ds.clusters;
 
 import com.codeabovelab.dm.cluman.cluster.docker.management.DockerService;
+import com.codeabovelab.dm.cluman.cluster.docker.management.argument.GetServicesArg;
 import com.codeabovelab.dm.cluman.cluster.docker.management.argument.GetTasksArg;
 import com.codeabovelab.dm.cluman.cluster.docker.model.swarm.ContainerSpec;
 import com.codeabovelab.dm.cluman.cluster.docker.model.swarm.Endpoint;
+import com.codeabovelab.dm.cluman.cluster.docker.model.swarm.Service;
 import com.codeabovelab.dm.cluman.cluster.docker.model.swarm.Task;
-import com.codeabovelab.dm.cluman.model.Port;
-import com.codeabovelab.dm.cluman.model.ContainerService;
-import com.codeabovelab.dm.cluman.model.ContainersManager;
-import com.codeabovelab.dm.cluman.model.DockerContainer;
-import com.codeabovelab.dm.cluman.model.NodeInfo;
+import com.codeabovelab.dm.cluman.model.*;
 import com.codeabovelab.dm.common.utils.StringUtils;
 import com.codeabovelab.dm.common.utils.TimeUtils;
 import com.google.common.base.Joiner;
@@ -57,8 +55,28 @@ class SmContainersManager implements ContainersManager {
 
     @Override
     public Collection<ContainerService> getServices() {
-        //TODO getDocker().getServices();
-        return Collections.emptyList();
+        List<Service> services = getDocker().getServices(new GetServicesArg());
+        ImmutableList.Builder<ContainerService> ilb = ImmutableList.builder();
+        services.forEach((s) -> {
+            ContainerService.Builder csb = ContainerService.builder();
+            csb.setCluster(dc.getName());
+            csb.setCreated(s.getCreated());
+            csb.setUpdated(s.getUpdated());
+            csb.setId(s.getId());
+            Service.ServiceSpec spec = s.getSpec();
+            csb.setLabels(spec.getLabels());
+            csb.setName(spec.getName());
+            Task.TaskSpec task = spec.getTaskTemplate();
+            ContainerSpec container = task.getContainer();
+            String image = container.getImage();
+            ImageName im = ImageName.parse(image);
+            csb.setImage(im.getFullName());
+            csb.setImageId(im.getId());
+            csb.setCommand(container.getCommand());
+            convertPorts(s.getEndpoint().getPorts(), csb.getPorts());
+            ilb.add(csb.build());
+        });
+        return ilb.build();
     }
 
     @Override
@@ -89,9 +107,9 @@ class SmContainersManager implements ContainersManager {
         DockerContainer.Builder dcb = DockerContainer.builder();
         ContainerSpec container = task.getSpec().getContainer();
         String image = container.getImage();
-        // TODO move into imagename utils
-        dcb.setImage(StringUtils.before(image, '@'));
-        dcb.setImageId(StringUtils.after(image, '@'));
+        ImageName im = ImageName.parse(image);
+        dcb.setImage(im.getFullName());
+        dcb.setImageId(im.getId());
         dcb.setName(task.getName());
         dcb.setId(task.getId());
         dcb.setNode(ni);
@@ -104,16 +122,20 @@ class SmContainersManager implements ContainersManager {
         Task.TaskStatus status = task.getStatus();
         Task.PortStatus portStatus = status.getPortStatus();
         if(portStatus != null) {
-            List<Endpoint.PortConfig> ports = portStatus.getPorts();
-            if(ports != null) {
-                ports.forEach(pc -> {
-                    dcb.getPorts().add(new Port(pc.getTargetPort(), pc.getPublishedPort(), pc.getProtocol()));
-                });
-            }
+            convertPorts(portStatus.getPorts(), dcb.getPorts());
         }
         dcb.setState(convertState(status.getState()));
         dcb.setStatus(MoreObjects.firstNonNull(status.getError(), status.getMessage()));
         return dcb.build();
+    }
+
+    private void convertPorts(List<Endpoint.PortConfig> ports, List<Port> target) {
+        if(ports == null) {
+            return;
+        }
+        ports.forEach(pc -> {
+            target.add(new Port(pc.getTargetPort(), pc.getPublishedPort(), pc.getProtocol()));
+        });
     }
 
     private DockerContainer.State convertState(Task.TaskState state) {

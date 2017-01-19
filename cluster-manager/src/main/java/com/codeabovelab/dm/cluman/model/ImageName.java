@@ -44,11 +44,21 @@ public class ImageName {
     private final String registry;
     private final String name;
     private final String tag;
+    private final String fullName;
+    private final String id;
 
-    public static ImageName parse(String src) {
-        if(src == null) {
-            return null;
-        }
+    // do not publish this constructor
+    ImageName(String registry, String name, String tag) {
+        this.registry = registry;
+        this.name = name;
+        this.tag = tag;
+        this.id = null;
+        this.fullName = toFullName(registry, name, tag);
+    }
+
+    private ImageName(String src, String id) {
+        this.fullName = src;
+        this.id = id;
         final int len = src.length();
         int registryEnd = src.indexOf('/');
         int tagBegin = src.indexOf(':', registryEnd);
@@ -60,9 +70,44 @@ public class ImageName {
             registry = "";
             registryEnd = -1;
         }
-        String name = src.substring(registryEnd + 1, tagBegin);
-        String tag = (tagBegin < len)?  src.substring(tagBegin + 1) : "";
-        return new ImageName(registry, name, tag);
+        this.registry = registry;
+        this.name = src.substring(registryEnd + 1, tagBegin);
+        this.tag = (tagBegin < len)?  src.substring(tagBegin + 1) : "";
+    }
+
+    public String getId() {
+        return id;
+    }
+
+    public String getFullName() {
+        return fullName;
+    }
+
+    public String getTag() {
+        return tag;
+    }
+
+    public String getRegistry() {
+        return registry;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    private static String toFullName(String registry, String name, String tag) {
+        return registry + '/' + name + ':' + tag;
+    }
+
+    public static ImageName parse(String src) {
+        if(src == null) {
+            return null;
+        }
+        int at = src.indexOf('@');
+        if(at < 0) {
+            return new ImageName(src, null);
+        }
+        return new ImageName(src.substring(0, at), src.substring(at + 1));
     }
 
     /**

@@ -164,6 +164,24 @@ public class ClusterApi {
 
     }
 
+    @RequestMapping(value = "/clusters/{cluster}/services", method = GET)
+    public ResponseEntity<Collection<UiContainerService>> listServices(@PathVariable("cluster") String cluster) {
+        AccessContext ac = aclContextFactory.getContext();
+        NodesGroup nodesGroup = discoveryStorage.getCluster(cluster);
+        ExtendedAssert.notFound(nodesGroup, "Cluster was not found by " + cluster);
+        Collection<ContainerService> services = nodesGroup.getContainers().getServices();
+        Map<String, String> apps = UiUtils.mapAppContainer(applicationService, nodesGroup);
+        List<UiContainerService> list = new ArrayList<>();
+        for (ContainerService service : services) {
+            UiContainerService uic = UiContainerService.from(service);
+            uic.setApplication(apps.get(uic.getId()));
+            UiPermission.inject(uic, ac, SecuredType.CONTAINER.id(uic.getId()));
+            list.add(uic);
+        }
+        Collections.sort(list);
+        return new ResponseEntity<>(list, HttpStatus.OK);
+    }
+
     @RequestMapping(value = "/clusters/{cluster}/info", method = GET)
     @Cacheable("SwarmInfo")
     @DefineCache(
