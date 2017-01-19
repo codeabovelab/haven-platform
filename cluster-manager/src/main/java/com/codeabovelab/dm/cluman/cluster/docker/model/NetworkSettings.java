@@ -16,6 +16,7 @@
 
 package com.codeabovelab.dm.cluman.cluster.docker.model;
 
+import com.codeabovelab.dm.cluman.cluster.docker.model.swarm.SwarmNetwork;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Data;
@@ -88,7 +89,7 @@ public class NetworkSettings {
     public static class Network {
 
         @JsonProperty("IPAMConfig")
-        private String ipamConfig;
+        private IPAMConfig ipamConfig;
 
         @JsonProperty("NetworkID")
         private String networkID;
@@ -117,5 +118,11 @@ public class NetworkSettings {
         @JsonProperty("MacAddress")
         private String macAddress;
 
+    }
+
+    @Data
+    public static class IPAMConfig {
+        @JsonProperty("IPv4Address")
+        private String ipV4Address;
     }
 }
