@@ -24,15 +24,17 @@ import com.codeabovelab.dm.cluman.cluster.docker.model.swarm.Endpoint;
 import com.codeabovelab.dm.cluman.cluster.docker.model.swarm.Service;
 import com.codeabovelab.dm.cluman.cluster.docker.model.swarm.Task;
 import com.codeabovelab.dm.cluman.model.*;
-import com.codeabovelab.dm.common.utils.StringUtils;
+import com.codeabovelab.dm.common.utils.SingleValueCache;
 import com.codeabovelab.dm.common.utils.TimeUtils;
 import com.google.common.base.Joiner;
 import com.google.common.base.MoreObjects;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.util.Assert;
 
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Containers manager for swarm-mode clusters.
@@ -41,22 +43,18 @@ import java.util.*;
 class SmContainersManager implements ContainersManager {
     public static final Joiner JOINER = Joiner.on(' ');
     protected final DockerCluster dc;
+    protected final SingleValueCache<Map<String, ContainerService>> svcmap;
 
     SmContainersManager(DockerCluster dc) {
         this.dc = dc;
+        this.svcmap = SingleValueCache.builder(this::loadServices)
+          .timeAfterWrite(TimeUnit.SECONDS, dc.getConfig().getConfig().getCacheTimeAfterWrite())
+          .build();
     }
 
-    protected DockerService getDocker() {
-        DockerService service = this.dc.getDocker();
-        Assert.notNull(service, "Cluster return null docker value");
-        return service;
-    }
-
-
-    @Override
-    public Collection<ContainerService> getServices() {
+    private Map<String, ContainerService> loadServices() {
         List<Service> services = getDocker().getServices(new GetServicesArg());
-        ImmutableList.Builder<ContainerService> ilb = ImmutableList.builder();
+        ImmutableMap.Builder<String, ContainerService> ilb = ImmutableMap.builder();
         services.forEach((s) -> {
             ContainerService.Builder csb = ContainerService.builder();
             csb.setCluster(dc.getName());
@@ -74,13 +72,26 @@ class SmContainersManager implements ContainersManager {
             csb.setImageId(im.getId());
             csb.setCommand(container.getCommand());
             convertPorts(s.getEndpoint().getPorts(), csb.getPorts());
-            ilb.add(csb.build());
+            ilb.put(s.getId(), csb.build());
         });
-        return ilb.build();
+        Map<String, ContainerService> map = ilb.build();
+        return map;
+    }
+
+    protected DockerService getDocker() {
+        DockerService service = this.dc.getDocker();
+        Assert.notNull(service, "Cluster return null docker value");
+        return service;
+    }
+
+    @Override
+    public Collection<ContainerService> getServices() {
+        return svcmap.get().values();
     }
 
     @Override
     public Collection<DockerContainer> getContainers() {
+        Map<String, ContainerService> map = svcmap.get();
         List<Task> tasks = getDocker().getTasks(new GetTasksArg());
         ImmutableList.Builder<DockerContainer> builder = ImmutableList.builder();
         Map<String, NodeInfo> nodes = new HashMap<>();
@@ -90,11 +101,15 @@ class SmContainersManager implements ContainersManager {
                 nodes.put(id, ni);
             }
         });
+        //TODO here we must load true containers instead of tasks
         tasks.forEach((t) -> {
             try {
+                DockerContainer.Builder dcb = fromTask(t);
                 NodeInfo ni = nodes.get(t.getNodeId());
-                DockerContainer dc = fromTask(ni, t);
-                builder.add(dc);
+                dcb.setNode(ni);
+                ContainerService service = map.get(t.getServiceId());
+                //TODO obtain true container name dcb.setName();
+                builder.add(dcb.build());
             } catch (Exception e) {
                 // full task.toString() too big for log
                 log.error("On {}", t.getId(), e);
@@ -103,7 +118,7 @@ class SmContainersManager implements ContainersManager {
         return builder.build();
     }
 
-    private DockerContainer fromTask(NodeInfo ni, Task task) {
+    private DockerContainer.Builder fromTask(Task task) {
         DockerContainer.Builder dcb = DockerContainer.builder();
         ContainerSpec container = task.getSpec().getContainer();
         String image = container.getImage();
@@ -112,7 +127,6 @@ class SmContainersManager implements ContainersManager {
         dcb.setImageId(im.getId());
         dcb.setName(task.getName());
         dcb.setId(task.getId());
-        dcb.setNode(ni);
         dcb.setLabels(task.getLabels());
         List<String> command = container.getCommand();
         if(command != null) {
@@ -126,7 +140,7 @@ class SmContainersManager implements ContainersManager {
         }
         dcb.setState(convertState(status.getState()));
         dcb.setStatus(MoreObjects.firstNonNull(status.getError(), status.getMessage()));
-        return dcb.build();
+        return dcb;
     }
 
     private void convertPorts(List<Endpoint.PortConfig> ports, List<Port> target) {

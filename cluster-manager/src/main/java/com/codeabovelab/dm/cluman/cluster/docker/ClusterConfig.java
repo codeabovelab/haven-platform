@@ -31,6 +31,10 @@ public interface ClusterConfig {
 
     String getCluster();
 
+    /**
+     * Time in seconds, which data was cached after last write.
+     * @return seconds
+     */
     long getCacheTimeAfterWrite();
 
     /**
