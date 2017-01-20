@@ -23,7 +23,10 @@ import com.codeabovelab.dm.cluman.cluster.docker.model.swarm.ContainerSpec;
 import com.codeabovelab.dm.cluman.cluster.docker.model.swarm.Endpoint;
 import com.codeabovelab.dm.cluman.cluster.docker.model.swarm.Service;
 import com.codeabovelab.dm.cluman.cluster.docker.model.swarm.Task;
+import com.codeabovelab.dm.cluman.ds.container.ContainerRegistration;
+import com.codeabovelab.dm.cluman.ds.container.ContainerStorage;
 import com.codeabovelab.dm.cluman.model.*;
+import com.codeabovelab.dm.common.utils.Functions;
 import com.codeabovelab.dm.common.utils.SingleValueCache;
 import com.codeabovelab.dm.common.utils.TimeUtils;
 import com.google.common.base.Joiner;
@@ -31,10 +34,12 @@ import com.google.common.base.MoreObjects;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.util.Assert;
 
 import java.util.*;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 /**
  * Containers manager for swarm-mode clusters.
@@ -43,10 +48,12 @@ import java.util.concurrent.TimeUnit;
 class SmContainersManager implements ContainersManager {
     public static final Joiner JOINER = Joiner.on(' ');
     protected final DockerCluster dc;
+    protected final ContainerStorage containerStorage;
     protected final SingleValueCache<Map<String, ContainerService>> svcmap;
 
-    SmContainersManager(DockerCluster dc) {
+    SmContainersManager(DockerCluster dc, ContainerStorage containerStorage) {
         this.dc = dc;
+        this.containerStorage = containerStorage;
         this.svcmap = SingleValueCache.builder(this::loadServices)
           .timeAfterWrite(TimeUnit.SECONDS, dc.getConfig().getConfig().getCacheTimeAfterWrite())
           .build();
@@ -89,31 +96,27 @@ class SmContainersManager implements ContainersManager {
         return svcmap.get().values();
     }
 
+    private List<DockerContainer.Builder> getContainersInternal() {
+        List<DockerContainer.Builder> conts = new ArrayList<>();
+        Map<String, NodeInfo> nodes = dc.getNodes().stream().collect(Collectors.toMap(NodeInfo::getName, Functions.directFunc()));
+        List<ContainerRegistration> crs = containerStorage.getContainers();
+        crs.forEach((cr) -> {
+            NodeInfo node = nodes.get(cr.getNode());
+            if(node == null) {
+                return;
+            }
+            DockerContainer.Builder dcb = DockerContainer.builder().from(cr.getContainer()).node(node);
+            conts.add(dcb);
+        });
+        return conts;
+    }
+
     @Override
     public Collection<DockerContainer> getContainers() {
-        Map<String, ContainerService> map = svcmap.get();
-        List<Task> tasks = getDocker().getTasks(new GetTasksArg());
         ImmutableList.Builder<DockerContainer> builder = ImmutableList.builder();
-        Map<String, NodeInfo> nodes = new HashMap<>();
-        dc.getNodes().forEach(ni -> {
-            String id = ni.getIdInCluster();
-            if(id != null) {
-                nodes.put(id, ni);
-            }
-        });
-        //TODO here we must load true containers instead of tasks
-        tasks.forEach((t) -> {
-            try {
-                DockerContainer.Builder dcb = fromTask(t);
-                NodeInfo ni = nodes.get(t.getNodeId());
-                dcb.setNode(ni);
-                ContainerService service = map.get(t.getServiceId());
-                //TODO obtain true container name dcb.setName();
-                builder.add(dcb.build());
-            } catch (Exception e) {
-                // full task.toString() too big for log
-                log.error("On {}", t.getId(), e);
-            }
+        List<DockerContainer.Builder> conts = getContainersInternal();
+        conts.forEach(dcb -> {
+            builder.add(dcb.build());
         });
         return builder.build();
     }

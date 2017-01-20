@@ -23,6 +23,7 @@ import com.codeabovelab.dm.cluman.cluster.docker.management.result.*;
 import com.codeabovelab.dm.cluman.cluster.docker.management.result.ResultCode;
 import com.codeabovelab.dm.cluman.cluster.docker.management.result.ServiceCallResult;
 import com.codeabovelab.dm.cluman.cluster.docker.model.swarm.*;
+import com.codeabovelab.dm.cluman.ds.container.ContainerStorage;
 import com.codeabovelab.dm.cluman.ds.nodes.NodeRegistration;
 import com.codeabovelab.dm.cluman.ds.nodes.NodeStorage;
 import com.codeabovelab.dm.cluman.ds.swarm.DockerServices;
@@ -107,7 +108,7 @@ public class DockerCluster extends AbstractNodesGroup<DockerClusterConfig> {
     private final ContainersManager containers;
 
     @lombok.Builder(builderClassName = "Builder")
-    DockerCluster(DockerClusterConfig config, DiscoveryStorageImpl storage) {
+    DockerCluster(DockerClusterConfig config, DiscoveryStorageImpl storage, ContainerStorage containerStorage) {
         super(config, storage, Collections.singleton(Feature.SWARM_MODE));
         long cacheTimeAfterWrite = config.getConfig().getCacheTimeAfterWrite();
         nodesMap = SingleValueCache.builder(() -> {
@@ -119,7 +120,7 @@ public class DockerCluster extends AbstractNodesGroup<DockerClusterConfig> {
           .setDaemon(true)
           .setNameFormat(getClass().getSimpleName() + "-" + getName() + "-%d")
           .build());
-        this.containers = new SmContainersManager(this);
+        this.containers = new SmContainersManager(this, containerStorage);
         // so docker does not send any events about new coming nodes, and we must refresh list of them
         this.scheduledExecutor.scheduleWithFixedDelay(this::updateNodes, 30L, 30L, TimeUnit.SECONDS);
         getNodeStorage().getNodeEventSubscriptions().subscribe(this::onNodeEvent);

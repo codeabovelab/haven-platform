@@ -18,6 +18,7 @@ package com.codeabovelab.dm.cluman.ds.clusters;
 
 import com.codeabovelab.dm.cluman.cluster.docker.management.DockerService;
 import com.codeabovelab.dm.cluman.cluster.filter.FilterFactory;
+import com.codeabovelab.dm.cluman.ds.container.ContainerStorage;
 import com.codeabovelab.dm.cluman.ds.nodes.NodeStorage;
 import com.codeabovelab.dm.cluman.ds.swarm.DockerServices;
 import com.codeabovelab.dm.cluman.model.*;
@@ -69,6 +70,7 @@ public class DiscoveryStorageImpl implements DiscoveryStorage {
     private final AccessContextFactory aclContextFactory;
     private final MessageBus<NodesGroupEvent> messageBus;
     private final KvMapperFactory kvmf;
+    private final ContainerStorage containerStorage;
 
     @Autowired
     public DiscoveryStorageImpl(KvMapperFactory kvmf,
@@ -76,12 +78,14 @@ public class DiscoveryStorageImpl implements DiscoveryStorage {
                                 DockerServices dockerServices,
                                 NodeStorage nodeStorage,
                                 AccessContextFactory aclContextFactory,
+                                ContainerStorage containerStorage,
                                 @Qualifier(NodesGroupEvent.BUS) MessageBus<NodesGroupEvent> messageBus) {
         this.kvmf = kvmf;
         this.services = dockerServices;
         this.nodeStorage = nodeStorage;
         this.messageBus = messageBus;
         this.aclContextFactory = aclContextFactory;
+        this.containerStorage = containerStorage;
         KeyValueStorage storage = kvmf.getStorage();
         this.filterFactory = filterFactory;
         this.prefix = storage.getPrefix() + "/clusters/";
@@ -237,7 +241,7 @@ public class DiscoveryStorageImpl implements DiscoveryStorage {
     }
 
     private ClusterFactory clusterFactory() {
-        return new ClusterFactory(this).kvmf(this.kvmf);
+        return new ClusterFactory(this).containerStorage(containerStorage).kvmf(this.kvmf);
     }
 
     @Override

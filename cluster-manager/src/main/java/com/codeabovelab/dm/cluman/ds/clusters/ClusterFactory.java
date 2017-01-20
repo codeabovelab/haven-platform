@@ -17,6 +17,7 @@
 package com.codeabovelab.dm.cluman.ds.clusters;
 
 import com.codeabovelab.dm.cluman.cluster.docker.ClusterConfigImpl;
+import com.codeabovelab.dm.cluman.ds.container.ContainerStorage;
 import com.codeabovelab.dm.cluman.model.NodesGroup;
 import com.codeabovelab.dm.common.kv.mapping.KvMapperFactory;
 import lombok.Data;
@@ -33,6 +34,7 @@ class ClusterFactory {
     private String type;
     private ClusterConfigFactory configFactory;
     private KvMapperFactory kvmf;
+    private ContainerStorage cs;
 
     public ClusterFactory kvmf(KvMapperFactory kvmf) {
         setKvmf(kvmf);
@@ -49,6 +51,11 @@ class ClusterFactory {
         return this;
     }
 
+    public ClusterFactory containerStorage(ContainerStorage cs) {
+        setCs(cs);
+        return this;
+    }
+
     NodesGroup build(String clusterId) {
         ClusterCreationContext ccc = new ClusterCreationContext(this, clusterId);
         processConfig(ccc);
@@ -58,7 +65,7 @@ class ClusterFactory {
             cluster = SwarmCluster.builder().kvmf(kvmf).storage(storage).config(localConfig).build();
         } else if(config instanceof DockerClusterConfig) {
             DockerClusterConfig localConfig = (DockerClusterConfig) config;
-            cluster = DockerCluster.builder().storage(storage).config(localConfig).build();
+            cluster = DockerCluster.builder().storage(storage).config(localConfig).containerStorage(cs).build();
         } else {
             throw new IllegalArgumentException("Unsupported type of cluster config: " + config.getClass());
         }
