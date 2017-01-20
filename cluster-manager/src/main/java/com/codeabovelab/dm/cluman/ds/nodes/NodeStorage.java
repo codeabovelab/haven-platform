@@ -74,6 +74,7 @@ public class NodeStorage implements NodeInfoProvider {
         String nodesPrefix = storage.getPrefix() + "/nodes/";
         this.nodes = KvMap.builder(NodeRegistrationImpl.class, NodeInfoImpl.Builder.class)
           .path(nodesPrefix)
+          .passDirty(true)
           .adapter(new KvMapAdapterImpl())
           .localListener((e) -> {
               if(e.getAction() == KvMapLocalEvent.Action.CREATE) {
@@ -149,8 +150,10 @@ public class NodeStorage implements NodeInfoProvider {
     @Scheduled(fixedDelay = 60_000L)
     private void checkNodes() {
         // periodically check online status of nodes
-        for(NodeRegistrationImpl nr: nodes.values()) {
-            nr.getNodeInfo();
+        try(TempAuth ta = TempAuth.asSystem()) {
+            for(NodeRegistrationImpl nr: nodes.values()) {
+                nr.getNodeInfo();
+            }
         }
     }
 

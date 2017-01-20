@@ -56,6 +56,12 @@ public class KvMap<T> {
          */
         private Consumer<KvMapEvent<T>> listener;
         private KvObjectFactory<V> factory;
+        /**
+         * Pass dirty value into adapter. Otherwise adapter receive null value.
+         * <p/>
+         * Default - false;
+         */
+        private boolean passDirty;
 
         public Builder(Class<T> type, Class<V> valueType) {
             Assert.notNull(type, "type is null");
@@ -100,6 +106,18 @@ public class KvMap<T> {
 
         public Builder<T, V> factory(KvObjectFactory<V> factory) {
             setFactory(factory);
+            return this;
+        }
+
+        /**
+         * Pass dirty value into adapter. Otherwise adapter receive null value.
+         * <p/>
+         * Default - false;
+         * @param passDirty flag
+         * @return this
+         */
+        public Builder<T, V> passDirty(boolean passDirty) {
+            setPassDirty(passDirty);
             return this;
         }
 
@@ -176,7 +194,7 @@ public class KvMap<T> {
         }
 
         synchronized void load() {
-            T old = getIfPresent();
+            T old = (dirty && !passDirty)? null : value;
             Object obj = mapper.load(key, adapter.getType(old));
             T newVal = null;
             if(obj != null || old != null) {
@@ -231,6 +249,7 @@ public class KvMap<T> {
     private final Consumer<KvMapLocalEvent<T>> localListener;
     private final Consumer<KvMapEvent<T>> listener;
     private final Map<String, ValueHolder> map = new LinkedHashMap<>();
+    private final boolean passDirty;
 
     @SuppressWarnings("unchecked")
     private KvMap(Builder builder) {
@@ -239,6 +258,8 @@ public class KvMap<T> {
         this.adapter = builder.adapter;
         this.localListener = builder.localListener;
         this.listener = builder.listener;
+        this.passDirty = builder.passDirty;
+        Assert.isTrue(!this.passDirty || this.adapter != KvMapAdapter.DIRECT, "Direct adapter does not support passDirty flag.");
         Class<Object> mapperType = MoreObjects.firstNonNull(builder.valueType, (Class<Object>)builder.type);
         this.mapper = builder.mapper.buildClassMapper(mapperType)
           .prefix(builder.path)

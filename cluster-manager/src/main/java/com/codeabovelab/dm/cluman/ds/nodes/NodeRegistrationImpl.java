@@ -24,6 +24,9 @@ import com.codeabovelab.dm.common.mb.*;
 import com.codeabovelab.dm.common.security.Action;
 import org.springframework.security.acls.model.ObjectIdentity;
 
+import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.util.*;
 import java.util.function.Consumer;
 
@@ -69,13 +72,17 @@ class NodeRegistrationImpl implements NodeRegistration {
         if(ttl < MIN_TTL) {
             ttl = MIN_TTL;
         }
-        //also convert seconds to ms
-        this.endTime = System.currentTimeMillis() + (ttl * 1000L);
-        this.ttl = ttl;
+        synchronized (lock) {
+            //also convert seconds to ms
+            this.endTime = System.currentTimeMillis() + (ttl * 1000L);
+            this.ttl = ttl;
+        }
     }
 
     public int getTtl() {
-        return this.ttl;
+        synchronized (lock) {
+            return this.ttl;
+        }
     }
 
     @Override
