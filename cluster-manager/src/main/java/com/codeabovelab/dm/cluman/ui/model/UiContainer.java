@@ -87,7 +87,10 @@ public class UiContainer implements Comparable<UiContainer>, UiContainerIface, W
         uic.setRun(container.isRun());
         // this is workaround, because docker use simply command representation in container,
         // for full you need use ContainerDetails
-        uic.getCommand().add(container.getCommand());
+        String command = container.getCommand();
+        if(command != null) {
+            uic.getCommand().add(command);
+        }
         return uic;
     }
 
