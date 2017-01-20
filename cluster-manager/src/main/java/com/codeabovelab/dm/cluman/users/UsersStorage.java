@@ -55,6 +55,7 @@ public class UsersStorage implements UserIdentifiersDetailsService {
         this.map = KvMap.builder(UserRegistration.class, ExtendedUserDetailsImpl.class)
           .mapper(mapperFactory)
           .path(prefix)
+          .passDirty(true)
           .adapter(new KvMapAdapterImpl())
           .build();
     }
