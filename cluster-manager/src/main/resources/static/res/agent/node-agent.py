@@ -147,8 +147,11 @@ class DockerMaster:
             }
             disks = {}
             for part in psutil.disk_partitions():
-                usage = psutil.disk_usage(part.mountpoint)
-                disks[part.mountpoint] = {'total': usage.total, 'used': usage.used}
+                try:
+                    usage = psutil.disk_usage(part.mountpoint)
+                    disks[part.mountpoint] = {'total': usage.total, 'used': usage.used}
+                except PermissionError as e:
+                    logging.warning("can not get info about %s due to: %s", part.mountpoint, e)
             status['disks'] = disks
             net = {}
             for id, nic in psutil.net_io_counters(pernic=True).items():
@@ -156,9 +159,10 @@ class DockerMaster:
                     continue
                 net[id] = {'bytesOut': nic.bytes_sent, 'bytesIn': nic.bytes_recv}
             status['net'] = net
-        except:
-            logging.warning("status will be empty because 'psutil' package is not found.")
-            pass
+        except ImportError as e:
+            logging.warning("status will be empty because: %s", e)
+        except Exception as e:
+            logging.warning("error happen when gathering status: %s", e)
         return status
 
     def update(self):
