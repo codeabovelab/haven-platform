@@ -125,6 +125,10 @@ class ContainerInfoUpdater implements SmartLifecycle {
         }
     }
 
+    /**
+     * Schedule update of specified node in yhe next 10 seconds. Concrete time may be changed in future.
+     * @param node name of node
+     */
     private void scheduleNodeUpdate(String node) {
         RescheduledTask task = this.scheduledNodes.computeIfAbsent(node, (n) -> {
             Runnable runnable = () -> this.updateNodeByName(n);
@@ -178,7 +182,13 @@ class ContainerInfoUpdater implements SmartLifecycle {
             if(dockerService != null) {
                 log.info("Node '{}' is online force update containers.", name);
                 updateForNode(dockerService);
+                return;
             }
+        }
+        //we schedule node for update, for first time only.
+        // because all other event may be lost
+        if(!scheduledNodes.containsKey(name)) {
+            scheduleNodeUpdate(name);
         }
     }
 
