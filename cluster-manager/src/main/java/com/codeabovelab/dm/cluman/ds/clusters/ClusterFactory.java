@@ -22,6 +22,7 @@ import com.codeabovelab.dm.cluman.model.NodesGroup;
 import com.codeabovelab.dm.common.kv.mapping.KvMapperFactory;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.config.AutowireCapableBeanFactory;
 import org.springframework.util.Assert;
 
 /**
@@ -34,12 +35,8 @@ class ClusterFactory {
     private String type;
     private ClusterConfigFactory configFactory;
     private KvMapperFactory kvmf;
-    private ContainerStorage cs;
+    private final AutowireCapableBeanFactory beanFactory;
 
-    public ClusterFactory kvmf(KvMapperFactory kvmf) {
-        setKvmf(kvmf);
-        return this;
-    }
 
     public ClusterFactory config(AbstractNodesGroupConfig<?> config) {
         setConfig(config);
@@ -51,24 +48,20 @@ class ClusterFactory {
         return this;
     }
 
-    public ClusterFactory containerStorage(ContainerStorage cs) {
-        setCs(cs);
-        return this;
-    }
-
     NodesGroup build(String clusterId) {
         ClusterCreationContext ccc = new ClusterCreationContext(this, clusterId);
         processConfig(ccc);
         AbstractNodesGroup<?> cluster;
         if(config instanceof SwarmNodesGroupConfig) {
             SwarmNodesGroupConfig localConfig = (SwarmNodesGroupConfig) config;
-            cluster = SwarmCluster.builder().kvmf(kvmf).storage(storage).config(localConfig).build();
+            cluster = new SwarmCluster(storage, localConfig);
         } else if(config instanceof DockerClusterConfig) {
             DockerClusterConfig localConfig = (DockerClusterConfig) config;
-            cluster = DockerCluster.builder().storage(storage).config(localConfig).containerStorage(cs).build();
+            cluster = new DockerCluster(storage, localConfig);
         } else {
             throw new IllegalArgumentException("Unsupported type of cluster config: " + config.getClass());
         }
+        beanFactory.autowireBean(cluster);
         ccc.beforeClusterInit(cluster);
         cluster.init();
         return cluster;

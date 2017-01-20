@@ -35,6 +35,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.util.Assert;
 import org.springframework.util.StringUtils;
 
@@ -105,10 +106,10 @@ public class DockerCluster extends AbstractNodesGroup<DockerClusterConfig> {
       .timeAfterWrite(Long.MAX_VALUE)// we cache for always, but must invalidate it at cluster reinitialization
       .build();
     private final SingleValueCache<Map<String, SwarmNode>> nodesMap;
-    private final ContainersManager containers;
+    private ContainerStorage containerStorage;
+    private ContainersManager containers;
 
-    @lombok.Builder(builderClassName = "Builder")
-    DockerCluster(DockerClusterConfig config, DiscoveryStorageImpl storage, ContainerStorage containerStorage) {
+    DockerCluster(DiscoveryStorageImpl storage, DockerClusterConfig config) {
         super(config, storage, Collections.singleton(Feature.SWARM_MODE));
         long cacheTimeAfterWrite = config.getConfig().getCacheTimeAfterWrite();
         nodesMap = SingleValueCache.builder(() -> {
@@ -120,10 +121,11 @@ public class DockerCluster extends AbstractNodesGroup<DockerClusterConfig> {
           .setDaemon(true)
           .setNameFormat(getClass().getSimpleName() + "-" + getName() + "-%d")
           .build());
-        this.containers = new SmContainersManager(this, containerStorage);
-        // so docker does not send any events about new coming nodes, and we must refresh list of them
-        this.scheduledExecutor.scheduleWithFixedDelay(this::updateNodes, 30L, 30L, TimeUnit.SECONDS);
-        getNodeStorage().getNodeEventSubscriptions().subscribe(this::onNodeEvent);
+    }
+
+    @Autowired
+    public void setContainerStorage(ContainerStorage containerStorage) {
+        this.containerStorage = containerStorage;
     }
 
     private void onNodeEvent(NodeEvent e) {
@@ -150,6 +152,12 @@ public class DockerCluster extends AbstractNodesGroup<DockerClusterConfig> {
         Assert.notEmpty(hosts, "Cluster config '" + getName() + "' must contains at least one manager host.");
         hosts.forEach(host -> managers.putIfAbsent(host, new Manager(host)));
         initCluster(hosts.get(0));
+
+        this.containers = new SmContainersManager(this, containerStorage);
+
+        // so docker does not send any events about new coming nodes, and we must refresh list of them
+        this.scheduledExecutor.scheduleWithFixedDelay(this::updateNodes, 30L, 30L, TimeUnit.SECONDS);
+        getNodeStorage().getNodeEventSubscriptions().subscribe(this::onNodeEvent);
     }
 
     private void initCluster(String leaderName) {

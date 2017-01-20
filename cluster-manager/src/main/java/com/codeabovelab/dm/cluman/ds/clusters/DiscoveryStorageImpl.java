@@ -43,6 +43,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.beans.factory.config.AutowireCapableBeanFactory;
 import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Component;
 import org.springframework.util.Assert;
@@ -69,8 +70,7 @@ public class DiscoveryStorageImpl implements DiscoveryStorage {
     private final FilterFactory filterFactory;
     private final AccessContextFactory aclContextFactory;
     private final MessageBus<NodesGroupEvent> messageBus;
-    private final KvMapperFactory kvmf;
-    private final ContainerStorage containerStorage;
+    private final AutowireCapableBeanFactory beanFactory;
 
     @Autowired
     public DiscoveryStorageImpl(KvMapperFactory kvmf,
@@ -78,14 +78,13 @@ public class DiscoveryStorageImpl implements DiscoveryStorage {
                                 DockerServices dockerServices,
                                 NodeStorage nodeStorage,
                                 AccessContextFactory aclContextFactory,
-                                ContainerStorage containerStorage,
+                                AutowireCapableBeanFactory beanFactory,
                                 @Qualifier(NodesGroupEvent.BUS) MessageBus<NodesGroupEvent> messageBus) {
-        this.kvmf = kvmf;
+        this.beanFactory = beanFactory;
         this.services = dockerServices;
         this.nodeStorage = nodeStorage;
         this.messageBus = messageBus;
         this.aclContextFactory = aclContextFactory;
-        this.containerStorage = containerStorage;
         KeyValueStorage storage = kvmf.getStorage();
         this.filterFactory = filterFactory;
         this.prefix = storage.getPrefix() + "/clusters/";
@@ -241,7 +240,7 @@ public class DiscoveryStorageImpl implements DiscoveryStorage {
     }
 
     private ClusterFactory clusterFactory() {
-        return new ClusterFactory(this).containerStorage(containerStorage).kvmf(this.kvmf);
+        return new ClusterFactory(this, beanFactory);
     }
 
     @Override

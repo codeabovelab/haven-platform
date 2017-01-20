@@ -26,9 +26,9 @@ import com.codeabovelab.dm.cluman.ds.swarm.DockerServices;
 import com.codeabovelab.dm.cluman.model.*;
 import com.codeabovelab.dm.common.kv.WriteOptions;
 import com.codeabovelab.dm.common.kv.mapping.KvMapperFactory;
-import lombok.Builder;
 import lombok.ToString;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.util.Assert;
 import org.springframework.util.StringUtils;
 
@@ -41,16 +41,18 @@ import java.util.*;
 @ToString(callSuper = true)
 public final class SwarmCluster extends AbstractNodesGroup<SwarmNodesGroupConfig> {
 
-    private final KvMapperFactory kvmf;
+    private KvMapperFactory kvmf;
     private DockerService docker;
     private ContainersManager containers;
 
-    @Builder
-    SwarmCluster(DiscoveryStorageImpl storage, SwarmNodesGroupConfig config, KvMapperFactory kvmf) {
+
+    SwarmCluster(DiscoveryStorageImpl storage, SwarmNodesGroupConfig config) {
         super(config, storage, Collections.singleton(Feature.SWARM));
+    }
+
+    @Autowired
+    void setKvmf(KvMapperFactory kvmf) {
         this.kvmf = kvmf;
-        storage.getNodeStorage().getNodeEventSubscriptions().subscribe(this::onNodeEvent);
-        this.containers = new DockerContainersManager(this::getDocker);
     }
 
     private void onNodeEvent(NodeEvent event) {
@@ -115,7 +117,11 @@ public final class SwarmCluster extends AbstractNodesGroup<SwarmNodesGroupConfig
         return docker;
     }
 
+    @Override
     protected void initImpl() {
+        getNodeStorage().getNodeEventSubscriptions().subscribe(this::onNodeEvent);
+        this.containers = new DockerContainersManager(this::getDocker);
+
         DockerServices dses = this.getDiscoveryStorage().getDockerServices();
         this.docker = dses.getOrCreateCluster(getClusterConfig(), (dsb) -> {
             dsb.setInfoInterceptor(this::dockerInfoModifier);
