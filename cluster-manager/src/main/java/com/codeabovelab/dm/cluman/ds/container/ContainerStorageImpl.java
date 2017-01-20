@@ -18,6 +18,7 @@ package com.codeabovelab.dm.cluman.ds.container;
 
 import com.codeabovelab.dm.cluman.model.ContainerBase;
 import com.codeabovelab.dm.cluman.model.ContainerBaseIface;
+import com.codeabovelab.dm.cluman.model.DockerContainer;
 import com.codeabovelab.dm.common.kv.mapping.KvMap;
 import com.codeabovelab.dm.common.kv.mapping.KvMapperFactory;
 import lombok.extern.slf4j.Slf4j;
@@ -57,7 +58,7 @@ public class ContainerStorageImpl implements ContainerStorage, InitializingBean 
     void deleteContainer(String id) {
         ContainerRegistration cr = map.remove(id);
         if(cr != null) {
-            ContainerBase cb = cr.getContainer();
+            DockerContainer cb = cr.getContainer();
             log.info("Container remove: {} '{}', of '{}'", cr.getId(), cb.getName(), cb.getImage());
         }
     }
@@ -112,7 +113,7 @@ public class ContainerStorageImpl implements ContainerStorage, InitializingBean 
     public ContainerRegistration updateAndGetContainer(ContainerBaseIface container, String node) {
         ContainerRegistration cr = map.computeIfAbsent(container.getId(), s -> new ContainerRegistration(this, s));
         cr.from(container, node);
-        ContainerBase cb = cr.getContainer();
+        DockerContainer cb = cr.getContainer();
         log.info("Update container: {} '{}', of '{}'", cr.getId(), cb.getName(), cb.getImage());
         return cr;
     }

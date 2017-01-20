@@ -16,6 +16,7 @@
 
 package com.codeabovelab.dm.cluman.ds.container;
 
+import com.codeabovelab.dm.cluman.model.DockerContainer;
 import com.codeabovelab.dm.cluman.utils.ContainerUtils;
 import com.codeabovelab.dm.common.kv.mapping.KvMap;
 import com.codeabovelab.dm.common.kv.mapping.KvMapping;
@@ -30,9 +31,9 @@ public class ContainerRegistration {
     private final String id;
     @KvMapping
     private Map<String, String> additionalLabels;
-    private final ContainerBase.Builder container = ContainerBase.builder();
+    private final DockerContainer.Builder container = DockerContainer.builder();
     private final Object lock = new Object();
-    private ContainerBase cached;
+    private DockerContainer cached;
     private String node;
     private KvMap<?> map;
 
@@ -58,8 +59,8 @@ public class ContainerRegistration {
         map.flush(id);
     }
 
-    public ContainerBase getContainer() {
-        ContainerBase dc = cached;
+    public DockerContainer getContainer() {
+        DockerContainer dc = cached;
         if(dc == null) {
             synchronized (lock) {
                 dc = cached = container.build();

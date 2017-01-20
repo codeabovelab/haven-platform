@@ -258,7 +258,7 @@ public class DeploySourceJob implements Runnable {
         String id = containerSource.getId();
         List<ContainerRegistration> containers = containerStorage.getContainers();
         for(ContainerRegistration cr: containers) {
-            ContainerBase cb = cr.getContainer();
+            DockerContainer cb = cr.getContainer();
             String crName = cb.getName();
             final String crId = cr.getId();
             if(name.equals(crName)) {

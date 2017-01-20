@@ -34,7 +34,6 @@ import com.google.common.base.MoreObjects;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.security.access.AccessDeniedException;
 import org.springframework.util.Assert;
 
 import java.util.*;
@@ -45,13 +44,14 @@ import java.util.stream.Collectors;
  * Containers manager for swarm-mode clusters.
  */
 @Slf4j
-class SmContainersManager implements ContainersManager {
+class DockerClusterContainers implements ContainersManager {
     public static final Joiner JOINER = Joiner.on(' ');
+    public static final String LABEL_TASK_ID = "com.docker.swarm.task.id";
     protected final DockerCluster dc;
     protected final ContainerStorage containerStorage;
     protected final SingleValueCache<Map<String, ContainerService>> svcmap;
 
-    SmContainersManager(DockerCluster dc, ContainerStorage containerStorage) {
+    DockerClusterContainers(DockerCluster dc, ContainerStorage containerStorage) {
         this.dc = dc;
         this.containerStorage = containerStorage;
         this.svcmap = SingleValueCache.builder(this::loadServices)
@@ -121,21 +121,14 @@ class SmContainersManager implements ContainersManager {
         return builder.build();
     }
 
-    private DockerContainer.Builder fromTask(Task task) {
-        DockerContainer.Builder dcb = DockerContainer.builder();
+    private DockerContainer.Builder fromTask(Task task, DockerContainer.Builder dcb) {
         ContainerSpec container = task.getSpec().getContainer();
-        String image = container.getImage();
-        ImageName im = ImageName.parse(image);
-        dcb.setImage(im.getFullName());
-        dcb.setImageId(im.getId());
-        dcb.setName(task.getName());
-        dcb.setId(task.getId());
-        dcb.setLabels(task.getLabels());
+        //dcb.setLabels(task.getLabels());
         List<String> command = container.getCommand();
         if(command != null) {
             dcb.setCommand(JOINER.join(command));
         }
-        dcb.setCreated(TimeUtils.toMillis(task.getCreated()));
+        //dcb.setCreated(TimeUtils.toMillis(task.getCreated()));
         Task.TaskStatus status = task.getStatus();
         Task.PortStatus portStatus = status.getPortStatus();
         if(portStatus != null) {
