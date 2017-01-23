@@ -30,7 +30,9 @@ import com.codeabovelab.dm.cluman.ds.container.ContainerManager;
 import com.codeabovelab.dm.cluman.job.JobInstance;
 import com.codeabovelab.dm.cluman.job.JobParameters;
 import com.codeabovelab.dm.cluman.job.JobsManager;
+import com.codeabovelab.dm.cluman.model.DiscoveryStorage;
 import com.codeabovelab.dm.cluman.model.DockerContainer;
+import com.codeabovelab.dm.cluman.model.NodesGroup;
 import com.codeabovelab.dm.cluman.model.Severity;
 import com.codeabovelab.dm.cluman.pipeline.arg.PipelineDeployArg;
 import com.codeabovelab.dm.cluman.pipeline.arg.PipelinePromoteArg;
@@ -76,18 +78,16 @@ public class PipelineServiceImpl implements PipelineService {
     private final KvMapperFactory kvmf;
     private final MessageBus<PipelineEvent> pipelineEventBus;
     private final String pipelinePrefix;
-    private final DockerServiceRegistry dockerServiceRegistry;
+    private final DiscoveryStorage dockerServiceRegistry;
     private final JobsManager jobsManager;
     private final RegistryRepository registryRepository;
-    private final ContainerManager containerManager;
 
     private final String updateCronExpression;
 
     @Autowired
     public PipelineServiceImpl(KvMapperFactory kvmf,
-                               DockerServiceRegistry dockerServiceRegistry,
+                               DiscoveryStorage dockerServiceRegistry,
                                RegistryRepository registryRepository,
-                               ContainerManager containerManager,
                                @Qualifier(PipelineEvent.BUS) MessageBus<PipelineEvent> pipelineEventBus,
                                JobsManager jobsManager,
                                @Value("${dm.pipeline.updateCronExpression:* * * * * *}") String updateCronExpression) {
@@ -96,7 +96,6 @@ public class PipelineServiceImpl implements PipelineService {
         this.registryRepository = registryRepository;
         this.pipelineEventBus = pipelineEventBus;
         this.dockerServiceRegistry = dockerServiceRegistry;
-        this.containerManager = containerManager;
         KeyValueStorage storage = kvmf.getStorage();
         this.updateCronExpression = updateCronExpression;
         this.pipelinePrefix = storage.getPrefix() + "/pipelines/";
@@ -337,7 +336,10 @@ public class PipelineServiceImpl implements PipelineService {
         Map<String, String> labels = createContainerArg.getContainer().getLabels();
         labels.putAll(getRequiredLabels(pipelineSchema, pipelineStages));
         labels.put(PIPELINE_ID, pipelineInstanceId);
-        containerManager.createContainer(createContainerArg);
+        String clusterName = createContainerArg.getContainer().getCluster();
+        NodesGroup cluster = dockerServiceRegistry.getCluster(clusterName);
+        Assert.notNull(cluster, "Can not find cluster: " + clusterName);
+        cluster.getContainers().createContainer(createContainerArg);
         pipelineInstances.flush(instance.getId());
         riseEvent(pipelineSchema, "deploy");
 

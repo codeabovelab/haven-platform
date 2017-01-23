@@ -22,6 +22,7 @@ import com.codeabovelab.dm.cluman.job.JobScope;
 import com.codeabovelab.dm.cluman.model.DiscoveryStorage;
 import com.codeabovelab.dm.cluman.batch.BatchUtils;
 import com.codeabovelab.dm.cluman.batch.UpdateStopThenStartEachJob;
+import com.codeabovelab.dm.cluman.model.NodesGroup;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
@@ -37,13 +38,22 @@ public class UpdateContainersConfiguration {
 
     @Bean
     @Scope(JobScope.SCOPE_NAME)
-    DockerService dockerService(JobContext jobContext, DiscoveryStorage storage) {
+    DockerService dockerService(NodesGroup nodesGroup) {
+        if(nodesGroup == null) {
+            return null;
+        }
+        return nodesGroup.getDocker();
+    }
+
+    @Bean
+    @Scope(JobScope.SCOPE_NAME)
+    NodesGroup nodesGroup(JobContext jobContext, DiscoveryStorage storage) {
         String clusterName = (String) jobContext.getParameters().getParameters().get(BatchUtils.JP_CLUSTER);
         if(clusterName == null) {
             return null;
         }
-        DockerService service = storage.getService(clusterName);
-        Assert.notNull(service, "Can not resolve service for cluser: " + clusterName);
-        return service;
+        NodesGroup cluster = storage.getCluster(clusterName);
+        Assert.notNull(cluster, "Can not resolve service for cluster: " + clusterName);
+        return cluster;
     }
 }

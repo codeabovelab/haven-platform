@@ -74,6 +74,7 @@ public class DeploySourceJob implements Runnable {
         private ClusterSource cluster;
         private ApplicationSource app;
         private DockerService service;
+        private NodesGroup nodesGroup;
 
         public String getPath(String container) {
             StringBuilder sb = new StringBuilder()
@@ -100,9 +101,6 @@ public class DeploySourceJob implements Runnable {
 
     @Autowired
     private DiscoveryStorage discoveryStorage;
-
-    @Autowired
-    private ContainerManager containerManager;
 
     @Autowired
     private ContainerStorage containerStorage;
@@ -143,6 +141,7 @@ public class DeploySourceJob implements Runnable {
             });
             return ccc.createConfig(clusterSource.getType());
         });
+        dc.setNodesGroup(ng);
         dc.setService(ng.getDocker());
         addNodes(dc, clusterSource);
         deployContainers(dc, clusterSource, ContainerHandler.NOP);
@@ -239,7 +238,7 @@ public class DeploySourceJob implements Runnable {
         SwarmUtils.clearConstraints(clone.getLabels());
         CreateContainerArg cca = CreateContainerArg.builder().container(clone)
                 .watcher((pe) -> jobContext.fire("On {0}, {1}", containerLogId, pe.getMessage())).build();
-        CreateAndStartContainerResult ccr = containerManager.createContainer(cca);
+        CreateAndStartContainerResult ccr = ctx.getNodesGroup().getContainers().createContainer(cca);
         ch.handle(clone, ccr);
         String containerId = ccr.getContainerId();
         jobContext.fire("End create container {0} with id {1} and result {2}", containerLogId, containerId, ccr);

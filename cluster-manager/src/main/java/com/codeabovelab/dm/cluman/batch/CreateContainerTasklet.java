@@ -27,6 +27,7 @@ import com.codeabovelab.dm.cluman.job.JobContext;
 import com.codeabovelab.dm.cluman.job.JobParam;
 import com.codeabovelab.dm.cluman.model.ContainerSource;
 import com.codeabovelab.dm.cluman.model.ImageName;
+import com.codeabovelab.dm.cluman.model.NodesGroup;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.util.Assert;
@@ -42,7 +43,7 @@ import java.util.function.Consumer;
 public class CreateContainerTasklet {
 
     @Autowired
-    private ContainerManager containerManager;
+    private NodesGroup nodesGroup;
 
     @Autowired
     private JobContext context;
@@ -71,7 +72,7 @@ public class CreateContainerTasklet {
                 .container(cs)
                 .watcher(new MessageProxy())
                 .build();
-        CreateAndStartContainerResult res = containerManager.createContainer(arg);
+        CreateAndStartContainerResult res = nodesGroup.getContainers().createContainer(arg);
         item = item.makeCopy().id(res.getContainerId()).name(res.getName()).build();
         rollback.record(item, RollbackData.Action.CREATE);
         ResultCode code = res.getCode();
