@@ -17,7 +17,10 @@
 package com.codeabovelab.dm.cluman.ds;
 
 import com.codeabovelab.dm.cluman.cluster.docker.management.DockerService;
+import com.codeabovelab.dm.cluman.cluster.docker.management.argument.CreateContainerArg;
 import com.codeabovelab.dm.cluman.cluster.docker.management.argument.GetContainersArg;
+import com.codeabovelab.dm.cluman.cluster.docker.management.result.CreateAndStartContainerResult;
+import com.codeabovelab.dm.cluman.ds.container.ContainerManager;
 import com.codeabovelab.dm.cluman.model.ContainerService;
 import com.codeabovelab.dm.cluman.model.DockerContainer;
 import org.springframework.util.Assert;
@@ -31,9 +34,12 @@ import java.util.function.Supplier;
  */
 public class DockerContainersManager extends AbstractContainersManager {
 
-    public DockerContainersManager(Supplier<DockerService> supplier) {
+    private final ContainerManager containerManager;
+
+    public DockerContainersManager(Supplier<DockerService> supplier, ContainerManager containerManager) {
         super(supplier);
         Assert.notNull(supplier);
+        this.containerManager = containerManager;
     }
 
     @Override
@@ -45,5 +51,10 @@ public class DockerContainersManager extends AbstractContainersManager {
     public Collection<DockerContainer> getContainers() {
         List<DockerContainer> containers = getDocker().getContainers(new GetContainersArg(true));
         return containers;
+    }
+
+    @Override
+    public CreateAndStartContainerResult createContainer(CreateContainerArg arg) {
+        return this.containerManager.createContainer(arg);
     }
 }

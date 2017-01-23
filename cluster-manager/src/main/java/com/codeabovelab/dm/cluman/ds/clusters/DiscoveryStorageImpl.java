@@ -67,7 +67,6 @@ public class DiscoveryStorageImpl implements DiscoveryStorage {
     private final NodeStorage nodeStorage;
     private final KvMap<NodesGroup> clusters;
     private final String prefix;
-    private final FilterFactory filterFactory;
     private final AccessContextFactory aclContextFactory;
     private final MessageBus<NodesGroupEvent> messageBus;
     private final AutowireCapableBeanFactory beanFactory;
@@ -86,7 +85,6 @@ public class DiscoveryStorageImpl implements DiscoveryStorage {
         this.messageBus = messageBus;
         this.aclContextFactory = aclContextFactory;
         KeyValueStorage storage = kvmf.getStorage();
-        this.filterFactory = filterFactory;
         this.prefix = storage.getPrefix() + "/clusters/";
         this.clusters = KvMap.builder(NodesGroup.class, AbstractNodesGroupConfig.class)
           .path(prefix)
@@ -225,18 +223,7 @@ public class DiscoveryStorageImpl implements DiscoveryStorage {
     }
 
     private NodesGroup makeClusterFromConfig(AbstractNodesGroupConfig<?> config, String cid) {
-        NodesGroup cluster;
-        if (config instanceof DefaultNodesGroupConfig) {
-            cluster = NodesGroupImpl.builder()
-              .config((DefaultNodesGroupConfig) config)
-              .filterFactory(filterFactory)
-              .storage(this)
-              .dockerServices(services)
-              .feature(NodesGroup.Feature.FORBID_NODE_ADDITION)
-              .build();
-        } else {
-            cluster = clusterFactory().config(config).build(cid);
-        }
+        NodesGroup cluster = clusterFactory().config(config).build(cid);
         return cluster;
     }
 

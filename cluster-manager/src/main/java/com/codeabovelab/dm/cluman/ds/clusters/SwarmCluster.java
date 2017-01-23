@@ -21,6 +21,7 @@ import com.codeabovelab.dm.cluman.cluster.docker.ClusterConfigImpl;
 import com.codeabovelab.dm.cluman.cluster.docker.management.DockerService;
 import com.codeabovelab.dm.cluman.cluster.docker.management.argument.GetContainersArg;
 import com.codeabovelab.dm.cluman.ds.DockerContainersManager;
+import com.codeabovelab.dm.cluman.ds.container.ContainerManager;
 import com.codeabovelab.dm.cluman.ds.nodes.NodeRegistration;
 import com.codeabovelab.dm.cluman.ds.swarm.DockerServices;
 import com.codeabovelab.dm.cluman.model.*;
@@ -44,7 +45,7 @@ public final class SwarmCluster extends AbstractNodesGroup<SwarmNodesGroupConfig
     private KvMapperFactory kvmf;
     private DockerService docker;
     private ContainersManager containers;
-
+    private ContainerManager containerManager;
 
     SwarmCluster(DiscoveryStorageImpl storage, SwarmNodesGroupConfig config) {
         super(config, storage, Collections.singleton(Feature.SWARM));
@@ -53,6 +54,11 @@ public final class SwarmCluster extends AbstractNodesGroup<SwarmNodesGroupConfig
     @Autowired
     void setKvmf(KvMapperFactory kvmf) {
         this.kvmf = kvmf;
+    }
+
+    @Autowired
+    void setContainerManager(ContainerManager containerManager) {
+        this.containerManager = containerManager;
     }
 
     private void onNodeEvent(NodeEvent event) {
@@ -120,7 +126,7 @@ public final class SwarmCluster extends AbstractNodesGroup<SwarmNodesGroupConfig
     @Override
     protected void initImpl() {
         getNodeStorage().getNodeEventSubscriptions().subscribe(this::onNodeEvent);
-        this.containers = new DockerContainersManager(this::getDocker);
+        this.containers = new DockerContainersManager(this::getDocker, this.containerManager);
 
         DockerServices dses = this.getDiscoveryStorage().getDockerServices();
         this.docker = dses.getOrCreateCluster(getClusterConfig(), (dsb) -> {

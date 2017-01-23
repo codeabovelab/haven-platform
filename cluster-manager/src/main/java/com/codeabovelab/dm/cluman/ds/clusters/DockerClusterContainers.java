@@ -17,8 +17,10 @@
 package com.codeabovelab.dm.cluman.ds.clusters;
 
 import com.codeabovelab.dm.cluman.cluster.docker.management.DockerService;
+import com.codeabovelab.dm.cluman.cluster.docker.management.argument.CreateContainerArg;
 import com.codeabovelab.dm.cluman.cluster.docker.management.argument.GetServicesArg;
 import com.codeabovelab.dm.cluman.cluster.docker.management.argument.GetTasksArg;
+import com.codeabovelab.dm.cluman.cluster.docker.management.result.CreateAndStartContainerResult;
 import com.codeabovelab.dm.cluman.cluster.docker.model.swarm.ContainerSpec;
 import com.codeabovelab.dm.cluman.cluster.docker.model.swarm.Endpoint;
 import com.codeabovelab.dm.cluman.cluster.docker.model.swarm.Service;
@@ -168,6 +170,12 @@ class DockerClusterContainers implements ContainersManager {
             case REJECTED:
                 return DockerContainer.State.DEAD;
         }
+        return null;
+    }
+
+    @Override
+    public CreateAndStartContainerResult createContainer(CreateContainerArg arg) {
+        //TODO
         return null;
     }
 }

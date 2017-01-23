@@ -20,14 +20,14 @@ import com.codeabovelab.dm.cluman.cluster.docker.management.DockerService;
 import com.codeabovelab.dm.cluman.cluster.filter.Filter;
 import com.codeabovelab.dm.cluman.cluster.filter.FilterFactory;
 import com.codeabovelab.dm.cluman.ds.DockerContainersManager;
-import com.codeabovelab.dm.cluman.ds.swarm.DockerServices;
+import com.codeabovelab.dm.cluman.ds.container.ContainerManager;
 import com.codeabovelab.dm.cluman.model.ContainersManager;
 import com.codeabovelab.dm.cluman.model.NodeInfo;
 import com.google.common.collect.ImmutableSet;
 import lombok.Builder;
 import lombok.Singular;
 import lombok.ToString;
-import org.springframework.util.Assert;
+import org.springframework.beans.factory.annotation.Autowired;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -40,26 +40,22 @@ import java.util.Set;
 @ToString(callSuper = true)
 class NodesGroupImpl extends AbstractNodesGroup<DefaultNodesGroupConfig> {
 
-    private final DockerServices dockerServices;
     private final VirtualDockerService service;
-    private final ContainersManager containers;
+    private ContainersManager containers;
     private Filter predicate;
     private final FilterFactory filterFactory;
+    private ContainerManager containerManager;
 
     @Builder
     public NodesGroupImpl(DiscoveryStorageImpl storage,
                           FilterFactory filterFactory,
                           Filter predicate,
                           DefaultNodesGroupConfig config,
-                          DockerServices dockerServices,
                           @Singular Set<Feature> features) {
         super(config, storage, ImmutableSet.<Feature>builder()
           .addAll(features == null? Collections.emptySet(): features)
           .build());
-        this.dockerServices = dockerServices;
-        Assert.notNull(this.dockerServices);
         this.service = new VirtualDockerService(this);
-        this.containers = new DockerContainersManager(this::getDocker);
         this.filterFactory = filterFactory;
         this.predicate = predicate;
         if(predicate != null) {
@@ -69,8 +65,14 @@ class NodesGroupImpl extends AbstractNodesGroup<DefaultNodesGroupConfig> {
         }
     }
 
-    DockerServices getDockerServices() {
-        return dockerServices;
+    @Autowired
+    void setContainerManager(ContainerManager containerManager) {
+        this.containerManager = containerManager;
+    }
+
+    @Override
+    protected void initImpl() {
+        this.containers = new DockerContainersManager(this::getDocker, this.containerManager);
     }
 
     @Override

@@ -52,7 +52,12 @@ class ClusterFactory {
         ClusterCreationContext ccc = new ClusterCreationContext(this, clusterId);
         processConfig(ccc);
         AbstractNodesGroup<?> cluster;
-        if(config instanceof SwarmNodesGroupConfig) {
+        if(config instanceof DefaultNodesGroupConfig) {
+            cluster = NodesGroupImpl.builder()
+              .config((DefaultNodesGroupConfig) config)
+              .storage(storage)
+              .build();
+        } else if(config instanceof SwarmNodesGroupConfig) {
             SwarmNodesGroupConfig localConfig = (SwarmNodesGroupConfig) config;
             cluster = new SwarmCluster(storage, localConfig);
         } else if(config instanceof DockerClusterConfig) {

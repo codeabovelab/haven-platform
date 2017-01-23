@@ -125,8 +125,12 @@ class VirtualDockerService implements DockerService {
 
     private DockerService getServiceByNode(Node node) {
         Assert.notNull(node, "Node is null");
-        DockerServices dockerServices = this.cluster.getDockerServices();
+        DockerServices dockerServices = getDockerServices();
         return  dockerServices.getNodeService(node.getName());
+    }
+
+    private DockerServices getDockerServices() {
+        return this.cluster.getDiscoveryStorage().getDockerServices();
     }
 
     @Override
@@ -140,7 +144,7 @@ class VirtualDockerService implements DockerService {
     }
 
     private DockerService getServiceByContainer(String id) {
-        return this.cluster.getDockerServices().getServiceByContainer(id);
+        return getDockerServices().getServiceByContainer(id);
     }
 
     @Override
