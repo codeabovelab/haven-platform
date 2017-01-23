@@ -26,11 +26,9 @@ import com.codeabovelab.dm.cluman.cluster.docker.management.result.ResultCode;
 import com.codeabovelab.dm.cluman.cluster.docker.management.result.ServiceCallResult;
 import com.codeabovelab.dm.cluman.cluster.docker.model.ContainerDetails;
 import com.codeabovelab.dm.cluman.cluster.docker.model.Statistics;
-import com.codeabovelab.dm.cluman.cluster.docker.model.UpdateContainerCmd;
 import com.codeabovelab.dm.cluman.cluster.registry.RegistryRepository;
 import com.codeabovelab.dm.cluman.cluster.registry.RegistryService;
 import com.codeabovelab.dm.cluman.configs.container.ConfigProvider;
-import com.codeabovelab.dm.cluman.ds.DockerServiceRegistry;
 import com.codeabovelab.dm.cluman.ds.container.ContainerManager;
 import com.codeabovelab.dm.cluman.ds.container.ContainerRegistration;
 import com.codeabovelab.dm.cluman.ds.container.ContainerStorage;
@@ -38,10 +36,7 @@ import com.codeabovelab.dm.cluman.ds.container.ContainersNameService;
 import com.codeabovelab.dm.cluman.ds.nodes.NodeRegistration;
 import com.codeabovelab.dm.cluman.ds.nodes.NodeStorage;
 import com.codeabovelab.dm.cluman.ds.swarm.DockerServices;
-import com.codeabovelab.dm.cluman.model.Application;
-import com.codeabovelab.dm.cluman.model.ContainerSource;
-import com.codeabovelab.dm.cluman.model.ImageDescriptor;
-import com.codeabovelab.dm.cluman.model.NodeInfo;
+import com.codeabovelab.dm.cluman.model.*;
 import com.codeabovelab.dm.cluman.source.ContainerSourceFactory;
 import com.codeabovelab.dm.cluman.ui.model.UIContainerDetails;
 import com.codeabovelab.dm.cluman.ui.model.UIStatistics;
@@ -87,7 +82,7 @@ import static org.springframework.web.bind.annotation.RequestMethod.GET;
 public class ContainerApi {
 
     private final ObjectMapper objectMapper;
-    private final DockerServiceRegistry dockerServiceRegistry;
+    private final DiscoveryStorage discoveryStorage;
     private final RegistryRepository registryRepository;
     private final ContainersNameService containersNameService;
     private final ContainerManager containerManager;
@@ -226,7 +221,7 @@ public class ContainerApi {
         log.info("image info {}", img);
         ContainerSource res = configProvider.resolveProperties(cluster, img, getImageNameWithoutPrefix(image),
                 new ContainerSource());
-        DockerService dockerService = dockerServiceRegistry.getService(cluster);
+        DockerService dockerService = discoveryStorage.getService(cluster);
 
         res.setName(containersNameService.calculateName(CalcNameArg.builder()
                 .allocate(false)
@@ -294,6 +289,8 @@ public class ContainerApi {
                 cluster = nodeCluster;
             }
         }
+        NodesGroup nodeGroup = discoveryStorage.getCluster(cluster);
+        ExtendedAssert.notFound(nodeGroup, "Can not find cluster: " + cluster);
         log.info("got create request container request at cluster: {} : {}", cluster, container);
 
         try (final ServletOutputStream writer = response.getOutputStream()) {
@@ -309,7 +306,8 @@ public class ContainerApi {
             try {
                 CreateContainerArg arg = CreateContainerArg.builder().container(container).watcher(watcher).build();
                 ProcessEvent.watch(watcher, "Creating container with params: {0}", container);
-                CreateAndStartContainerResult res = containerManager.createContainer(arg);
+                ContainersManager containers = nodeGroup.getContainers();
+                CreateAndStartContainerResult res = containers.createContainer(arg);
                 ProcessEvent.watch(watcher, "Finished with {0}", res.getCode());
                 objectMapper.writeValue(writer, res);
             } catch (Exception e) {
@@ -351,20 +349,12 @@ public class ContainerApi {
                                              @RequestBody UiUpdateContainer container) {
         String cluster = getClusterForContainer(containerId);
         log.info("Begin update container '{}' at cluster: '{}' request: '{}'", containerId, cluster, container);
-        UpdateContainerCmd cmd = new UpdateContainerCmd();
-        cmd.setId(containerId);
-        cmd.setBlkioWeight(container.getBlkioWeight());
-        cmd.setCpuPeriod(container.getCpuPeriod());
-        cmd.setCpuQuota(container.getCpuQuota());
-        cmd.setCpuShares(container.getCpuShares());
-        cmd.setCpusetCpus(container.getCpusetCpus());
-        cmd.setCpusetMems(container.getCpusetMems());
-        cmd.setKernelMemory(container.getKernelMemory());
-        cmd.setMemory(container.getMemoryLimit());
-        cmd.setMemoryReservation(container.getMemoryReservation());
-        cmd.setMemorySwap(container.getMemorySwap());
-        DockerService service = dockerServiceRegistry.getService(cluster);
-        ServiceCallResult res = service.updateContainer(cmd);
+        NodesGroup nodesGroup = discoveryStorage.getCluster(cluster);
+        ContainersManager manager = nodesGroup.getContainers();
+        EditContainerArg arg = new EditContainerArg();
+        arg.setContainerId(containerId);
+        arg.setSource(container);
+        ServiceCallResult res = manager.updateContainer(arg);
         log.info("Begin update container '{}' at cluster: '{}' result: '{}'", containerId, cluster, res);
         return UiUtils.createResponse(res);
     }

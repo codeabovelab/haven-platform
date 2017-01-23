@@ -17,7 +17,8 @@
 package com.codeabovelab.dm.cluman.model;
 
 import com.codeabovelab.dm.cluman.cluster.docker.management.argument.CreateContainerArg;
-import com.codeabovelab.dm.cluman.cluster.docker.management.result.CreateAndStartContainerResult;
+import com.codeabovelab.dm.cluman.cluster.docker.management.result.*;
+import com.codeabovelab.dm.cluman.cluster.docker.management.result.ServiceCallResult;
 
 import java.util.Collection;
 
@@ -39,5 +40,17 @@ public interface ContainersManager {
      */
     Collection<DockerContainer> getContainers();
 
+    /**
+     * Create container or service (depend from argument)
+     * @param arg argument
+     * @return container creation result
+     */
     CreateAndStartContainerResult createContainer(CreateContainerArg arg);
+
+    /**
+     * Update (edit) container or service.
+     * @param arg arg
+     * @return update container result
+     */
+    ServiceCallResult updateContainer(EditContainerArg arg);
 }

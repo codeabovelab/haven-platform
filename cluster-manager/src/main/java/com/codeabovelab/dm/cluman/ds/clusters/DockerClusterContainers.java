@@ -20,7 +20,8 @@ import com.codeabovelab.dm.cluman.cluster.docker.management.DockerService;
 import com.codeabovelab.dm.cluman.cluster.docker.management.argument.CreateContainerArg;
 import com.codeabovelab.dm.cluman.cluster.docker.management.argument.GetServicesArg;
 import com.codeabovelab.dm.cluman.cluster.docker.management.argument.GetTasksArg;
-import com.codeabovelab.dm.cluman.cluster.docker.management.result.CreateAndStartContainerResult;
+import com.codeabovelab.dm.cluman.cluster.docker.management.result.*;
+import com.codeabovelab.dm.cluman.cluster.docker.management.result.ServiceCallResult;
 import com.codeabovelab.dm.cluman.cluster.docker.model.swarm.ContainerSpec;
 import com.codeabovelab.dm.cluman.cluster.docker.model.swarm.Endpoint;
 import com.codeabovelab.dm.cluman.cluster.docker.model.swarm.Service;
@@ -175,6 +176,12 @@ class DockerClusterContainers implements ContainersManager {
 
     @Override
     public CreateAndStartContainerResult createContainer(CreateContainerArg arg) {
+        //TODO
+        return null;
+    }
+
+    @Override
+    public ServiceCallResult updateContainer(EditContainerArg arg) {
         //TODO
         return null;
     }

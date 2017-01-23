@@ -20,9 +20,13 @@ import com.codeabovelab.dm.cluman.cluster.docker.management.DockerService;
 import com.codeabovelab.dm.cluman.cluster.docker.management.argument.CreateContainerArg;
 import com.codeabovelab.dm.cluman.cluster.docker.management.argument.GetContainersArg;
 import com.codeabovelab.dm.cluman.cluster.docker.management.result.CreateAndStartContainerResult;
+import com.codeabovelab.dm.cluman.cluster.docker.management.result.ServiceCallResult;
+import com.codeabovelab.dm.cluman.cluster.docker.model.UpdateContainerCmd;
 import com.codeabovelab.dm.cluman.ds.container.ContainerManager;
 import com.codeabovelab.dm.cluman.model.ContainerService;
 import com.codeabovelab.dm.cluman.model.DockerContainer;
+import com.codeabovelab.dm.cluman.model.EditContainerArg;
+import com.codeabovelab.dm.cluman.model.EditableContainerSource;
 import org.springframework.util.Assert;
 
 import java.util.Collection;
@@ -56,5 +60,22 @@ public class DockerContainersManager extends AbstractContainersManager {
     @Override
     public CreateAndStartContainerResult createContainer(CreateContainerArg arg) {
         return this.containerManager.createContainer(arg);
+    }
+
+    @Override
+    public ServiceCallResult updateContainer(EditContainerArg arg) {
+        UpdateContainerCmd cmd = new UpdateContainerCmd();
+        EditableContainerSource src = arg.getSource();
+        cmd.setBlkioWeight(src.getBlkioWeight());
+        cmd.setCpuPeriod(src.getCpuPeriod());
+        cmd.setCpuQuota(src.getCpuQuota());
+        cmd.setCpuShares(src.getCpuShares());
+        cmd.setCpusetCpus(src.getCpusetCpus());
+        cmd.setCpusetMems(src.getCpusetMems());
+        cmd.setKernelMemory(src.getKernelMemory());
+        cmd.setMemory(src.getMemoryLimit());
+        cmd.setMemoryReservation(src.getMemoryReservation());
+        cmd.setMemorySwap(src.getMemorySwap());
+        return getDocker().updateContainer(cmd);
     }
 }
