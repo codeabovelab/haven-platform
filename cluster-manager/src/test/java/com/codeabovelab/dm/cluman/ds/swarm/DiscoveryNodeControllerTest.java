@@ -13,6 +13,8 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mockito;
+import org.mockito.invocation.InvocationOnMock;
+import org.mockito.stubbing.Answer;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -69,7 +71,7 @@ public class DiscoveryNodeControllerTest {
         @Bean
         DiscoveryStorage discoveryStorage() {
             NodesGroup cluster = mock(NodesGroup.class);
-            when(cluster.getNodes()).thenReturn(new ArrayList<>(nodes.values()));
+            when(cluster.getNodes()).thenAnswer(invocation -> new ArrayList<>(nodes.values()));
 
             DiscoveryStorage storage = mock(DiscoveryStorage.class);
 
