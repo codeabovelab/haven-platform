@@ -13,13 +13,12 @@ import com.codeabovelab.dm.cluman.cluster.registry.RegistryRepository;
 import com.codeabovelab.dm.cluman.configs.container.ConfigProvider;
 import com.codeabovelab.dm.cluman.configs.container.DefaultParser;
 import com.codeabovelab.dm.cluman.configs.container.Parser;
+import com.codeabovelab.dm.cluman.ds.SwarmClusterContainers;
+import com.codeabovelab.dm.cluman.ds.clusters.SwarmCluster;
 import com.codeabovelab.dm.cluman.ds.container.*;
 import com.codeabovelab.dm.cluman.ds.swarm.NetworkManager;
 import com.codeabovelab.dm.cluman.job.*;
-import com.codeabovelab.dm.cluman.model.DiscoveryStorage;
-import com.codeabovelab.dm.cluman.model.DockerContainer;
-import com.codeabovelab.dm.cluman.model.DockerServiceInfo;
-import com.codeabovelab.dm.cluman.model.NodeRegistry;
+import com.codeabovelab.dm.cluman.model.*;
 import com.codeabovelab.dm.cluman.source.ContainerSourceFactory;
 import com.codeabovelab.dm.cluman.ui.health.HealthCheckService;
 import com.codeabovelab.dm.cluman.ui.update.UpdateContainersConfiguration;
@@ -83,12 +82,29 @@ public class UpdateTest {
         }
 
         @Bean
+        NodeRegistry nodeRegistry() {
+            return mock(NodeRegistry.class);
+        }
+
+        @Bean
+        ConfigProvider configProvider() {
+            ConfigProvider confProv = mock(ConfigProvider.class);
+            when(confProv.resolveProperties(anyString(), anyObject(), anyString(), anyObject()))
+              .then((i) -> i.getArgumentAt(3, Object.class));
+            return confProv;
+        }
+
+        @Bean
+        ContainerStorage containerStorage() {
+            ContainerStorage contStorage = mock(ContainerStorage.class);
+            when(contStorage.updateAndGetContainer(anyObject(), anyString())).thenReturn(mock(ContainerRegistration.class));
+            return contStorage;
+        }
+
+        @Bean
         DiscoveryStorage discoveryStorage() {
             DiscoveryStorage mock = mock(DiscoveryStorage.class);
-            DockerServiceMock ds = new DockerServiceMock(DockerServiceInfo.builder()
-              .name(TESTCLUSTER)
-              .build());
-            when(mock.getService(ds.getCluster())).thenReturn(ds);
+
             return mock;
         }
 
@@ -103,25 +119,18 @@ public class UpdateTest {
         }
 
         @Bean
-        ContainerCreator containerManager(DiscoveryStorage discoveryStorage,
-                                          ObjectFactory<DockerService> dockerServiceFactory,
-                                          ContainerSourceFactory containerSourceFactory) {
-            ConfigProvider confProv = mock(ConfigProvider.class);
-            when(confProv.resolveProperties(anyString(), anyObject(), anyString(), anyObject()))
-              .then((i) -> i.getArgumentAt(3, Object.class));
+        NetworkManager networkManager() {
+            return mock(NetworkManager.class);
+        }
 
-            ContainerStorage contStorage = mock(ContainerStorage.class);
-            when(contStorage.updateAndGetContainer(anyObject(), anyString())).thenReturn(mock(ContainerRegistration.class));
+        @Bean
+        ContainersNameService containersNameService() {
+            return new ContainersNameService(new ContainerNamesSupplier());
+        }
 
-            ContainerCreator cm = new ContainerCreator();
-            cm.setDockerServiceRegistry(discoveryStorage);
-            cm.setNodeRegistry(mock(NodeRegistry.class));
-            cm.setConfigProvider(confProv);
-            cm.setContainersNameService(new ContainersNameService(new ContainerNamesSupplier()));
-            cm.setContainerStorage(contStorage);
-            cm.setNetworkManager(mock(NetworkManager.class));
-            cm.setContainerSourceFactory(containerSourceFactory);
-            return cm;
+        @Bean
+        ContainerCreator containerManager() {
+            return new ContainerCreator();
         }
 
         @Bean
@@ -144,6 +153,9 @@ public class UpdateTest {
     @Autowired
     private DiscoveryStorage discoveryStorage;
 
+    @Autowired
+    private ContainerCreator containerCreator;
+
     private void addContainer(String name, String image) {
         names.add(name);
         CreateContainerCmd cc = new CreateContainerCmd();
@@ -164,10 +176,28 @@ public class UpdateTest {
 
     @Before
     public void before() {
+
+        initCluster();
+
         addContainer("one-container", TESTIMAGE + ":" + SRC_VERSION);
         addContainer("two-container", TESTIMAGE + ":" + SRC_VERSION);
         addContainer("three-container", TESTIMAGE + ":" + SRC_VERSION);
         addContainer("buggy-container", IMAGE_ID);
+    }
+
+    private void initCluster() {
+        DockerServiceMock ds = new DockerServiceMock(DockerServiceInfo.builder()
+          .name(TESTCLUSTER)
+          .build());
+        when(discoveryStorage.getService(ds.getCluster())).thenReturn(ds);
+
+        NodesGroup ng = mock(NodesGroup.class);
+        when(ng.getDocker()).thenReturn(ds);
+
+        SwarmClusterContainers scc = new SwarmClusterContainers(() -> ds, containerCreator);
+        when(ng.getContainers()).thenReturn(scc);
+
+        when(discoveryStorage.getCluster(ds.getCluster())).thenReturn(ng);
     }
 
     private void checkNames(DockerContainer container) {
