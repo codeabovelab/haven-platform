@@ -20,7 +20,7 @@ import com.codeabovelab.dm.cluman.cluster.docker.management.DockerService;
 import com.codeabovelab.dm.cluman.cluster.docker.management.DockerServiceImpl;
 import com.codeabovelab.dm.cluman.cluster.docker.management.DockerUtils;
 import com.codeabovelab.dm.cluman.cluster.docker.management.argument.CalcNameArg;
-import com.codeabovelab.dm.cluman.cluster.docker.management.argument.CreateContainerArg;
+import com.codeabovelab.dm.cluman.model.CreateContainerArg;
 import com.codeabovelab.dm.cluman.cluster.docker.management.result.CreateAndStartContainerResult;
 import com.codeabovelab.dm.cluman.cluster.docker.management.result.ProcessEvent;
 import com.codeabovelab.dm.cluman.cluster.docker.management.result.ResultCode;
@@ -62,7 +62,7 @@ import static com.google.common.base.MoreObjects.firstNonNull;
  */
 @Component
 @RequiredArgsConstructor(onConstructor = @__(@Autowired))
-public class ContainerManager {
+public class ContainerCreator {
     private static final Logger LOG = LoggerFactory.getLogger(DockerServiceImpl.class);
     private static final int CREATE_CONTAINER_TRIES = 3;
     private final DockerServiceRegistry dockerServiceRegistry;
@@ -162,14 +162,15 @@ public class ContainerManager {
 
     /**
      * add scalable to doc
-     * @param clusterId
+     * @param docker swarm service
      * @param scaleFactor
      * @param id
-     * @return
+     * @return resul
      */
-    public ServiceCallResult scale(String clusterId, Integer scaleFactor, String id) {
-        DockerService docker = getDockerForCluster(clusterId);
+    public ServiceCallResult scale(DockerService docker, Integer scaleFactor, String id) {
         ContainerDetails container = docker.getContainer(id);
+        String cluster = docker.getCluster();
+        Assert.notNull(cluster, "Wrong docker service: " + docker + " it must be swarm service.");
         ExtendedAssert.notFound(container, "Can not find container: " + id);
         String scalable = container.getConfig().getLabels().get(SCALABLE);
         if (scalable == null || "true".equals(scalable)) {
@@ -177,7 +178,7 @@ public class ContainerManager {
             for (int i = 0; i < scale; i++) {
                 ContainerSource nc = new ContainerSource();
                 containerSourceFactory.toSource(container, nc);
-                nc.setCluster(clusterId);
+                nc.setCluster(cluster);
                 nc.setNode(null);
                 nc.setName(null);
                 nc.setHostname(null);

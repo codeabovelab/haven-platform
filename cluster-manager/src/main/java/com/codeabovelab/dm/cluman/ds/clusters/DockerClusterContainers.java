@@ -17,9 +17,8 @@
 package com.codeabovelab.dm.cluman.ds.clusters;
 
 import com.codeabovelab.dm.cluman.cluster.docker.management.DockerService;
-import com.codeabovelab.dm.cluman.cluster.docker.management.argument.CreateContainerArg;
-import com.codeabovelab.dm.cluman.cluster.docker.management.argument.GetServicesArg;
-import com.codeabovelab.dm.cluman.cluster.docker.management.argument.GetTasksArg;
+import com.codeabovelab.dm.cluman.cluster.docker.management.argument.*;
+import com.codeabovelab.dm.cluman.model.CreateContainerArg;
 import com.codeabovelab.dm.cluman.cluster.docker.management.result.*;
 import com.codeabovelab.dm.cluman.cluster.docker.management.result.ServiceCallResult;
 import com.codeabovelab.dm.cluman.cluster.docker.model.swarm.ContainerSpec;
@@ -31,7 +30,6 @@ import com.codeabovelab.dm.cluman.ds.container.ContainerStorage;
 import com.codeabovelab.dm.cluman.model.*;
 import com.codeabovelab.dm.common.utils.Functions;
 import com.codeabovelab.dm.common.utils.SingleValueCache;
-import com.codeabovelab.dm.common.utils.TimeUtils;
 import com.google.common.base.Joiner;
 import com.google.common.base.MoreObjects;
 import com.google.common.collect.ImmutableList;
@@ -44,7 +42,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 /**
- * Containers manager for swarm-mode clusters.
+ * Containers manager for swarm-mode clusters. <p/>
+ * We must prevent managing of containers which is enclosed to existed 'service'.
  */
 @Slf4j
 class DockerClusterContainers implements ContainersManager {
@@ -175,14 +174,76 @@ class DockerClusterContainers implements ContainersManager {
     }
 
     @Override
+    public ServiceCallResult createService(CreateServiceArg arg) {
+        return getDocker().createService(arg);
+    }
+
+    @Override
+    public ServiceCallResult updateService(UpdateServiceArg arg) {
+        return getDocker().updateService(arg);
+    }
+
+    @Override
+    public ServiceCallResult deleteService(String service) {
+        return getDocker().deleteService(service);
+    }
+
+    @Override
     public CreateAndStartContainerResult createContainer(CreateContainerArg arg) {
+        DockerService ds = getNodeForNew(arg);
         //TODO
         return null;
     }
 
+    private DockerService getNodeForNew(CreateContainerArg arg) {
+        String node = arg.getContainer().getNode();
+        DockerService ds;
+        if(node == null || !dc.hasNode(node)) {
+            // we use dummy random strategy
+            // from one side if you need good scheduling you must create 'service'
+            // from other we support legacy contract when user can schedule container
+            List<NodeInfo> nodes = dc.getNodes();
+            int num = (int) (Math.random() * (nodes.size() - 1));
+            NodeInfo nodeInfo = nodes.get(num);
+            node = nodeInfo.getName();
+        }
+        ds = dc.getDiscoveryStorage().getDockerServices().getNodeService(node);
+        Assert.notNull(ds, "Can not find docker service for node: " + node);
+        return ds;
+    }
+
     @Override
     public ServiceCallResult updateContainer(EditContainerArg arg) {
-        //TODO
+        return null;
+    }
+
+    @Override
+    public ServiceCallResult stopContainer(StopContainerArg arg) {
+        return null;
+    }
+
+    @Override
+    public ServiceCallResult startContainer(String containerId) {
+        return null;
+    }
+
+    @Override
+    public ServiceCallResult pauseContainer(String containerId) {
+        return null;
+    }
+
+    @Override
+    public ServiceCallResult deleteContainer(DeleteContainerArg arg) {
+        return null;
+    }
+
+    @Override
+    public ServiceCallResult restartContainer(StopContainerArg arg) {
+        return null;
+    }
+
+    @Override
+    public ServiceCallResult scaleContainer(ScaleContainerArg arg) {
         return null;
     }
 }

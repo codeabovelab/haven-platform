@@ -16,7 +16,10 @@
 
 package com.codeabovelab.dm.cluman.model;
 
-import com.codeabovelab.dm.cluman.cluster.docker.management.argument.CreateContainerArg;
+import com.codeabovelab.dm.cluman.cluster.docker.management.argument.CreateServiceArg;
+import com.codeabovelab.dm.cluman.cluster.docker.management.argument.DeleteContainerArg;
+import com.codeabovelab.dm.cluman.cluster.docker.management.argument.StopContainerArg;
+import com.codeabovelab.dm.cluman.cluster.docker.management.argument.UpdateServiceArg;
 import com.codeabovelab.dm.cluman.cluster.docker.management.result.*;
 import com.codeabovelab.dm.cluman.cluster.docker.management.result.ServiceCallResult;
 
@@ -41,16 +44,38 @@ public interface ContainersManager {
     Collection<DockerContainer> getContainers();
 
     /**
-     * Create container or service (depend from argument)
+     * Create container. Note that it created on
      * @param arg argument
      * @return container creation result
      */
     CreateAndStartContainerResult createContainer(CreateContainerArg arg);
 
     /**
-     * Update (edit) container or service.
+     * Update (edit) container.
      * @param arg arg
      * @return update container result
      */
     ServiceCallResult updateContainer(EditContainerArg arg);
+    ServiceCallResult stopContainer(StopContainerArg arg);
+    ServiceCallResult restartContainer(StopContainerArg arg);
+    ServiceCallResult startContainer(String containerId);
+    ServiceCallResult pauseContainer(String containerId);
+    ServiceCallResult deleteContainer(DeleteContainerArg arg);
+    ServiceCallResult scaleContainer(ScaleContainerArg arg);
+
+    /**
+     * Create service, when cluster does not supported services underline code emulate them.
+     * @param arg argument
+     * @return service creation result
+     */
+    ServiceCallResult createService(CreateServiceArg arg);
+
+    /**
+     * Update (edit) service.
+     * @param arg arg
+     * @return update service result
+     */
+    ServiceCallResult updateService(UpdateServiceArg arg);
+    ServiceCallResult deleteService(String service);
+
 }

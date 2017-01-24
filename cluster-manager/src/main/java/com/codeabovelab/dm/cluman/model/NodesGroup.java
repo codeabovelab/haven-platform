@@ -21,6 +21,7 @@ import com.codeabovelab.dm.cluman.ds.clusters.AbstractNodesGroupConfig;
 import com.codeabovelab.dm.cluman.security.WithAcl;
 
 import java.util.Collection;
+import java.util.List;
 import java.util.Set;
 import java.util.function.Consumer;
 
@@ -86,10 +87,10 @@ public interface NodesGroup extends Named, WithAcl {
     void setDescription(String description);
 
     /**
-     * Return all current nodes
-     * @return
+     * Return copy of all current nodes collection
+     * @return copy of current nodes
      */
-    Collection<NodeInfo> getNodes();
+    List<NodeInfo> getNodes();
 
     /**
      * Collections with names of other intersected NodesGroups. Note that it

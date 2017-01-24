@@ -20,8 +20,8 @@ import com.codeabovelab.dm.cluman.cluster.docker.ClusterConfig;
 import com.codeabovelab.dm.cluman.cluster.docker.ClusterConfigImpl;
 import com.codeabovelab.dm.cluman.cluster.docker.management.DockerService;
 import com.codeabovelab.dm.cluman.cluster.docker.management.argument.GetContainersArg;
-import com.codeabovelab.dm.cluman.ds.DockerContainersManager;
-import com.codeabovelab.dm.cluman.ds.container.ContainerManager;
+import com.codeabovelab.dm.cluman.ds.SwarmClusterContainers;
+import com.codeabovelab.dm.cluman.ds.container.ContainerCreator;
 import com.codeabovelab.dm.cluman.ds.nodes.NodeRegistration;
 import com.codeabovelab.dm.cluman.ds.swarm.DockerServices;
 import com.codeabovelab.dm.cluman.model.*;
@@ -45,7 +45,7 @@ public final class SwarmCluster extends AbstractNodesGroup<SwarmNodesGroupConfig
     private KvMapperFactory kvmf;
     private DockerService docker;
     private ContainersManager containers;
-    private ContainerManager containerManager;
+    private ContainerCreator containerCreator;
 
     SwarmCluster(DiscoveryStorageImpl storage, SwarmNodesGroupConfig config) {
         super(config, storage, Collections.singleton(Feature.SWARM));
@@ -57,8 +57,8 @@ public final class SwarmCluster extends AbstractNodesGroup<SwarmNodesGroupConfig
     }
 
     @Autowired
-    void setContainerManager(ContainerManager containerManager) {
-        this.containerManager = containerManager;
+    void setContainerCreator(ContainerCreator containerCreator) {
+        this.containerCreator = containerCreator;
     }
 
     private void onNodeEvent(NodeEvent event) {
@@ -101,7 +101,7 @@ public final class SwarmCluster extends AbstractNodesGroup<SwarmNodesGroupConfig
 
     @Override
     @SuppressWarnings("unchecked")
-    public Collection<NodeInfo> getNodes() {
+    public List<NodeInfo> getNodes() {
         return getNodesInfo();
     }
 
@@ -110,7 +110,7 @@ public final class SwarmCluster extends AbstractNodesGroup<SwarmNodesGroupConfig
         return Collections.emptySet();
     }
 
-    private Collection<NodeInfo> getNodesInfo() {
+    private List<NodeInfo> getNodesInfo() {
         return getNodeStorage().getNodes(this::isFromSameCluster);
     }
 
@@ -126,7 +126,7 @@ public final class SwarmCluster extends AbstractNodesGroup<SwarmNodesGroupConfig
     @Override
     protected void initImpl() {
         getNodeStorage().getNodeEventSubscriptions().subscribe(this::onNodeEvent);
-        this.containers = new DockerContainersManager(this::getDocker, this.containerManager);
+        this.containers = new SwarmClusterContainers(this::getDocker, this.containerCreator);
 
         DockerServices dses = this.getDiscoveryStorage().getDockerServices();
         this.docker = dses.getOrCreateCluster(getClusterConfig(), (dsb) -> {

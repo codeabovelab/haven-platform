@@ -29,7 +29,6 @@ import com.codeabovelab.dm.cluman.cluster.docker.model.Statistics;
 import com.codeabovelab.dm.cluman.cluster.registry.RegistryRepository;
 import com.codeabovelab.dm.cluman.cluster.registry.RegistryService;
 import com.codeabovelab.dm.cluman.configs.container.ConfigProvider;
-import com.codeabovelab.dm.cluman.ds.container.ContainerManager;
 import com.codeabovelab.dm.cluman.ds.container.ContainerRegistration;
 import com.codeabovelab.dm.cluman.ds.container.ContainerStorage;
 import com.codeabovelab.dm.cluman.ds.container.ContainersNameService;
@@ -85,7 +84,6 @@ public class ContainerApi {
     private final DiscoveryStorage discoveryStorage;
     private final RegistryRepository registryRepository;
     private final ContainersNameService containersNameService;
-    private final ContainerManager containerManager;
     private final ConfigProvider configProvider;
     private final DockerServices dockerServices;
     private final ContainerStorage containerStorage;
@@ -96,7 +94,7 @@ public class ContainerApi {
     @RequestMapping(value = "/{id}/stop", method = RequestMethod.POST)
     public ResponseEntity<?> stopContainer(@PathVariable("id") String id) {
         StopContainerArg arg = StopContainerArg.builder().id(id).build();
-        DockerService service = getService(id);
+        ContainersManager service = getContainersManager(id);
         ServiceCallResult res = service.stopContainer(arg);
         return UiUtils.createResponse(res);
     }
@@ -105,7 +103,7 @@ public class ContainerApi {
     @RequestMapping(value = "/{id}/refresh", method = RequestMethod.POST)
     public ResponseEntity<?> refreshContainer(@PathVariable("id") String id) {
         StopContainerArg arg = StopContainerArg.builder().id(id).build();
-        DockerService service = getService(id);
+        ContainersManager service = getContainersManager(id);
         ServiceCallResult resStop = service.stopContainer(arg);
         log.info("resStop {}", resStop);
         ServiceCallResult resStart = service.startContainer(id);
@@ -114,7 +112,7 @@ public class ContainerApi {
 
     @RequestMapping(value = "/{id}/remove", method = RequestMethod.POST)
     public ResponseEntity<?> removeContainer(@PathVariable("id") String id) {
-        DockerService service = getService(id);
+        ContainersManager service = getContainersManager(id);
         service.stopContainer(StopContainerArg.builder().id(id).build());
         DeleteContainerArg arg = DeleteContainerArg.builder().id(id).build();
         ServiceCallResult res = service.deleteContainer(arg);
@@ -123,7 +121,7 @@ public class ContainerApi {
 
     @RequestMapping(value = "/{id}/start", method = RequestMethod.POST)
     public ResponseEntity<?> startContainer(@PathVariable("id") String id) {
-        DockerService service = getService(id);
+        ContainersManager service = getContainersManager(id);
         ServiceCallResult res = service.startContainer(id);
         return UiUtils.createResponse(res);
     }
@@ -203,9 +201,16 @@ public class ContainerApi {
         return service;
     }
 
+    private ContainersManager getContainersManager(String id) {
+        ContainerRegistration cr = containerStorage.getContainer(id);
+        ExtendedAssert.notFound(cr, "Can not find container: " + id);
+        NodesGroup nodesGroups = discoveryStorage.getClusterForNode(cr.getNode());
+        return nodesGroups.getContainers();
+    }
+
     @RequestMapping(value = "/{id}/restart", method = RequestMethod.POST)
     public ResponseEntity<?> restartContainer(@PathVariable("id") String id) {
-        ServiceCallResult res = getService(id)
+        ServiceCallResult res = getContainersManager(id)
                 .restartContainer(StopContainerArg.builder().id(id).build());
         return UiUtils.createResponse(res);
     }
@@ -396,7 +401,11 @@ public class ContainerApi {
                                    @RequestParam(value = "scaleFactor", required = false, defaultValue = "1") Integer scaleFactor) {
         log.info("got scale request id: {}, count {}", id, scaleFactor);
         String cluster = getClusterForContainer(id);
-        ServiceCallResult res = containerManager.scale(cluster, scaleFactor, id);
+        ContainersManager containersManager = getContainersManager(id);
+        ScaleContainerArg arg = new ScaleContainerArg();
+        arg.setContainerId(id);
+        arg.setScale(scaleFactor);
+        ServiceCallResult res = containersManager.scaleContainer(arg);
         return UiUtils.createResponse(res);
     }
 

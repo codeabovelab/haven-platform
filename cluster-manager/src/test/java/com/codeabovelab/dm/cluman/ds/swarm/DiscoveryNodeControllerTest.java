@@ -25,6 +25,7 @@ import org.springframework.util.MimeTypeUtils;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.NestedServletException;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
@@ -68,7 +69,7 @@ public class DiscoveryNodeControllerTest {
         @Bean
         DiscoveryStorage discoveryStorage() {
             NodesGroup cluster = mock(NodesGroup.class);
-            when(cluster.getNodes()).thenReturn(nodes.values());
+            when(cluster.getNodes()).thenReturn(new ArrayList<>(nodes.values()));
 
             DiscoveryStorage storage = mock(DiscoveryStorage.class);
 

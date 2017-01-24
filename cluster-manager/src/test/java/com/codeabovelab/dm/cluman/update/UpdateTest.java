@@ -103,7 +103,7 @@ public class UpdateTest {
         }
 
         @Bean
-        ContainerManager containerManager(DiscoveryStorage discoveryStorage,
+        ContainerCreator containerManager(DiscoveryStorage discoveryStorage,
                                           ObjectFactory<DockerService> dockerServiceFactory,
                                           ContainerSourceFactory containerSourceFactory) {
             ConfigProvider confProv = mock(ConfigProvider.class);
@@ -113,7 +113,7 @@ public class UpdateTest {
             ContainerStorage contStorage = mock(ContainerStorage.class);
             when(contStorage.updateAndGetContainer(anyObject(), anyString())).thenReturn(mock(ContainerRegistration.class));
 
-            ContainerManager cm = new ContainerManager(discoveryStorage,
+            ContainerCreator cm = new ContainerCreator(discoveryStorage,
               mock(NodeRegistry.class),
               confProv,
               new ContainersNameService(new ContainerNamesSupplier()),

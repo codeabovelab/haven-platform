@@ -19,8 +19,8 @@ package com.codeabovelab.dm.cluman.ds.clusters;
 import com.codeabovelab.dm.cluman.cluster.docker.management.DockerService;
 import com.codeabovelab.dm.cluman.cluster.filter.Filter;
 import com.codeabovelab.dm.cluman.cluster.filter.FilterFactory;
-import com.codeabovelab.dm.cluman.ds.DockerContainersManager;
-import com.codeabovelab.dm.cluman.ds.container.ContainerManager;
+import com.codeabovelab.dm.cluman.ds.SwarmClusterContainers;
+import com.codeabovelab.dm.cluman.ds.container.ContainerCreator;
 import com.codeabovelab.dm.cluman.model.ContainersManager;
 import com.codeabovelab.dm.cluman.model.NodeInfo;
 import com.google.common.collect.ImmutableSet;
@@ -29,10 +29,7 @@ import lombok.Singular;
 import lombok.ToString;
 import org.springframework.beans.factory.annotation.Autowired;
 
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.*;
 
 /**
  * Node group managed 'manually'. It allow to view multiple nodes as single entity.
@@ -44,7 +41,7 @@ class NodesGroupImpl extends AbstractNodesGroup<DefaultNodesGroupConfig> {
     private ContainersManager containers;
     private Filter predicate;
     private final FilterFactory filterFactory;
-    private ContainerManager containerManager;
+    private ContainerCreator containerCreator;
 
     @Builder
     public NodesGroupImpl(DiscoveryStorageImpl storage,
@@ -66,13 +63,13 @@ class NodesGroupImpl extends AbstractNodesGroup<DefaultNodesGroupConfig> {
     }
 
     @Autowired
-    void setContainerManager(ContainerManager containerManager) {
-        this.containerManager = containerManager;
+    void setContainerCreator(ContainerCreator containerCreator) {
+        this.containerCreator = containerCreator;
     }
 
     @Override
     protected void initImpl() {
-        this.containers = new DockerContainersManager(this::getDocker, this.containerManager);
+        this.containers = new SwarmClusterContainers(this::getDocker, this.containerCreator);
     }
 
     @Override
@@ -87,11 +84,11 @@ class NodesGroupImpl extends AbstractNodesGroup<DefaultNodesGroupConfig> {
 
     @Override
     @SuppressWarnings("unchecked")
-    public Collection<NodeInfo> getNodes() {
+    public List<NodeInfo> getNodes() {
         return getNodesInternal();
     }
 
-    private Collection<NodeInfo> getNodesInternal() {
+    private List<NodeInfo> getNodesInternal() {
         return getNodeStorage().getNodes(predicate);
     }
 

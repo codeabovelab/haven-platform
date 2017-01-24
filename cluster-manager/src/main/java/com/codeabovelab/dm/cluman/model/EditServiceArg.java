@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 Code Above Lab LLC
+ * Copyright 2017 Code Above Lab LLC
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,24 +14,14 @@
  * limitations under the License.
  */
 
-package com.codeabovelab.dm.cluman.pipeline.arg;
+package com.codeabovelab.dm.cluman.model;
 
-import com.codeabovelab.dm.cluman.model.CreateContainerArg;
-import lombok.Builder;
 import lombok.Data;
 
-import java.util.Map;
-
+/**
+ */
 @Data
-@Builder
-public class PipelineDeployArg {
-
-    private final String pipelineInstance;
-    //    private final String registry;
-//    private final String imageId;
-    private final String stage;
-    private final String comment;
-    private final Map<String, String> arguments;
-    private final CreateContainerArg createContainerArg;
-
+public class EditServiceArg {
+    private String service;
+    private EditableContainerSource source;
 }

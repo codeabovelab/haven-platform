@@ -274,7 +274,7 @@ public class NodeStorage implements NodeInfoProvider {
      * @param predicate functor which is return true for InstanceInfo's which will be passed to result.
      * @return
      */
-    public Collection<NodeInfo> getNodes(Predicate<? super NodeRegistration> predicate) {
+    public List<NodeInfo> getNodes(Predicate<? super NodeRegistration> predicate) {
         Set<String> keys = listNodeNames();
         AccessContext ac = AccessContextFactory.getLocalContext();
         List<NodeInfo> nodeList = new ArrayList<>(keys.size());

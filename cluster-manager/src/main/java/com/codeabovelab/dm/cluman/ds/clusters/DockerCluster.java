@@ -23,6 +23,7 @@ import com.codeabovelab.dm.cluman.cluster.docker.management.result.*;
 import com.codeabovelab.dm.cluman.cluster.docker.management.result.ResultCode;
 import com.codeabovelab.dm.cluman.cluster.docker.management.result.ServiceCallResult;
 import com.codeabovelab.dm.cluman.cluster.docker.model.swarm.*;
+import com.codeabovelab.dm.cluman.ds.container.ContainerCreator;
 import com.codeabovelab.dm.cluman.ds.container.ContainerStorage;
 import com.codeabovelab.dm.cluman.ds.nodes.NodeRegistration;
 import com.codeabovelab.dm.cluman.ds.nodes.NodeStorage;
@@ -107,6 +108,7 @@ public class DockerCluster extends AbstractNodesGroup<DockerClusterConfig> {
       .build();
     private final SingleValueCache<Map<String, SwarmNode>> nodesMap;
     private ContainerStorage containerStorage;
+    private ContainerCreator containerCreator;
     private ContainersManager containers;
 
     DockerCluster(DiscoveryStorageImpl storage, DockerClusterConfig config) {
@@ -124,8 +126,13 @@ public class DockerCluster extends AbstractNodesGroup<DockerClusterConfig> {
     }
 
     @Autowired
-    public void setContainerStorage(ContainerStorage containerStorage) {
+    void setContainerStorage(ContainerStorage containerStorage) {
         this.containerStorage = containerStorage;
+    }
+
+    @Autowired
+    void setContainerCreator(ContainerCreator containerCreator) {
+        this.containerCreator = containerCreator;
     }
 
     private void onNodeEvent(NodeEvent e) {
@@ -221,7 +228,7 @@ public class DockerCluster extends AbstractNodesGroup<DockerClusterConfig> {
     }
 
     @Override
-    public Collection<NodeInfo> getNodes() {
+    public List<NodeInfo> getNodes() {
         Map<String, SwarmNode> map = nodesMap.get();
         ImmutableList.Builder<NodeInfo> b = ImmutableList.builder();
         map.forEach((k, v) -> {

@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 Code Above Lab LLC
+ * Copyright 2017 Code Above Lab LLC
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,10 +14,9 @@
  * limitations under the License.
  */
 
-package com.codeabovelab.dm.cluman.cluster.docker.management.argument;
+package com.codeabovelab.dm.cluman.model;
 
 import com.codeabovelab.dm.cluman.cluster.docker.management.result.ProcessEvent;
-import com.codeabovelab.dm.cluman.model.ContainerSource;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -33,8 +32,6 @@ import java.util.function.Consumer;
 public class CreateContainerArg {
 
     private final Consumer<ProcessEvent> watcher;
-    private final Integer scale;
-    private final Integer maxScale;
     private final ContainerSource container;
     private final boolean enrichConfigs;
 
