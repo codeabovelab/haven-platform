@@ -17,6 +17,7 @@
 package com.codeabovelab.dm.cluman.model;
 
 import lombok.Data;
+import org.springframework.util.Assert;
 import org.springframework.util.StringUtils;
 
 /**
@@ -96,7 +97,18 @@ public class ImageName {
     }
 
     private static String toFullName(String registry, String name, String tag) {
-        return registry + '/' + name + ':' + tag;
+        if(registry == null && name == null && tag == null) {
+            return null;
+        }
+        StringBuilder sb = new StringBuilder();
+        if(StringUtils.hasText(registry)) {
+            sb.append(registry).append('/');
+        }
+        sb.append(name);
+        if(StringUtils.hasText(tag)) {
+            sb.append(':').append(tag);
+        }
+        return sb.toString();
     }
 
     public static ImageName parse(String src) {
