@@ -18,6 +18,8 @@ package com.codeabovelab.dm.cluman.ds.clusters;
 
 import com.codeabovelab.dm.cluman.cluster.docker.management.DockerService;
 import com.codeabovelab.dm.cluman.cluster.docker.management.argument.*;
+import com.codeabovelab.dm.cluman.cluster.docker.model.UpdateContainerCmd;
+import com.codeabovelab.dm.cluman.ds.container.ContainerCreator;
 import com.codeabovelab.dm.cluman.model.CreateContainerArg;
 import com.codeabovelab.dm.cluman.cluster.docker.management.result.*;
 import com.codeabovelab.dm.cluman.cluster.docker.management.result.ServiceCallResult;
@@ -52,10 +54,12 @@ class DockerClusterContainers implements ContainersManager {
     protected final DockerCluster dc;
     protected final ContainerStorage containerStorage;
     protected final SingleValueCache<Map<String, ContainerService>> svcmap;
+    private final ContainerCreator containerCreator;
 
-    DockerClusterContainers(DockerCluster dc, ContainerStorage containerStorage) {
+    DockerClusterContainers(DockerCluster dc, ContainerStorage containerStorage, ContainerCreator containerCreator) {
         this.dc = dc;
         this.containerStorage = containerStorage;
+        this.containerCreator = containerCreator;
         this.svcmap = SingleValueCache.builder(this::loadServices)
           .timeAfterWrite(TimeUnit.SECONDS, dc.getConfig().getConfig().getCacheTimeAfterWrite())
           .build();
@@ -191,13 +195,11 @@ class DockerClusterContainers implements ContainersManager {
     @Override
     public CreateAndStartContainerResult createContainer(CreateContainerArg arg) {
         DockerService ds = getNodeForNew(arg);
-        //TODO
-        return null;
+        return containerCreator.createContainer(arg, ds);
     }
 
     private DockerService getNodeForNew(CreateContainerArg arg) {
         String node = arg.getContainer().getNode();
-        DockerService ds;
         if(node == null || !dc.hasNode(node)) {
             // we use dummy random strategy
             // from one side if you need good scheduling you must create 'service'
@@ -207,43 +209,66 @@ class DockerClusterContainers implements ContainersManager {
             NodeInfo nodeInfo = nodes.get(num);
             node = nodeInfo.getName();
         }
-        ds = dc.getDiscoveryStorage().getDockerServices().getNodeService(node);
+        return getNodeService(node);
+    }
+
+    private DockerService getNodeService(String node) {
+        DockerService ds = dc.getDiscoveryStorage().getDockerServices().getNodeService(node);
         Assert.notNull(ds, "Can not find docker service for node: " + node);
         return ds;
     }
 
+    private DockerService getContainerDocker(String containerId) {
+        ContainerRegistration container = containerStorage.getContainer(containerId);
+        return getNodeService(container.getNode());
+    }
+
     @Override
     public ServiceCallResult updateContainer(EditContainerArg arg) {
-        return null;
+        DockerService ds = getContainerDocker(arg.getContainerId());
+        UpdateContainerCmd cmd = new UpdateContainerCmd();
+        EditableContainerSource src = arg.getSource();
+        cmd.from(src);
+        return ds.updateContainer(cmd);
     }
 
     @Override
     public ServiceCallResult stopContainer(StopContainerArg arg) {
-        return null;
+        DockerService ds = getContainerDocker(arg.getId());
+        return ds.stopContainer(arg);
     }
 
     @Override
     public ServiceCallResult startContainer(String containerId) {
-        return null;
+        DockerService ds = getContainerDocker(containerId);
+        return ds.startContainer(containerId);
     }
 
     @Override
     public ServiceCallResult pauseContainer(String containerId) {
-        return null;
+        DockerService ds = getContainerDocker(containerId);
+        //TODO return ds.pauseContainer(containerId);
+        throw new UnsupportedOperationException("Not implemented yet.");
     }
 
     @Override
     public ServiceCallResult deleteContainer(DeleteContainerArg arg) {
-        return null;
+        DockerService ds = getContainerDocker(arg.getId());
+        return ds.deleteContainer(arg);
     }
 
     @Override
     public ServiceCallResult restartContainer(StopContainerArg arg) {
-        return null;
+        DockerService ds = getContainerDocker(arg.getId());
+        return ds.restartContainer(arg);
     }
 
     @Override
     public ServiceCallResult scaleContainer(ScaleContainerArg arg) {
-        return null;
+        throw new UnsupportedOperationException("Not implemented yet.");
+        // we currently not support this because scale need strategy for spread containers between nodes
+        // therefore user must create service, or in future we implement this
+        //DockerService ds = getContainerDocker(arg.getContainerId());
+        //containerCreator.scale(ds, arg.getScale(), arg.getContainerId());
     }
 }

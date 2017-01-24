@@ -55,7 +55,7 @@ public class SwarmClusterContainers extends AbstractContainersManager {
 
     @Override
     public CreateAndStartContainerResult createContainer(CreateContainerArg arg) {
-        return this.containerCreator.createContainer(arg);
+        return this.containerCreator.createContainer(arg, getDocker());
     }
 
     @Override

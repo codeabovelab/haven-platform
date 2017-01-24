@@ -76,25 +76,11 @@ public class ContainerCreator {
     /**
      * Create container by image information (image name, tag) also can be specified optional params <p/>
      * <b>Must not throw any exception after start creation of container.</b>
-     * @param arg
+     * @param arg argument
+     * @param docker cluster or node service
      * @return id of new container
      */
-    public CreateAndStartContainerResult createContainer(CreateContainerArg arg) {
-        LOG.info("CreateContainerArg: {}", arg);
-
-        DockerService docker;
-        ContainerSource container = arg.getContainer();
-        String cluster = container.getCluster();
-        if(cluster != null) {
-            docker = getDockerForCluster(cluster);
-        } else {
-            String node = container.getNode();
-            if(node != null) {
-                docker = nodeRegistry.getNodeService(node);
-            } else {
-                throw new IllegalArgumentException("Cluster and node is null.");
-            }
-        }
+    public CreateAndStartContainerResult createContainer(CreateContainerArg arg, DockerService docker) {
         CreateContainerContext cc = new CreateContainerContext(arg, docker);
         return createContainerInternal(cc);
     }

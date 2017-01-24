@@ -160,7 +160,7 @@ public class DockerCluster extends AbstractNodesGroup<DockerClusterConfig> {
         hosts.forEach(host -> managers.putIfAbsent(host, new Manager(host)));
         initCluster(hosts.get(0));
 
-        this.containers = new DockerClusterContainers(this, containerStorage);
+        this.containers = new DockerClusterContainers(this, this.containerStorage, this.containerCreator);
 
         // so docker does not send any events about new coming nodes, and we must refresh list of them
         this.scheduledExecutor.scheduleWithFixedDelay(this::updateNodes, 30L, 30L, TimeUnit.SECONDS);
