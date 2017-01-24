@@ -48,6 +48,7 @@ import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Component;
 import org.springframework.util.Assert;
 
+import javax.annotation.PostConstruct;
 import java.util.Collection;
 import java.util.List;
 import java.util.Set;
@@ -118,6 +119,10 @@ public class DiscoveryStorageImpl implements DiscoveryStorage {
           .build();
 
         filterFactory.registerFilter(new OrphansNodeFilterFactory(this));
+    }
+
+    @PostConstruct
+    public void init() {
         try(TempAuth ta = TempAuth.asSystem()) {
             AclModifier aclModifier = (asb) -> {
                 //here we add default rights to read this groups by all users

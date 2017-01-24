@@ -113,14 +113,14 @@ public class UpdateTest {
             ContainerStorage contStorage = mock(ContainerStorage.class);
             when(contStorage.updateAndGetContainer(anyObject(), anyString())).thenReturn(mock(ContainerRegistration.class));
 
-            ContainerCreator cm = new ContainerCreator(discoveryStorage,
-              mock(NodeRegistry.class),
-              confProv,
-              new ContainersNameService(new ContainerNamesSupplier()),
-              contStorage,
-              mock(NetworkManager.class),
-              containerSourceFactory
-            );
+            ContainerCreator cm = new ContainerCreator();
+            cm.setDockerServiceRegistry(discoveryStorage);
+            cm.setNodeRegistry(mock(NodeRegistry.class));
+            cm.setConfigProvider(confProv);
+            cm.setContainersNameService(new ContainersNameService(new ContainerNamesSupplier()));
+            cm.setContainerStorage(contStorage);
+            cm.setNetworkManager(mock(NetworkManager.class));
+            cm.setContainerSourceFactory(containerSourceFactory);
             return cm;
         }
 

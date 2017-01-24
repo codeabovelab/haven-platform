@@ -17,7 +17,6 @@
 package com.codeabovelab.dm.cluman.ds.clusters;
 
 import com.codeabovelab.dm.cluman.cluster.docker.ClusterConfigImpl;
-import com.codeabovelab.dm.cluman.ds.container.ContainerStorage;
 import com.codeabovelab.dm.cluman.model.NodesGroup;
 import com.codeabovelab.dm.common.kv.mapping.KvMapperFactory;
 import lombok.Data;

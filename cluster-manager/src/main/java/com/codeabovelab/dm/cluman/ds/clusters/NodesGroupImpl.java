@@ -27,6 +27,7 @@ import com.google.common.collect.ImmutableSet;
 import lombok.Builder;
 import lombok.Singular;
 import lombok.ToString;
+import org.springframework.beans.factory.ObjectFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import java.util.*;
@@ -40,12 +41,11 @@ class NodesGroupImpl extends AbstractNodesGroup<DefaultNodesGroupConfig> {
     private final VirtualDockerService service;
     private ContainersManager containers;
     private Filter predicate;
-    private final FilterFactory filterFactory;
+    private FilterFactory filterFactory;
     private ContainerCreator containerCreator;
 
     @Builder
     public NodesGroupImpl(DiscoveryStorageImpl storage,
-                          FilterFactory filterFactory,
                           Filter predicate,
                           DefaultNodesGroupConfig config,
                           @Singular Set<Feature> features) {
@@ -53,13 +53,8 @@ class NodesGroupImpl extends AbstractNodesGroup<DefaultNodesGroupConfig> {
           .addAll(features == null? Collections.emptySet(): features)
           .build());
         this.service = new VirtualDockerService(this);
-        this.filterFactory = filterFactory;
+
         this.predicate = predicate;
-        if(predicate != null) {
-            config.setNodeFilter(predicate.getExpression());
-        } else {
-            this.predicate = filterFactory.createFilter(config.getNodeFilter());
-        }
     }
 
     @Autowired
@@ -67,8 +62,18 @@ class NodesGroupImpl extends AbstractNodesGroup<DefaultNodesGroupConfig> {
         this.containerCreator = containerCreator;
     }
 
+    @Autowired
+    void setFilterFactory(FilterFactory filterFactory) {
+        this.filterFactory = filterFactory;
+    }
+
     @Override
     protected void initImpl() {
+        if(predicate != null) {
+            config.setNodeFilter(predicate.getExpression());
+        } else {
+            this.predicate = filterFactory.createFilter(config.getNodeFilter());
+        }
         this.containers = new SwarmClusterContainers(this::getDocker, this.containerCreator);
     }
 
