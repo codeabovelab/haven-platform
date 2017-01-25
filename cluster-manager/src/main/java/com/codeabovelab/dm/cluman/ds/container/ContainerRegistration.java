@@ -17,7 +17,6 @@
 package com.codeabovelab.dm.cluman.ds.container;
 
 import com.codeabovelab.dm.cluman.model.DockerContainer;
-import com.codeabovelab.dm.cluman.utils.ContainerUtils;
 import com.codeabovelab.dm.common.kv.mapping.KvMap;
 import com.codeabovelab.dm.common.kv.mapping.KvMapping;
 import com.codeabovelab.dm.cluman.model.ContainerBaseIface;
@@ -25,6 +24,7 @@ import org.springframework.util.Assert;
 
 import java.util.Collections;
 import java.util.Map;
+import java.util.function.Consumer;
 
 public class ContainerRegistration {
     private final String id;
@@ -57,11 +57,19 @@ public class ContainerRegistration {
         map.flush(id);
     }
 
+    /**
+     * Return container from its registration, when container invalid - return null.
+     * @return null when container is invalid
+     */
     public DockerContainer getContainer() {
         DockerContainer dc = cached;
         if(dc == null) {
             synchronized (lock) {
-                dc = cached = container.build();
+                try {
+                    dc = cached = container.build();
+                } catch (IllegalArgumentException e) {
+                    //suppress
+                }
             }
         }
         return dc;
@@ -73,26 +81,35 @@ public class ContainerRegistration {
         }
     }
 
-    public void setNode(String node) {
-        Assert.notNull(node, "Container node can not be null.");
+    public void modify(Consumer<DockerContainer.Builder> modifier) {
         synchronized (lock) {
-            this.container.setNode(node);
+            modifier.accept(this.container);
+            validate();
+            this.cached = null;
         }
     }
 
     public void from(ContainerBaseIface container, String node) {
+        modify((cb) -> {
+            this.container.from(container).setNode(node);
+        });
+    }
+
+    private void validate() {
+        String name = this.container.getName();
+        // swarm can give container names with leading '/'
+        if(name.startsWith("/")) {
+            throw new IllegalArgumentException("Bad container name: " + name);
+        }
+        String currId = this.container.getId();
+        Assert.isTrue(this.id.equals(currId), "After update container has differ id: old=" + this.id + " new=" + currId);
+    }
+
+    protected String forLog() {
         synchronized (lock) {
-            String name = container.getName();
-            // swarm can give container names with leading '/'
-            if(name == null || name.startsWith("/")) {
-                throw new IllegalArgumentException("Bad container name: " + name);
-            }
-            this.container.from(container);
-            ContainerUtils.getFixedImageName(this.container);
-            setNode(node);
-            String currId = this.container.getId();
-            Assert.isTrue(this.id.equals(currId), "After update container has differ id: old=" + this.id + " new=" + currId);
-            this.cached = null;
+            StringBuilder sb = new StringBuilder().append(id);
+            return sb.append(" \'").append(container.getName()).append("\' of \'")
+              .append(container.getImage()).append('\'').toString();
         }
     }
 }

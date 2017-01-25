@@ -193,6 +193,7 @@ public class DockerContainer implements ContainerBaseIface, WithNode {
         this.status = builder.status;
         this.state = builder.state;
         this.node = builder.node;
+        Assert.notNull(this.id, "id is null");
         Assert.notNull(this.node, "node is null");
         Assert.notNull(this.imageId, "imageId is null");
     }

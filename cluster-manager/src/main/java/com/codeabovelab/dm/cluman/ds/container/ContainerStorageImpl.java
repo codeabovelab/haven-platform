@@ -51,37 +51,54 @@ public class ContainerStorageImpl implements ContainerStorage, InitializingBean 
 
     @Override
     public void afterPropertiesSet() {
-
+        this.map.load();
     }
 
 
     void deleteContainer(String id) {
         ContainerRegistration cr = map.remove(id);
         if(cr != null) {
-            DockerContainer cb = cr.getContainer();
-            log.info("Container remove: {} '{}', of '{}'", cr.getId(), cb.getName(), cb.getImage());
+            log.info("Container remove: {} ", cr.forLog());
         }
     }
 
     @Override
     public List<ContainerRegistration> getContainers() {
-        return new ArrayList<>(map.values());
+        ArrayList<ContainerRegistration> list = new ArrayList<>(map.values());
+        list.removeIf(cr -> cr.getContainer() == null);
+        return list;
     }
 
     @Override
     public ContainerRegistration getContainer(String id) {
-        return map.get(id);
+        ContainerRegistration cr = map.get(id);
+        return check(cr);
+    }
+
+    private ContainerRegistration check(ContainerRegistration cr) {
+        // we must not return invalid registrations
+        if(cr == null) {
+            return null;
+        }
+        DockerContainer dc = cr.getContainer();
+        if(dc == null) {
+            // remove invalid container
+            deleteContainer(cr.getId());
+            return null;
+        }
+        return cr;
     }
 
     @Override
     public ContainerRegistration findContainer(String name) {
         ContainerRegistration cr = map.get(name);
         if(cr == null) {
-            cr = map.values().stream().filter((c) -> {
-                return c.getId().startsWith(name) || c.getContainer().getName().equals(name);
+            cr = map.values().stream().filter((item) -> {
+                DockerContainer container = item.getContainer();
+                return container != null && (item.getId().startsWith(name) || container.getName().equals(name));
             }).findAny().orElse(null);
         }
-        return cr;
+        return check(cr);
     }
 
     @Override
@@ -113,8 +130,7 @@ public class ContainerStorageImpl implements ContainerStorage, InitializingBean 
     public ContainerRegistration updateAndGetContainer(ContainerBaseIface container, String node) {
         ContainerRegistration cr = map.computeIfAbsent(container.getId(), s -> new ContainerRegistration(this, s));
         cr.from(container, node);
-        DockerContainer cb = cr.getContainer();
-        log.info("Update container: {} '{}', of '{}'", cr.getId(), cb.getName(), cb.getImage());
+        log.info("Update container: {}", cr.forLog());
         return cr;
     }
 

@@ -131,7 +131,13 @@ public class ContainerApi {
         List<ContainerRegistration> crs = containerStorage.getContainers();
         Map<String, String> app2cont = UiUtils.mapAppContainer(applicationService, null);
         List<UiContainer> containers = crs.stream().map((cr) -> {
-            UiContainer uc = UiContainer.fromBase(new UiContainer(), cr.getContainer());
+            DockerContainer container = cr.getContainer();
+            UiContainer uc = new UiContainer();
+            if(container != null) {
+                UiContainer.fromBase(uc, container);
+            } else {
+                uc.setName("<invalid>");
+            }
             uc.setNode(cr.getNode());
             uc.getLabels().putAll(cr.getAdditionalLabels());
             uc.setCluster(getClusterForNode(cr.getNode()));

@@ -104,24 +104,36 @@ class ContainerInfoUpdater implements SmartLifecycle {
     }
 
     private void onDockerLogEvent(DockerLogEvent dle) {
+        System.out.println(dle.getAction() + " " + dle.getType() + " " + dle.getContainer());
         if(dle.getType() != EventType.CONTAINER) {
             return;
         }
         final ContainerBase container = dle.getContainer();
         final String id = container.getId();
+        ContainerRegistration cr = null;
         switch(dle.getAction()) {
             case StandardActions.DELETE: {
                 containerStorage.deleteContainer(id);
                 break;
             }
-            default: {
+            case StandardActions.CREATE: {
                 String node = dle.getNode();
                 // we can not create containers here because it not full filled
-                ContainerRegistration cr = containerStorage.getContainer(id);
+                cr = containerStorage.getContainer(id);
                 if(cr == null) {
                     scheduleNodeUpdate(node);
                 }
+                break;
             }
+            default: {
+                cr = containerStorage.getContainer(id);
+            }
+        }
+        if(cr != null) {
+            cr.modify(cb -> {
+                //TODO got state
+                cb.setStatus(dle.getStatus());
+            });
         }
     }
 
