@@ -16,14 +16,13 @@
 
 package com.codeabovelab.dm.cluman.batch;
 
-import com.codeabovelab.dm.cluman.model.ImageName;
-import com.codeabovelab.dm.cluman.utils.ContainerUtils;
 import com.codeabovelab.dm.cluman.cluster.docker.management.DockerService;
 import com.codeabovelab.dm.cluman.cluster.docker.management.argument.GetContainersArg;
 import com.codeabovelab.dm.cluman.job.JobComponent;
 import com.codeabovelab.dm.cluman.job.JobContext;
 import com.codeabovelab.dm.cluman.job.JobParam;
 import com.codeabovelab.dm.cluman.model.DockerContainer;
+import com.codeabovelab.dm.cluman.utils.ContainerUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.util.Assert;
@@ -38,11 +37,11 @@ import java.util.List;
 @Slf4j
 public class LoadContainersOfImageTasklet {
 
-    private static final String PREFIX = "LoadContainersOfImage.";
     /**
      * Job parameter 'image' - pattern of image name which containers will has been loaded.
      */
     public static final String JP_IMAGE = "images";
+    private static final String PREFIX = "LoadContainersOfImage.";
     public static final String JP_PERCENTAGE = PREFIX + "percentage";
     private final DockerService dockerService;
     private final JobContext context;
@@ -84,12 +83,12 @@ public class LoadContainersOfImageTasklet {
         for(DockerContainer container : containers) {
             ImagesForUpdate.Image img = images.findImage(container.getImage(), container.getImageId());
             if(img == null) {
-                log.debug("Container does not match any image: {}", container.getName());
+                log.warn("Container does not match any image: {}", container.getName());
                 continue;
             }
             ProcessedContainer processedContainer = convert(container);
             if(ContainerUtils.isOurContainer(processedContainer)) {
-                log.debug("Our container: {}", processedContainer.getName());
+                log.warn("Our container: {}", processedContainer.getName());
                 continue;
             }
 

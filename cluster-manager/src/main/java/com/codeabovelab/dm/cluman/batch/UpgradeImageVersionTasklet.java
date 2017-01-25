@@ -19,11 +19,12 @@ package com.codeabovelab.dm.cluman.batch;
 import com.codeabovelab.dm.cluman.cluster.registry.RegistryRepository;
 import com.codeabovelab.dm.cluman.cluster.registry.RegistryService;
 import com.codeabovelab.dm.cluman.cluster.registry.data.Tags;
-import com.codeabovelab.dm.cluman.model.ImageName;
-import com.codeabovelab.dm.cluman.utils.ContainerUtils;
 import com.codeabovelab.dm.cluman.job.JobComponent;
 import com.codeabovelab.dm.cluman.job.JobContext;
 import com.codeabovelab.dm.cluman.job.JobParam;
+import com.codeabovelab.dm.cluman.model.ImageName;
+import com.codeabovelab.dm.cluman.utils.ContainerUtils;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.util.Assert;
 
@@ -35,6 +36,7 @@ import static com.codeabovelab.dm.cluman.batch.LoadContainersOfImageTasklet.JP_I
  * Upgrade version of container
  */
 @JobComponent
+@Slf4j
 public class UpgradeImageVersionTasklet {
 
     @JobParam(value = JP_IMAGE, required = true)
@@ -50,6 +52,7 @@ public class UpgradeImageVersionTasklet {
         String version = resolveVersion(item);
         final String image = item.getImage();
         final String newImage = ContainerUtils.setImageVersion(image, version);
+        log.info("updating to {}", newImage);
         item = item.makeNew()
           .image(newImage)
           .imageId(null) // we also need to reset image id

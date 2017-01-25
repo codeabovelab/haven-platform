@@ -62,7 +62,7 @@ public class ContainerNeedUpdatedPredicate implements ContainerPredicate {
         if (descriptor == null) {
 //            throw new IllegalArgumentException("ImageDescriptor was not found for " + image);
             log.warn("ImageDescriptor was not found for " + image);
-            return false;
+            return true;
         }
         log.debug("ImageDescriptor for {}: {}, container imageId: {}", image, descriptor, imageId);
         return !imageId.equals(descriptor.getId());
