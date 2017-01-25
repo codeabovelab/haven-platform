@@ -104,15 +104,9 @@ class DockerClusterContainers implements ContainersManager {
 
     private List<DockerContainer.Builder> getContainersInternal() {
         List<DockerContainer.Builder> conts = new ArrayList<>();
-        Map<String, NodeInfo> nodes = dc.getNodes().stream().collect(Collectors.toMap(NodeInfo::getName, Functions.directFunc()));
         List<ContainerRegistration> crs = containerStorage.getContainers();
         crs.forEach((cr) -> {
-            NodeInfo node = nodes.get(cr.getNode());
-            if(node == null) {
-                return;
-            }
-            DockerContainer.Builder dcb = DockerContainer.builder().from(cr.getContainer()).node(node);
-            conts.add(dcb);
+            conts.add(DockerContainer.builder().from(cr.getContainer()));
         });
         return conts;
     }

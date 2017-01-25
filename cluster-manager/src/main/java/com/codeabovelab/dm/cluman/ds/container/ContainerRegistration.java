@@ -20,7 +20,6 @@ import com.codeabovelab.dm.cluman.model.DockerContainer;
 import com.codeabovelab.dm.cluman.utils.ContainerUtils;
 import com.codeabovelab.dm.common.kv.mapping.KvMap;
 import com.codeabovelab.dm.common.kv.mapping.KvMapping;
-import com.codeabovelab.dm.cluman.model.ContainerBase;
 import com.codeabovelab.dm.cluman.model.ContainerBaseIface;
 import org.springframework.util.Assert;
 
@@ -34,7 +33,6 @@ public class ContainerRegistration {
     private final DockerContainer.Builder container = DockerContainer.builder();
     private final Object lock = new Object();
     private DockerContainer cached;
-    private String node;
     private KvMap<?> map;
 
     ContainerRegistration(ContainerStorageImpl csi, String id) {
@@ -71,14 +69,14 @@ public class ContainerRegistration {
 
     public String getNode() {
         synchronized (lock) {
-            return node;
+            return this.container.getNode();
         }
     }
 
     public void setNode(String node) {
         Assert.notNull(node, "Container node can not be null.");
         synchronized (lock) {
-            this.node = node;
+            this.container.setNode(node);
         }
     }
 

@@ -40,7 +40,7 @@ public class UiDeployedImage extends UiImageData {
             UiContainerShort uc = new UiContainerShort();
             uc.setId(dc.getId());
             uc.setName(dc.getName());
-            uc.setNode(dc.getNode().getName());
+            uc.setNode(dc.getNode());
             return uc;
         }
     }

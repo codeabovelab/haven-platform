@@ -77,8 +77,7 @@ public class UiContainer implements Comparable<UiContainer>, UiContainerIface, W
 
     protected static  UiContainer from(UiContainer uic, DockerContainer container) {
         fromBase(uic, container);
-        com.codeabovelab.dm.cluman.model.Node node = container.getNode();
-        uic.setNode(node.getName());
+        uic.setNode(container.getNode());
         uic.setCreated(new Date(container.getCreated()));
         uic.getPorts().addAll(container.getPorts());
         String status = container.getStatus();

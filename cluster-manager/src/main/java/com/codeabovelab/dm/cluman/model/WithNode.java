@@ -20,5 +20,5 @@ package com.codeabovelab.dm.cluman.model;
  * Something with node.
  */
 public interface WithNode {
-    Node getNode();
+    String getNode();
 }

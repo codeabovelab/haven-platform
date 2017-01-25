@@ -76,7 +76,7 @@ public class DockerContainer implements ContainerBaseIface, WithNode {
         private final Map<String, String> labels = new HashMap<>();
         private String status;
         private State state;
-        private Node node;
+        private String node;
 
         public Builder id(String id) {
             setId(id);
@@ -137,7 +137,7 @@ public class DockerContainer implements ContainerBaseIface, WithNode {
             return this;
         }
 
-        public Builder node(Node node) {
+        public Builder node(String node) {
             setNode(node);
             return this;
         }
@@ -176,7 +176,10 @@ public class DockerContainer implements ContainerBaseIface, WithNode {
     private final Map<String, String> labels;
     private final String status;
     private final State state;
-    private final Node node;
+    /**
+     * node name
+     */
+    private final String node;
 
     public DockerContainer(Builder builder) {
         this.id = builder.id;

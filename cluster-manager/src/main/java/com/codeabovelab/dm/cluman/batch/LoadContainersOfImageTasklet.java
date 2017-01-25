@@ -118,7 +118,7 @@ public class LoadContainersOfImageTasklet {
         return ProcessedContainer.builder()
           .id(dc.getId())
           .name(dc.getName())
-          .node(dc.getNode().getName())
+          .node(dc.getNode())
           .image(dc.getImage())
           .imageId(dc.getImageId())
           .cluster(this.cluster)

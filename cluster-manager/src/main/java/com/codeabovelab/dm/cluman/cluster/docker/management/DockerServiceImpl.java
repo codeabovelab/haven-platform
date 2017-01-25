@@ -403,9 +403,7 @@ public class DockerServiceImpl implements DockerService {
 
         dcb.setName(containerName);
         Assert.notNull(nodeName, "Can not resolve node name for: " + c);
-        NodeInfo node = nodeInfoProvider.getNodeInfo(nodeName);
-        Assert.notNull(node, "Can not find node for name: " + nodeName);
-        dcb.setNode(node);
+        dcb.setNode(nodeName);
     }
 
     @Override

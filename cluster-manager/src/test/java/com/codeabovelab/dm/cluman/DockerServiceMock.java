@@ -184,8 +184,9 @@ public class DockerServiceMock implements DockerService {
         ContainerDetails cd = new ContainerDetails();
         DockerContainer source = holder.asDockerContainer();
         BeanUtils.copyProperties(source, cd);
-        Node node = source.getNode();
-        cd.setNode(toDockerNode(node));
+        // wait list of nodes
+        String node = source.getNode();
+        cd.setNode(toDockerNode(this.node));
         //TODO clone below
         cd.setHostConfig(holder.getHostConfig());
         cd.setConfig(holder.getConfig());
@@ -362,7 +363,7 @@ public class DockerServiceMock implements DockerService {
               .name(name)
               .image(image)
               .imageId(image)
-              .node(getNode(cmd.getLabels()))
+              .node(getNode(cmd.getLabels()).getName())
               .build();
             ch = new ContainerHolder(dc);
             ch.setHostConfig(cmd.getHostConfig());
