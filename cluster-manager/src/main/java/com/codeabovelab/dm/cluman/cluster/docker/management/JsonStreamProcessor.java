@@ -24,6 +24,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.common.util.concurrent.MoreExecutors;
 import com.google.common.util.concurrent.SettableFuture;
+import lombok.extern.slf4j.Slf4j;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -31,6 +32,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.function.Consumer;
 
+@Slf4j
 public class JsonStreamProcessor<T> implements ResponseStreamProcessor<T> {
 
     private static final Logger LOG = LoggerFactory.getLogger(JsonStreamProcessor.class);
@@ -69,6 +71,7 @@ public class JsonStreamProcessor<T> implements ResponseStreamProcessor<T> {
                         watcher.accept(next);
                     }
                 } catch (Exception e) {
+                    log.error("Error on process json item.", e);
                 }
 
                 closed = jp.isClosed();
