@@ -17,6 +17,7 @@
 package com.codeabovelab.dm.cluman.cluster.docker.management;
 
 import com.codeabovelab.dm.cluman.model.ContainerBase;
+import com.codeabovelab.dm.cluman.model.DockerContainer;
 import com.codeabovelab.dm.cluman.model.DockerLogEvent;
 import com.codeabovelab.dm.cluman.model.LogEvent;
 import com.codeabovelab.dm.common.cache.CacheInvalidator;

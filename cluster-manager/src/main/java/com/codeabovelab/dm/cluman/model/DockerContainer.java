@@ -16,6 +16,7 @@
 
 package com.codeabovelab.dm.cluman.model;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import lombok.Data;
@@ -33,6 +34,9 @@ import java.util.Map;
 @Data
 public class DockerContainer implements ContainerBaseIface, WithNode {
 
+    /**
+     * https://github.com/docker/docker/blob/b59ee9486fad5fa19f3d0af0eb6c5ce100eae0fc/container/state.go#L123
+     * */
     public enum State {
         PAUSED(true),
         RESTARTING(true),
@@ -181,6 +185,7 @@ public class DockerContainer implements ContainerBaseIface, WithNode {
      */
     private final String node;
 
+    @JsonCreator
     public DockerContainer(Builder builder) {
         this.id = builder.id;
         this.name = builder.name;

@@ -234,7 +234,7 @@ public class DockerServices implements DockerServiceRegistry, NodeRegistry {
                         GetEventsArg getEventsArg = GetEventsArg.builder()
                           .since(time)
                           .until(afterTime)
-                          .watcher(e -> dockerEventMessageBus.accept(convertToLogEvent(nodeName, e)))
+                          .watcher((e) -> this.proxyDockerEvent(nodeName, e))
                           .build();
                         log.debug("getting events args {}", getEventsArg);
                         try (TempAuth ta = TempAuth.asSystem()) {
@@ -249,15 +249,26 @@ public class DockerServices implements DockerServiceRegistry, NodeRegistry {
         return service;
     }
 
+    private void proxyDockerEvent(String nodeName, DockerEvent e) {
+        try {
+            DockerLogEvent logEvent = convertToLogEvent(nodeName, e);
+            dockerEventMessageBus.accept(logEvent);
+        } catch (Exception ex) {
+            log.error("can not convert {}", e, ex);
+        }
+    }
+
     private DockerLogEvent convertToLogEvent(final String nodeName, final DockerEvent e) {
         // see https://docs.docker.com/engine/reference/commandline/events/
         DockerLogEvent.Builder logEvent = DockerLogEvent.builder();
         final String action = e.getAction();
         logEvent.setAction(action);
+        String localNodeName = (e.getNode() != null) ? e.getNode().getName() : nodeName;
         final EventType type = e.getType();
         if (type == EventType.CONTAINER) {
             ContainerBase.Builder builder = ContainerBase.builder();
             builder.setId(e.getId());
+            builder.setNode(localNodeName);
             Actor actor = e.getActor();
             Map<String, String> attributes = actor.getAttributes();
             builder.setLabels(attributes);
@@ -265,17 +276,39 @@ public class DockerServices implements DockerServiceRegistry, NodeRegistry {
             builder.getLabels().keySet().removeAll(ImmutableSet.of("name", "image"));
             builder.setName(attributes.get("name"));
             builder.setImage(e.getFrom());
-            logEvent.setContainer(builder.build());
+            DockerContainer.State state = null;
+            // Containers report these events: attach, commit, copy, create, destroy, detach, die, exec_create,
+            // exec_detach, exec_start, export, kill, oom, pause, rename, resize, restart, start,
+            // stop, top, unpause, update
             switch (action) {
                 //we do not support 'kill' action
-                case "kill": logEvent.setAction(StandardActions.STOP);
+                case "kill":
+                    logEvent.setAction(StandardActions.STOP);
+                    state = DockerContainer.State.EXITED;
                     break;
-                case "destroy":logEvent.setAction(StandardActions.DELETE);
+                case "destroy":
+                    logEvent.setAction(StandardActions.DELETE);
+                    state = DockerContainer.State.REMOVING;
+                    break;
+                case "die":
+                case "stop":
+                    state = DockerContainer.State.DEAD;
+                    break;
+                case "unpause":
+                case "start":
+                    state = DockerContainer.State.RUNNING;
+                    break;
+                case "pause":
+                    state = DockerContainer.State.PAUSED;
+                    break;
+                case "restart":
+                    state = DockerContainer.State.RESTARTING;
                     break;
             }
+            builder.setState(state);
+            logEvent.setContainer(builder.build());
         }
         logEvent.setDate(new Date(e.getTime() * 1000L));
-        String localNodeName = (e.getNode() != null) ? e.getNode().getName() : nodeName;
         logEvent.setNode(localNodeName);
         logEvent.setCluster(this.nodeInfoProvider.getNodeCluster(localNodeName));
         logEvent.setType(type);
@@ -285,6 +318,9 @@ public class DockerServices implements DockerServiceRegistry, NodeRegistry {
     }
 
     private Severity calculateSeverity(String status) {
+        if(status == null) {
+            return Severity.INFO;
+        }
         switch (status) {
             case "die":
                 return Severity.ERROR;
