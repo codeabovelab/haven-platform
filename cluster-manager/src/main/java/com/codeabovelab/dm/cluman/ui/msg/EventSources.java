@@ -154,12 +154,12 @@ class EventSources {
 
     private void processNode(Esuc esuc,
                                 NodeInfo ni) {
+        NodeRegistration nr = nodeStorage.getNodeRegistration(ni.getName());
         {
             String id = "node:" + ni.getName() + ":health";
-            NodeRegistration nr = nodeStorage.getNodeRegistration(ni.getName());
             esuc.update(id, (i) -> nr.getHealthSubscriptions());
         }
-        DockerService service = dockerServices.getNodeService(ni.getName());
+        DockerService service = nr.getDocker();
         if(service == null || !service.isOnline()) {
             return;
         }

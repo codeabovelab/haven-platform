@@ -18,104 +18,58 @@ package com.codeabovelab.dm.cluman.ds.swarm;
 
 import com.codeabovelab.dm.cluman.cluster.docker.ClusterConfig;
 import com.codeabovelab.dm.cluman.cluster.docker.ClusterConfigImpl;
-import com.codeabovelab.dm.cluman.cluster.docker.HttpAuthInterceptor;
 import com.codeabovelab.dm.cluman.cluster.docker.management.DockerService;
 import com.codeabovelab.dm.cluman.cluster.docker.management.DockerServiceEvent;
 import com.codeabovelab.dm.cluman.cluster.docker.management.DockerServiceImpl;
-import com.codeabovelab.dm.cluman.cluster.docker.management.argument.GetEventsArg;
-import com.codeabovelab.dm.cluman.cluster.docker.model.Actor;
-import com.codeabovelab.dm.cluman.cluster.docker.model.DockerEvent;
-import com.codeabovelab.dm.cluman.cluster.docker.model.EventType;
-import com.codeabovelab.dm.cluman.cluster.registry.RegistryRepository;
+import com.codeabovelab.dm.cluman.ds.DockerServiceFactory;
 import com.codeabovelab.dm.cluman.ds.DockerServiceRegistry;
-import com.codeabovelab.dm.cluman.ds.container.ContainerRegistration;
-import com.codeabovelab.dm.cluman.ds.container.ContainerStorage;
+import com.codeabovelab.dm.cluman.ds.nodes.NodeStorage;
 import com.codeabovelab.dm.cluman.model.*;
-import com.codeabovelab.dm.cluman.security.AccessContextFactory;
-import com.codeabovelab.dm.cluman.security.DockerServiceSecurityWrapper;
-import com.codeabovelab.dm.cluman.validate.ExtendedAssert;
 import com.codeabovelab.dm.common.mb.MessageBus;
 import com.codeabovelab.dm.cluman.security.TempAuth;
 import com.codeabovelab.dm.common.utils.Throwables;
-import com.codeabovelab.dm.platform.http.async.NettyRequestFactory;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.http.client.AsyncClientHttpRequestFactory;
 import org.springframework.stereotype.Component;
-import org.springframework.util.Assert;
-import org.springframework.web.client.AsyncRestTemplate;
 
 import javax.annotation.PreDestroy;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.function.Consumer;
-import java.util.function.Function;
 
 /**
  * Registry for docker service. It hold and provide swarm and docker services. It does not provide virtual services,
  * therefore you must use {@link NodesGroup#getDocker()} directly. <p/>
  */
 @Component
-public class DockerServices implements DockerServiceRegistry, NodeRegistry {
+public class DockerServices implements DockerServiceRegistry {
 
     private final Logger log = LoggerFactory.getLogger(getClass());
     private final ConcurrentMap<String, DockerService> clusters = new ConcurrentHashMap<>();
-    private final ConcurrentMap<String, DockerService> nodes = new ConcurrentHashMap<>();
-    private final RegistryRepository registryRepository;
-    private final ScheduledExecutorService scheduledExecutorService;
     private final ScheduledExecutorService scheduledExecutor;
-    private final ExecutorService executor;
     private final SwarmProcesses swarmProcesses;
-    private final NodeInfoProvider nodeInfoProvider;
-    private final MessageBus<DockerLogEvent> dockerEventMessageBus;
-    private final DockerEventsConfig dockerMonitoringConfig;
-    private final ContainerStorage containerStorage;
+    private final NodeStorage nodeStorage;
+
     private final MessageBus<DockerServiceEvent> dockerServiceEventMessageBus;
-    private final AccessContextFactory aclContextFactory;
-    private final Map<String, ScheduledFuture> watchingFutures = new ConcurrentHashMap<>();
+    private final DockerServiceFactory dockerFactory;
 
     @Autowired
     public DockerServices(DockerServicesConfig configuration,
-                          ContainerStorage containerStorage,
                           SwarmProcesses swarmProcesses,
-                          RegistryRepository registryRepository,
-                          NodeInfoProvider nodeInfoProvider,
-                          DockerEventsConfig dockerMonitoringConfig,
-                          AccessContextFactory aclContextFactory,
-                          @Qualifier(NodeEvent.BUS) MessageBus<NodeEvent> nodeInfoMessageBus,
-                          @Qualifier(DockerLogEvent.BUS) MessageBus<DockerLogEvent> dockerEventMessageBus,
+                          NodeStorage nodeStorage,
+                          DockerServiceFactory dockerFactory,
                           @Qualifier(DockerServiceEvent.BUS) MessageBus<DockerServiceEvent> dockerServiceEventMessageBus) {
-        this.containerStorage = containerStorage;
-        this.registryRepository = registryRepository;
         this.swarmProcesses = swarmProcesses;
-        this.nodeInfoProvider = nodeInfoProvider;
-        this.dockerEventMessageBus = dockerEventMessageBus;
-        this.dockerMonitoringConfig = dockerMonitoringConfig;
+        this.nodeStorage = nodeStorage;
         this.dockerServiceEventMessageBus = dockerServiceEventMessageBus;
-        this.aclContextFactory = aclContextFactory;
-        nodeInfoMessageBus.subscribe((e) -> {
-            switch (e.getAction()) {
-                case StandardActions.UPDATE:
-                case StandardActions.CREATE: {
-                    registerNode(e.getCurrent());
-                    break;
-                }
-                case StandardActions.DELETE: {
-                    //TODO unregisterNode(e.getNode());
-                    break;
-                }
-            }
-        });
+        this.dockerFactory = dockerFactory;
+
         String classPrefix = getClass().getSimpleName();
-        this.executor = Executors.newSingleThreadExecutor(new ThreadFactoryBuilder()
-          .setDaemon(true)
-          .setNameFormat(classPrefix + "-executor-%d")
-          .setUncaughtExceptionHandler(Throwables.uncaughtHandler(log))
-          .build());
+
         scheduledExecutor = Executors.newSingleThreadScheduledExecutor(new ThreadFactoryBuilder()
                 .setDaemon(true)
                 .setNameFormat(classPrefix + "-scheduled-%d")
@@ -125,12 +79,6 @@ public class DockerServices implements DockerServiceRegistry, NodeRegistry {
                 configuration.getRefreshInfoSeconds(),
                 configuration.getRefreshInfoSeconds(),
                 TimeUnit.SECONDS);
-        scheduledExecutorService = Executors.newScheduledThreadPool(dockerMonitoringConfig.getCountOfThreads(), new ThreadFactoryBuilder()
-                .setDaemon(true)
-                .setNameFormat(classPrefix + "-eventsFetcher-%d")
-                .setUncaughtExceptionHandler(Throwables.uncaughtHandler(log))
-                .build());
-        dockerServiceEventMessageBus.asSubscriptions().subscribe(this::serviceListener);
     }
 
     private void updateInfo() {
@@ -165,7 +113,7 @@ public class DockerServices implements DockerServiceRegistry, NodeRegistry {
             return getService(val);
         }
         if("node".equals(type)) {
-            return getNodeService(val);
+            return nodeStorage.getNodeService(val);
         }
         //unknown type
         return null;
@@ -187,191 +135,9 @@ public class DockerServices implements DockerServiceRegistry, NodeRegistry {
      * @param nodeName
      * @return
      */
-    @Override
+    @Deprecated
     public DockerService getNodeService(String nodeName) {
-        DockerService service = nodes.get(nodeName);
-        return service;
-    }
-
-    @Override
-    public Set<String> getNodeServices() {
-        return ImmutableSet.copyOf(nodes.keySet());
-    }
-
-    /**
-     * service of node which is owns container.
-     *
-     * @param containerId
-     * @return
-     */
-    public DockerService getServiceByContainer(String containerId) {
-        ContainerRegistration container = containerStorage.getContainer(containerId);
-        ExtendedAssert.notFound(container, "Can't find container by id " + containerId);
-        DockerService dockerService = nodes.get(container.getNode());
-        return dockerService;
-    }
-
-    public void registerNode(Node node) {
-        registerNode(node.getName(), node.getAddress());
-    }
-
-    public DockerService registerNode(String nodeName, String address) {
-        // we intentionally register node without specifying cluster
-        ClusterConfig config = configForNode(address).build();
-
-        Function<String, DockerService> factory = (nn) -> createDockerService(config, (b) -> b.setNode(nn));
-
-
-        // also we register services by its containers
-        final DockerService service = registerNodeBy(config, factory, nodeName);
-        if (service != null) {
-            watchingFutures.computeIfAbsent(nodeName, s -> {
-                log.info("try to register node for fetching logs {}", nodeName);
-
-                return scheduledExecutorService.scheduleAtFixedRate(() -> {
-                        Long time = new Date().getTime();
-                        Long afterTime = time + dockerMonitoringConfig.getPeriodInSeconds() * 1000;
-                        GetEventsArg getEventsArg = GetEventsArg.builder()
-                          .since(time)
-                          .until(afterTime)
-                          .watcher((e) -> this.proxyDockerEvent(nodeName, e))
-                          .build();
-                        log.debug("getting events args {}", getEventsArg);
-                        try (TempAuth ta = TempAuth.asSystem()) {
-                            service.subscribeToEvents(getEventsArg);
-                        }
-                    },
-                    dockerMonitoringConfig.getInitialDelayInSeconds(),
-                    dockerMonitoringConfig.getPeriodInSeconds(), TimeUnit.SECONDS);
-
-            });
-        }
-        return service;
-    }
-
-    private void proxyDockerEvent(String nodeName, DockerEvent e) {
-        try {
-            DockerLogEvent logEvent = convertToLogEvent(nodeName, e);
-            dockerEventMessageBus.accept(logEvent);
-        } catch (Exception ex) {
-            log.error("can not convert {}", e, ex);
-        }
-    }
-
-    private DockerLogEvent convertToLogEvent(final String nodeName, final DockerEvent e) {
-        // see https://docs.docker.com/engine/reference/commandline/events/
-        DockerLogEvent.Builder logEvent = DockerLogEvent.builder();
-        final String action = e.getAction();
-        logEvent.setAction(action);
-        String localNodeName = (e.getNode() != null) ? e.getNode().getName() : nodeName;
-        final EventType type = e.getType();
-        if (type == EventType.CONTAINER) {
-            ContainerBase.Builder builder = ContainerBase.builder();
-            builder.setId(e.getId());
-            builder.setNode(localNodeName);
-            Actor actor = e.getActor();
-            Map<String, String> attributes = actor.getAttributes();
-            builder.setLabels(attributes);
-            //remove attributes which is not a labels.
-            builder.getLabels().keySet().removeAll(ImmutableSet.of("name", "image"));
-            builder.setName(attributes.get("name"));
-            builder.setImage(e.getFrom());
-            DockerContainer.State state = null;
-            // Containers report these events: attach, commit, copy, create, destroy, detach, die, exec_create,
-            // exec_detach, exec_start, export, kill, oom, pause, rename, resize, restart, start,
-            // stop, top, unpause, update
-            switch (action) {
-                //we do not support 'kill' action
-                case "kill":
-                    logEvent.setAction(StandardActions.STOP);
-                    state = DockerContainer.State.EXITED;
-                    break;
-                case "destroy":
-                    logEvent.setAction(StandardActions.DELETE);
-                    state = DockerContainer.State.REMOVING;
-                    break;
-                case "die":
-                case "stop":
-                    state = DockerContainer.State.DEAD;
-                    break;
-                case "unpause":
-                case "start":
-                    state = DockerContainer.State.RUNNING;
-                    break;
-                case "pause":
-                    state = DockerContainer.State.PAUSED;
-                    break;
-                case "restart":
-                    state = DockerContainer.State.RESTARTING;
-                    break;
-            }
-            builder.setState(state);
-            logEvent.setContainer(builder.build());
-        }
-        logEvent.setDate(new Date(e.getTime() * 1000L));
-        logEvent.setNode(localNodeName);
-        logEvent.setCluster(this.nodeInfoProvider.getNodeCluster(localNodeName));
-        logEvent.setType(type);
-        logEvent.setStatus(e.getStatus());
-        logEvent.setSeverity(calculateSeverity(e.getStatus()));
-        return logEvent.build();
-    }
-
-    private Severity calculateSeverity(String status) {
-        if(status == null) {
-            return Severity.INFO;
-        }
-        switch (status) {
-            case "die":
-                return Severity.ERROR;
-            case "kill":
-                return Severity.WARNING;
-            default:
-                return Severity.INFO;
-        }
-    }
-
-    private DockerService registerNodeBy(ClusterConfig config, Function<String, DockerService> factory, String name) {
-        if (name == null) {
-            return null;
-        }
-        int i = 10;
-        while (i > 0) {
-            DockerService service = nodes.computeIfAbsent(name, factory);
-            if (config.getHost().equals(service.getClusterConfig().getHost())) {
-                return service;
-            }
-            nodes.remove(name, service);
-            i--;
-        }
-        Assert.isTrue(i > 0, "Detect cycling on register node.");
-        return null;
-    }
-
-    private DockerService createDockerService(ClusterConfig clusterConfig, Consumer<DockerServiceImpl.Builder> dockerConsumer) {
-        DockerServiceImpl.Builder b = DockerServiceImpl.builder();
-        b.setConfig(clusterConfig);
-        String cluster = clusterConfig.getCluster();
-        if(cluster != null) {
-            b.setCluster(cluster);
-        }
-        b.setRestTemplate(createNewRestTemplate());
-        b.setEventConsumer(this::dockerEventConsumer);
-        b.setNodeInfoProvider(nodeInfoProvider);
-        if (dockerConsumer != null) {
-            dockerConsumer.accept(b);
-        }
-        DockerService ds = b.build();
-        ds = securityWrapper(ds);
-        return ds;
-    }
-
-    private void dockerEventConsumer(DockerServiceEvent dockerServiceEvent) {
-        executor.execute(() -> {
-            try(TempAuth auth = TempAuth.asSystem()) {
-                dockerServiceEventMessageBus.accept(dockerServiceEvent);
-            }
-        });
+        return nodeStorage.getNodeService(nodeName);
     }
 
     public DockerService getOrCreateCluster(ClusterConfig clusterConfig, Consumer<DockerServiceImpl.Builder> dockerConsumer) {
@@ -386,45 +152,12 @@ public class DockerServices implements DockerServiceRegistry, NodeRegistry {
                 ccib.host(process.getAddress());
                 instanceConfig = ccib.build();
             }
-            DockerService dockerService = createDockerService(instanceConfig, dockerConsumer);
+            DockerService dockerService = dockerFactory.createDockerService(instanceConfig, dockerConsumer);
             // here we have conceptual problem: swarm service is 'start', but DockerService is 'create',
             // which action we must send into bus? So it may be service of long ago created cluster, therefore we use 'start'.
             dockerServiceEventMessageBus.accept(new DockerServiceEvent(dockerService, StandardActions.START));
             return dockerService;
         });
-    }
-
-    /**
-     * Make address part of docker service. Note that it leave cluster id with null value.
-     *
-     * @param addr address of service
-     * @return
-     */
-    private ClusterConfigImpl.Builder configForNode(String addr) {
-        return ClusterConfigImpl.builder()
-                .host(addr);
-    }
-
-
-    private void serviceListener(DockerServiceEvent e) {
-        try {
-            if (e instanceof DockerServiceEvent.DockerServiceInfoEvent) {
-                DockerServiceEvent.DockerServiceInfoEvent ie = (DockerServiceEvent.DockerServiceInfoEvent) e;
-                for (NodeInfo ni : ie.getInfo().getNodeList()) {
-                    registerNode(ni);
-                }
-            }
-        } catch (Exception ex) {
-            log.error("On event: {}", e, ex);
-        }
-    }
-
-    private AsyncRestTemplate createNewRestTemplate() {
-        // we use async client because usual client does not allow to interruption in some cases
-        AsyncClientHttpRequestFactory factory = new NettyRequestFactory();
-        final AsyncRestTemplate restTemplate = new AsyncRestTemplate(factory);
-        restTemplate.setInterceptors(Collections.singletonList(new HttpAuthInterceptor(registryRepository)));
-        return restTemplate;
     }
 
     @Override
@@ -435,10 +168,6 @@ public class DockerServices implements DockerServiceRegistry, NodeRegistry {
     @PreDestroy
     public void shutdown() {
         scheduledExecutor.shutdown();
-        scheduledExecutorService.shutdown();
     }
 
-    public DockerService securityWrapper(DockerService dockerService) {
-        return new DockerServiceSecurityWrapper(aclContextFactory, dockerService);
-    }
 }

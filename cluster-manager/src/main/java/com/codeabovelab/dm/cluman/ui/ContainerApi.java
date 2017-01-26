@@ -34,6 +34,7 @@ import com.codeabovelab.dm.cluman.ds.container.ContainerStorage;
 import com.codeabovelab.dm.cluman.ds.container.ContainersNameService;
 import com.codeabovelab.dm.cluman.ds.nodes.NodeRegistration;
 import com.codeabovelab.dm.cluman.ds.nodes.NodeStorage;
+import com.codeabovelab.dm.cluman.ds.nodes.NodeUtils;
 import com.codeabovelab.dm.cluman.ds.swarm.DockerServices;
 import com.codeabovelab.dm.cluman.model.*;
 import com.codeabovelab.dm.cluman.source.ContainerSourceFactory;
@@ -157,7 +158,7 @@ public class ContainerApi {
         ContainerRegistration cr = containerStorage.getContainer(id);
         ExtendedAssert.notFound(cr, "Not found container: " + id);
         String node = cr.getNode();
-        DockerService nodeService = dockerServices.getNodeService(node);
+        DockerService nodeService = nodeStorage.getNodeService(node);
         ContainerDetails container = nodeService.getContainer(id);
         return toContainerDetails(cr, container);
     }
@@ -202,7 +203,7 @@ public class ContainerApi {
     }
 
     private DockerService getService(String id) {
-        DockerService service = dockerServices.getServiceByContainer(id);
+        DockerService service = NodeUtils.getDockerByContainer(containerStorage, nodeStorage, id);
         ExtendedAssert.notFound(service, "Can not find container: " + id);
         return service;
     }
@@ -347,7 +348,7 @@ public class ContainerApi {
         ContainerRegistration cr = containerStorage.findContainer(name);
         ExtendedAssert.notFound(cr, "Can't find container by name " + name);
         String node = cr.getNode();
-        DockerService service = dockerServices.getNodeService(node);
+        DockerService service = nodeStorage.getNodeService(node);
         ExtendedAssert.notFound(service, "Can't find container node by id " + node);
         String containerId = cr.getId();
         ContainerDetails container = service.getContainer(containerId);

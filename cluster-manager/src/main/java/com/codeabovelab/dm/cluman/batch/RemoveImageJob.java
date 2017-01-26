@@ -16,6 +16,7 @@
 
 package com.codeabovelab.dm.cluman.batch;
 
+import com.codeabovelab.dm.cluman.ds.nodes.NodeStorage;
 import com.codeabovelab.dm.cluman.utils.ContainerUtils;
 import com.codeabovelab.dm.cluman.cluster.docker.management.DockerService;
 import com.codeabovelab.dm.cluman.cluster.docker.management.argument.GetImagesArg;
@@ -72,6 +73,9 @@ public class RemoveImageJob implements Runnable {
 
     @Autowired
     private DockerServices dockerServices;
+
+    @Autowired
+    private NodeStorage nodeStorage;
 
     @Autowired
     private FilterFactory filterFactory;
@@ -137,7 +141,7 @@ public class RemoveImageJob implements Runnable {
 
     private void removeOnNode(String nodeName) {
         try {
-            DockerService service = dockerServices.getNodeService(nodeName);
+            DockerService service = nodeStorage.getNodeService(nodeName);
             String regImage = ContainerUtils.getRegistryAndImageName(fullImageName);
             List<ImageItem> images = service.getImages(GetImagesArg.builder()
                     .all(true)
@@ -157,7 +161,7 @@ public class RemoveImageJob implements Runnable {
         }
         for(String nodeName: nodes) {
             try {
-                DockerService service = dockerServices.getNodeService(nodeName);
+                DockerService service = nodeStorage.getNodeService(nodeName);
                 doInNode(imageId, service);
             } catch (Exception e) {
                 context.fire("Can not delete image \"{0}\" from \"{1}\", due error.", fullImageName, nodeName, e);

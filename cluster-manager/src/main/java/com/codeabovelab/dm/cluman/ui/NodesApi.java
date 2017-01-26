@@ -71,7 +71,7 @@ public class NodesApi {
 
     @RequestMapping(value = "/{name}/containers", method = RequestMethod.GET)
     public List<UiContainer> getContainers(@PathVariable("name") String name) {
-        DockerService ds = dockerServices.getNodeService(name);
+        DockerService ds = nodeStorage.getNodeService(name);
         ExtendedAssert.notFound(ds, "Can not find docker service for node: " + name);
         List<DockerContainer> containers = ds.getContainers(new GetContainersArg(true));
         List<UiContainer> uics = containers.stream().map(UiContainer::from).collect(Collectors.toList());

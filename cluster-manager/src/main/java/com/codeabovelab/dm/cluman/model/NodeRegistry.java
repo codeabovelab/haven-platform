@@ -24,5 +24,5 @@ import java.util.Set;
  */
 public interface NodeRegistry {
     DockerService getNodeService(String name);
-    Set<String> getNodeServices();
+
 }

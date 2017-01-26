@@ -20,6 +20,7 @@ import com.codeabovelab.dm.cluman.cluster.docker.management.DockerService;
 import com.codeabovelab.dm.cluman.cluster.docker.management.DockerServiceEvent;
 import com.codeabovelab.dm.cluman.cluster.docker.management.argument.GetContainersArg;
 import com.codeabovelab.dm.cluman.cluster.docker.model.EventType;
+import com.codeabovelab.dm.cluman.ds.nodes.NodeStorage;
 import com.codeabovelab.dm.cluman.ds.swarm.DockerServices;
 import com.codeabovelab.dm.cluman.model.*;
 import com.codeabovelab.dm.common.mb.Subscriptions;
@@ -46,18 +47,18 @@ import java.util.concurrent.*;
 @Component
 class ContainerInfoUpdater implements SmartLifecycle {
     private boolean started;
-    private final DockerServices dockerServices;
     private final ContainerStorageImpl containerStorage;
     private final ConcurrentMap<String, RescheduledTask> scheduledNodes;
     private final ScheduledExecutorService scheduledService;
+    private final NodeStorage nodeStorage;
 
     @Autowired
-    public ContainerInfoUpdater(DockerServices dockerServices,
+    public ContainerInfoUpdater(NodeStorage nodeStorage,
                                 ContainerStorageImpl containerStorage,
                                 @Qualifier(NodeEvent.BUS) Subscriptions<NodeEvent> nodeSubs,
                                 @Qualifier(DockerServiceEvent.BUS) Subscriptions<DockerServiceEvent> dockerSubs,
                                 @Qualifier(DockerLogEvent.BUS) Subscriptions<DockerLogEvent> dockerLogSubs) {
-        this.dockerServices = dockerServices;
+        this.nodeStorage = nodeStorage;
         this.containerStorage = containerStorage;
         nodeSubs.subscribe(this::onNodeEvent);
         dockerSubs.subscribe(this::onDockerEvent);
@@ -165,7 +166,7 @@ class ContainerInfoUpdater implements SmartLifecycle {
 
     private void updateNodeByName(String node) {
         try(TempAuth ta = TempAuth.asSystem()) {
-            DockerService service = dockerServices.getNodeService(node);
+            DockerService service = nodeStorage.getNodeService(node);
             if (service == null) {
                 return;
             }
@@ -186,7 +187,7 @@ class ContainerInfoUpdater implements SmartLifecycle {
         // at first event 'ONLINE', node does not have a service, but we ignore second event
         // so we need to wait when docker service is registered
         if(StandardActions.ONLINE.equals(action)) {
-            DockerService dockerService = dockerServices.getNodeService(name);
+            DockerService dockerService = nodeStorage.getNodeService(name);
             // we do _not_ check service to 'online' here
             if(dockerService != null) {
                 log.info("Node '{}' is online force update containers.", name);
@@ -205,8 +206,8 @@ class ContainerInfoUpdater implements SmartLifecycle {
     public void update() {
         try(TempAuth ta = TempAuth.asSystem()) {
             log.info("Begin update containers list");
-            for(String node: dockerServices.getNodeServices()) {
-                DockerService nodeService = dockerServices.getNodeService(node);
+            for(String node: nodeStorage.getNodeNames()) {
+                DockerService nodeService = nodeStorage.getNodeService(node);
                 // we do _not_ check service to 'online' here
                 if(nodeService == null) {
                     continue;

@@ -64,13 +64,12 @@ public class DockerCluster extends AbstractNodesGroup<DockerClusterConfig> {
 
         private synchronized void loadService() {
             if(service == null) {
-                DiscoveryStorageImpl ds = getDiscoveryStorage();
-                DockerServices dses = ds.getDockerServices();
-                service = dses.getNodeService(name);
+                NodeStorage nodeStorage = getNodeStorage();
+                service = nodeStorage.getNodeService(name);
                 if(service != null) {
                     // in some cases node may has different cluster, it cause undefined behaviour
                     // therefore we must force node to new cluster
-                    ds.getNodeStorage().setNodeCluster(name, DockerCluster.this.getName());
+                    nodeStorage.setNodeCluster(name, DockerCluster.this.getName());
                 }
             }
         }
@@ -331,7 +330,7 @@ public class DockerCluster extends AbstractNodesGroup<DockerClusterConfig> {
         log.info("Begin join node '{}' to '{}'", name, getName());
         ClusterData clusterData = data.get();
         String workerToken = clusterData.getWorkerToken();
-        DockerService ds = getDiscoveryStorage().getDockerServices().getNodeService(name);
+        DockerService ds = getNodeStorage().getNodeService(name);
         if(ds == null) {
             log.warn("Can not join node '{}', it does not have registered docker service", name);
             return;
@@ -348,7 +347,7 @@ public class DockerCluster extends AbstractNodesGroup<DockerClusterConfig> {
 
     private void leave(String node, String id) {
         log.info("Begin leave node '{}' from '{}'", node, getName());
-        DockerService ds = getDiscoveryStorage().getDockerServices().getNodeService(node);
+        DockerService ds = getNodeStorage().getNodeService(node);
         if(ds == null) {
             log.warn("Can not leave node '{}' from cluster, node does not have registered docker service", node);
             return;
@@ -403,8 +402,8 @@ public class DockerCluster extends AbstractNodesGroup<DockerClusterConfig> {
 
     private void registerNode(String node, String address) {
         try {
-            DockerServices dses = getDiscoveryStorage().getDockerServices();
-            dses.registerNode(node, address);
+            NodeStorage nodes = getDiscoveryStorage().getNodeStorage();
+            nodes.registerNode(node, address);
         } catch (Exception e) {
             log.error("While register node '{}' at '{}'", node, address, e);
         }

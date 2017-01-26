@@ -21,13 +21,13 @@ import com.codeabovelab.dm.cluman.cluster.filter.Filter;
 import com.codeabovelab.dm.cluman.cluster.filter.FilterFactory;
 import com.codeabovelab.dm.cluman.ds.SwarmClusterContainers;
 import com.codeabovelab.dm.cluman.ds.container.ContainerCreator;
+import com.codeabovelab.dm.cluman.ds.container.ContainerStorage;
 import com.codeabovelab.dm.cluman.model.ContainersManager;
 import com.codeabovelab.dm.cluman.model.NodeInfo;
 import com.google.common.collect.ImmutableSet;
 import lombok.Builder;
 import lombok.Singular;
 import lombok.ToString;
-import org.springframework.beans.factory.ObjectFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import java.util.*;
@@ -43,6 +43,7 @@ class NodesGroupImpl extends AbstractNodesGroup<DefaultNodesGroupConfig> {
     private Filter predicate;
     private FilterFactory filterFactory;
     private ContainerCreator containerCreator;
+    private ContainerStorage containerStorage;
 
     @Builder
     public NodesGroupImpl(DiscoveryStorageImpl storage,
@@ -65,6 +66,11 @@ class NodesGroupImpl extends AbstractNodesGroup<DefaultNodesGroupConfig> {
     @Autowired
     void setFilterFactory(FilterFactory filterFactory) {
         this.filterFactory = filterFactory;
+    }
+
+    @Autowired
+    void setContainerStorage(ContainerStorage containerStorage) {
+        this.containerStorage = containerStorage;
     }
 
     @Override
@@ -123,5 +129,9 @@ class NodesGroupImpl extends AbstractNodesGroup<DefaultNodesGroupConfig> {
     @Override
     public boolean hasNode(String id) {
         return getNodeStorage().hasNode(predicate, id);
+    }
+
+    ContainerStorage getContainerStorage() {
+        return this.containerStorage;
     }
 }

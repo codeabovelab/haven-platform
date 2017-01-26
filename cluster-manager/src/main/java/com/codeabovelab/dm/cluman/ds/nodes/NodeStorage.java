@@ -16,7 +16,12 @@
 
 package com.codeabovelab.dm.cluman.ds.nodes;
 
+import com.codeabovelab.dm.cluman.cluster.docker.ClusterConfig;
+import com.codeabovelab.dm.cluman.cluster.docker.ClusterConfigImpl;
+import com.codeabovelab.dm.cluman.cluster.docker.management.DockerService;
 import com.codeabovelab.dm.cluman.cluster.docker.management.DockerServiceEvent;
+import com.codeabovelab.dm.cluman.ds.DockerServiceFactory;
+import com.codeabovelab.dm.cluman.ds.swarm.DockerEventsConfig;
 import com.codeabovelab.dm.cluman.model.*;
 import com.codeabovelab.dm.cluman.persistent.PersistentBusFactory;
 import com.codeabovelab.dm.cluman.reconfig.ReConfigObject;
@@ -34,6 +39,7 @@ import com.codeabovelab.dm.common.mb.MessageBus;
 import com.codeabovelab.dm.common.mb.Subscriptions;
 import com.codeabovelab.dm.common.security.Action;
 import com.codeabovelab.dm.common.validate.ValidityException;
+import com.google.common.collect.ImmutableSet;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -54,28 +60,37 @@ import java.util.function.Predicate;
  */
 @ReConfigurable
 @Component
-public class NodeStorage implements NodeInfoProvider {
+public class NodeStorage implements NodeInfoProvider, NodeRegistry {
 
     private final Logger log = LoggerFactory.getLogger(getClass());
     private final KvMap<NodeRegistrationImpl> nodes;
     private final MessageBus<NodeEvent> nodeEventBus;
+    private final MessageBus<DockerLogEvent> dockerLogBus;
     private final PersistentBusFactory persistentBusFactory;
     private final ExecutorService executorService;
+    final DockerEventsConfig dockerEventConfig;
+    private final DockerServiceFactory dockerFactory;
 
     @Autowired
     public NodeStorage(KvMapperFactory kvmf,
                        @Qualifier(NodeEvent.BUS) MessageBus<NodeEvent> nodeEventBus,
                        @Qualifier(DockerServiceEvent.BUS) MessageBus<DockerServiceEvent> dockerBus,
+                       @Qualifier(DockerLogEvent.BUS) MessageBus<DockerLogEvent> dockerLogBus,
+                       DockerEventsConfig dockerEventConfig,
                        PersistentBusFactory persistentBusFactory,
+                       DockerServiceFactory dockerFactory,
                        ExecutorService executorService) {
         this.nodeEventBus = nodeEventBus;
         this.persistentBusFactory = persistentBusFactory;
+        this.dockerEventConfig = dockerEventConfig;
+        this.dockerLogBus = dockerLogBus;
+        this.dockerFactory = dockerFactory;
         KeyValueStorage storage = kvmf.getStorage();
         String nodesPrefix = storage.getPrefix() + "/nodes/";
         this.nodes = KvMap.builder(NodeRegistrationImpl.class, NodeInfoImpl.Builder.class)
           .path(nodesPrefix)
           .passDirty(true)
-          .adapter(new KvMapAdapterImpl())
+          .adapter(new NodesKvMapAdapterImpl(this))
           .localListener((e) -> {
               if(e.getAction() == KvMapLocalEvent.Action.CREATE) {
                   AccessContextFactory.getLocalContext().assertGranted(SecuredType.NODE.id(e.getKey()), Action.CREATE);
@@ -120,7 +135,7 @@ public class NodeStorage implements NodeInfoProvider {
         }
     }
 
-    private void fireNodeModification(NodeRegistration nr, String action, NodeInfoImpl old, NodeInfoImpl current) {
+    void fireNodeModification(NodeRegistration nr, String action, NodeInfoImpl old, NodeInfoImpl current) {
         // NodeRegistrationImpl - may be null in some cases
         NodeEvent ne = NodeEvent.builder()
           .action(action)
@@ -135,15 +150,19 @@ public class NodeStorage implements NodeInfoProvider {
     }
 
     private void onDockerServiceEvent(DockerServiceEvent e) {
-        if(e instanceof DockerServiceEvent.DockerServiceInfoEvent) {
-            // we update health of all presented nodes
-            DockerServiceInfo info = ((DockerServiceEvent.DockerServiceInfoEvent) e).getInfo();
-            for(NodeInfo node: info.getNodeList()) {
-                NodeRegistrationImpl reg = getOrCreateNodeRegistration(node.getName());
-                if(reg != null) {
-                    reg.updateHealth(node.getHealth());
+        try {
+            if(e instanceof DockerServiceEvent.DockerServiceInfoEvent) {
+                // we update health of all presented nodes
+                DockerServiceInfo info = ((DockerServiceEvent.DockerServiceInfoEvent) e).getInfo();
+                for(NodeInfo node: info.getNodeList()) {
+                    NodeRegistrationImpl reg = getOrCreateNodeRegistration(node.getName());
+                    if(reg != null) {
+                        reg.updateHealth(node.getHealth());
+                    }
                 }
             }
+        } catch (Exception ex) {
+            log.error("Can not update nodes.", ex);
         }
     }
 
@@ -157,8 +176,8 @@ public class NodeStorage implements NodeInfoProvider {
         }
     }
 
-    private NodeRegistrationImpl newRegistration(NodeInfo nodeInfo) {
-        return new NodeRegistrationImpl(persistentBusFactory, nodeInfo, this::fireNodeModification);
+    NodeRegistrationImpl newRegistration(NodeInfo nodeInfo) {
+        return new NodeRegistrationImpl(this, persistentBusFactory, nodeInfo);
     }
 
     public boolean hasNode(Predicate<Object> predicate, String nodeId) {
@@ -290,6 +309,10 @@ public class NodeStorage implements NodeInfoProvider {
         return nodeList;
     }
 
+    public Collection<String> getNodeNames() {
+        return ImmutableSet.copyOf(nodes.list());
+    }
+
     private Set<String> listNodeNames() {
         return nodes.list();
     }
@@ -327,32 +350,43 @@ public class NodeStorage implements NodeInfoProvider {
         }
     }
 
-    private class KvMapAdapterImpl implements KvMapAdapter<NodeRegistrationImpl> {
-        @Override
-        public Object get(String key, NodeRegistrationImpl source) {
-            return NodeInfoImpl.builder(source.getNodeInfo());
+    public DockerService getNodeService(String nodeName) {
+        NodeRegistrationImpl nr = nodes.get(nodeName);
+        if(nr == null) {
+            return null;
         }
+        DockerService service = nr.getDocker();
+        return service;
+    }
 
-        @Override
-        public NodeRegistrationImpl set(String key, NodeRegistrationImpl source, Object value) {
-            NodeInfo ni = (NodeInfo) value;
-            if(source == null) {
-                NodeInfoImpl.Builder nib = NodeInfoImpl.builder(ni);
-                nib.setName(key);
-                source = newRegistration(nib);
-            } else {
-                source.updateNodeInfo(b -> {
-                    NodeMetrics om = b.getHealth();
-                    b.from(ni);
-                    b.health(om);
-                });
+    public DockerService registerNode(String nodeName, String address) {
+        NodeRegistrationImpl nr = getOrCreateNodeRegistration(nodeName);
+        return nr.setAddress(address);
+    }
+
+    /**
+     * Make address part of docker service. Note that it leave cluster id with null value.
+     *
+     * @param addr address of service
+     * @return
+     */
+    private ClusterConfigImpl.Builder configForNode(String addr) {
+        return ClusterConfigImpl.builder()
+          .host(addr);
+    }
+
+
+    DockerService createNodeService(NodeRegistrationImpl nr) {
+        // we intentionally register node without specifying cluster
+        ClusterConfig config = configForNode(nr.getAddress()).build();
+        return dockerFactory.createDockerService(config, (b) -> b.setNode(nr.getName()));
+    }
+
+    void acceptDockerLogEvent(DockerLogEvent logEvent) {
+        this.executorService.execute(() -> {
+            try (TempAuth auth = TempAuth.asSystem()) {
+                this.dockerLogBus.accept(logEvent);
             }
-            return source;
-        }
-
-        @Override
-        public Class<?> getType(NodeRegistrationImpl source) {
-            return NodeInfoImpl.Builder.class;
-        }
+        });
     }
 }

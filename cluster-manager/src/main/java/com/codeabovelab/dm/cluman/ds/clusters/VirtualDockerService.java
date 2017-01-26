@@ -25,7 +25,8 @@ import com.codeabovelab.dm.cluman.cluster.docker.management.result.ResultCode;
 import com.codeabovelab.dm.cluman.cluster.docker.management.result.ServiceCallResult;
 import com.codeabovelab.dm.cluman.cluster.docker.model.*;
 import com.codeabovelab.dm.cluman.cluster.docker.model.swarm.*;
-import com.codeabovelab.dm.cluman.ds.swarm.DockerServices;
+import com.codeabovelab.dm.cluman.ds.nodes.NodeStorage;
+import com.codeabovelab.dm.cluman.ds.nodes.NodeUtils;
 import com.codeabovelab.dm.cluman.model.*;
 import com.codeabovelab.dm.cluman.model.Node;
 import lombok.extern.slf4j.Slf4j;
@@ -125,12 +126,11 @@ class VirtualDockerService implements DockerService {
 
     private DockerService getServiceByNode(Node node) {
         Assert.notNull(node, "Node is null");
-        DockerServices dockerServices = getDockerServices();
-        return  dockerServices.getNodeService(node.getName());
+        return  getNodeStorage().getNodeService(node.getName());
     }
 
-    private DockerServices getDockerServices() {
-        return this.cluster.getDiscoveryStorage().getDockerServices();
+    private NodeStorage getNodeStorage() {
+        return this.cluster.getNodeStorage();
     }
 
     @Override
@@ -144,7 +144,7 @@ class VirtualDockerService implements DockerService {
     }
 
     private DockerService getServiceByContainer(String id) {
-        return getDockerServices().getServiceByContainer(id);
+        return NodeUtils.getDockerByContainer(cluster.getContainerStorage(), getNodeStorage(), id);
     }
 
     @Override

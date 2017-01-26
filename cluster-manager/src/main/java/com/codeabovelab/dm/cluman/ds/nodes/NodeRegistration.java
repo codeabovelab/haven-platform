@@ -16,6 +16,7 @@
 
 package com.codeabovelab.dm.cluman.ds.nodes;
 
+import com.codeabovelab.dm.cluman.cluster.docker.management.DockerService;
 import com.codeabovelab.dm.cluman.model.NodeInfo;
 import com.codeabovelab.dm.common.mb.Subscriptions;
 import org.springframework.security.acls.model.ObjectIdentity;
@@ -41,4 +42,6 @@ public interface NodeRegistration {
     Subscriptions<NodeHealthEvent> getHealthSubscriptions();
 
     ObjectIdentity getOid();
+
+    DockerService getDocker();
 }

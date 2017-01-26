@@ -207,7 +207,7 @@ class DockerClusterContainers implements ContainersManager {
     }
 
     private DockerService getNodeService(String node) {
-        DockerService ds = dc.getDiscoveryStorage().getDockerServices().getNodeService(node);
+        DockerService ds = dc.getNodeStorage().getNodeService(node);
         Assert.notNull(ds, "Can not find docker service for node: " + node);
         return ds;
     }
