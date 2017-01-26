@@ -198,9 +198,8 @@ public class DockerContainer implements ContainerBaseIface, WithNode {
         this.status = builder.status;
         this.state = builder.state;
         this.node = builder.node;
+        // we must allow to se invalid containers too, therefore check only 'id'
         Assert.notNull(this.id, "id is null");
-        Assert.notNull(this.node, "node is null");
-        Assert.notNull(this.imageId, "imageId is null");
     }
 
     public static Builder builder() {

@@ -110,9 +110,12 @@ public class UiContainer implements Comparable<UiContainer>, UiContainerIface, W
      */
     public void enrich(DiscoveryStorage discoveryStorage, ContainerStorage containerStorage) {
         //note that cluster can be virtual
-        NodesGroup nodeCluster = discoveryStorage.getClusterForNode(getNode());
-        if(nodeCluster != null) {
-            setCluster(nodeCluster.getName());
+        String node = getNode();
+        if(node != null) {
+            NodesGroup nodeCluster = discoveryStorage.getClusterForNode(node);
+            if(nodeCluster != null) {
+                setCluster(nodeCluster.getName());
+            }
         }
 
         ContainerRegistration registration = containerStorage.getContainer(getId());

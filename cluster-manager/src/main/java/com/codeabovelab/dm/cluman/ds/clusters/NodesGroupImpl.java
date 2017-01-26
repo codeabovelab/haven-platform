@@ -17,18 +17,24 @@
 package com.codeabovelab.dm.cluman.ds.clusters;
 
 import com.codeabovelab.dm.cluman.cluster.docker.management.DockerService;
+import com.codeabovelab.dm.cluman.cluster.docker.management.argument.GetContainersArg;
 import com.codeabovelab.dm.cluman.cluster.filter.Filter;
 import com.codeabovelab.dm.cluman.cluster.filter.FilterFactory;
 import com.codeabovelab.dm.cluman.ds.SwarmClusterContainers;
 import com.codeabovelab.dm.cluman.ds.container.ContainerCreator;
+import com.codeabovelab.dm.cluman.ds.container.ContainerRegistration;
 import com.codeabovelab.dm.cluman.ds.container.ContainerStorage;
+import com.codeabovelab.dm.cluman.ds.nodes.NodeStorage;
 import com.codeabovelab.dm.cluman.model.ContainersManager;
+import com.codeabovelab.dm.cluman.model.DockerContainer;
+import com.codeabovelab.dm.cluman.model.Node;
 import com.codeabovelab.dm.cluman.model.NodeInfo;
 import com.google.common.collect.ImmutableSet;
 import lombok.Builder;
 import lombok.Singular;
 import lombok.ToString;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.access.AccessDeniedException;
 
 import java.util.*;
 
@@ -38,12 +44,50 @@ import java.util.*;
 @ToString(callSuper = true)
 class NodesGroupImpl extends AbstractNodesGroup<DefaultNodesGroupConfig> {
 
+    public interface ContainersProvider {
+        List<DockerContainer> getContainers(NodesGroupImpl ng, GetContainersArg arg);
+    }
+
+    private static class DefaultContainersProvider implements ContainersProvider {
+
+        public List<DockerContainer> getContainers(NodesGroupImpl ng, GetContainersArg arg) {
+            List<DockerContainer> list = new ArrayList<>();
+            NodeStorage nodeStorage = ng.getNodeStorage();
+            for(Node node: ng.getNodes()) {
+                DockerService service = nodeStorage.getNodeService(node.getName());
+                if(VirtualDockerService.isOffline(service)) {
+                    // due to different causes service can be null
+                    continue;
+                }
+                try {
+                    List<DockerContainer> nodeContainer = service.getContainers(arg);
+                    list.addAll(nodeContainer);
+                } catch (AccessDeniedException e) {
+                    //nothing
+                }
+            }
+            return list;
+        }
+    }
+
+    public static class AllContainersProvider implements ContainersProvider {
+        @Override
+        public List<DockerContainer> getContainers(NodesGroupImpl ng, GetContainersArg arg) {
+            List<ContainerRegistration> containers = ng.containerStorage.getContainers();
+            ArrayList<DockerContainer> list = new ArrayList<>(containers.size());
+            containers.forEach(cr -> {list.add(cr.getContainer());});
+            return list;
+        }
+    }
+
+    private final ContainersProvider DEFAULT_CONTAINERS_PROVIDER = new DefaultContainersProvider();
     private final VirtualDockerService service;
     private ContainersManager containers;
     private Filter predicate;
     private FilterFactory filterFactory;
     private ContainerCreator containerCreator;
     private ContainerStorage containerStorage;
+    private ContainersProvider containersProvider;
 
     @Builder
     public NodesGroupImpl(DiscoveryStorageImpl storage,
@@ -53,9 +97,14 @@ class NodesGroupImpl extends AbstractNodesGroup<DefaultNodesGroupConfig> {
         super(config, storage, ImmutableSet.<Feature>builder()
           .addAll(features == null? Collections.emptySet(): features)
           .build());
+        this.containersProvider = DEFAULT_CONTAINERS_PROVIDER;
         this.service = new VirtualDockerService(this);
 
         this.predicate = predicate;
+    }
+
+    public void setContainersProvider(ContainersProvider containersProvider) {
+        this.containersProvider = containersProvider;
     }
 
     @Autowired
@@ -133,5 +182,9 @@ class NodesGroupImpl extends AbstractNodesGroup<DefaultNodesGroupConfig> {
 
     ContainerStorage getContainerStorage() {
         return this.containerStorage;
+    }
+
+    List<DockerContainer> getContainersImpl(GetContainersArg arg) {
+        return this.containersProvider.getContainers(this, arg);
     }
 }

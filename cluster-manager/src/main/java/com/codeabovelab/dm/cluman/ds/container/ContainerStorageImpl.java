@@ -16,17 +16,16 @@
 
 package com.codeabovelab.dm.cluman.ds.container;
 
-import com.codeabovelab.dm.cluman.model.ContainerBase;
 import com.codeabovelab.dm.cluman.model.ContainerBaseIface;
 import com.codeabovelab.dm.cluman.model.DockerContainer;
 import com.codeabovelab.dm.common.kv.mapping.KvMap;
 import com.codeabovelab.dm.common.kv.mapping.KvMapperFactory;
+import com.google.common.collect.ImmutableList;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
@@ -54,8 +53,8 @@ public class ContainerStorageImpl implements ContainerStorage, InitializingBean 
         this.map.load();
     }
 
-
-    void deleteContainer(String id) {
+    @Override
+    public void deleteContainer(String id) {
         ContainerRegistration cr = map.remove(id);
         if(cr != null) {
             log.info("Container remove: {} ", cr.forLog());
@@ -64,29 +63,12 @@ public class ContainerStorageImpl implements ContainerStorage, InitializingBean 
 
     @Override
     public List<ContainerRegistration> getContainers() {
-        ArrayList<ContainerRegistration> list = new ArrayList<>(map.values());
-        list.removeIf(cr -> cr.getContainer() == null);
-        return list;
+        return ImmutableList.copyOf(map.values());
     }
 
     @Override
     public ContainerRegistration getContainer(String id) {
-        ContainerRegistration cr = map.get(id);
-        return check(cr);
-    }
-
-    private ContainerRegistration check(ContainerRegistration cr) {
-        // we must not return invalid registrations
-        if(cr == null) {
-            return null;
-        }
-        DockerContainer dc = cr.getContainer();
-        if(dc == null) {
-            // remove invalid container
-            deleteContainer(cr.getId());
-            return null;
-        }
-        return cr;
+        return map.get(id);
     }
 
     @Override
@@ -98,7 +80,7 @@ public class ContainerStorageImpl implements ContainerStorage, InitializingBean 
                 return container != null && (item.getId().startsWith(name) || container.getName().equals(name));
             }).findAny().orElse(null);
         }
-        return check(cr);
+        return cr;
     }
 
     @Override

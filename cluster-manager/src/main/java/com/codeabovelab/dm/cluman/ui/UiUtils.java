@@ -64,16 +64,24 @@ public final class UiUtils {
 
         String message = code + " " + (result.getMessage() == null ? "" : result.getMessage());
         if (code == ResultCode.OK) {
-            UIResult res = new UIResult();
-            res.setMessage(message);
-            res.setCode(OK.value());
-            return new ResponseEntity<>(res, OK);
+            return okResponse(message);
         } else {
-            UiError err = new UiError();
-            err.setMessage(message);
-            err.setCode(toStatus(code).value());
-            return new ResponseEntity<>(err, toStatus(code));
+            return errResponse(code, message);
         }
+    }
+
+    static ResponseEntity<UIResult> errResponse(ResultCode code, String message) {
+        UiError err = new UiError();
+        err.setMessage(message);
+        err.setCode(toStatus(code).value());
+        return new ResponseEntity<>(err, toStatus(code));
+    }
+
+    static ResponseEntity<UIResult> okResponse(String message) {
+        UIResult res = new UIResult();
+        res.setMessage(message);
+        res.setCode(OK.value());
+        return new ResponseEntity<>(res, OK);
     }
 
     public static double convertToGB(long memory) {

@@ -88,21 +88,7 @@ class VirtualDockerService implements DockerService {
 
     @Override
     public List<DockerContainer> getContainers(GetContainersArg arg) {
-        List<DockerContainer> virtConts = new ArrayList<>();
-        for(Node node: cluster.getNodes()) {
-            DockerService service = getServiceByNode(node);
-            if(isOffline(service)) {
-                // due to different causes service can be null
-                continue;
-            }
-            try {
-                List<DockerContainer> nodeContainer = service.getContainers(arg);
-                virtConts.addAll(nodeContainer);
-            } catch (AccessDeniedException e) {
-                //nothing
-            }
-        }
-        return virtConts;
+        return this.cluster.getContainersImpl(arg);
     }
 
     @Override
@@ -197,7 +183,7 @@ class VirtualDockerService implements DockerService {
           .build();
     }
 
-    private boolean isOffline(DockerService service) {
+    static boolean isOffline(DockerService service) {
         return service == null || !service.isOnline();
     }
 

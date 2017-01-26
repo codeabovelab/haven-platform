@@ -35,7 +35,6 @@ import com.codeabovelab.dm.cluman.ds.container.ContainersNameService;
 import com.codeabovelab.dm.cluman.ds.nodes.NodeRegistration;
 import com.codeabovelab.dm.cluman.ds.nodes.NodeStorage;
 import com.codeabovelab.dm.cluman.ds.nodes.NodeUtils;
-import com.codeabovelab.dm.cluman.ds.swarm.DockerServices;
 import com.codeabovelab.dm.cluman.model.*;
 import com.codeabovelab.dm.cluman.source.ContainerSourceFactory;
 import com.codeabovelab.dm.cluman.ui.model.UIContainerDetails;
@@ -86,7 +85,6 @@ public class ContainerApi {
     private final RegistryRepository registryRepository;
     private final ContainersNameService containersNameService;
     private final ConfigProvider configProvider;
-    private final DockerServices dockerServices;
     private final ContainerStorage containerStorage;
     private final NodeStorage nodeStorage;
     private final ApplicationService applicationService;
@@ -113,7 +111,17 @@ public class ContainerApi {
 
     @RequestMapping(value = "/{id}/remove", method = RequestMethod.POST)
     public ResponseEntity<?> removeContainer(@PathVariable("id") String id) {
-        ContainersManager service = getContainersManager(id);
+        // NOT use `getContainersManager` here!
+        ContainerRegistration cr = containerStorage.getContainer(id);
+        ExtendedAssert.notFound(cr, "Can not find container: " + id);
+        String node = cr.getNode();
+        if(node == null) {
+            // container not found on any node, we must remove it from storage
+            containerStorage.deleteContainer(id);
+            return UiUtils.okResponse("Container '" + id + "' removed from storage. ");
+        }
+        NodesGroup nodesGroups = discoveryStorage.getClusterForNode(node);
+        ContainersManager service = nodesGroups.getContainers();
         service.stopContainer(StopContainerArg.builder().id(id).build());
         DeleteContainerArg arg = DeleteContainerArg.builder().id(id).build();
         ServiceCallResult res = service.deleteContainer(arg);
@@ -211,7 +219,9 @@ public class ContainerApi {
     private ContainersManager getContainersManager(String id) {
         ContainerRegistration cr = containerStorage.getContainer(id);
         ExtendedAssert.notFound(cr, "Can not find container: " + id);
-        NodesGroup nodesGroups = discoveryStorage.getClusterForNode(cr.getNode());
+        String node = cr.getNode();
+        ExtendedAssert.badRequest(node == null, "Container: " + id + " nas not find on any node.");
+        NodesGroup nodesGroups = discoveryStorage.getClusterForNode(node);
         return nodesGroups.getContainers();
     }
 
@@ -387,6 +397,9 @@ public class ContainerApi {
      * @return
      */
     private String getClusterForNode(String node) {
+        if(node == null) {
+            return null;
+        }
         NodeRegistration nodeReg = this.nodeStorage.getNodeRegistration(node);
         //below is not an 404, because above we found container with link to node, but cannot give existed node
         Assert.notNull(nodeReg, "Node \"" + node + "\" has invalid registration.");

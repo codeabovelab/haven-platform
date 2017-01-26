@@ -17,6 +17,7 @@
 package com.codeabovelab.dm.cluman.ds.clusters;
 
 import com.codeabovelab.dm.cluman.cluster.docker.management.DockerService;
+import com.codeabovelab.dm.cluman.cluster.docker.management.argument.GetContainersArg;
 import com.codeabovelab.dm.cluman.cluster.filter.FilterFactory;
 import com.codeabovelab.dm.cluman.ds.container.ContainerStorage;
 import com.codeabovelab.dm.cluman.ds.nodes.NodeStorage;
@@ -134,7 +135,9 @@ public class DiscoveryStorageImpl implements DiscoveryStorage {
                 return true;
             };
             // virtual cluster for any nodes
-            getOrCreateGroup(new DefaultNodesGroupConfig(GROUP_ID_ALL, FilterFactory.ANY)).updateAcl(aclModifier);
+            NodesGroup allGroup = getOrCreateGroup(new DefaultNodesGroupConfig(GROUP_ID_ALL, FilterFactory.ANY));
+            allGroup.updateAcl(aclModifier);
+            ((NodesGroupImpl)allGroup).setContainersProvider(new NodesGroupImpl.AllContainersProvider());
             // virtual cluster for nodes without cluster
             getOrCreateGroup(new DefaultNodesGroupConfig(GROUP_ID_ORPHANS, OrphansNodeFilterFactory.FILTER)).updateAcl(aclModifier);
         }

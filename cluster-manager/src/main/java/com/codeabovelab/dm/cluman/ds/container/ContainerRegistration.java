@@ -30,7 +30,7 @@ public class ContainerRegistration {
     private final String id;
     @KvMapping
     private Map<String, String> additionalLabels;
-    private final DockerContainer.Builder container = DockerContainer.builder();
+    private final DockerContainer.Builder container;
     private final Object lock = new Object();
     private DockerContainer cached;
     private KvMap<?> map;
@@ -38,6 +38,7 @@ public class ContainerRegistration {
     ContainerRegistration(ContainerStorageImpl csi, String id) {
         this.id = id;
         Assert.notNull(id, "id is null");
+        this.container = DockerContainer.builder().id(id);
         this.map = csi.map;
     }
 
@@ -65,11 +66,7 @@ public class ContainerRegistration {
         DockerContainer dc = cached;
         if(dc == null) {
             synchronized (lock) {
-                try {
-                    dc = cached = container.build();
-                } catch (IllegalArgumentException e) {
-                    //suppress
-                }
+                dc = cached = container.build();
             }
         }
         return dc;
@@ -98,7 +95,7 @@ public class ContainerRegistration {
     private void validate() {
         String name = this.container.getName();
         // swarm can give container names with leading '/'
-        if(name.startsWith("/")) {
+        if(name != null && name.startsWith("/")) {
             throw new IllegalArgumentException("Bad container name: " + name);
         }
         String currId = this.container.getId();
