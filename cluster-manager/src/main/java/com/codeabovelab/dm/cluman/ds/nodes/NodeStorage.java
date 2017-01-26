@@ -69,7 +69,7 @@ public class NodeStorage implements NodeInfoProvider, NodeRegistry {
     private final PersistentBusFactory persistentBusFactory;
     private final ExecutorService executorService;
     final DockerEventsConfig dockerEventConfig;
-    private final DockerServiceFactory dockerFactory;
+    private DockerServiceFactory dockerFactory;
 
     @Autowired
     public NodeStorage(KvMapperFactory kvmf,
@@ -78,7 +78,6 @@ public class NodeStorage implements NodeInfoProvider, NodeRegistry {
                        @Qualifier(DockerLogEvent.BUS) MessageBus<DockerLogEvent> dockerLogBus,
                        DockerEventsConfig dockerEventConfig,
                        PersistentBusFactory persistentBusFactory,
-                       DockerServiceFactory dockerFactory,
                        ExecutorService executorService) {
         this.nodeEventBus = nodeEventBus;
         this.persistentBusFactory = persistentBusFactory;
@@ -100,8 +99,12 @@ public class NodeStorage implements NodeInfoProvider, NodeRegistry {
           .mapper(kvmf)
           .build();
         this.executorService = executorService;
+        dockerBus.subscribe(this::onDockerServiceEvent);
+    }
 
-        dockerBus.asSubscriptions().subscribe(this::onDockerServiceEvent);
+    @Autowired
+    void setDockerFactory(DockerServiceFactory dockerFactory) {
+        this.dockerFactory = dockerFactory;
     }
 
     public Subscriptions<NodeEvent> getNodeEventSubscriptions() {
