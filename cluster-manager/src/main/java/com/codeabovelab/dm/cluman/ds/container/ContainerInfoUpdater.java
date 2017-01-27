@@ -110,7 +110,8 @@ class ContainerInfoUpdater implements SmartLifecycle {
         final ContainerBase container = dle.getContainer();
         final String id = container.getId();
         ContainerRegistration cr = null;
-        switch(dle.getAction()) {
+        String action = dle.getAction();
+        switch(action) {
             case StandardActions.DELETE: {
                 containerStorage.deleteContainer(id);
                 break;
@@ -131,6 +132,7 @@ class ContainerInfoUpdater implements SmartLifecycle {
             });
         }
         String node = dle.getNode();
+        log.info("Schedule node '{}' update due to container '{}' changed to: {}", node, id, action);
         scheduleNodeUpdate(node);
     }
 
