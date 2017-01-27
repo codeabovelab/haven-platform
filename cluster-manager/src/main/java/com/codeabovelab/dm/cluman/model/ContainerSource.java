@@ -105,6 +105,7 @@ public class ContainerSource extends EditableContainerSource implements Cloneabl
     private Map<String, String> links = new HashMap<>();
     @Setter(AccessLevel.NONE)
     private List<String> command = new ArrayList<>();
+    @Setter(AccessLevel.NONE)
     private List<String> entrypoint = new ArrayList<>();
     /**
      * List of dependencies, note that deps may be in reverse order (mean that specified
