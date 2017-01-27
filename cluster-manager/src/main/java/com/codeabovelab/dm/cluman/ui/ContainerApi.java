@@ -220,7 +220,7 @@ public class ContainerApi {
         ContainerRegistration cr = containerStorage.getContainer(id);
         ExtendedAssert.notFound(cr, "Can not find container: " + id);
         String node = cr.getNode();
-        ExtendedAssert.badRequest(node == null, "Container: " + id + " nas not find on any node.");
+        ExtendedAssert.badRequest(node != null, "Container: " + id + " nas not find on any node.");
         NodesGroup nodesGroups = discoveryStorage.getClusterForNode(node);
         return nodesGroups.getContainers();
     }
