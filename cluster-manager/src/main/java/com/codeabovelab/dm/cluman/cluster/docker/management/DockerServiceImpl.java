@@ -961,7 +961,7 @@ public class DockerServiceImpl implements DockerService {
     @Override
     public Service getService(String service) {
         Assert.hasText(service, "service is null or empty");
-        UriComponentsBuilder ucb = makeUrl("/service/").path(service);
+        UriComponentsBuilder ucb = makeUrl("/services/").path(service);
         ResponseEntity<Service> configResult = getFast(() -> restTemplate.getForEntity(ucb.toUriString(), Service.class));
         return configResult.getBody();
     }
@@ -974,10 +974,12 @@ public class DockerServiceImpl implements DockerService {
             installContentType(headers);
             AuthConfig.install(headers, arg.getRegistryAuth());
             HttpEntity<Service.ServiceSpec> req = new HttpEntity<>(arg.getSpec(), headers);
-            ResponseEntity<ServiceCreateResult> res = getSlow(() -> {
+            ResponseEntity<ServiceCreateResult> entity = getSlow(() -> {
                 return restTemplate.postForEntity(makeUrl("/services/create").toUriString(), req, ServiceCreateResult.class);
             });
-            return res.getBody();
+            ServiceCreateResult res = entity.getBody();
+            res.setCode(ResultCode.OK);
+            return res;
         } catch (HttpStatusCodeException e) {
             ServiceCreateResult res = new ServiceCreateResult();
             processStatusCodeException(e, res);
@@ -995,14 +997,17 @@ public class DockerServiceImpl implements DockerService {
             Assert.hasText(service, "arg.service is null or empty");
             ucb.path(service);
             ucb.path("/update");
+            ucb.queryParam("version", arg.getVersion());
             HttpHeaders headers = new HttpHeaders();
             installContentType(headers);
             AuthConfig.install(headers, arg.getRegistryAuth());
             HttpEntity<Service.ServiceSpec> req = new HttpEntity<>(arg.getSpec(), headers);
-            ResponseEntity<ServiceUpdateResult> res = getSlow(() -> {
+            ResponseEntity<ServiceUpdateResult> entity = getSlow(() -> {
                 return restTemplate.postForEntity(ucb.toUriString(), req, ServiceUpdateResult.class);
             });
-            return res.getBody();
+            ServiceUpdateResult res = entity.getBody();
+            res.setCode(ResultCode.OK);
+            return res;
         } catch (HttpStatusCodeException e) {
             ServiceUpdateResult res = new ServiceUpdateResult();
             processStatusCodeException(e, res);
