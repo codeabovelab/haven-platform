@@ -19,6 +19,8 @@ package com.codeabovelab.dm.cluman.cluster.docker.model.swarm;
 import com.codeabovelab.dm.cluman.cluster.docker.model.HealthConfig;
 import com.codeabovelab.dm.cluman.cluster.docker.model.Mount;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 
 import java.util.List;
@@ -29,6 +31,8 @@ import java.util.Map;
  * https://github.com/docker/docker/blob/master/api/types/swarm/container.go
  */
 @Data
+@AllArgsConstructor
+@Builder(builderClassName = "Builder")
 public class ContainerSpec {
 
     @JsonProperty("Image")

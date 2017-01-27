@@ -32,5 +32,9 @@ public class UpdateServiceArg {
      * id or name
      */
     private String service;
+    /**
+     * The version number of the service object being updated. This is required to avoid conflicting writes.
+     */
+    private int version;
     private Service.ServiceSpec spec;
 }

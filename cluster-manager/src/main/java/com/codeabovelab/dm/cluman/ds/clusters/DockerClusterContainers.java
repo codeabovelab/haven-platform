@@ -18,6 +18,7 @@ package com.codeabovelab.dm.cluman.ds.clusters;
 
 import com.codeabovelab.dm.cluman.cluster.docker.management.DockerService;
 import com.codeabovelab.dm.cluman.cluster.docker.management.argument.*;
+import com.codeabovelab.dm.cluman.cluster.docker.management.result.ResultCode;
 import com.codeabovelab.dm.cluman.cluster.docker.model.UpdateContainerCmd;
 import com.codeabovelab.dm.cluman.ds.container.ContainerCreator;
 import com.codeabovelab.dm.cluman.model.CreateContainerArg;
@@ -50,6 +51,7 @@ import java.util.concurrent.TimeUnit;
 class DockerClusterContainers implements ContainersManager {
     public static final Joiner JOINER = Joiner.on(' ');
     public static final String LABEL_TASK_ID = "com.docker.swarm.task.id";
+    public static final String LABEL_SERVICE_ID = "com.docker.swarm.service.id";
     protected final DockerCluster dc;
     protected final ContainerStorage containerStorage;
     protected final SingleValueCache<Map<String, ContainerService>> svcmap;
@@ -256,10 +258,32 @@ class DockerClusterContainers implements ContainersManager {
 
     @Override
     public ServiceCallResult scaleContainer(ScaleContainerArg arg) {
+        String containerId = arg.getContainerId();
+        ContainerRegistration cr = containerStorage.getContainer(containerId);
+        if(cr == null) {
+            return new ServiceCallResult().code(ResultCode.NOT_FOUND).message(containerId + " is not registered");
+        }
+        String serviceId = cr.getContainer().getLabels().get(LABEL_SERVICE_ID);
+        if(serviceId != null) {
+            return scaleService(serviceId, arg.getScale());
+        }
         throw new UnsupportedOperationException("Not implemented yet.");
         // we currently not support this because scale need strategy for spread containers between nodes
         // therefore user must create service, or in future we implement this
         //DockerService ds = getContainerDocker(arg.getContainerId());
         //containerCreator.scale(ds, arg.getScale(), arg.getContainerId());
+    }
+
+    private ServiceCallResult scaleService(String serviceId, int scale) {
+        DockerService docker = dc.getDocker();
+        Service service = docker.getService(serviceId);
+        Service.ServiceSpec origSpec = service.getSpec();
+        UpdateServiceArg arg = new UpdateServiceArg();
+        arg.setVersion(service.getVersion().getIndex());
+        arg.setService(serviceId);
+        Service.ServiceSpec.Builder ss = origSpec.toBuilder();
+        ss.mode(Service.ServiceMode.builder().replicated(new Service.ReplicatedService(scale)).build());
+        arg.setSpec(ss.build());
+        return docker.updateService(arg);
     }
 }

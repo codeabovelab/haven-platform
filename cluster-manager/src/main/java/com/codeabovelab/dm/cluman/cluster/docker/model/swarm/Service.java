@@ -17,7 +17,10 @@
 package com.codeabovelab.dm.cluman.cluster.docker.model.swarm;
 
 import com.codeabovelab.dm.common.json.JtEnumLower;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 
 import java.time.LocalDateTime;
@@ -65,6 +68,8 @@ public class Service {
     }
 
     @Data
+    @AllArgsConstructor
+    @Builder(builderClassName = "Builder", toBuilder = true)
     public static class ServiceSpec {
 
         @JsonProperty("Name")
@@ -101,6 +106,8 @@ public class Service {
     }
 
     @Data
+    @AllArgsConstructor
+    @Builder(builderClassName = "Builder")
     public static class ServiceMode {
 
         @JsonProperty("Replicated")
@@ -132,6 +139,8 @@ public class Service {
      * UpdateConfig represents the update configuration.
      */
     @Data
+    @AllArgsConstructor
+    @Builder(builderClassName = "Builder")
     public static class UpdateConfig {
         /**
          * Maximum number of tasks to be updated in one iteration. <p/>

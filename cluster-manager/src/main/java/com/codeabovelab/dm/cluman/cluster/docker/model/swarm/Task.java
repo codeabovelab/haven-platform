@@ -18,6 +18,8 @@ package com.codeabovelab.dm.cluman.cluster.docker.model.swarm;
 
 import com.codeabovelab.dm.common.json.JtEnumLower;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 
 import java.time.LocalDateTime;
@@ -71,6 +73,8 @@ public class Task {
     private final List<SwarmNetwork.NetworkAttachment> networksAttachments;
 
     @Data
+    @AllArgsConstructor
+    @Builder(builderClassName = "Builder")
     public static class TaskSpec {
 
         @JsonProperty("ContainerSpec")
