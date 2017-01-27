@@ -41,7 +41,6 @@ import org.springframework.util.Assert;
 
 import java.util.*;
 import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
 
 /**
  * Containers manager for swarm-mode clusters. <p/>
@@ -102,23 +101,21 @@ class DockerClusterContainers implements ContainersManager {
         return svcmap.get().values();
     }
 
-    private List<DockerContainer.Builder> getContainersInternal() {
-        List<DockerContainer.Builder> conts = new ArrayList<>();
+    private List<DockerContainer> getContainersInternal() {
+        ImmutableList.Builder<DockerContainer> conts = ImmutableList.builder();
         List<ContainerRegistration> crs = containerStorage.getContainers();
         crs.forEach((cr) -> {
-            conts.add(DockerContainer.builder().from(cr.getContainer()));
+            DockerContainer container = cr.getContainer();
+            if(this.dc.hasNode(container.getNode())) {
+                conts.add(container);
+            }
         });
-        return conts;
+        return conts.build();
     }
 
     @Override
     public Collection<DockerContainer> getContainers() {
-        ImmutableList.Builder<DockerContainer> builder = ImmutableList.builder();
-        List<DockerContainer.Builder> conts = getContainersInternal();
-        conts.forEach(dcb -> {
-            builder.add(dcb.build());
-        });
-        return builder.build();
+        return getContainersInternal();
     }
 
     private DockerContainer.Builder fromTask(Task task, DockerContainer.Builder dcb) {
