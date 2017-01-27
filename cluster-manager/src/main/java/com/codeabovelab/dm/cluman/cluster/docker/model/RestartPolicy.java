@@ -17,10 +17,8 @@
 package com.codeabovelab.dm.cluman.cluster.docker.model;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import org.apache.commons.lang.builder.EqualsBuilder;
-import org.apache.commons.lang.builder.HashCodeBuilder;
-
-import static com.google.common.base.Preconditions.checkNotNull;
+import com.google.common.base.Objects;
+import lombok.Data;
 
 /**
  * Container restart policy
@@ -42,19 +40,20 @@ import static com.google.common.base.Preconditions.checkNotNull;
  * @author marcus
  *
  */
+@Data
 public class RestartPolicy {
 
-    @JsonProperty("MaximumRetryCount")
-    private Integer maximumRetryCount = 0;
+    public static final String NO = "no";
+    public static final String ALWAYS = "always";
+    public static final String ON_FAILURE = "on-failure";
+    public static final String UNLESS_STOPPED = "unless-stopped";
 
-    @JsonProperty("Name")
-    private String name = "";
+    private final int maximumRetryCount;
 
-    public RestartPolicy() {
-    }
+    private final String name;
 
-    private RestartPolicy(int maximumRetryCount, String name) {
-        checkNotNull(name, "name is null");
+    private RestartPolicy(@JsonProperty("Name") String name,
+                          @JsonProperty("MaximumRetryCount") int maximumRetryCount) {
         this.maximumRetryCount = maximumRetryCount;
         this.name = name;
     }
@@ -63,14 +62,22 @@ public class RestartPolicy {
      * Do not restart the container if it dies. (default)
      */
     public static RestartPolicy noRestart() {
-        return new RestartPolicy();
+        return new RestartPolicy(NO, 0);
     }
 
     /**
      * Always restart the container no matter what exit code is returned.
      */
     public static RestartPolicy alwaysRestart() {
-        return new RestartPolicy(0, "always");
+        return new RestartPolicy(ALWAYS, 0);
+    }
+
+    /**
+     * Always restart the container regardless of the exit status, but do not start it on daemon startup if
+     * the container has been put to a stopped state before.
+     */
+    public static RestartPolicy unlessStopped() {
+        return new RestartPolicy(UNLESS_STOPPED, 0);
     }
 
     /**
@@ -80,7 +87,7 @@ public class RestartPolicy {
      *            the maximum number of restarts. Set to <code>0</code> for unlimited retries.
      */
     public static RestartPolicy onFailureRestart(int maximumRetryCount) {
-        return new RestartPolicy(maximumRetryCount, "on-failure");
+        return new RestartPolicy("on-failure", maximumRetryCount);
     }
 
     public Integer getMaximumRetryCount() {
@@ -104,11 +111,16 @@ public class RestartPolicy {
         try {
             String[] parts = serialized.split(":");
             String name = parts[0];
-            if ("no".equals(name))
+            if (NO.equals(name)) {
                 return noRestart();
-            if ("always".equals(name))
+            }
+            if (ALWAYS.equals(name)) {
                 return alwaysRestart();
-            if ("on-failure".equals(name)) {
+            }
+            if (UNLESS_STOPPED.equals(name)) {
+                return unlessStopped();
+            }
+            if (ON_FAILURE.equals(name)) {
                 int count = 0;
                 if (parts.length == 2) {
                     count = Integer.parseInt(parts[1]);
@@ -132,20 +144,4 @@ public class RestartPolicy {
         String result = name.isEmpty() ? "no" : name;
         return maximumRetryCount > 0 ? result + ":" + maximumRetryCount : result;
     }
-
-    @Override
-    public boolean equals(Object obj) {
-        if (obj instanceof RestartPolicy) {
-            RestartPolicy other = (RestartPolicy) obj;
-            return new EqualsBuilder().append(maximumRetryCount, other.getMaximumRetryCount())
-                    .append(name, other.getName()).isEquals();
-        } else
-            return super.equals(obj);
-    }
-
-    @Override
-    public int hashCode() {
-        return new HashCodeBuilder().append(maximumRetryCount).append(name).toHashCode();
-    }
-
 }
