@@ -316,7 +316,7 @@ public class DockerServiceSecurityWrapper implements DockerService {
     }
 
     @Override
-    public ServiceCreateResult updateService(UpdateServiceArg arg) {
+    public ServiceUpdateResult updateService(UpdateServiceArg arg) {
         checkServiceAccess(Action.ALTER_INSIDE);
         return service.updateService(arg);
     }

@@ -208,10 +208,10 @@ public interface DockerService {
     /**
      * Update a service
      * POST /services/(id or name)/update
-     * @param cmd
-     * @return
+     * @param arg argument
+     * @return result of scale ops
      */
-    ServiceCreateResult updateService(UpdateServiceArg arg);
+    ServiceUpdateResult updateService(UpdateServiceArg arg);
 
     /**
      * DELETE /services/(id or name)

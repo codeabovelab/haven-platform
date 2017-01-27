@@ -624,9 +624,13 @@ public class DockerServiceImpl implements DockerService {
 
     private <T> HttpEntity<T> wrapEntity(T cmd) {
         HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.APPLICATION_JSON);
+        installContentType(headers);
         HttpEntity<T> entity = new HttpEntity<>(cmd, headers);
         return entity;
+    }
+
+    private void installContentType(HttpHeaders headers) {
+        headers.setContentType(MediaType.APPLICATION_JSON);
     }
 
     @Override
@@ -967,6 +971,7 @@ public class DockerServiceImpl implements DockerService {
         Assert.notNull(arg, "arg is null");
         try {
             HttpHeaders headers = new HttpHeaders();
+            installContentType(headers);
             AuthConfig.install(headers, arg.getRegistryAuth());
             HttpEntity<Service.ServiceSpec> req = new HttpEntity<>(arg.getSpec(), headers);
             ResponseEntity<ServiceCreateResult> res = getSlow(() -> {
@@ -982,7 +987,7 @@ public class DockerServiceImpl implements DockerService {
     }
 
     @Override
-    public ServiceCreateResult updateService(UpdateServiceArg arg) {
+    public ServiceUpdateResult updateService(UpdateServiceArg arg) {
         Assert.notNull(arg, "arg is null");
         try {
             UriComponentsBuilder ucb = makeUrl("/services/");
@@ -991,14 +996,15 @@ public class DockerServiceImpl implements DockerService {
             ucb.path(service);
             ucb.path("/update");
             HttpHeaders headers = new HttpHeaders();
+            installContentType(headers);
             AuthConfig.install(headers, arg.getRegistryAuth());
             HttpEntity<Service.ServiceSpec> req = new HttpEntity<>(arg.getSpec(), headers);
-            ResponseEntity<ServiceCreateResult> res = getSlow(() -> {
-                return restTemplate.postForEntity(ucb.toUriString(), req, ServiceCreateResult.class);
+            ResponseEntity<ServiceUpdateResult> res = getSlow(() -> {
+                return restTemplate.postForEntity(ucb.toUriString(), req, ServiceUpdateResult.class);
             });
             return res.getBody();
         } catch (HttpStatusCodeException e) {
-            ServiceCreateResult res = new ServiceCreateResult();
+            ServiceUpdateResult res = new ServiceUpdateResult();
             processStatusCodeException(e, res);
             log.error("can't create service, result: {} \n arg:{}", res.getMessage(), arg, e);
             return res;

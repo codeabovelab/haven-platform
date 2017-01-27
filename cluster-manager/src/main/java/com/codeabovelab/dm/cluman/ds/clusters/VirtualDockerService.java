@@ -360,7 +360,7 @@ class VirtualDockerService implements DockerService {
     }
 
     @Override
-    public ServiceCreateResult updateService(UpdateServiceArg arg) {
+    public ServiceUpdateResult updateService(UpdateServiceArg arg) {
         return null;
     }
 
