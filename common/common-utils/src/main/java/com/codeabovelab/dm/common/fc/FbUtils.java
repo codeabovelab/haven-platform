@@ -44,7 +44,7 @@ final class FbUtils {
         dao.write(SIGN);
     }
 
-    static void writeSign(ByteBuffer bb) throws IOException {
+    static void writeSign(ByteBuffer bb) {
         bb.put(SIGN);
     }
 
@@ -54,7 +54,7 @@ final class FbUtils {
         validateSign(buf);
     }
 
-    static void readSign(ByteBuffer bb) throws IOException {
+    static void readSign(ByteBuffer bb) {
         byte[] buf = new byte[SIGN.length];
         bb.get(buf);
         validateSign(buf);
@@ -73,7 +73,7 @@ final class FbUtils {
         }
     }
 
-    static void readAndValidate(ByteBuffer bb, byte expected) throws IOException {
+    static void readAndValidate(ByteBuffer bb, byte expected) {
         byte readed = bb.get();
         if(readed != expected) {
             throw new FbException(String.format("Expected %X byte, but give: %X", expected, readed));

@@ -68,6 +68,18 @@ class DockerInfoParser {
         return parser.parse();
     }
 
+    private static NodeMetrics.State parseState(String val) {
+        if(val == null) {
+            return null;
+        }
+        try {
+            return NodeMetrics.State.valueOf(val.toUpperCase());
+        } catch (Exception e) {
+            //suppress
+            return null;
+        }
+    }
+
     private void parseStatusList(List<List<String>> driverStatus) {
         final int size = driverStatus.size();
         for (int i = 0; i < size; i++) {
@@ -138,13 +150,14 @@ class DockerInfoParser {
     private long parseSize(String s) {
         String[] pair = org.springframework.util.StringUtils.split(s, " ");
         double val = Double.parseDouble(pair[0]);
-        double mult = 1d;
+        double mult;
         switch (pair[1]) {
             case "KiB": mult = KIB; break;
             case "MiB": mult = MIB; break;
             case "GiB": mult = GIB; break;
             case "TiB": mult = TIB; break;
             case "PiB": mult = PIB; break;
+            default: mult = 1d;
         }
         return (long) (val * mult);
     }
@@ -168,18 +181,6 @@ class DockerInfoParser {
                 nib.setHealth(nhb.build());
             }
             this.result.getNodeList().add(nib.build());
-        }
-    }
-
-    private static NodeMetrics.State parseState(String val) {
-        if(val == null) {
-            return null;
-        }
-        try {
-            return NodeMetrics.State.valueOf(val.toUpperCase());
-        } catch (Exception e) {
-            //suppress
-            return null;
         }
     }
 

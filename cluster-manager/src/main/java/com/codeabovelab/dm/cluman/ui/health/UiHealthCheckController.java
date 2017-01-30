@@ -42,7 +42,7 @@ public class UiHealthCheckController {
     }
 
     @RequestMapping(value = "/clusters/{cluster}/containers/{id}/check", method = RequestMethod.GET)
-    public ServiceHealthCheckResult checkContainer(@PathVariable("cluster") String cluster, @PathVariable("id") String id) throws Exception {
+    public ServiceHealthCheckResult checkContainer(@PathVariable("cluster") String cluster, @PathVariable("id") String id) {
         //TODO use timeout from parameters
         ServiceHealthCheckResult result = service.checkContainer(cluster, id, 10_000L);
         if(result == null) {
@@ -54,7 +54,7 @@ public class UiHealthCheckController {
     }
 
     @RequestMapping(value = "/healthcheck/check", method = RequestMethod.GET)
-    public List<ServiceHealthCheckResult> check() throws Exception {
+    public List<ServiceHealthCheckResult> check() {
         List<ServiceHealthCheckResult> list = new ArrayList<>();
         service.checkAll(list::add);
         return list;

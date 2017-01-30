@@ -247,7 +247,7 @@ class NodeRegistrationImpl implements NodeRegistration, AutoCloseable {
 
     private void subscribe() {
         log.info("Begin register node for fetching logs {}", name);
-        DockerEventsConfig cfg = nodeStorage.dockerEventConfig;
+        DockerEventsConfig cfg = nodeStorage.getDockerEventConfig();
         Assert.isNull(this.logFuture, "Future of docker logging is not null");
         this.logFuture = logFetcher.scheduleAtFixedRate(() -> {
               Long time = System.currentTimeMillis();

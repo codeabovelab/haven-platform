@@ -16,10 +16,8 @@
 
 package com.codeabovelab.dm.cluman.cluster.docker.management;
 
-import java.io.IOException;
-
 public interface ResponseStreamProcessor<T> {
 
-    void processResponseStream(StreamContext<T> context) throws IOException;
+    void processResponseStream(StreamContext<T> context);
 
 }

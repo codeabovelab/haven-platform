@@ -25,7 +25,6 @@ import com.codeabovelab.dm.cluman.cluster.docker.management.result.ProcessEvent;
 import com.codeabovelab.dm.cluman.cluster.docker.model.DockerEvent;
 import com.codeabovelab.dm.cluman.ds.nodes.NodeRegistration;
 import com.codeabovelab.dm.cluman.ds.nodes.NodeStorage;
-import com.codeabovelab.dm.cluman.ds.swarm.DockerServices;
 import com.codeabovelab.dm.cluman.events.EventsUtils;
 import com.codeabovelab.dm.cluman.model.*;
 import com.codeabovelab.dm.cluman.security.DockerServiceSecurityWrapper;
@@ -57,24 +56,21 @@ class EventSources {
     private static final long TIMEOUT = 60_000L;
     private final DiscoveryStorage clusterStorage;
     private final NodeStorage nodeStorage;
-    private final DockerServices dockerServices;
-    private ExecutorService executor;
     private final Lock lock = new ReentrantLock();
     //store immutable map
     private final AtomicReference<Map<String, Subscriptions<?>>> subs = new AtomicReference<>(Collections.emptyMap());
-    private volatile long lastUpdate;
     private final Map<String, Subscriptions<?>> systemSubs;
     private final Collection<AutoCloseable> close = new ArrayList<>();
+    private ExecutorService executor;
+    private volatile long lastUpdate;
 
     @SuppressWarnings("unchecked")
     @Autowired
     public EventSources(DiscoveryStorage clusterStorage,
                         NodeStorage nodeStorage,
-                        DockerServices dockerServices,
                         Map<String, Subscriptions<?>> systemSubs) {
         this.clusterStorage = clusterStorage;
         this.nodeStorage = nodeStorage;
-        this.dockerServices = dockerServices;
         this.systemSubs = new HashMap<>(systemSubs);
         addStats(this.systemSubs.get(DockerLogEvent.BUS), DockerLogEvent.BUS + "-stats", this::getDockerLogEventKey);
         addStats(this.systemSubs.get(EventsUtils.BUS_ERRORS), EventsUtils.BUS_ERRORS + "-stats", (e) -> {

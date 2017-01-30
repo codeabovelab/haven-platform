@@ -19,15 +19,14 @@ package com.codeabovelab.dm.cluman.ds.clusters;
 import com.codeabovelab.dm.cluman.cluster.docker.management.DockerService;
 import com.codeabovelab.dm.cluman.cluster.docker.management.argument.RemoveNodeArg;
 import com.codeabovelab.dm.cluman.cluster.docker.management.argument.SwarmLeaveArg;
-import com.codeabovelab.dm.cluman.cluster.docker.management.result.*;
 import com.codeabovelab.dm.cluman.cluster.docker.management.result.ResultCode;
 import com.codeabovelab.dm.cluman.cluster.docker.management.result.ServiceCallResult;
+import com.codeabovelab.dm.cluman.cluster.docker.management.result.SwarmInitResult;
 import com.codeabovelab.dm.cluman.cluster.docker.model.swarm.*;
 import com.codeabovelab.dm.cluman.ds.container.ContainerCreator;
 import com.codeabovelab.dm.cluman.ds.container.ContainerStorage;
 import com.codeabovelab.dm.cluman.ds.nodes.NodeRegistration;
 import com.codeabovelab.dm.cluman.ds.nodes.NodeStorage;
-import com.codeabovelab.dm.cluman.ds.swarm.DockerServices;
 import com.codeabovelab.dm.cluman.model.*;
 import com.codeabovelab.dm.cluman.security.TempAuth;
 import com.codeabovelab.dm.cluman.utils.AddressUtils;
@@ -41,47 +40,16 @@ import org.springframework.util.Assert;
 import org.springframework.util.StringUtils;
 
 import java.util.*;
-import java.util.concurrent.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 /**
  * A kind of nodegroup which is managed by 'docker' in 'swarm mode'.
  */
 @Slf4j
 public class DockerCluster extends AbstractNodesGroup<DockerClusterConfig> {
-
-    private final class Manager {
-        private final String name;
-        private DockerService service;
-
-        Manager(String name) {
-            this.name = name;
-        }
-
-        synchronized DockerService getService() {
-            loadService();
-            return service;
-        }
-
-        private synchronized void loadService() {
-            if(service == null) {
-                NodeStorage nodeStorage = getNodeStorage();
-                service = nodeStorage.getNodeService(name);
-                if(service != null) {
-                    // in some cases node may has different cluster, it cause undefined behaviour
-                    // therefore we must force node to new cluster
-                    nodeStorage.setNodeCluster(name, DockerCluster.this.getName());
-                }
-            }
-        }
-    }
-
-    @Data
-    @lombok.Builder(builderClassName = "Builder")
-    private static class ClusterData {
-        private final String workerToken;
-        private final String managerToken;
-        private final List<String> managers;
-    }
 
     /**
      * List of cluster manager nodes.
@@ -109,13 +77,11 @@ public class DockerCluster extends AbstractNodesGroup<DockerClusterConfig> {
     private ContainerStorage containerStorage;
     private ContainerCreator containerCreator;
     private ContainersManager containers;
-
     DockerCluster(DiscoveryStorageImpl storage, DockerClusterConfig config) {
         super(config, storage, Collections.singleton(Feature.SWARM_MODE));
         long cacheTimeAfterWrite = config.getConfig().getCacheTimeAfterWrite();
-        nodesMap = SingleValueCache.builder(() -> {
-            return loadNodesMap();
-        }).timeAfterWrite(cacheTimeAfterWrite)
+        nodesMap = SingleValueCache.builder(this::loadNodesMap)
+          .timeAfterWrite(cacheTimeAfterWrite)
           .nullStrategy(SingleValueCache.NullStrategy.DIRTY)
           .build();
         this.scheduledExecutor = Executors.newSingleThreadScheduledExecutor(new ThreadFactoryBuilder()
@@ -138,7 +104,6 @@ public class DockerCluster extends AbstractNodesGroup<DockerClusterConfig> {
         NodeInfo old = e.getOld();
         NodeInfo curr = e.getCurrent();
         final String thisCluster = getName();
-        final String nodeName = e.getNode().getName();
         boolean nowOur = curr != null && thisCluster.equals(curr.getCluster());
         boolean wasOur = old != null && thisCluster.equals(old.getCluster());
         if (wasOur != nowOur) {
@@ -147,7 +112,6 @@ public class DockerCluster extends AbstractNodesGroup<DockerClusterConfig> {
             scheduledExecutor.execute(this::updateNodes);
         }
     }
-
 
     protected void closeImpl() {
         this.scheduledExecutor.shutdownNow();
@@ -211,7 +175,7 @@ public class DockerCluster extends AbstractNodesGroup<DockerClusterConfig> {
 
     private Manager createCluster(String leader) {
         Manager manager = managers.get(leader);
-        log.info("Begin initialize swarm-mode cluster on '{}'", manager.name);
+        log.info("Begin initializing swarm-mode cluster on '{}'", manager.name);
         SwarmInitCmd cmd = new SwarmInitCmd();
         cmd.setSpec(getSwarmConfig());
         DockerService service = manager.getService();
@@ -222,7 +186,7 @@ public class DockerCluster extends AbstractNodesGroup<DockerClusterConfig> {
         if(res.getCode() != ResultCode.OK) {
             throw new IllegalStateException("Can not initialize swarm-mode cluster on '" + manager.name + "' due to error: " + res.getMessage());
         }
-        log.info("Initialize swarm-mode cluster on '{}' at address {}", manager.name, address);
+        log.info("Initialized swarm-mode cluster on '{}' at address {}", manager.name, address);
         return manager;
     }
 
@@ -360,7 +324,6 @@ public class DockerCluster extends AbstractNodesGroup<DockerClusterConfig> {
         log.info("Result of remove node '{}' from cluster: {} {}", node, rmres.getCode(), rmres.getMessage());
     }
 
-
     private String getNodeName(SwarmNode sn) {
         return sn.getDescription().getHostname();
     }
@@ -369,7 +332,7 @@ public class DockerCluster extends AbstractNodesGroup<DockerClusterConfig> {
         String nodeName = getNodeName(sn);
         String address = getNodeAddress(sn);
         if(StringUtils.isEmpty(address)) {
-            log.warn("Node {} does not has address, it usual for docker prior to 1.13 version.", nodeName);
+            log.warn("Node {} does not contain address, it is usual for docker prior to 1.13 version.", nodeName);
             return null;
         }
 
@@ -469,5 +432,39 @@ public class DockerCluster extends AbstractNodesGroup<DockerClusterConfig> {
     @Override
     public ContainersManager getContainers() {
         return containers;
+    }
+
+    @Data
+    @lombok.Builder(builderClassName = "Builder")
+    private static class ClusterData {
+        private final String workerToken;
+        private final String managerToken;
+        private final List<String> managers;
+    }
+
+    private final class Manager {
+        private final String name;
+        private DockerService service;
+
+        Manager(String name) {
+            this.name = name;
+        }
+
+        synchronized DockerService getService() {
+            loadService();
+            return service;
+        }
+
+        private synchronized void loadService() {
+            if(service == null) {
+                NodeStorage nodeStorage = getNodeStorage();
+                service = nodeStorage.getNodeService(name);
+                if(service != null) {
+                    // in some cases node may has different cluster, it cause undefined behaviour
+                    // therefore we must force node to new cluster
+                    nodeStorage.setNodeCluster(name, DockerCluster.this.getName());
+                }
+            }
+        }
     }
 }

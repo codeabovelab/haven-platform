@@ -17,7 +17,6 @@
 package com.codeabovelab.dm.common.json;
 
 import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.*;
 import com.fasterxml.jackson.databind.deser.ContextualDeserializer;
 import org.springframework.util.Assert;
@@ -40,7 +39,7 @@ class EnumLowercaseStringDeserializer extends JsonDeserializer<Enum<?>> implemen
 
     @Override
     @SuppressWarnings("unchecked")
-    public Enum<?> deserialize(JsonParser p, DeserializationContext ctxt) throws IOException, JsonProcessingException {
+    public Enum<?> deserialize(JsonParser p, DeserializationContext ctxt) throws IOException {
         String name = p.getValueAsString();
         JavaType type;
         if(property != null) {

@@ -45,11 +45,11 @@ import java.util.concurrent.*;
 @Slf4j
 @Component
 class ContainerInfoUpdater implements SmartLifecycle {
-    private boolean started;
     private final ContainerStorageImpl containerStorage;
     private final ConcurrentMap<String, RescheduledTask> scheduledNodes;
     private final ScheduledExecutorService scheduledService;
     private final NodeStorage nodeStorage;
+    private boolean started;
 
     @Autowired
     public ContainerInfoUpdater(NodeStorage nodeStorage,
@@ -108,32 +108,35 @@ class ContainerInfoUpdater implements SmartLifecycle {
             return;
         }
         final ContainerBase container = dle.getContainer();
-        final String id = container.getId();
-        ContainerRegistration cr = null;
-        String action = dle.getAction();
-        switch(action) {
-            case StandardActions.DELETE: {
-                containerStorage.deleteContainer(id);
-                break;
-            }
-            default: {
-                cr = containerStorage.getContainer(id);
-            }
-        }
-        if(cr != null && container != null) {
-            cr.modify(cb -> {
-                DockerContainer.State state = container.getState();
-                if(state != null) {
-                    cb.setState(state);
-                    // we can not retrieve status from event
-                    // but old status may confuse user
-                    cb.setStatus(null);
+        if (container != null) {
+            final String id = container.getId();
+            ContainerRegistration cr = null;
+            String action = dle.getAction();
+            switch(action) {
+                case StandardActions.DELETE: {
+                    containerStorage.deleteContainer(id);
+                    break;
                 }
-            });
+                default: {
+                    cr = containerStorage.getContainer(id);
+                }
+            }
+            if(cr != null) {
+                cr.modify(cb -> {
+                    DockerContainer.State state = container.getState();
+                    if(state != null) {
+                        cb.setState(state);
+                        // we can not retrieve status from event
+                        // but old status may confuse user
+                        cb.setStatus(null);
+                    }
+                });
+            }
+            String node = dle.getNode();
+            log.info("Schedule node '{}' update due to container '{}' changed to: {}", node, id, action);
+            scheduleNodeUpdate(node);
         }
-        String node = dle.getNode();
-        log.info("Schedule node '{}' update due to container '{}' changed to: {}", node, id, action);
-        scheduleNodeUpdate(node);
+
     }
 
     /**

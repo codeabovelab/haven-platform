@@ -30,112 +30,13 @@ import java.util.stream.Stream;
  */
 public class DockerServiceMock implements DockerService {
 
-    private class ContainerHolder {
-        private final DockerContainer container;
-        private String name;
-        private LocalDateTime started;
-        private LocalDateTime stopped;
-        private HostConfig hostConfig;
-        private ContainerConfig config;
-
-        ContainerHolder(DockerContainer container) {
-            this.container = container;
-            this.name = this.container.getName();
-        }
-
-        synchronized void start() {
-            started = LocalDateTime.now();
-        }
-
-        synchronized void stop() {
-            stopped = LocalDateTime.now();
-            started = null;
-        }
-
-        synchronized boolean isStarted() {
-            return started != null && (stopped == null || started.isAfter(stopped));
-        }
-
-        DockerContainer asDockerContainer() {
-            return container.toBuilder().name(name).build();
-        }
-
-        public String getId() {
-            return container.getId();
-        }
-
-        public String getName() {
-            return name;
-        }
-
-        public synchronized HostConfig getHostConfig() {
-            return hostConfig;
-        }
-
-        public synchronized void setHostConfig(HostConfig hostConfig) {
-            this.hostConfig = hostConfig;
-        }
-
-        public synchronized ContainerConfig getConfig() {
-            return config;
-        }
-
-        public synchronized void setConfig(ContainerConfig config) {
-            this.config = config;
-        }
-
-        public synchronized void restart() {
-            stop();
-            start();
-        }
-
-        public synchronized void setName(String name) {
-            this.name = name;
-        }
-
-        @Override
-        public String toString() {
-            return "ContainerHolder{" +
-              "name='" + name + '\'' +
-              '}';
-        }
-    }
-
-    private class NetworkHolder {
-
-        private final String name;
-        private final String driver;
-
-        NetworkHolder(CreateNetworkCmd cmd) {
-            this.name = cmd.getName();
-            this.driver = cmd.getDriver();
-        }
-
-        public String getName() {
-            return name;
-        }
-
-        public String getDriver() {
-            return driver;
-        }
-
-        Network asNetwork() {
-            Network network = new Network();
-            network.setName(name);
-            return network;
-        }
-    }
-
-
     static final int ID_LEN = 12;
     private final Map<String, ContainerHolder> containers = new HashMap<>();
     private final Map<String, NetworkHolder> networks = new ConcurrentHashMap<>();
-
     private final ClusterConfig cc = ClusterConfigImpl.builder().build();
     private final DockerServiceInfo info;
     //we need to make list of nodes
     private final NodeInfo node = NodeInfoImpl.builder().name("test-node").build();
-
     public DockerServiceMock(DockerServiceInfo info) {
         this.info = info;
     }
@@ -185,7 +86,6 @@ public class DockerServiceMock implements DockerService {
         DockerContainer source = holder.asDockerContainer();
         BeanUtils.copyProperties(source, cd);
         // wait list of nodes
-        String node = source.getNode();
         cd.setNode(toDockerNode(this.node));
         //TODO clone below
         cd.setHostConfig(holder.getHostConfig());
@@ -550,5 +450,101 @@ public class DockerServiceMock implements DockerService {
     @Override
     public Task getTask(String taskId) {
         return null;
+    }
+
+    private static class ContainerHolder {
+        private final DockerContainer container;
+        private String name;
+        private LocalDateTime started;
+        private LocalDateTime stopped;
+        private HostConfig hostConfig;
+        private ContainerConfig config;
+
+        ContainerHolder(DockerContainer container) {
+            this.container = container;
+            this.name = this.container.getName();
+        }
+
+        synchronized void start() {
+            started = LocalDateTime.now();
+        }
+
+        synchronized void stop() {
+            stopped = LocalDateTime.now();
+            started = null;
+        }
+
+        synchronized boolean isStarted() {
+            return started != null && (stopped == null || started.isAfter(stopped));
+        }
+
+        DockerContainer asDockerContainer() {
+            return container.toBuilder().name(name).build();
+        }
+
+        public String getId() {
+            return container.getId();
+        }
+
+        public String getName() {
+            return name;
+        }
+
+        public synchronized void setName(String name) {
+            this.name = name;
+        }
+
+        public synchronized HostConfig getHostConfig() {
+            return hostConfig;
+        }
+
+        public synchronized void setHostConfig(HostConfig hostConfig) {
+            this.hostConfig = hostConfig;
+        }
+
+        public synchronized ContainerConfig getConfig() {
+            return config;
+        }
+
+        public synchronized void setConfig(ContainerConfig config) {
+            this.config = config;
+        }
+
+        public synchronized void restart() {
+            stop();
+            start();
+        }
+
+        @Override
+        public String toString() {
+            return "ContainerHolder{" +
+              "name='" + name + '\'' +
+              '}';
+        }
+    }
+
+    private static class NetworkHolder {
+
+        private final String name;
+        private final String driver;
+
+        NetworkHolder(CreateNetworkCmd cmd) {
+            this.name = cmd.getName();
+            this.driver = cmd.getDriver();
+        }
+
+        public String getName() {
+            return name;
+        }
+
+        public String getDriver() {
+            return driver;
+        }
+
+        Network asNetwork() {
+            Network network = new Network();
+            network.setName(name);
+            return network;
+        }
     }
 }

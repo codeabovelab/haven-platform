@@ -11,7 +11,7 @@ import static java.util.Collections.singletonMap;
 
 public class ConfigServerBootstrapApplicationListener implements ApplicationListener<ApplicationPreparedEvent> {
 
-    private PropertySource<?> propertySource = new MapPropertySource(
+    private final PropertySource<?> propertySource = new MapPropertySource(
             "configServer", singletonMap("spring.cloud.config.server.bootstrap", "true"));
 
     @Override

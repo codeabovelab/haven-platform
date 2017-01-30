@@ -27,6 +27,7 @@ import java.util.Map;
  */
 @Slf4j
 public class SwarmUtils {
+
     /**
      * Swarm place some info into containers labels, this may collide with some other options and we sometime msut clean it.
      */
@@ -34,6 +35,9 @@ public class SwarmUtils {
     public static final String LABEL_CONSTRAINTS = LABELS_PREFIX + "constraints";
     public static final String LABEL_ID = LABELS_PREFIX + "id";
     public static final String NODE_EQ = "node==";
+    private SwarmUtils() {
+        throw new IllegalStateException("");
+    }
 
     /**
      * Remove all swarm data from labels

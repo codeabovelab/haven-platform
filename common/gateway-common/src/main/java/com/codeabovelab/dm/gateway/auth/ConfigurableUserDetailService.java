@@ -18,8 +18,7 @@ package com.codeabovelab.dm.gateway.auth;
 
 import com.codeabovelab.dm.common.security.*;
 import lombok.Data;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.core.annotation.Order;
 import org.springframework.security.core.GrantedAuthority;
@@ -28,9 +27,9 @@ import org.springframework.util.StringUtils;
 
 import java.util.*;
 
+@Slf4j
 @Order
 public class ConfigurableUserDetailService implements UserIdentifiersDetailsService {
-    private static final Logger LOG = LoggerFactory.getLogger(ConfigurableUserDetailService.class);
 
     private final Map<String, ExtendedUserDetails> detailsMap;
 
@@ -63,11 +62,25 @@ public class ConfigurableUserDetailService implements UserIdentifiersDetailsServ
                 ExtendedUserDetailsImpl details = ub.build();
                 ExtendedUserDetails old = detailsMap.put(ub.getUsername(), details);
                 if(old != null) {
-                    LOG.warn("Override \n old={} with \n new={}", old, details);
+                    log.warn("Override \n old={} with \n new={}", old, details);
                 }
             }
         }
         this.detailsMap = Collections.unmodifiableMap(detailsMap);
+    }
+
+    private static GrantedAuthority parseAuthority(String token, String defaultTenant) {
+        String[] arr = StringUtils.split(token, "@");
+        String name;
+        String tenant;
+        if(arr == null) {
+            name = token;
+            tenant = defaultTenant;
+        } else {
+            name = arr[0];
+            tenant = arr[1];
+        }
+        return Authorities.fromName(name, tenant);
     }
 
     private void parseUserName(ExtendedUserDetailsImpl.Builder ub, Map.Entry<String, UserConfig> e, String defaultTenant) {
@@ -87,22 +100,6 @@ public class ConfigurableUserDetailService implements UserIdentifiersDetailsServ
         ub.setUsername(username);
         ub.setTenant(tenant);
     }
-
-
-    private static GrantedAuthority parseAuthority(String token, String defaultTenant) {
-        String[] arr = StringUtils.split(token, "@");
-        String name;
-        String tenant;
-        if(arr == null) {
-            name = token;
-            tenant = defaultTenant;
-        } else {
-            name = arr[0];
-            tenant = arr[1];
-        }
-        return Authorities.fromName(name, tenant);
-    }
-
 
     @Override
     public Collection<ExtendedUserDetails> getUsers() {

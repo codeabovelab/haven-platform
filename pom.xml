@@ -64,7 +64,7 @@
         <commons-codec.version>1.10</commons-codec.version>
         <javax-mail.version>1.5.2</javax-mail.version>
         <greenmail.version>1.4.0</greenmail.version>
-        <guava.version>19.0</guava.version>
+        <guava.version>21.0</guava.version>
         <commons-io.version>2.5</commons-io.version>
         <swagger.version>2.6.1</swagger.version>
 

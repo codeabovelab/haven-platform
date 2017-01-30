@@ -16,7 +16,6 @@
 
 package com.codeabovelab.dm.cluman.model;
 
-import com.codeabovelab.dm.cluman.cluster.filter.Filter;
 import com.codeabovelab.dm.cluman.ds.DockerServiceRegistry;
 import com.codeabovelab.dm.cluman.ds.clusters.AbstractNodesGroupConfig;
 import com.codeabovelab.dm.cluman.ds.clusters.ClusterConfigFactory;
@@ -24,7 +23,6 @@ import com.codeabovelab.dm.cluman.ds.clusters.ClusterConfigFactory;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
-import java.util.function.Consumer;
 
 /**
  * Swarm discovery hub service interface @see https://github.com/docker/swarm/tree/master/discovery/token

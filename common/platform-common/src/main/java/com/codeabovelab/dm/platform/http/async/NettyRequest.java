@@ -99,11 +99,11 @@ class NettyRequest implements ClientHttpRequest, AsyncClientHttpRequest {
         return this.uri;
     }
 
-    protected OutputStream getBodyInternal(HttpHeaders headers) throws IOException {
+    protected OutputStream getBodyInternal(HttpHeaders headers) {
         return this.body;
     }
 
-    protected ListenableFuture<ClientHttpResponse> executeInternal(final HttpHeaders headers) throws IOException {
+    protected ListenableFuture<ClientHttpResponse> executeInternal(final HttpHeaders headers) {
         final SettableListenableFuture<ClientHttpResponse> responseFuture = new SettableListenableFuture<>();
 
         ChannelFutureListener connectionListener = future -> {

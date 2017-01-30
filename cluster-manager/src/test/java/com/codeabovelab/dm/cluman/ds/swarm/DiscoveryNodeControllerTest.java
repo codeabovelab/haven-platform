@@ -1,20 +1,18 @@
 package com.codeabovelab.dm.cluman.ds.swarm;
 
+import com.codeabovelab.dm.cluman.ds.nodes.DiscoveryNodeController;
 import com.codeabovelab.dm.cluman.ds.nodes.NodeAgentData;
 import com.codeabovelab.dm.cluman.ds.nodes.NodeStorage;
-import com.codeabovelab.dm.cluman.model.*;
-import com.codeabovelab.dm.cluman.ds.nodes.DiscoveryNodeController;
-
-import static org.hamcrest.Matchers.*;
-
+import com.codeabovelab.dm.cluman.model.DiscoveryStorage;
+import com.codeabovelab.dm.cluman.model.NodeInfo;
+import com.codeabovelab.dm.cluman.model.NodeInfoImpl;
+import com.codeabovelab.dm.cluman.model.NodesGroup;
 import com.codeabovelab.dm.common.utils.StringUtils;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mockito;
-import org.mockito.invocation.InvocationOnMock;
-import org.mockito.stubbing.Answer;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -24,8 +22,6 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import org.springframework.util.MimeTypeUtils;
-import org.springframework.web.client.RestTemplate;
-import org.springframework.web.util.NestedServletException;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -33,7 +29,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Consumer;
 
-import static org.junit.Assert.*;
+import static org.hamcrest.Matchers.*;
+import static org.junit.Assert.assertThat;
 import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static org.springframework.test.web.servlet.setup.MockMvcBuilders.standaloneSetup;
@@ -47,41 +44,6 @@ public class DiscoveryNodeControllerTest {
     private static final String CLUSTER_ID = "cluster_id";
     private static final String URL = "/discovery/nodes";
     private static final String SECRET = "secr3t";
-
-    @Configuration
-    public static class TestConfiguration {
-        final Map<String, NodeInfo> nodes = new HashMap<>();
-
-        @SuppressWarnings("unchecked")
-        @Bean
-        NodeStorage nodeStorage() {
-            NodeStorage ns = mock(NodeStorage.class);
-            Mockito.doAnswer(invocation -> {
-                final String name = invocation.getArgumentAt(0, String.class);
-                final Consumer updater = invocation.getArgumentAt(2, Consumer.class);
-                NodeInfo ni = nodes.get(name);
-                NodeInfoImpl.Builder b = NodeInfoImpl.builder(ni);
-                updater.accept(b);
-                nodes.put(name, b.build());
-                return null;
-            }).when(ns).updateNode(anyString(), anyInt(), anyObject());
-            return ns;
-        }
-
-        @Bean
-        DiscoveryStorage discoveryStorage() {
-            NodesGroup cluster = mock(NodesGroup.class);
-            when(cluster.getNodes()).thenAnswer(invocation -> new ArrayList<>(nodes.values()));
-
-            DiscoveryStorage storage = mock(DiscoveryStorage.class);
-
-            when(storage.getCluster(CLUSTER_ID)).thenReturn(cluster);
-            when(storage.getClusterForNode(anyString(), eq(CLUSTER_ID))).thenReturn(cluster);
-            when(storage.getClusterForNode(eq(CLUSTER_ID), anyString())).thenReturn(cluster);
-            return storage;
-        }
-    }
-
     @Autowired
     private DiscoveryStorage discoveryStorage;
     @Autowired
@@ -94,8 +56,6 @@ public class DiscoveryNodeControllerTest {
         mvc = standaloneSetup(new DiscoveryNodeController(nodeStorage, SECRET))
           .build();
     }
-
-    private RestTemplate restTemplate = new RestTemplate();
 
     @SuppressWarnings("unchecked")
     @Test
@@ -139,6 +99,40 @@ public class DiscoveryNodeControllerTest {
 
     private String getClusterUrl(String clusterId) {
         return URL + "/" + clusterId;
+    }
+
+    @Configuration
+    public static class TestConfiguration {
+        final Map<String, NodeInfo> nodes = new HashMap<>();
+
+        @SuppressWarnings("unchecked")
+        @Bean
+        NodeStorage nodeStorage() {
+            NodeStorage ns = mock(NodeStorage.class);
+            Mockito.doAnswer(invocation -> {
+                final String name = invocation.getArgumentAt(0, String.class);
+                final Consumer updater = invocation.getArgumentAt(2, Consumer.class);
+                NodeInfo ni = nodes.get(name);
+                NodeInfoImpl.Builder b = NodeInfoImpl.builder(ni);
+                updater.accept(b);
+                nodes.put(name, b.build());
+                return null;
+            }).when(ns).updateNode(anyString(), anyInt(), anyObject());
+            return ns;
+        }
+
+        @Bean
+        DiscoveryStorage discoveryStorage() {
+            NodesGroup cluster = mock(NodesGroup.class);
+            when(cluster.getNodes()).thenAnswer(invocation -> new ArrayList<>(nodes.values()));
+
+            DiscoveryStorage storage = mock(DiscoveryStorage.class);
+
+            when(storage.getCluster(CLUSTER_ID)).thenReturn(cluster);
+            when(storage.getClusterForNode(anyString(), eq(CLUSTER_ID))).thenReturn(cluster);
+            when(storage.getClusterForNode(eq(CLUSTER_ID), anyString())).thenReturn(cluster);
+            return storage;
+        }
     }
 
 }

@@ -24,16 +24,12 @@ import com.codeabovelab.dm.cluman.cluster.docker.management.DockerService;
 import com.codeabovelab.dm.cluman.cluster.docker.management.argument.StopContainerArg;
 import com.codeabovelab.dm.cluman.cluster.docker.management.result.ResultCode;
 import com.codeabovelab.dm.cluman.cluster.docker.model.ContainerDetails;
-import com.codeabovelab.dm.cluman.source.ContainerSourceFactory;
-import com.codeabovelab.dm.cluman.model.ApplicationSource;
 import com.codeabovelab.dm.cluman.ds.DockerServiceRegistry;
+import com.codeabovelab.dm.cluman.model.*;
+import com.codeabovelab.dm.cluman.source.ContainerSourceFactory;
+import com.codeabovelab.dm.cluman.validate.ExtendedAssert;
 import com.codeabovelab.dm.common.kv.KeyValueStorage;
 import com.codeabovelab.dm.common.kv.KvUtils;
-import com.codeabovelab.dm.cluman.model.Application;
-import com.codeabovelab.dm.cluman.model.ApplicationImpl;
-import com.codeabovelab.dm.cluman.model.ContainerSource;
-import com.codeabovelab.dm.cluman.model.Severity;
-import com.codeabovelab.dm.cluman.validate.ExtendedAssert;
 import com.codeabovelab.dm.common.kv.mapping.KvMap;
 import com.codeabovelab.dm.common.kv.mapping.KvMapperFactory;
 import com.codeabovelab.dm.common.mb.MessageBus;
@@ -45,7 +41,10 @@ import org.springframework.util.Assert;
 import org.springframework.util.CollectionUtils;
 
 import java.io.File;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Date;
+import java.util.List;
 import java.util.stream.Collectors;
 
 import static com.google.common.base.MoreObjects.firstNonNull;
@@ -193,7 +192,7 @@ public class ApplicationServiceImpl implements ApplicationService {
     }
 
     @Override
-    public void addApplication(Application application) throws Exception {
+    public void addApplication(Application application) {
         Assert.notNull(application, "application can't be null");
         String appName = application.getName();
         ExtendedAssert.matchId(appName, "application name");
@@ -207,7 +206,7 @@ public class ApplicationServiceImpl implements ApplicationService {
     }
 
     @Override
-    public void removeApplication(String cluster, String id) throws Exception {
+    public void removeApplication(String cluster, String id) {
         log.info("about to remove application: {}, in cluster: {}", id, cluster);
         Application application = getApplication(cluster, id);
         DockerService service = dockerServiceRegistry.getService(application.getCluster());

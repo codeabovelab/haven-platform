@@ -16,15 +16,12 @@
 
 package com.codeabovelab.dm.platform.http.async;
 
-import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufHolder;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.handler.codec.http.*;
 import org.springframework.http.client.ClientHttpResponse;
 import org.springframework.util.concurrent.SettableListenableFuture;
-
-import java.io.IOException;
 
 /**
  */
@@ -33,7 +30,7 @@ class NettyResponseHandler extends SimpleChannelInboundHandler<HttpObject> {
     private final SettableListenableFuture<ClientHttpResponse> responseFuture;
     private final ChunkedInputStream<ByteBufHolder> in = new ChunkedInputStream<>(ByteBufHolderAdapter.INSTANCE);
 
-    NettyResponseHandler(SettableListenableFuture<ClientHttpResponse> responseFuture) throws IOException {
+    NettyResponseHandler(SettableListenableFuture<ClientHttpResponse> responseFuture) {
         this.responseFuture = responseFuture;
     }
 

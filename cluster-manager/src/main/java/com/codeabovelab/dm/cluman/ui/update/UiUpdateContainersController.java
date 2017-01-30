@@ -52,7 +52,7 @@ public class UiUpdateContainersController {
 
     @RequestMapping(value = "/clusters/{cluster}/containers/update", method = RequestMethod.POST, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseBodyEmitter update(@PathVariable("cluster") String cluster,
-                                      @RequestBody UiUpdateContainers req) throws Exception {
+                                      @RequestBody UiUpdateContainers req) {
         LOG.info("got scale update request: {}", req);
         JobParameters params = createParametersString(cluster, req);
 

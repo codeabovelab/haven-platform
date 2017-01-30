@@ -68,7 +68,7 @@ public class NodeStorage implements NodeInfoProvider, NodeRegistry {
     private final MessageBus<DockerLogEvent> dockerLogBus;
     private final PersistentBusFactory persistentBusFactory;
     private final ExecutorService executorService;
-    final DockerEventsConfig dockerEventConfig;
+    private final DockerEventsConfig dockerEventConfig;
     private DockerServiceFactory dockerFactory;
 
     @Autowired
@@ -83,7 +83,6 @@ public class NodeStorage implements NodeInfoProvider, NodeRegistry {
         this.persistentBusFactory = persistentBusFactory;
         this.dockerEventConfig = dockerEventConfig;
         this.dockerLogBus = dockerLogBus;
-        this.dockerFactory = dockerFactory;
         KeyValueStorage storage = kvmf.getStorage();
         String nodesPrefix = storage.getPrefix() + "/nodes/";
         this.nodes = KvMap.builder(NodeRegistrationImpl.class, NodeInfoImpl.Builder.class)
@@ -391,5 +390,9 @@ public class NodeStorage implements NodeInfoProvider, NodeRegistry {
                 this.dockerLogBus.accept(logEvent);
             }
         });
+    }
+
+    public DockerEventsConfig getDockerEventConfig() {
+        return dockerEventConfig;
     }
 }

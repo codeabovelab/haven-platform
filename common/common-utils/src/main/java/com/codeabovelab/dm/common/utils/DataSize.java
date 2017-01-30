@@ -25,10 +25,10 @@ import java.util.Locale;
  */
 public final class DataSize {
 
-    public static long KiB = 1L << 10L;
-    public static long MiB = 1L << 20L;
-    public static long GiB = 1L << 30L;
-    public static long TiB = 1L << 40L;
+    public static final long KiB = 1L << 10L;
+    public static final long MiB = 1L << 20L;
+    public static final long GiB = 1L << 30L;
+    public static final long TiB = 1L << 40L;
 
     private DataSize() {
     }
