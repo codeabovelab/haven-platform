@@ -126,7 +126,7 @@ public class KvMap<T> {
             return new KvMap<>(this);
         }
     }
-    private final  class ValueHolder {
+    private final class ValueHolder {
         private final String key;
         private volatile T value;
         private final Map<String, Long> index = new ConcurrentHashMap<>();
@@ -137,33 +137,42 @@ public class KvMap<T> {
             this.key = key;
         }
 
-        synchronized T save(T val) {
-            checkValue(val);
-            // we must not publish dirty value
-            T old = getIfPresent();
-            this.dirty = false;
-            if(val == value) {
-                return value;
+        T save(T val) {
+            T old;
+            KvMapLocalEvent.Action action;
+            synchronized (this) {
+                checkValue(val);
+                // we must not publish dirty value
+                old = getIfPresent();
+                this.dirty = false;
+                if(val == value) {
+                    return value;
+                }
+                action = this.value == null ? KvMapLocalEvent.Action.CREATE : KvMapLocalEvent.Action.UPDATE;
+                this.value = val;
             }
-            KvMapLocalEvent.Action action = this.value == null ? KvMapLocalEvent.Action.CREATE : KvMapLocalEvent.Action.UPDATE;
-            this.value = val;
             onLocal(action, this, old, val);
             flush();
             return old;
         }
 
-        synchronized void flush() {
-            if(this.value == null) {
-                // no value set, nothing to flush
-                return;
+        void flush() {
+            Object obj;
+            synchronized (this) {
+                if(this.value == null) {
+                    // no value set, nothing to flush
+                    return;
+                }
+                this.dirty = false;
+                obj = adapter.get(this.key, this.value);
             }
-            this.dirty = false;
-            Object obj = adapter.get(this.key, this.value);
             // Note that message will be concatenated with type of object by `Assert.isInstanceOf`
             Assert.isInstanceOf(mapper.getType(), obj, "Adapter " + adapter + " return object of inappropriate");
             Assert.notNull(obj, "Adapter " + adapter + " return null from " + this.value + " that is not allowed");
             mapper.save(key, obj, (name, res) -> {
-                index.put(toIndexKey(name), res.getIndex());
+                synchronized (this) {
+                    index.put(toIndexKey(name), res.getIndex());
+                }
             });
         }
 
