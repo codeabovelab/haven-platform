@@ -206,6 +206,9 @@ public class NodeStorage implements NodeInfoProvider, NodeRegistry {
      * @return registration or null
      */
     NodeRegistrationImpl getNodeRegistrationInternal(String nodeId) {
+        if(nodeId == null) {
+            return null;
+        }
         try {
             return nodes.get(nodeId);
         } catch (Exception e) {
