@@ -16,9 +16,11 @@
 
 package com.codeabovelab.dm.common.utils;
 
+import lombok.Data;
+
 import java.util.List;
-import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.concurrent.Executor;
+import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Common utilities for {@link java.util.concurrent.Executor }
@@ -61,5 +63,109 @@ public final class ExecutorUtils {
      */
     public static DeferredExecutor deferred() {
         return new DeferredExecutor();
+    }
+
+    private static class ThreadFactoryImpl implements ThreadFactory {
+        private final ThreadGroup group;
+        private final AtomicInteger count = new AtomicInteger(1);
+        private final String prefix;
+        private final boolean daemon;
+
+        ThreadFactoryImpl(String name, boolean daemon) {
+            SecurityManager sm = System.getSecurityManager();
+            group = (sm != null)? sm.getThreadGroup():
+              Thread.currentThread().getThreadGroup();
+            this.prefix = name.endsWith("-")? name : (name + "-");
+            this.daemon = daemon;
+        }
+
+        @Override
+        public Thread newThread(Runnable r) {
+            Thread thread = new Thread(group, r, prefix + count.getAndIncrement());
+            thread.setDaemon(daemon);
+            thread.setPriority(Thread.NORM_PRIORITY);
+            return thread;
+        }
+    }
+
+    @Data
+    public static final class ExecutorBuilder {
+        private String name;
+        private boolean daemon = true;
+        private Thread.UncaughtExceptionHandler exceptionHandler = Throwables.uncaughtHandler();
+        private RejectedExecutionHandler rejectedHandler = new ThreadPoolExecutor.AbortPolicy();
+        private int maxSize = 5;
+        private int coreSize = 2;
+        private long keepAlive = 30;
+        private int queueSize = 10;
+
+        /**
+         * Name of thread, without thread number pattern.
+         * @param name name
+         * @return this
+         */
+        public ExecutorBuilder name(String name) {
+            setName(name);
+            return this;
+        }
+
+        /**
+         * Daemon flag.
+         * @param daemon default true
+         * @return this
+         */
+        public ExecutorBuilder daemon(boolean daemon) {
+            setDaemon(daemon);
+            return this;
+        }
+
+        /**
+         * Uncaught exception handler.
+         * @param exceptionHandler handler, default {@link Throwables#uncaughtHandler()}
+         * @return this
+         */
+        public ExecutorBuilder exceptionHandler(Thread.UncaughtExceptionHandler exceptionHandler) {
+            setExceptionHandler(exceptionHandler);
+            return this;
+        }
+
+        /**
+         * Rejected execution handler.
+         * @param rejectedHandler rejected execution handler, default {@link ThreadPoolExecutor.AbortPolicy()}
+         * @return this
+         */
+        public ExecutorBuilder rejectedHandler(RejectedExecutionHandler rejectedHandler) {
+            setRejectedHandler(rejectedHandler);
+            return this;
+        }
+
+        public ExecutorBuilder coreSize(int coreSize) {
+            setCoreSize(coreSize);
+            return this;
+        }
+
+        public ExecutorBuilder maxSize(int maxSize) {
+            setMaxSize(maxSize);
+            return this;
+        }
+
+        public ExecutorBuilder keepAlive(long keepAlive) {
+            setKeepAlive(keepAlive);
+            return this;
+        }
+
+        public ExecutorBuilder queueSize(int queueSize) {
+            setQueueSize(queueSize);
+            return this;
+        }
+
+        public ExecutorService build() {
+            ThreadFactory tf = new ThreadFactoryImpl(name, daemon);
+            return new ThreadPoolExecutor(coreSize, maxSize, keepAlive, TimeUnit.SECONDS, new ArrayBlockingQueue<>(queueSize), tf, rejectedHandler);
+        }
+    }
+
+    public static ExecutorBuilder executorBuilder() {
+        return new ExecutorBuilder();
     }
 }

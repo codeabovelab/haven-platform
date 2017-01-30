@@ -16,17 +16,18 @@
 
 package com.codeabovelab.dm.common.utils;
 
+import lombok.extern.slf4j.Slf4j;
 import org.slf4j.Logger;
 import org.springframework.util.Assert;
 
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
-import java.net.ConnectException;
 
 /**
  * tools for throwables
  */
+@Slf4j
 public class Throwables {
     /**
      * Print specified throwable to string. If throwable is null, then return null.
@@ -94,6 +95,10 @@ public class Throwables {
             e = e.getCause();
         }
         return false;
+    }
+
+    public static Thread.UncaughtExceptionHandler uncaughtHandler() {
+        return uncaughtHandler(log);
     }
 
     public static Thread.UncaughtExceptionHandler uncaughtHandler(Logger log) {
