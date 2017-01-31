@@ -38,6 +38,7 @@ import com.codeabovelab.dm.common.kv.mapping.*;
 import com.codeabovelab.dm.common.mb.MessageBus;
 import com.codeabovelab.dm.common.mb.Subscriptions;
 import com.codeabovelab.dm.common.security.Action;
+import com.codeabovelab.dm.common.utils.ExecutorUtils;
 import com.codeabovelab.dm.common.validate.ValidityException;
 import com.google.common.collect.ImmutableSet;
 import org.slf4j.Logger;
@@ -52,6 +53,7 @@ import org.springframework.util.Assert;
 import javax.annotation.PostConstruct;
 import java.util.*;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.RejectedExecutionException;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 
@@ -69,16 +71,18 @@ public class NodeStorage implements NodeInfoProvider, NodeRegistry {
     private final PersistentBusFactory persistentBusFactory;
     private final ExecutorService executorService;
     private final DockerEventsConfig dockerEventConfig;
+    private final NodeStorageConfig config;
     private DockerServiceFactory dockerFactory;
 
     @Autowired
-    public NodeStorage(KvMapperFactory kvmf,
+    public NodeStorage(NodeStorageConfig config,
+                       KvMapperFactory kvmf,
                        @Qualifier(NodeEvent.BUS) MessageBus<NodeEvent> nodeEventBus,
                        @Qualifier(DockerServiceEvent.BUS) MessageBus<DockerServiceEvent> dockerBus,
                        @Qualifier(DockerLogEvent.BUS) MessageBus<DockerLogEvent> dockerLogBus,
                        DockerEventsConfig dockerEventConfig,
-                       PersistentBusFactory persistentBusFactory,
-                       ExecutorService executorService) {
+                       PersistentBusFactory persistentBusFactory) {
+        this.config = config;
         this.nodeEventBus = nodeEventBus;
         this.persistentBusFactory = persistentBusFactory;
         this.dockerEventConfig = dockerEventConfig;
@@ -97,7 +101,24 @@ public class NodeStorage implements NodeInfoProvider, NodeRegistry {
           .listener(this::onKVEvent)
           .mapper(kvmf)
           .build();
-        this.executorService = executorService;
+        log.info("{} initialized with config: {}", getClass().getSimpleName(), this.config);
+        this.executorService = ExecutorUtils.executorBuilder()
+          .name(getClass().getSimpleName())
+          .maxSize(this.config.getMaxNodes())
+          .rejectedHandler((runnable, executor) -> {
+              String hint = "";
+              try {
+                  int nodes = this.nodes.list().size();
+                  int maxNodes = this.config.getMaxNodes();
+                  if(nodes > maxNodes) {
+                      hint = "\nNote that 'config.maxNodes'=" + maxNodes + " but storage has 'nodes'=" + nodes;
+                  }
+              } catch (Exception e) {
+                  //supress
+              }
+              throw new RejectedExecutionException("Task " + runnable + " rejected from " + executor + hint);
+          })
+          .build();
         dockerBus.subscribe(this::onDockerServiceEvent);
     }
 
@@ -206,6 +227,9 @@ public class NodeStorage implements NodeInfoProvider, NodeRegistry {
      * @return registration or null
      */
     NodeRegistrationImpl getNodeRegistrationInternal(String nodeId) {
+        if(nodeId == null) {
+            return null;
+        }
         try {
             return nodes.get(nodeId);
         } catch (Exception e) {
