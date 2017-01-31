@@ -324,6 +324,7 @@ public class ClusterApi {
             if(data != null) {
                 ClusterConfigImpl.Builder config = data.getConfig();
                 if(gc instanceof DockerBasedClusterConfig && config != null) {
+                    config.setCluster(name); // we must fix name of cluster
                     ((DockerBasedClusterConfig)gc).setConfig(config.build());
                 }
                 data.toCluster(gc);
