@@ -32,4 +32,9 @@ public class NodeStorageConfig {
      * exceed this value, but then performance may degrade.
      */
     private int maxNodes = 10;
+    /**
+     * Minimal ttl of node in seconds, note that node may not respond on maintenance
+     * and we must keep they while this time.
+     */
+    private int minTtl = 60;
 }

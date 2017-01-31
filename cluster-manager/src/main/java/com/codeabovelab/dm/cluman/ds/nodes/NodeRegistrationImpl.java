@@ -48,10 +48,6 @@ import java.util.function.Consumer;
 @Slf4j
 class NodeRegistrationImpl implements NodeRegistration, AutoCloseable {
 
-    /**
-     * minimal ttl of node in seconds
-     */
-    private static final int MIN_TTL = 10;
     private final String name;
     private final Object lock = new Object();
     private volatile NodeInfoImpl cache;
@@ -89,8 +85,9 @@ class NodeRegistrationImpl implements NodeRegistration, AutoCloseable {
      * @param ttl in seconds
      */
     public void update(int ttl) {
-        if(ttl < MIN_TTL) {
-            ttl = MIN_TTL;
+        final int min = nodeStorage.getStorageConfig().getMinTtl();
+        if(ttl < min) {
+            ttl = min;
         }
         synchronized (lock) {
             //also convert seconds to ms

@@ -416,7 +416,11 @@ public class NodeStorage implements NodeInfoProvider, NodeRegistry {
         });
     }
 
-    public DockerEventsConfig getDockerEventConfig() {
+    DockerEventsConfig getDockerEventConfig() {
         return dockerEventConfig;
+    }
+
+    NodeStorageConfig getStorageConfig() {
+        return config;
     }
 }
