@@ -178,6 +178,30 @@ public class DockerServiceMock implements DockerService {
     }
 
     @Override
+    public ServiceCallResult pauseContainer(String id) {
+        synchronized (containers) {
+            ContainerHolder ch = getContainerHolder(id);
+            if (ch == null) {
+                return resultNotFound();
+            }
+            ch.pause();
+            return resultOk();
+        }
+    }
+
+    @Override
+    public ServiceCallResult unpauseContainer(String id) {
+        synchronized (containers) {
+            ContainerHolder ch = getContainerHolder(id);
+            if (ch == null) {
+                return resultNotFound();
+            }
+            ch.unpause();
+            return resultOk();
+        }
+    }
+
+    @Override
     public ServiceCallResult stopContainer(StopContainerArg arg) {
         synchronized (containers) {
             ContainerHolder ch = getContainerHolder(arg.getId());
@@ -457,6 +481,7 @@ public class DockerServiceMock implements DockerService {
         private String name;
         private LocalDateTime started;
         private LocalDateTime stopped;
+        private LocalDateTime paused;
         private HostConfig hostConfig;
         private ContainerConfig config;
 
@@ -466,10 +491,16 @@ public class DockerServiceMock implements DockerService {
         }
 
         synchronized void start() {
+            checkPaused();
             started = LocalDateTime.now();
         }
 
+        private void checkPaused() {
+            Assert.isNull(this.paused, "Container is paused");
+        }
+
         synchronized void stop() {
+            checkPaused();
             stopped = LocalDateTime.now();
             started = null;
         }
@@ -514,6 +545,21 @@ public class DockerServiceMock implements DockerService {
             stop();
             start();
         }
+
+        public synchronized void pause() {
+            if(this.paused != null) {
+                throw new RuntimeException("Container is already paused.");
+            }
+            this.paused = LocalDateTime.now();
+        }
+
+        public synchronized void unpause() {
+            if(this.paused == null) {
+                throw new RuntimeException("Container is not paused.");
+            }
+            this.paused = null;
+        }
+
 
         @Override
         public String toString() {

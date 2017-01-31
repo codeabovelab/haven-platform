@@ -510,10 +510,24 @@ public class DockerServiceImpl implements DockerService {
 
     @Override
     public ServiceCallResult startContainer(String id) {
+        return simpleAction(id, "start");
+    }
+
+    @Override
+    public ServiceCallResult pauseContainer(String id) {
+        return simpleAction(id, "pause");
+    }
+
+    @Override
+    public ServiceCallResult unpauseContainer(String id) {
+        return simpleAction(id, "unpause");
+    }
+
+    private ServiceCallResult simpleAction(String id, String op) {
         Assert.notNull(id, "id is null");
         try {
-            log.info("trying to start container {}", id);
-            ResponseEntity<String> res = getSlow(() -> restTemplate.postForEntity(getUrlContainer(id, "start").toUriString(), null, String.class));
+            log.info("trying to '{}' container {}", op, id);
+            ResponseEntity<String> res = getSlow(() -> restTemplate.postForEntity(getUrlContainer(id, op).toUriString(), null, String.class));
             return DockerUtils.getServiceCallResult(res);
         } catch (HttpStatusCodeException e) {
             ServiceCallResult callResult = new ServiceCallResult();
@@ -558,7 +572,7 @@ public class DockerServiceImpl implements DockerService {
 
     @Override
     public ServiceCallResult stopContainer(StopContainerArg arg) {
-        return genericAction(arg.getId(), arg, "stop");
+        return stopBasedAction(arg.getId(), arg, "stop");
     }
 
     @Override
@@ -604,7 +618,7 @@ public class DockerServiceImpl implements DockerService {
 
     @Override
     public ServiceCallResult restartContainer(StopContainerArg arg) {
-        return genericAction(arg.getId(), arg, RESTART);
+        return stopBasedAction(arg.getId(), arg, RESTART);
     }
 
     @Override
@@ -696,7 +710,7 @@ public class DockerServiceImpl implements DockerService {
         return Collections.emptyList();
     }
 
-    private ServiceCallResult genericAction(String id, StopContainerArg arg, String action) {
+    private ServiceCallResult stopBasedAction(String id, StopContainerArg arg, String action) {
         Assert.notNull(id, "id is null");
         UriComponentsBuilder ub = getUrlContainer(id, action);
         int time = arg.getTimeBeforeKill();

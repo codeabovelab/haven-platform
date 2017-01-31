@@ -106,10 +106,24 @@ public interface DockerService {
 
     /**
      * Start specified by id container
-     * @param id
+     * @param id id of container
      * @return result
      */
     ServiceCallResult startContainer(String id);
+
+    /**
+     * Pause specified by id container
+     * @param id id of container
+     * @return result
+     */
+    ServiceCallResult pauseContainer(String id);
+
+    /**
+     * Run previously paused container
+     * @param id id of container
+     * @return result
+     */
+    ServiceCallResult unpauseContainer(String id);
 
     /**
      * Stop specified by id container

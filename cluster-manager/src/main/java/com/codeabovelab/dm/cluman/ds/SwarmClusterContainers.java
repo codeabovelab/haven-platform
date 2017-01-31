@@ -78,8 +78,12 @@ public class SwarmClusterContainers extends AbstractContainersManager {
 
     @Override
     public ServiceCallResult pauseContainer(String containerId) {
-        //TODO return getDocker().pauseContainer(containerId);
-        throw new UnsupportedOperationException("Not implemented yet.");
+        return getDocker().pauseContainer(containerId);
+    }
+
+    @Override
+    public ServiceCallResult unpauseContainer(String containerId) {
+        return getDocker().unpauseContainer(containerId);
     }
 
     @Override

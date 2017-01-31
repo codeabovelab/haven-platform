@@ -150,6 +150,17 @@ public class DockerServiceSecurityWrapper implements DockerService {
         return service.startContainer(id);
     }
 
+    @Override
+    public ServiceCallResult pauseContainer(String id) {
+        checkContainerAccess(id, Action.EXECUTE);
+        return service.pauseContainer(id);
+    }
+
+    @Override
+    public ServiceCallResult unpauseContainer(String id) {
+        checkContainerAccess(id, Action.EXECUTE);
+        return service.unpauseContainer(id);
+    }
 
     @Override
     public ServiceCallResult stopContainer(StopContainerArg arg) {

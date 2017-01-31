@@ -90,6 +90,20 @@ public class ContainerApi {
     private final ApplicationService applicationService;
     private final ContainerSourceFactory containerSourceFactory;
 
+    @RequestMapping(value = "/{id}/pause", method = RequestMethod.POST)
+    public ResponseEntity<?> pauseContainer(@PathVariable("id") String id) {
+        ContainersManager service = getContainersManager(id);
+        ServiceCallResult res = service.pauseContainer(id);
+        return UiUtils.createResponse(res);
+    }
+
+    @RequestMapping(value = "/{id}/unpause", method = RequestMethod.POST)
+    public ResponseEntity<?> unpauseContainer(@PathVariable("id") String id) {
+        ContainersManager service = getContainersManager(id);
+        ServiceCallResult res = service.unpauseContainer(id);
+        return UiUtils.createResponse(res);
+    }
+
     @RequestMapping(value = "/{id}/stop", method = RequestMethod.POST)
     public ResponseEntity<?> stopContainer(@PathVariable("id") String id) {
         StopContainerArg arg = StopContainerArg.builder().id(id).build();

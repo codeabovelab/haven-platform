@@ -197,6 +197,24 @@ class VirtualDockerService implements DockerService {
     }
 
     @Override
+    public ServiceCallResult pauseContainer(String id) {
+        DockerService service = getServiceByContainer(id);
+        if(isOffline(service)) {
+            return whenNotFoundService(id);
+        }
+        return service.pauseContainer(id);
+    }
+
+    @Override
+    public ServiceCallResult unpauseContainer(String id) {
+        DockerService service = getServiceByContainer(id);
+        if(isOffline(service)) {
+            return whenNotFoundService(id);
+        }
+        return service.unpauseContainer(id);
+    }
+
+    @Override
     public ServiceCallResult stopContainer(StopContainerArg arg) {
         DockerService service = getServiceByContainer(arg.getId());
         if(isOffline(service)) {

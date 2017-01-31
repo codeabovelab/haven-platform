@@ -240,8 +240,13 @@ class DockerClusterContainers implements ContainersManager {
     @Override
     public ServiceCallResult pauseContainer(String containerId) {
         DockerService ds = getContainerDocker(containerId);
-        //TODO return ds.pauseContainer(containerId);
-        throw new UnsupportedOperationException("Not implemented yet.");
+        return ds.pauseContainer(containerId);
+    }
+
+    @Override
+    public ServiceCallResult unpauseContainer(String containerId) {
+        DockerService ds = getContainerDocker(containerId);
+        return ds.unpauseContainer(containerId);
     }
 
     @Override

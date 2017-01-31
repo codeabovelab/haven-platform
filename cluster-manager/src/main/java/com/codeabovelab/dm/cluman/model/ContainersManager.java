@@ -60,6 +60,7 @@ public interface ContainersManager {
     ServiceCallResult restartContainer(StopContainerArg arg);
     ServiceCallResult startContainer(String containerId);
     ServiceCallResult pauseContainer(String containerId);
+    ServiceCallResult unpauseContainer(String containerId);
     ServiceCallResult deleteContainer(DeleteContainerArg arg);
     ServiceCallResult scaleContainer(ScaleContainerArg arg);
 
