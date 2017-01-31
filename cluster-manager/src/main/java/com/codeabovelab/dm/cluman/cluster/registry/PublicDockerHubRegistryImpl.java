@@ -20,6 +20,7 @@ import com.codeabovelab.dm.cluman.cluster.registry.data.ImageCatalog;
 import com.codeabovelab.dm.cluman.cluster.registry.data.SearchResult;
 import com.codeabovelab.dm.cluman.cluster.registry.model.RegistryAdapter;
 import com.codeabovelab.dm.common.utils.Throwables;
+import com.google.common.base.CharMatcher;
 import lombok.Builder;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.client.HttpStatusCodeException;
@@ -52,7 +53,7 @@ public class PublicDockerHubRegistryImpl extends AbstractV2RegistryService imple
               .queryParam("q", searchTerm)
               .queryParam("page", page + 1 /* hub numbers pages from 1 instead of 0*/)
               .queryParam("n", count)
-              .build();
+              .build().encode("utf-8");
             SearchResult res = getRestTemplate().getForObject(build.toUri(), SearchResult.class);
             //first page in hub will start from '1', it may confuse our api users
             res.setPage(res.getPage() - 1);
