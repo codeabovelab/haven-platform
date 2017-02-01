@@ -54,10 +54,46 @@ class VirtualDockerService implements DockerService {
         this.cluster = cluster;
     }
 
+    private ServiceCallResult notSupported() {
+        ServiceCallResult res = new ServiceCallResult();
+        return notSupported(res);
+    }
+
+    private <T extends ServiceCallResult> T notSupported(T res) {
+        res.code(ResultCode.ERROR).message("Virtual cluster '" + getCluster() + "' does not support this.");
+        return res;
+    }
+
     @Override
     public ServiceCallResult createNetwork(CreateNetworkCmd createNetworkCmd) {
         //TODO
-        return new ServiceCallResult().code(ResultCode.ERROR).message("Virtual cluster '" + getCluster() + "' does not support this.");
+        return notSupported();
+    }
+
+    @Override
+    public Network inspectNetwork(String id) {
+        return null;
+    }
+
+    @Override
+    public ServiceCallResult deleteNetwork(String id) {
+        return notSupported();
+    }
+
+    @Override
+    public PruneNetworksResponse pruneNetworks(PruneNetworksArg arg) {
+        PruneNetworksResponse res = new PruneNetworksResponse();
+        return notSupported(res);
+    }
+
+    @Override
+    public ServiceCallResult connectNetwork(ConnectNetworkCmd cmd) {
+        return notSupported();
+    }
+
+    @Override
+    public ServiceCallResult disconnectNetwork(DisconnectNetworkCmd cmd) {
+        return notSupported();
     }
 
     @Override

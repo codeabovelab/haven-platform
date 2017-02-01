@@ -153,6 +153,29 @@ public interface DockerService {
     ServiceCallResult renameContainer(String id, String newName);
 
     ServiceCallResult createNetwork(CreateNetworkCmd cmd);
+    Network inspectNetwork(String id);
+    ServiceCallResult deleteNetwork(String id);
+
+    /**
+     * Delete unused networks
+     * @param arg arg with filter for networks
+     * @return result with list of deleted networks
+     */
+    PruneNetworksResponse pruneNetworks(PruneNetworksArg arg);
+
+    /**
+     * Connect specified container to network
+     * @param cmd command
+     * @return result
+     */
+    ServiceCallResult connectNetwork(ConnectNetworkCmd cmd);
+
+    /**
+     * Disconnect specified container from network.
+     * @param cmd command
+     * @return result
+     */
+    ServiceCallResult disconnectNetwork(DisconnectNetworkCmd cmd);
 
     List<Network> getNetworks();
 

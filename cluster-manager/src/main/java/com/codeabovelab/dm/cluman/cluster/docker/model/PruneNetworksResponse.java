@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 Code Above Lab LLC
+ * Copyright 2017 Code Above Lab LLC
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,28 +16,18 @@
 
 package com.codeabovelab.dm.cluman.cluster.docker.model;
 
+import com.codeabovelab.dm.cluman.cluster.docker.management.result.ServiceCallResult;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.util.List;
 
 /**
- * TODO It must consider all fields from {@link Network }
  */
+@EqualsAndHashCode(callSuper = true)
 @Data
-public class CreateNetworkCmd {
-
-    @JsonProperty("Name")
-    private String name;
-
-    @JsonProperty("Driver")
-    private String driver;
-
-    @JsonProperty("IPAM")
-    private Network.Ipam ipam;
-
-    @JsonProperty("Options")
-    private Map<String, String> options = new HashMap<>();
-
+public class PruneNetworksResponse extends ServiceCallResult {
+    @JsonProperty("NetworksDeleted")
+    private List<String> networks;
 }

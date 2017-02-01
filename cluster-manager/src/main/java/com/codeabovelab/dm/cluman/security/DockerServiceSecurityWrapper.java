@@ -229,6 +229,38 @@ public class DockerServiceSecurityWrapper implements DockerService {
     }
 
     @Override
+    public ServiceCallResult deleteNetwork(String id) {
+        checkNetworkAccess(id, Action.DELETE);
+        return service.deleteNetwork(id);
+    }
+
+    @Override
+    public Network inspectNetwork(String id) {
+        checkNetworkAccess(id, Action.READ);
+        return service.inspectNetwork(id);
+    }
+
+    @Override
+    public PruneNetworksResponse pruneNetworks(PruneNetworksArg arg) {
+        checkServiceAccess(Action.ALTER_INSIDE);
+        return service.pruneNetworks(arg);
+    }
+
+    @Override
+    public ServiceCallResult connectNetwork(ConnectNetworkCmd cmd) {
+        checkNetworkAccess(cmd.getNetwork(), Action.UPDATE);
+        checkContainerAccess(cmd.getContainer(), Action.UPDATE);
+        return service.connectNetwork(cmd);
+    }
+
+    @Override
+    public ServiceCallResult disconnectNetwork(DisconnectNetworkCmd cmd) {
+        checkNetworkAccess(cmd.getNetwork(), Action.UPDATE);
+        checkContainerAccess(cmd.getContainer(), Action.UPDATE);
+        return service.disconnectNetwork(cmd);
+    }
+
+    @Override
     public List<Network> getNetworks() {
         AccessContext context = aclContextFactory.getContext();
         checkServiceAccessInternal(context, Action.READ);

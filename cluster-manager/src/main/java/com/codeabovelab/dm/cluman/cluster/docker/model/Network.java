@@ -19,53 +19,60 @@ package com.codeabovelab.dm.cluman.cluster.docker.model;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * Based on 'NetworkResource' from https://github.com/docker/docker/blob/master/api/types/types.go#L392 <p/>
+ * Note that 'inspect' command return same, but more filled object that 'list'
+ */
 @Data
 @JsonIgnoreProperties(ignoreUnknown = true)
 @JsonInclude(JsonInclude.Include.NON_NULL)
+@Builder(builderClassName = "Builder")
+@AllArgsConstructor
 public class Network {
 
     @JsonProperty("Id")
-    private String id;
+    private final String id;
 
     @JsonProperty("Name")
-    private String name;
+    private final String name;
 
     @JsonProperty("Scope")
-    private String scope;
+    private final String scope;
 
     @JsonProperty("Driver")
-    private String driver;
+    private final String driver;
 
     @JsonProperty("IPAM")
-    private Ipam ipam;
+    private final Ipam ipam;
 
     @JsonProperty("Containers")
-    private Map<String, ContainerNetworkConfig> containers;
+    private final Map<String, EndpointResource> containers;
 
     @JsonProperty("Options")
-    private Map<String, String> options;
+    private final Map<String, String> options;
 
     @Data
     @JsonIgnoreProperties(ignoreUnknown = true)
-    public static class ContainerNetworkConfig {
+    public static class EndpointResource {
 
         @JsonProperty("EndpointID")
-        private String endpointId;
+        private final String endpointId;
 
         @JsonProperty("MacAddress")
-        private String macAddress;
+        private final String macAddress;
 
         @JsonProperty("IPv4Address")
-        private String ipv4Address;
+        private final String ipv4Address;
 
         @JsonProperty("IPv6Address")
-        private String ipv6Address;
+        private final String ipv6Address;
 
     }
 
@@ -74,31 +81,25 @@ public class Network {
     public static class Ipam {
 
         @JsonProperty("Driver")
-        private String driver;
+        private final String driver;
 
         @JsonProperty("Config")
-        List<Config> config = new ArrayList<>();
+        private final List<Config> config;
 
-        @Data
-        @JsonIgnoreProperties(ignoreUnknown = true)
-        public static class Config {
-
-            @JsonProperty("Subnet")
-            private String subnet;
-
-            @JsonProperty("IPRange")
-            private String ipRange;
-
-            @JsonProperty("Gateway")
-            private String gateway;
-
-        }
     }
 
-    @Override
-    public String toString() {
-        return  "{id='" + id + '\'' +
-                ", driver='" + driver + '\'' +
-                ", name='" + name + '\'' + '}';
+    @Data
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    public static class Config {
+
+        @JsonProperty("Subnet")
+        private final String subnet;
+
+        @JsonProperty("IPRange")
+        private final String ipRange;
+
+        @JsonProperty("Gateway")
+        private final String gateway;
+
     }
 }

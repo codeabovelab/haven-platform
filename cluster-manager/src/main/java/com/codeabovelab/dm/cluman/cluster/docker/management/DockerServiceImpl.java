@@ -510,26 +510,54 @@ public class DockerServiceImpl implements DockerService {
 
     @Override
     public ServiceCallResult startContainer(String id) {
-        return simpleAction(id, "start");
+        return simpleContainerAction(id, "start");
     }
 
     @Override
     public ServiceCallResult pauseContainer(String id) {
-        return simpleAction(id, "pause");
+        return simpleContainerAction(id, "pause");
     }
 
     @Override
     public ServiceCallResult unpauseContainer(String id) {
-        return simpleAction(id, "unpause");
+        return simpleContainerAction(id, "unpause");
     }
 
-    private ServiceCallResult simpleAction(String id, String op) {
+    private ServiceCallResult simpleContainerAction(String id, String op) {
         Assert.notNull(id, "id is null");
+        log.info("trying to '{}' container {}", op, id);
+        UriComponentsBuilder ucb = getUrlContainer(id, op);
+        return postAction(ucb, null);
+    }
+
+    private ServiceCallResult postAction(UriComponentsBuilder ub, Object cmd) {
+        String url = ub.toUriString();
         try {
-            log.info("trying to '{}' container {}", op, id);
-            ResponseEntity<String> res = getSlow(() -> restTemplate.postForEntity(getUrlContainer(id, op).toUriString(), null, String.class));
+            ResponseEntity<String> res = getSlow(() -> {
+                HttpEntity<?> req = null;
+                if(cmd != null) {
+                    req = wrapEntity(cmd);
+                }
+                return restTemplate.postForEntity(url, req, String.class);
+            });
             return DockerUtils.getServiceCallResult(res);
         } catch (HttpStatusCodeException e) {
+            log.warn("Failed to execute POST on {}, due to {}", url, e.toString());
+            ServiceCallResult callResult = new ServiceCallResult();
+            processStatusCodeException(e, callResult);
+            return callResult;
+        }
+    }
+
+    private ServiceCallResult deleteAction(UriComponentsBuilder ub) {
+        String url = ub.toUriString();
+        try {
+            ResponseEntity<String> res = getSlow(() -> {
+                return restTemplate.exchange(url, HttpMethod.DELETE, null, String.class);
+            });
+            return DockerUtils.getServiceCallResult(res);
+        } catch (HttpStatusCodeException e) {
+            log.warn("Failed to execute delete on {}, due to {}", url, e.toString());
             ServiceCallResult callResult = new ServiceCallResult();
             processStatusCodeException(e, callResult);
             return callResult;
@@ -684,22 +712,62 @@ public class DockerServiceImpl implements DockerService {
         }
     }
 
-
     @Override
     public ServiceCallResult createNetwork(CreateNetworkCmd createNetworkCmd) {
-        UriComponentsBuilder ub = makeBaseUrl();
-        ub.pathSegment("networks", "create");
-        try {
-            ResponseEntity<String> res = getSlow(() -> restTemplate.exchange(ub.toUriString(), HttpMethod.POST, wrapEntity(createNetworkCmd), String.class));
-            return DockerUtils.getServiceCallResult(res);
-        } catch (HttpStatusCodeException e) {
-            ServiceCallResult res = new ServiceCallResult();
-            processStatusCodeException(e, res);
-            return res;
-        }
+        UriComponentsBuilder ub = makeBaseUrl().pathSegment("networks", "create");
+        return postAction(ub, createNetworkCmd);
     }
 
-    ///networks?filters={"type":{"custom":true}}
+    @Override
+    public Network inspectNetwork(String id) {
+        ResponseEntity<Network> res = getFast(() -> restTemplate.getForEntity(makeBaseUrl().pathSegment("networks", id).toUriString(), Network.class));
+        return res.getBody();
+    }
+
+    @Override
+    public ServiceCallResult deleteNetwork(String id) {
+        UriComponentsBuilder url = makeBaseUrl().pathSegment("networks", id);
+        return deleteAction(url);
+    }
+
+    @Override
+    public PruneNetworksResponse pruneNetworks(PruneNetworksArg arg) {
+        PruneNetworksResponse resp;
+        UriComponentsBuilder ub = makeBaseUrl().pathSegment("networks", "prune");
+        if(!arg.getFilters().isEmpty()) {
+            ub.queryParam("filters", toJson(arg.getFilters()));
+        }
+        try {
+            ResponseEntity<PruneNetworksResponse> res = getSlow(() -> restTemplate.exchange(ub.toUriString(), HttpMethod.POST, null, PruneNetworksResponse.class));
+            resp = res.getBody();
+            log.info("networks was pruned {}", resp);
+            DockerUtils.getServiceCallResult(res, resp);
+        } catch (HttpStatusCodeException e) {
+            resp = new PruneNetworksResponse();
+            processStatusCodeException(e, resp);
+            log.error("can't prune networks due to {}", e.getMessage());
+        }
+        return resp;
+    }
+
+
+    @Override
+    public ServiceCallResult connectNetwork(ConnectNetworkCmd cmd) {
+        UriComponentsBuilder ub = makeBaseUrl().pathSegment("networks", cmd.getNetwork(), "connect");
+        return postAction(ub, cmd);
+    }
+
+    @Override
+    public ServiceCallResult disconnectNetwork(DisconnectNetworkCmd cmd) {
+        UriComponentsBuilder ub = makeBaseUrl().pathSegment("networks", cmd.getNetwork(), "disconnect");
+        return postAction(ub, cmd);
+    }
+
+    private Object toJson(Object obj) {
+        // it need to pass ObjectMapper into this class
+        throw new UnsupportedOperationException("not supported yet");
+    }
+
     @Override
     public List<Network> getNetworks() {
         ResponseEntity<Network[]> networks = getFast(() -> restTemplate.getForEntity(makeBaseUrl().pathSegment("networks").toUriString(), Network[].class));
@@ -768,23 +836,19 @@ public class DockerServiceImpl implements DockerService {
 
     @Override
     public ServiceCallResult deleteContainer(DeleteContainerArg arg) {
-        try {
-            Assert.notNull(arg.getId(), "id is null");
-            UriComponentsBuilder ub = getUrlContainer(arg.getId(), null);
-            if (arg.isDeleteVolumes()) {
-                ub.queryParam("v", "1");
-            }
-            if (arg.isKill()) {
-                ub.queryParam("force", "1");
-            }
-            ResponseEntity<String> res = getSlow(() -> restTemplate.exchange(ub.toUriString(), HttpMethod.DELETE, null, String.class));
-            return DockerUtils.getServiceCallResult(res);
-        } catch (HttpStatusCodeException e) {
-            log.error("can't delete container: {} {}", arg, e);
-            ServiceCallResult callResult = new ServiceCallResult();
-            processStatusCodeException(e, callResult);
-            return callResult;
+        Assert.notNull(arg.getId(), "id is null");
+        UriComponentsBuilder ub = getUrlContainer(arg.getId(), null);
+        if (arg.isDeleteVolumes()) {
+            ub.queryParam("v", "1");
         }
+        if (arg.isKill()) {
+            ub.queryParam("force", "1");
+        }
+        ServiceCallResult res = deleteAction(ub);
+        if(res.getCode() != ResultCode.OK) {
+            log.error("can't delete container: {} {}", arg, res.getMessage());
+        }
+        return res;
     }
 
     @Override

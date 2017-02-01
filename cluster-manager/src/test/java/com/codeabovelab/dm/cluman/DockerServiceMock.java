@@ -366,6 +366,37 @@ public class DockerServiceMock implements DockerService {
     }
 
     @Override
+    public Network inspectNetwork(String id) {
+        NetworkHolder nh = networks.get(id);
+        if(nh == null) {
+            return null;
+        }
+        return nh.asNetwork();
+    }
+
+    @Override
+    public ServiceCallResult deleteNetwork(String id) {
+        NetworkHolder nh = networks.remove(id);
+        return nh == null? resultNotFound() : resultOk();
+    }
+
+    @Override
+    public PruneNetworksResponse pruneNetworks(PruneNetworksArg arg) {
+        PruneNetworksResponse res = new PruneNetworksResponse();
+        return res;
+    }
+
+    @Override
+    public ServiceCallResult connectNetwork(ConnectNetworkCmd cmd) {
+        return resultOk();
+    }
+
+    @Override
+    public ServiceCallResult disconnectNetwork(DisconnectNetworkCmd cmd) {
+        return resultOk();
+    }
+
+    @Override
     public List<Network> getNetworks() {
         return networks.values().stream().map(NetworkHolder::asNetwork).collect(Collectors.toList());
     }
@@ -588,9 +619,9 @@ public class DockerServiceMock implements DockerService {
         }
 
         Network asNetwork() {
-            Network network = new Network();
-            network.setName(name);
-            return network;
+            Network.Builder nb = Network.builder();
+            nb.name(name);
+            return nb.build();
         }
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 Code Above Lab LLC
+ * Copyright 2017 Code Above Lab LLC
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,28 +16,30 @@
 
 package com.codeabovelab.dm.cluman.cluster.docker.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Data;
 
-import java.util.HashMap;
-import java.util.Map;
-
 /**
- * TODO It must consider all fields from {@link Network }
  */
 @Data
-public class CreateNetworkCmd {
+public class DisconnectNetworkCmd {
 
-    @JsonProperty("Name")
-    private String name;
+    /**
+     * Name or id of network
+     */
+    @JsonIgnore
+    private String network;
 
-    @JsonProperty("Driver")
-    private String driver;
+    /**
+     * name or id of container
+     */
+    @JsonProperty("Container")
+    private String container;
 
-    @JsonProperty("IPAM")
-    private Network.Ipam ipam;
-
-    @JsonProperty("Options")
-    private Map<String, String> options = new HashMap<>();
-
+    /**
+     * Force the container to disconnect from the network.
+     */
+    @JsonProperty("Force")
+    private boolean force;
 }
