@@ -77,7 +77,7 @@ public class ContainerStorageImpl implements ContainerStorage, InitializingBean 
         if(cr == null) {
             cr = map.values().stream().filter((item) -> {
                 DockerContainer container = item.getContainer();
-                return container != null && (item.getId().startsWith(name) || container.getName().equals(name));
+                return container != null && (item.getId().startsWith(name) || Objects.equals(container.getName(), name));
             }).findAny().orElse(null);
         }
         return cr;
