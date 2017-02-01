@@ -153,7 +153,7 @@ public interface DockerService {
     ServiceCallResult renameContainer(String id, String newName);
 
     ServiceCallResult createNetwork(CreateNetworkCmd cmd);
-    Network inspectNetwork(String id);
+    Network getNetwork(String id);
     ServiceCallResult deleteNetwork(String id);
 
     /**

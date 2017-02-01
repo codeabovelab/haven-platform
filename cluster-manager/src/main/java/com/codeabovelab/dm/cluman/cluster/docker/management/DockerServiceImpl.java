@@ -719,7 +719,7 @@ public class DockerServiceImpl implements DockerService {
     }
 
     @Override
-    public Network inspectNetwork(String id) {
+    public Network getNetwork(String id) {
         ResponseEntity<Network> res = getFast(() -> restTemplate.getForEntity(makeBaseUrl().pathSegment("networks", id).toUriString(), Network.class));
         return res.getBody();
     }

@@ -366,7 +366,7 @@ public class DockerServiceMock implements DockerService {
     }
 
     @Override
-    public Network inspectNetwork(String id) {
+    public Network getNetwork(String id) {
         NetworkHolder nh = networks.get(id);
         if(nh == null) {
             return null;

@@ -235,9 +235,9 @@ public class DockerServiceSecurityWrapper implements DockerService {
     }
 
     @Override
-    public Network inspectNetwork(String id) {
+    public Network getNetwork(String id) {
         checkNetworkAccess(id, Action.READ);
-        return service.inspectNetwork(id);
+        return service.getNetwork(id);
     }
 
     @Override

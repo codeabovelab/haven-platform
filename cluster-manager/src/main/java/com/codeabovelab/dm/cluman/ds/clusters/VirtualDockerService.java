@@ -71,7 +71,7 @@ class VirtualDockerService implements DockerService {
     }
 
     @Override
-    public Network inspectNetwork(String id) {
+    public Network getNetwork(String id) {
         return null;
     }
 
