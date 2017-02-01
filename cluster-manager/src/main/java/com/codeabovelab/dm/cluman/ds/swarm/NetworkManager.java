@@ -32,6 +32,7 @@ import org.springframework.stereotype.Component;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.Consumer;
 
 @Component
@@ -59,8 +60,9 @@ public class NetworkManager implements Consumer<NodeEvent> {
         return createNetwork(group, clusterName);
     }
 
-    private ServiceCallResult createNetwork(NodesGroup group, String networkName) {
-        if(!group.getFeatures().contains(NodesGroup.Feature.SWARM)) {
+    public ServiceCallResult createNetwork(NodesGroup group, String networkName) {
+        Set<NodesGroup.Feature> features = group.getFeatures();
+        if(!features.contains(NodesGroup.Feature.SWARM) && !features.contains(NodesGroup.Feature.SWARM_MODE)) {
             // non swarm groups does not support network creation
             return new ServiceCallResult().code(ResultCode.NOT_MODIFIED).message("not supported for this group type");
         }
