@@ -16,6 +16,7 @@
 
 package com.codeabovelab.dm.cluman.cluster.docker.model;
 
+import com.codeabovelab.dm.common.json.JtEnumLower;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -47,8 +48,12 @@ public class Network {
     @JsonProperty("Created")
     private final ZonedDateTime created;
 
+    /**
+     * Scope describes the level at which the network exists
+     * (e.g. `global` for cluster-wide or `local` for machine level)
+     */
     @JsonProperty("Scope")
-    private final String scope;
+    private final Scope scope;
 
     @JsonProperty("Driver")
     private final String driver;
@@ -90,6 +95,11 @@ public class Network {
     @JsonProperty("Peers")
     private final List<PeerInfo> peers;
 
+    @JtEnumLower
+    public enum Scope {
+        GLOBAL, LOCAL, SWARM
+    }
+
     @Data
     @JsonIgnoreProperties(ignoreUnknown = true)
     @lombok.Builder(builderClassName = "Builder")
@@ -130,7 +140,7 @@ public class Network {
         private final Map<String, String> options;
 
         @JsonProperty("Config")
-        private final List<IpamConfig> config;
+        private final List<IpamConfig> configs;
 
     }
 
