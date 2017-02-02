@@ -23,6 +23,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 
+import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.Map;
 
@@ -43,24 +44,58 @@ public class Network {
     @JsonProperty("Name")
     private final String name;
 
+    @JsonProperty("Created")
+    private final ZonedDateTime created;
+
     @JsonProperty("Scope")
     private final String scope;
 
     @JsonProperty("Driver")
     private final String driver;
 
+    /**
+     * IPAM is the network's IP Address Management
+     */
     @JsonProperty("IPAM")
     private final Ipam ipam;
+
+    /**
+     * Internal represents if the network is used internal only
+     */
+    @JsonProperty("Internal")
+    private final boolean internal;
+
+    /**
+     * Attachable represents if the global scope is manually attachable by regular containers
+     * from workers in swarm mode.
+     */
+    @JsonProperty("Attachable")
+    private final boolean attachable;
 
     @JsonProperty("Containers")
     private final Map<String, EndpointResource> containers;
 
+    /**
+     * Options holds the network specific options to use for when creating the network
+     */
     @JsonProperty("Options")
     private final Map<String, String> options;
 
+    /**
+     * List of peer nodes for an overlay network
+     */
+    @JsonProperty("Peers")
+    private final List<PeerInfo> peers;
+
     @Data
     @JsonIgnoreProperties(ignoreUnknown = true)
+    @lombok.Builder(builderClassName = "Builder")
+    @AllArgsConstructor
     public static class EndpointResource {
+
+
+        @JsonProperty("Name")
+        private final String name;
 
         @JsonProperty("EndpointID")
         private final String endpointId;
@@ -77,20 +112,30 @@ public class Network {
     }
 
     @Data
+    @lombok.Builder(builderClassName = "Builder")
+    @AllArgsConstructor
     @JsonIgnoreProperties(ignoreUnknown = true)
     public static class Ipam {
 
         @JsonProperty("Driver")
         private final String driver;
 
+        /**
+         * Per network IPAM driver options
+         */
+        @JsonProperty("Options")
+        private final Map<String, String> options;
+
         @JsonProperty("Config")
-        private final List<Config> config;
+        private final List<IpamConfig> config;
 
     }
 
     @Data
+    @lombok.Builder(builderClassName = "Builder")
+    @AllArgsConstructor
     @JsonIgnoreProperties(ignoreUnknown = true)
-    public static class Config {
+    public static class IpamConfig {
 
         @JsonProperty("Subnet")
         private final String subnet;
@@ -101,5 +146,20 @@ public class Network {
         @JsonProperty("Gateway")
         private final String gateway;
 
+        @JsonProperty("AuxiliaryAddresses")
+        private final Map<String, String> auxiliaryAddresses;
     }
+
+    @Data
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    public static class PeerInfo {
+
+        @JsonProperty("Name")
+        private final String name;
+
+        @JsonProperty("IP")
+        private final String ip;
+
+    }
+
 }
