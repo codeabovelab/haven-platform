@@ -81,6 +81,9 @@ public class Network {
     @JsonProperty("Options")
     private final Map<String, String> options;
 
+    @JsonProperty("Labels")
+    private final Map<String, String> labels;
+
     /**
      * List of peer nodes for an overlay network
      */
