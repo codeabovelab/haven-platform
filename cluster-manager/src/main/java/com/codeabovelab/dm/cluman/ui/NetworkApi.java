@@ -18,10 +18,12 @@ package com.codeabovelab.dm.cluman.ui;
 
 import com.codeabovelab.dm.cluman.cluster.docker.management.result.ServiceCallResult;
 import com.codeabovelab.dm.cluman.cluster.docker.model.Network;
+import com.codeabovelab.dm.cluman.ds.container.ContainerStorage;
 import com.codeabovelab.dm.cluman.ds.swarm.NetworkManager;
 import com.codeabovelab.dm.cluman.model.DiscoveryStorage;
 import com.codeabovelab.dm.cluman.model.NodesGroup;
 import com.codeabovelab.dm.cluman.ui.model.UIResult;
+import com.codeabovelab.dm.cluman.ui.model.UiNetwork;
 import com.codeabovelab.dm.cluman.validate.ExtendedAssert;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -31,6 +33,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
@@ -42,10 +45,19 @@ public class NetworkApi {
 
     private final NetworkManager networkManager;
     private final DiscoveryStorage discoveryStorage;
+    private final ContainerStorage containerStorage;
 
     @RequestMapping(value = {"{cluster}/"}, method = RequestMethod.GET)
-    public List<Network> getNetworks(@PathVariable("cluster") String clusterName) {
-        return networkManager.getNetworks(clusterName);
+    public List<UiNetwork> getNetworks(@PathVariable("cluster") String clusterName) {
+        List<Network> networks = networkManager.getNetworks(clusterName);
+        ArrayList<UiNetwork> results = new ArrayList<>(networks.size());
+        networks.forEach(src -> {
+            UiNetwork res = new UiNetwork();
+            res.from(src, containerStorage);
+            res.setCluster(clusterName);
+            results.add(res);
+        });
+        return results;
     }
 
     @RequestMapping(value = "{cluster}/{network}", method = RequestMethod.POST)
