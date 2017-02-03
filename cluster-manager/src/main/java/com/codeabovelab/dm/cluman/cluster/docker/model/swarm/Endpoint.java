@@ -59,7 +59,22 @@ public class Endpoint {
      */
     @JtEnumLower
     public enum ResolutionMode {
+        /**
+         * VIP resolution mode specifies that the
+         * service resolves to a logical IP and the requests
+         * are sent to that logical IP. Packets hitting that
+         * logical IP are load balanced to a chosen backend.
+         */
         VIP,
+        /**
+         * DNS round-robin. <p/>
+         * DNSRR resolution mode specifies that the
+         * service directly gets resolved to one of the
+         * backend IP and the client directly initiates a
+         * request towards the actual backend. This requires
+         * that the client does not cache the DNS responses
+         * when the DNS response TTL is 0.
+         */
         DNSRR
     }
 
