@@ -23,6 +23,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
+import lombok.Singular;
 
 import java.time.ZonedDateTime;
 import java.util.List;
@@ -76,6 +77,9 @@ public class Network {
      */
     @JsonProperty("Attachable")
     private final boolean attachable;
+
+    @JsonProperty("EnableIPv6")
+    private final boolean enableIpv6;
 
     @JsonProperty("Containers")
     private final Map<String, EndpointResource> containers;
@@ -139,6 +143,7 @@ public class Network {
         @JsonProperty("Options")
         private final Map<String, String> options;
 
+        @Singular
         @JsonProperty("Config")
         private final List<IpamConfig> configs;
 

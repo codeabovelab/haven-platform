@@ -34,6 +34,9 @@ public class CreateNetworkCmd {
     @JsonProperty("CheckDuplicate")
     private boolean checkDuplicate;
 
+    @JsonProperty("EnableIPv6")
+    private boolean enableIpv6;
+
     @JsonProperty("Driver")
     private String driver;
 

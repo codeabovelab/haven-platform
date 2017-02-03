@@ -66,16 +66,20 @@ public class NetworkManager implements Consumer<NodeEvent> {
             // non swarm groups does not support network creation
             return new ServiceCallResult().code(ResultCode.NOT_MODIFIED).message("not supported for this group type");
         }
-        DockerService service = group.getDocker();
 
         CreateNetworkCmd cmd = new CreateNetworkCmd();
         cmd.setName(networkName);
         cmd.setDriver(OVERLAY_DRIVER);
         cmd.setCheckDuplicate(true);
-        LOG.debug("About to create network '{}' for cluster '{}'", cmd, networkName);
+        return createNetwork(group, cmd);
+    }
+
+    public ServiceCallResult createNetwork(NodesGroup group, CreateNetworkCmd cmd) {
+        DockerService service = group.getDocker();
+        LOG.debug("About to create network '{}' for cluster '{}'", cmd, group.getName());
         ServiceCallResult res = service.createNetwork(cmd);
         if (res.getCode() == ResultCode.ERROR) {
-            LOG.error("can't create network for cluster {} due: {}", networkName, res.getMessage());
+            LOG.error("can't create network for cluster {} due: {}", group.getName(), res.getMessage());
         }
         return res;
     }
