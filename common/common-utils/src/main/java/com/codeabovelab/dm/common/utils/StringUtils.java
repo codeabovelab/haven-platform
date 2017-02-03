@@ -44,6 +44,14 @@ public class StringUtils {
         return s.substring(pos + 1);
     }
 
+    public static String beforeLast(String s, char c) {
+        int pos = s.lastIndexOf(c);
+        if(pos < 0) {
+            throw new IllegalArgumentException("String '" + s + "' must contains '" + c + "'.");
+        }
+        return s.substring(0, pos);
+    }
+
     public static String afterLast(String s, char c) {
         int pos = s.lastIndexOf(c);
         if(pos < 0) {

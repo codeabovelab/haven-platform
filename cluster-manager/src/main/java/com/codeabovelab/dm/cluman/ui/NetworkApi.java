@@ -17,6 +17,7 @@
 package com.codeabovelab.dm.cluman.ui;
 
 import com.codeabovelab.dm.cluman.cluster.docker.management.result.ServiceCallResult;
+import com.codeabovelab.dm.cluman.cluster.docker.model.CreateNetworkCmd;
 import com.codeabovelab.dm.cluman.cluster.docker.model.Network;
 import com.codeabovelab.dm.cluman.ds.container.ContainerStorage;
 import com.codeabovelab.dm.cluman.ds.swarm.NetworkManager;
@@ -24,14 +25,13 @@ import com.codeabovelab.dm.cluman.model.DiscoveryStorage;
 import com.codeabovelab.dm.cluman.model.NodesGroup;
 import com.codeabovelab.dm.cluman.ui.model.UIResult;
 import com.codeabovelab.dm.cluman.ui.model.UiNetwork;
+import com.codeabovelab.dm.cluman.ui.model.UiNetworkDetails;
+import com.codeabovelab.dm.cluman.ui.model.UiNetworkBase;
 import com.codeabovelab.dm.cluman.validate.ExtendedAssert;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -47,7 +47,7 @@ public class NetworkApi {
     private final DiscoveryStorage discoveryStorage;
     private final ContainerStorage containerStorage;
 
-    @RequestMapping(value = {"{cluster}/"}, method = RequestMethod.GET)
+    @RequestMapping(value = {"{cluster}"}, method = RequestMethod.GET)
     public List<UiNetwork> getNetworks(@PathVariable("cluster") String clusterName) {
         List<Network> networks = networkManager.getNetworks(clusterName);
         ArrayList<UiNetwork> results = new ArrayList<>(networks.size());
@@ -61,20 +61,27 @@ public class NetworkApi {
     }
 
     @RequestMapping(value = "{cluster}/{network}", method = RequestMethod.POST)
-    public ResponseEntity<UIResult> createNetwork(@PathVariable("cluster") String clusterName, @PathVariable("network") String network) {
+    public ResponseEntity<UIResult> createNetwork(@PathVariable("cluster") String clusterName,
+                                                  @PathVariable("network") String network,
+                                                  @RequestBody UiNetworkBase body) {
         NodesGroup group = discoveryStorage.getCluster(clusterName);
         ExtendedAssert.notFound(group, "Cluster " + clusterName + " not found");
-        ServiceCallResult res = networkManager.createNetwork(group, network);
+        CreateNetworkCmd cmd = new CreateNetworkCmd();
+        if(body != null) {
+            body.to(cmd);
+        }
+        cmd.setName(network);
+        ServiceCallResult res = networkManager.createNetwork(group, cmd);
         return UiUtils.createResponse(res);
     }
 
     @RequestMapping(value = "{cluster}/{network}", method = RequestMethod.GET)
-    public Object getNetwork(@PathVariable("cluster") String clusterName, @PathVariable("network") String netId) {
+    public UiNetworkDetails getNetwork(@PathVariable("cluster") String clusterName, @PathVariable("network") String netId) {
         NodesGroup group = discoveryStorage.getCluster(clusterName);
         ExtendedAssert.notFound(group, "Cluster " + clusterName + " not found");
         Network net = group.getDocker().getNetwork(netId);
-        //TODO return UI network
-        return net;
+        ExtendedAssert.notFound(net, "Can not found network " + clusterName + "/" + netId);
+        return new UiNetworkDetails().from(net, containerStorage);
     }
 
     @RequestMapping(value = "{cluster}/{network}", method = RequestMethod.DELETE)

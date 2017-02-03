@@ -21,6 +21,7 @@ import com.codeabovelab.dm.cluman.ds.container.ContainerRegistration;
 import com.codeabovelab.dm.cluman.ds.container.ContainerStorage;
 import com.codeabovelab.dm.cluman.model.DockerContainer;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -28,34 +29,13 @@ import java.util.Map;
 
 /**
  */
+@EqualsAndHashCode(callSuper = true)
 @Data
-public class UiNetwork {
+public class UiNetwork extends UiNetworkBase {
     private String id;
-    private String name;
-    private String cluster;
     private Network.Scope scope;
-    private String driver;
-    private Ipam ipam;
     private final List<Container> containers = new ArrayList<>();
-
-    @Data
-    public static class Ipam {
-
-        private String driver;
-
-        private final List<IpamConfig> configs = new ArrayList<>();
-
-    }
-
-    @Data
-    public static class IpamConfig {
-
-        private String subnet;
-
-        private String range;
-
-        private String gateway;
-    }
+    private boolean attachable;
 
     @Data
     public static class Container {
@@ -73,24 +53,12 @@ public class UiNetwork {
     }
 
 
-    public void from(Network network, ContainerStorage cs) {
+    public UiNetwork from(Network network, ContainerStorage cs) {
+        super.from(network);
         this.setId(network.getId());
-        this.setName(network.getName());
         this.setScope(network.getScope());
-        this.setDriver(network.getDriver());
-        Network.Ipam origIpam = network.getIpam();
-        Ipam uiIpam = new Ipam();
-        uiIpam.setDriver(origIpam.getDriver());
-        List<Network.IpamConfig> configs = origIpam.getConfigs();
-        if(configs != null) {
-            configs.forEach(oc -> {
-                IpamConfig uic = new IpamConfig();
-                uic.setGateway(oc.getGateway());
-                uic.setRange(oc.getIpRange());
-                uic.setSubnet(oc.getSubnet());
-                uiIpam.getConfigs().add(uic);
-            });
-        }
+        this.setAttachable(isAttachable());
+
         Map<String, Network.EndpointResource> containers = network.getContainers();
         if(cs != null && containers != null) {
             containers.forEach((key, val) -> {
@@ -109,7 +77,7 @@ public class UiNetwork {
                 getContainers().add(c);
             });
         }
-        this.setIpam(uiIpam);
+        return this;
     }
 
 }
