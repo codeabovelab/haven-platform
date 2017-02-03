@@ -69,12 +69,13 @@ public class NetworkApi {
                                                   @RequestParam("network") String network,
                                                   @RequestBody UiNetworkBase body) {
         NodesGroup group = discoveryStorage.getCluster(clusterName);
-        ExtendedAssert.notFound(group, "Cluster " + clusterName + " not found");
+        ExtendedAssert.notFound(group, "Cluster '" + clusterName + "' not found");
         CreateNetworkCmd cmd = new CreateNetworkCmd();
         if(body != null) {
             body.to(cmd);
         }
         cmd.setName(network);
+        cmd.setCheckDuplicate(true);
         ServiceCallResult res = networkManager.createNetwork(group, cmd);
         return UiUtils.createResponse(res);
     }
@@ -83,9 +84,9 @@ public class NetworkApi {
     public UiNetworkDetails getNetwork(@RequestParam("cluster") String clusterName,
                                        @RequestParam("network")  String netId) {
         NodesGroup group = discoveryStorage.getCluster(clusterName);
-        ExtendedAssert.notFound(group, "Cluster " + clusterName + " not found");
+        ExtendedAssert.notFound(group, "Cluster '" + clusterName + "' not found");
         Network net = group.getDocker().getNetwork(netId);
-        ExtendedAssert.notFound(net, "Can not found network " + clusterName + "/" + netId);
+        ExtendedAssert.notFound(net, "Can not found network '" + netId + "' in cluster '" + clusterName + "'");
         UiNetworkDetails uinet = new UiNetworkDetails();
         uinet.setCluster(clusterName);
         return uinet.from(net, containerStorage);
@@ -95,7 +96,7 @@ public class NetworkApi {
     public ResponseEntity<?> deleteNetwork(@RequestParam("cluster") String clusterName,
                                            @RequestParam("network") String network) {
         NodesGroup group = discoveryStorage.getCluster(clusterName);
-        ExtendedAssert.notFound(group, "Cluster " + clusterName + " not found");
+        ExtendedAssert.notFound(group, "Cluster '" + clusterName + "' not found");
         ServiceCallResult res = group.getDocker().deleteNetwork(network);
         return UiUtils.createResponse(res);
     }

@@ -84,7 +84,12 @@ public class UiNetworkBase {
         }
 
         public Ipam from(Network.Ipam ipam) {
-            setDriver(ipam.getDriver());
+            String driver = ipam.getDriver();
+            if(driver == null) {
+                // docker does not allow null value for this field.
+                driver = "default";
+            }
+            setDriver(driver);
             List<Network.IpamConfig> configs = ipam.getConfigs();
             if(configs != null) {
                 configs.forEach(oc -> getConfig().add(IpamConfig.from(oc)));
