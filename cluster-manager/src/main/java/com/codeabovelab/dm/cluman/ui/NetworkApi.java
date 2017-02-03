@@ -86,7 +86,9 @@ public class NetworkApi {
         ExtendedAssert.notFound(group, "Cluster " + clusterName + " not found");
         Network net = group.getDocker().getNetwork(netId);
         ExtendedAssert.notFound(net, "Can not found network " + clusterName + "/" + netId);
-        return new UiNetworkDetails().from(net, containerStorage);
+        UiNetworkDetails uinet = new UiNetworkDetails();
+        uinet.setCluster(clusterName);
+        return uinet.from(net, containerStorage);
     }
 
     @RequestMapping(path = "delete", method = RequestMethod.DELETE)
