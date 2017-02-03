@@ -68,11 +68,12 @@ public class NetworkManager implements Consumer<NodeEvent> {
         }
         DockerService service = group.getDocker();
 
-        CreateNetworkCmd createNetworkCmd = new CreateNetworkCmd();
-        createNetworkCmd.setName(networkName);
-        createNetworkCmd.setDriver(OVERLAY_DRIVER);
-        LOG.debug("About to create network '{}' for cluster '{}'", createNetworkCmd, networkName);
-        ServiceCallResult res = service.createNetwork(createNetworkCmd);
+        CreateNetworkCmd cmd = new CreateNetworkCmd();
+        cmd.setName(networkName);
+        cmd.setDriver(OVERLAY_DRIVER);
+        cmd.setCheckDuplicate(true);
+        LOG.debug("About to create network '{}' for cluster '{}'", cmd, networkName);
+        ServiceCallResult res = service.createNetwork(cmd);
         if (res.getCode() == ResultCode.ERROR) {
             LOG.error("can't create network for cluster {} due: {}", networkName, res.getMessage());
         }

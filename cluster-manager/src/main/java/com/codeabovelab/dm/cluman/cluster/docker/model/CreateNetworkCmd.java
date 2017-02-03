@@ -31,13 +31,21 @@ public class CreateNetworkCmd {
     @JsonProperty("Name")
     private String name;
 
+    @JsonProperty("CheckDuplicate")
+    private boolean checkDuplicate;
+
     @JsonProperty("Driver")
     private String driver;
+
+    @JsonProperty("Internal")
+    private boolean internal;
 
     @JsonProperty("IPAM")
     private Network.Ipam ipam;
 
     @JsonProperty("Options")
-    private Map<String, String> options = new HashMap<>();
+    private final Map<String, String> options = new HashMap<>();
 
+    @JsonProperty("Labels")
+    private final Map<String, String> labels = new HashMap<>();
 }
