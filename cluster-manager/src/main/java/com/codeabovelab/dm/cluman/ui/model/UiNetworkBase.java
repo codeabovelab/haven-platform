@@ -18,6 +18,7 @@ package com.codeabovelab.dm.cluman.ui.model;
 
 import com.codeabovelab.dm.cluman.cluster.docker.model.CreateNetworkCmd;
 import com.codeabovelab.dm.cluman.cluster.docker.model.Network;
+import com.codeabovelab.dm.common.utils.Sugar;
 import lombok.Data;
 
 import java.util.ArrayList;
@@ -41,27 +42,27 @@ public class UiNetworkBase {
     public void to(CreateNetworkCmd cmd) {
         cmd.setName(getName());
         cmd.setDriver(getDriver());
-        cmd.getOptions().putAll(getOptions());
+        Sugar.setIfNotNull(cmd.getOptions()::putAll, getOptions());
         Ipam ipam = getIpam();
         if(ipam != null) {
             cmd.setIpam(ipam.to());
         }
         cmd.setInternal(isInternal());
         cmd.setEnableIpv6(isEnableIpv6());
-        cmd.getLabels().putAll(getLabels());
+        Sugar.setIfNotNull(cmd.getLabels()::putAll, getLabels());
     }
 
     public UiNetworkBase from(Network net) {
         setName(net.getName());
         setDriver(net.getDriver());
-        getOptions().putAll(net.getOptions());
+        Sugar.setIfNotNull(getOptions()::putAll, net.getOptions());
         Network.Ipam ipam = net.getIpam();
         if(ipam != null) {
             setIpam(new Ipam().from(ipam));
         }
         setInternal(net.isInternal());
         setEnableIpv6(net.isEnableIpv6());
-        getLabels().putAll(net.getLabels());
+        Sugar.setIfNotNull(getLabels()::putAll, net.getLabels());
         return this;
     }
 
@@ -76,8 +77,8 @@ public class UiNetworkBase {
 
         public Network.Ipam to() {
             Network.Ipam.Builder ib = Network.Ipam.builder();
-            ib.driver(getDriver())
-              .options(getOptions());
+            ib.driver(getDriver());
+            Sugar.setIfNotNull(ib::options, getOptions());
             getConfig().forEach(csrc -> ib.config(csrc.to()));
             return ib.build();
         }

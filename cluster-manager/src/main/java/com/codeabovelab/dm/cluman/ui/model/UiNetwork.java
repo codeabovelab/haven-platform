@@ -22,6 +22,7 @@ import com.codeabovelab.dm.cluman.ds.container.ContainerStorage;
 import com.codeabovelab.dm.cluman.model.DockerContainer;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
+import org.springframework.util.StringUtils;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -73,7 +74,10 @@ public class UiNetwork extends UiNetworkBase {
                 c.setName(dc.getName());
                 c.setImage(dc.getImage());
                 c.setIpv4Address(val.getIpv4Address());
-                c.setIpv6Address(val.getIpv6Address());
+                String ipv6Address = val.getIpv6Address();
+                if(StringUtils.hasText(ipv6Address)) {
+                    c.setIpv6Address(ipv6Address);
+                }
                 getContainers().add(c);
             });
         }
