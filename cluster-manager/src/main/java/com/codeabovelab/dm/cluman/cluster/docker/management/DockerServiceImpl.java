@@ -36,6 +36,7 @@ import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.BeanUtils;
 import org.springframework.http.*;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.util.Assert;
@@ -531,21 +532,28 @@ public class DockerServiceImpl implements DockerService {
     }
 
     private ServiceCallResult postAction(UriComponentsBuilder ub, Object cmd) {
+        return postAction(ub, cmd, ServiceCallResult.class);
+    }
+
+    private <T extends ServiceCallResult> T postAction(UriComponentsBuilder ub, Object cmd, Class<T> responseType) {
         String url = ub.toUriString();
+        T resp;
         try {
-            ResponseEntity<String> res = getSlow(() -> {
+            ResponseEntity<T> entity = getSlow(() -> {
                 HttpEntity<?> req = null;
                 if(cmd != null) {
                     req = wrapEntity(cmd);
                 }
-                return restTemplate.postForEntity(url, req, String.class);
+                return restTemplate.postForEntity(url, req, responseType);
             });
-            return DockerUtils.getServiceCallResult(res);
+            resp = entity.getBody();
+            resp.setCode(ResultCode.OK);
+            return resp;
         } catch (HttpStatusCodeException e) {
             log.warn("Failed to execute POST on {}, due to {}", url, e.toString());
-            ServiceCallResult callResult = new ServiceCallResult();
-            processStatusCodeException(e, callResult);
-            return callResult;
+            resp = BeanUtils.instantiate(responseType);
+            processStatusCodeException(e, resp);
+            return resp;
         }
     }
 
@@ -713,9 +721,9 @@ public class DockerServiceImpl implements DockerService {
     }
 
     @Override
-    public ServiceCallResult createNetwork(CreateNetworkCmd createNetworkCmd) {
+    public CreateNetworkResponse createNetwork(CreateNetworkCmd createNetworkCmd) {
         UriComponentsBuilder ub = makeBaseUrl().pathSegment("networks", "create");
-        return postAction(ub, createNetworkCmd);
+        return postAction(ub, createNetworkCmd, CreateNetworkResponse.class);
     }
 
     @Override

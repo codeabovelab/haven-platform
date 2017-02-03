@@ -65,9 +65,9 @@ class VirtualDockerService implements DockerService {
     }
 
     @Override
-    public ServiceCallResult createNetwork(CreateNetworkCmd createNetworkCmd) {
+    public CreateNetworkResponse createNetwork(CreateNetworkCmd createNetworkCmd) {
         //TODO
-        return notSupported();
+        return notSupported(new CreateNetworkResponse());
     }
 
     @Override

@@ -223,7 +223,7 @@ public class DockerServiceSecurityWrapper implements DockerService {
     }
 
     @Override
-    public ServiceCallResult createNetwork(CreateNetworkCmd cmd) {
+    public CreateNetworkResponse createNetwork(CreateNetworkCmd cmd) {
         checkNetworkAccess(cmd.getName(), Action.CREATE);
         return service.createNetwork(cmd);
     }

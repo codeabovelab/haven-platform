@@ -356,13 +356,17 @@ public class DockerServiceMock implements DockerService {
     }
 
     @Override
-    public ServiceCallResult createNetwork(CreateNetworkCmd cmd) {
+    public CreateNetworkResponse createNetwork(CreateNetworkCmd cmd) {
         NetworkHolder value = new NetworkHolder(cmd);
         NetworkHolder old = networks.putIfAbsent(cmd.getName(), value);
+        CreateNetworkResponse res = new CreateNetworkResponse();
         if(old != null) {
-            return resultConflict();
+            res.code(ResultCode.CONFLICT);
+            return res;
         }
-        return resultOk();
+        res.setId(value.getName());
+        res.code(ResultCode.OK);
+        return res;
     }
 
     @Override
