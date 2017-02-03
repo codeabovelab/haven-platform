@@ -38,6 +38,10 @@ import java.util.List;
 
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 
+/**
+ * <b>Note: network name may contains '/' and other symbols which is illegal in url path</b>, therefore we use
+ * 'RequestParam' instead 'PathVariable'.
+ */
 @RestController
 @RequestMapping(value = "/ui/api/networks", produces = APPLICATION_JSON_VALUE)
 @RequiredArgsConstructor(onConstructor = @__(@Autowired))
@@ -47,8 +51,8 @@ public class NetworkApi {
     private final DiscoveryStorage discoveryStorage;
     private final ContainerStorage containerStorage;
 
-    @RequestMapping(value = {"{cluster}"}, method = RequestMethod.GET)
-    public List<UiNetwork> getNetworks(@PathVariable("cluster") String clusterName) {
+    @RequestMapping(path = "list", method = RequestMethod.GET)
+    public List<UiNetwork> getNetworks(@RequestParam("cluster") String clusterName) {
         List<Network> networks = networkManager.getNetworks(clusterName);
         ArrayList<UiNetwork> results = new ArrayList<>(networks.size());
         networks.forEach(src -> {
@@ -60,9 +64,9 @@ public class NetworkApi {
         return results;
     }
 
-    @RequestMapping(value = "{cluster}/{network}", method = RequestMethod.POST)
-    public ResponseEntity<UIResult> createNetwork(@PathVariable("cluster") String clusterName,
-                                                  @PathVariable("network") String network,
+    @RequestMapping(path = "create", method = RequestMethod.POST)
+    public ResponseEntity<UIResult> createNetwork(@RequestParam("cluster") String clusterName,
+                                                  @RequestParam("network") String network,
                                                   @RequestBody UiNetworkBase body) {
         NodesGroup group = discoveryStorage.getCluster(clusterName);
         ExtendedAssert.notFound(group, "Cluster " + clusterName + " not found");
@@ -75,8 +79,9 @@ public class NetworkApi {
         return UiUtils.createResponse(res);
     }
 
-    @RequestMapping(value = "{cluster}/{network}", method = RequestMethod.GET)
-    public UiNetworkDetails getNetwork(@PathVariable("cluster") String clusterName, @PathVariable("network") String netId) {
+    @RequestMapping(path = "get", method = RequestMethod.GET)
+    public UiNetworkDetails getNetwork(@RequestParam("cluster") String clusterName,
+                                       @RequestParam("network")  String netId) {
         NodesGroup group = discoveryStorage.getCluster(clusterName);
         ExtendedAssert.notFound(group, "Cluster " + clusterName + " not found");
         Network net = group.getDocker().getNetwork(netId);
@@ -84,8 +89,9 @@ public class NetworkApi {
         return new UiNetworkDetails().from(net, containerStorage);
     }
 
-    @RequestMapping(value = "{cluster}/{network}", method = RequestMethod.DELETE)
-    public ResponseEntity<?> deleteNetwork(@PathVariable("cluster") String clusterName, @PathVariable("network") String network) {
+    @RequestMapping(path = "delete", method = RequestMethod.DELETE)
+    public ResponseEntity<?> deleteNetwork(@RequestParam("cluster") String clusterName,
+                                           @RequestParam("network") String network) {
         NodesGroup group = discoveryStorage.getCluster(clusterName);
         ExtendedAssert.notFound(group, "Cluster " + clusterName + " not found");
         ServiceCallResult res = group.getDocker().deleteNetwork(network);
