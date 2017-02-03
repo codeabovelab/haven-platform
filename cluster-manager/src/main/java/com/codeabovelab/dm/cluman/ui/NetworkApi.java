@@ -16,21 +16,22 @@
 
 package com.codeabovelab.dm.cluman.ui;
 
+import com.codeabovelab.dm.cluman.cluster.docker.management.result.ResultCode;
 import com.codeabovelab.dm.cluman.cluster.docker.management.result.ServiceCallResult;
 import com.codeabovelab.dm.cluman.cluster.docker.model.CreateNetworkCmd;
+import com.codeabovelab.dm.cluman.cluster.docker.model.CreateNetworkResponse;
 import com.codeabovelab.dm.cluman.cluster.docker.model.Network;
 import com.codeabovelab.dm.cluman.ds.container.ContainerStorage;
 import com.codeabovelab.dm.cluman.ds.swarm.NetworkManager;
 import com.codeabovelab.dm.cluman.model.DiscoveryStorage;
 import com.codeabovelab.dm.cluman.model.NodesGroup;
-import com.codeabovelab.dm.cluman.ui.model.UIResult;
-import com.codeabovelab.dm.cluman.ui.model.UiNetwork;
-import com.codeabovelab.dm.cluman.ui.model.UiNetworkDetails;
-import com.codeabovelab.dm.cluman.ui.model.UiNetworkBase;
+import com.codeabovelab.dm.cluman.ui.model.*;
 import com.codeabovelab.dm.cluman.validate.ExtendedAssert;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.ArrayList;
@@ -65,7 +66,7 @@ public class NetworkApi {
     }
 
     @RequestMapping(path = "create", method = RequestMethod.POST)
-    public ResponseEntity<UIResult> createNetwork(@RequestParam("cluster") String clusterName,
+    public ResponseEntity<?> createNetwork(@RequestParam("cluster") String clusterName,
                                                   @RequestParam("network") String network,
                                                   @RequestBody UiNetworkBase body) {
         NodesGroup group = discoveryStorage.getCluster(clusterName);
@@ -76,7 +77,17 @@ public class NetworkApi {
         }
         cmd.setName(network);
         cmd.setCheckDuplicate(true);
-        ServiceCallResult res = networkManager.createNetwork(group, cmd);
+        CreateNetworkResponse res = networkManager.createNetwork(group, cmd);
+        if(res.getCode() == ResultCode.OK) {
+            UiNetworkCreateResult uincr = new UiNetworkCreateResult();
+            uincr.setId(res.getId());
+            String warning = res.getWarning();
+            if(StringUtils.hasText(warning)) {
+                uincr.setWarning(warning);
+            }
+            uincr.setName(network);
+            return new ResponseEntity<Object>(uincr, HttpStatus.OK);
+        }
         return UiUtils.createResponse(res);
     }
 

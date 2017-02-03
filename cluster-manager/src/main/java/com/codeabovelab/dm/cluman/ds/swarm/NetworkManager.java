@@ -20,6 +20,7 @@ import com.codeabovelab.dm.cluman.cluster.docker.management.DockerService;
 import com.codeabovelab.dm.cluman.cluster.docker.management.result.ResultCode;
 import com.codeabovelab.dm.cluman.cluster.docker.management.result.ServiceCallResult;
 import com.codeabovelab.dm.cluman.cluster.docker.model.CreateNetworkCmd;
+import com.codeabovelab.dm.cluman.cluster.docker.model.CreateNetworkResponse;
 import com.codeabovelab.dm.cluman.cluster.docker.model.Network;
 import com.codeabovelab.dm.cluman.model.*;
 import com.codeabovelab.dm.common.mb.MessageBus;
@@ -55,16 +56,18 @@ public class NetworkManager implements Consumer<NodeEvent> {
      * Docker daemon should have --cluster-store and --cluster-advertise options. <p/>
      * @param clusterName
      */
-    public ServiceCallResult createNetwork(String clusterName) {
+    public CreateNetworkResponse createNetwork(String clusterName) {
         NodesGroup group = discoveryStorage.getCluster(clusterName);
         return createNetwork(group, clusterName);
     }
 
-    public ServiceCallResult createNetwork(NodesGroup group, String networkName) {
+    public CreateNetworkResponse createNetwork(NodesGroup group, String networkName) {
         Set<NodesGroup.Feature> features = group.getFeatures();
         if(!features.contains(NodesGroup.Feature.SWARM) && !features.contains(NodesGroup.Feature.SWARM_MODE)) {
             // non swarm groups does not support network creation
-            return new ServiceCallResult().code(ResultCode.NOT_MODIFIED).message("not supported for this group type");
+            CreateNetworkResponse res = new CreateNetworkResponse();
+            res.code(ResultCode.NOT_MODIFIED).message("not supported for this group type");
+            return res;
         }
 
         CreateNetworkCmd cmd = new CreateNetworkCmd();
@@ -74,10 +77,10 @@ public class NetworkManager implements Consumer<NodeEvent> {
         return createNetwork(group, cmd);
     }
 
-    public ServiceCallResult createNetwork(NodesGroup group, CreateNetworkCmd cmd) {
+    public CreateNetworkResponse createNetwork(NodesGroup group, CreateNetworkCmd cmd) {
         DockerService service = group.getDocker();
         LOG.debug("About to create network '{}' for cluster '{}'", cmd, group.getName());
-        ServiceCallResult res = service.createNetwork(cmd);
+        CreateNetworkResponse res = service.createNetwork(cmd);
         if (res.getCode() == ResultCode.ERROR) {
             LOG.error("can't create network for cluster {} due: {}", group.getName(), res.getMessage());
         }
