@@ -18,9 +18,8 @@ package com.codeabovelab.dm.cluman.ui;
 
 import com.codeabovelab.dm.cluman.cluster.docker.management.result.ResultCode;
 import com.codeabovelab.dm.cluman.cluster.docker.management.result.ServiceCallResult;
-import com.codeabovelab.dm.cluman.cluster.docker.model.CreateNetworkCmd;
-import com.codeabovelab.dm.cluman.cluster.docker.model.CreateNetworkResponse;
-import com.codeabovelab.dm.cluman.cluster.docker.model.Network;
+import com.codeabovelab.dm.cluman.cluster.docker.model.*;
+import com.codeabovelab.dm.cluman.ds.container.ContainerRegistration;
 import com.codeabovelab.dm.cluman.ds.container.ContainerStorage;
 import com.codeabovelab.dm.cluman.ds.swarm.NetworkManager;
 import com.codeabovelab.dm.cluman.model.DiscoveryStorage;
@@ -69,8 +68,7 @@ public class NetworkApi {
     public ResponseEntity<?> createNetwork(@RequestParam("cluster") String clusterName,
                                                   @RequestParam("network") String network,
                                                   @RequestBody UiNetworkBase body) {
-        NodesGroup group = discoveryStorage.getCluster(clusterName);
-        ExtendedAssert.notFound(group, "Cluster '" + clusterName + "' not found");
+        NodesGroup group = getNodesGroup(clusterName);
         CreateNetworkCmd cmd = new CreateNetworkCmd();
         if(body != null) {
             body.to(cmd);
@@ -91,11 +89,50 @@ public class NetworkApi {
         return UiUtils.createResponse(res);
     }
 
+    @RequestMapping(path = "connect", method = RequestMethod.POST)
+    public ResponseEntity<?> connectNetwork(@RequestParam("cluster") String clusterName,
+                                            @RequestParam("network") String network,
+                                            @RequestParam("container") String container,
+                                            @RequestParam(value = "ipv4", required = false) String ipv4,
+                                            @RequestParam(value = "ipv6", required = false) String ipv6) {
+        NodesGroup ng = getNodesGroup(clusterName);
+        ContainerRegistration cr = containerStorage.getContainer(container);
+        ExtendedAssert.notFound(cr, "Can not find container with id: " + container);
+        ConnectNetworkCmd cmd = new ConnectNetworkCmd();
+        cmd.setContainer(container);
+        cmd.setNetwork(network);
+        if(ipv4 != null || ipv6 != null) {
+            // we may create 'name' here, but it has no effect
+            EndpointSettings config = EndpointSettings.builder()
+              .ipamConfig(EndpointSettings.EndpointIPAMConfig.builder()
+                .ipv4Address(ipv4)
+                .ipv6Address(ipv6)
+                .build())
+              .build();
+            cmd.setConfig(config);
+        }
+        ServiceCallResult res = ng.getDocker().connectNetwork(cmd);
+        return UiUtils.createResponse(res);
+    }
+
+    @RequestMapping(path = "disconnect", method = RequestMethod.POST)
+    public ResponseEntity<?> disconnectNetwork(@RequestParam("cluster") String clusterName,
+                                               @RequestParam("network") String network,
+                                               @RequestParam("container") String container) {
+        NodesGroup ng = getNodesGroup(clusterName);
+        DisconnectNetworkCmd cmd = new DisconnectNetworkCmd();
+        cmd.setContainer(container);
+        cmd.setNetwork(network);
+        cmd.setForce(true);
+        ServiceCallResult res = ng.getDocker().disconnectNetwork(cmd);
+        return UiUtils.createResponse(res);
+    }
+
+
     @RequestMapping(path = "get", method = RequestMethod.GET)
     public UiNetworkDetails getNetwork(@RequestParam("cluster") String clusterName,
                                        @RequestParam("network")  String netId) {
-        NodesGroup group = discoveryStorage.getCluster(clusterName);
-        ExtendedAssert.notFound(group, "Cluster '" + clusterName + "' not found");
+        NodesGroup group = getNodesGroup(clusterName);
         Network net = group.getDocker().getNetwork(netId);
         ExtendedAssert.notFound(net, "Can not found network '" + netId + "' in cluster '" + clusterName + "'");
         UiNetworkDetails uinet = new UiNetworkDetails();
@@ -106,9 +143,14 @@ public class NetworkApi {
     @RequestMapping(path = "delete", method = RequestMethod.DELETE)
     public ResponseEntity<?> deleteNetwork(@RequestParam("cluster") String clusterName,
                                            @RequestParam("network") String network) {
-        NodesGroup group = discoveryStorage.getCluster(clusterName);
-        ExtendedAssert.notFound(group, "Cluster '" + clusterName + "' not found");
+        NodesGroup group = getNodesGroup(clusterName);
         ServiceCallResult res = group.getDocker().deleteNetwork(network);
         return UiUtils.createResponse(res);
+    }
+
+    private NodesGroup getNodesGroup(String clusterName) {
+        NodesGroup group = discoveryStorage.getCluster(clusterName);
+        ExtendedAssert.notFound(group, "Cluster '" + clusterName + "' not found");
+        return group;
     }
 }

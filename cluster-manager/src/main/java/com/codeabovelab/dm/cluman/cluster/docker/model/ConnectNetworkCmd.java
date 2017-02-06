@@ -21,6 +21,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Data;
 
 /**
+ * https://github.com/docker/docker/blob/a69c4129e086e4e7b86cce7d2682685dfdc6f2d2/api/types/types.go#L442
  */
 @Data
 public class ConnectNetworkCmd {
@@ -41,5 +42,5 @@ public class ConnectNetworkCmd {
      * Configuration for a network endpoint.
      */
     @JsonProperty("EndpointConfig")
-    private Network.EndpointResource config;
+    private EndpointSettings config;
 }
