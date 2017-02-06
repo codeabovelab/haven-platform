@@ -532,10 +532,13 @@ public class DockerServiceImpl implements DockerService {
     }
 
     private ServiceCallResult postAction(UriComponentsBuilder ub, Object cmd) {
-        return postAction(ub, cmd, ServiceCallResult.class);
+        return postAction(ub, cmd, ServiceCallResult.class, null);
     }
 
-    private <T extends ServiceCallResult> T postAction(UriComponentsBuilder ub, Object cmd, Class<T> responseType) {
+    private <T extends ServiceCallResult> T postAction(UriComponentsBuilder ub, Object cmd, Class<T> responseType, Supplier<T> factory) {
+        if(factory == null) {
+            factory = () -> BeanUtils.instantiate(responseType);
+        }
         String url = ub.toUriString();
         T resp;
         try {
@@ -547,11 +550,14 @@ public class DockerServiceImpl implements DockerService {
                 return restTemplate.postForEntity(url, req, responseType);
             });
             resp = entity.getBody();
+            if(resp == null) {
+                resp = factory.get();
+            }
             resp.setCode(ResultCode.OK);
             return resp;
         } catch (HttpStatusCodeException e) {
             log.warn("Failed to execute POST on {}, due to {}", url, e.toString());
-            resp = BeanUtils.instantiate(responseType);
+            resp = factory.get();
             processStatusCodeException(e, resp);
             return resp;
         }
@@ -723,7 +729,7 @@ public class DockerServiceImpl implements DockerService {
     @Override
     public CreateNetworkResponse createNetwork(CreateNetworkCmd createNetworkCmd) {
         UriComponentsBuilder ub = makeBaseUrl().pathSegment("networks", "create");
-        return postAction(ub, createNetworkCmd, CreateNetworkResponse.class);
+        return postAction(ub, createNetworkCmd, CreateNetworkResponse.class, null);
     }
 
     @Override
