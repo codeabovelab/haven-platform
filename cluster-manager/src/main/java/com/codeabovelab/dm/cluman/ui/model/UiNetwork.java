@@ -69,7 +69,7 @@ public class UiNetwork extends UiNetworkBase {
                     return;
                 }
                 Container c = new Container();
-                c.setId(val.getEndpointId());
+                c.setId(cr.getId());
                 DockerContainer dc = cr.getContainer();
                 c.setName(dc.getName());
                 c.setImage(dc.getImage());
