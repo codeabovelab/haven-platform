@@ -95,7 +95,7 @@ public class DockerCluster extends AbstractNodesGroup<DockerClusterConfig> {
     }
 
     @Autowired
-    void setUpdateNodesTimeout(@Value("${" + SwarmUtils.NODE_UPDATE_TIMEOUT + "}") int updateNodesTimeout) {
+    void setUpdateNodesTimeout(@Value("${" + SwarmUtils.PROP_NODES_UPDATE + "}") int updateNodesTimeout) {
         this.updateNodesTimeout = updateNodesTimeout;
     }
 

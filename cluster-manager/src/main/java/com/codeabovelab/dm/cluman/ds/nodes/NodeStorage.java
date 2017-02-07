@@ -21,6 +21,7 @@ import com.codeabovelab.dm.cluman.cluster.docker.ClusterConfigImpl;
 import com.codeabovelab.dm.cluman.cluster.docker.management.DockerService;
 import com.codeabovelab.dm.cluman.cluster.docker.management.DockerServiceEvent;
 import com.codeabovelab.dm.cluman.ds.DockerServiceFactory;
+import com.codeabovelab.dm.cluman.ds.SwarmUtils;
 import com.codeabovelab.dm.cluman.ds.swarm.DockerEventsConfig;
 import com.codeabovelab.dm.cluman.model.*;
 import com.codeabovelab.dm.cluman.persistent.PersistentBusFactory;
@@ -189,7 +190,7 @@ public class NodeStorage implements NodeInfoProvider, NodeRegistry {
         }
     }
 
-    @Scheduled(fixedDelay = 60_000L)
+    @Scheduled(fixedDelayString = SwarmUtils.EXPR_NODES_UPDATE_MS)
     private void checkNodes() {
         // periodically check online status of nodes
         try(TempAuth ta = TempAuth.asSystem()) {

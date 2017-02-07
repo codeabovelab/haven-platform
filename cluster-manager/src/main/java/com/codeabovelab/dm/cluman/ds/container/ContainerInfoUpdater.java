@@ -208,8 +208,7 @@ class ContainerInfoUpdater implements SmartLifecycle {
         }
     }
 
-    // we use seconds in timeout, but spring require milliseconds
-    @Scheduled(fixedDelayString = "#{${" + SwarmUtils.NODE_UPDATE_TIMEOUT + "}*1000}")
+    @Scheduled(fixedDelayString = SwarmUtils.EXPR_NODES_UPDATE_MS)
     public void update() {
         try(TempAuth ta = TempAuth.asSystem()) {
             log.info("Begin update containers list");
