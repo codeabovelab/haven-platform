@@ -83,6 +83,10 @@ class NodeRegistrationImpl implements NodeRegistration, AutoCloseable {
         renewDocker();
     }
 
+    /**
+     * Time while node is actual, in seconds.
+     * @param ttl time in seconds
+     */
     public void setTtl(int ttl) {
         final int min = nodeStorage.getStorageConfig().getMinTtl();
         if(ttl < min) {

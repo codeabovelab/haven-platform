@@ -37,4 +37,8 @@ public class NodeStorageConfig {
      * and we must keep they while this time.
      */
     private int minTtl = 60;
+    /**
+     * Time between nodes update
+     */
+    private int updateSeconds = 60;
 }

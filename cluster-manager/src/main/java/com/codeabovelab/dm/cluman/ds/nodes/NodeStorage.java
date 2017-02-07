@@ -204,16 +204,19 @@ public class NodeStorage implements NodeInfoProvider, NodeRegistry {
                     log.error("Fail to load node '{}' info due to error: {}", nr.getName(), e.toString());
                 }
                 final DockerServiceInfo dsi = tmp;
-                if(dsi != null) {
-                    nr.updateNodeInfo(b -> {
+                nr.updateNodeInfo(b -> {
+                    NodeMetrics.Builder nmb = NodeMetrics.builder().from(b.getHealth());
+                    if(dsi != null) {
                         b.setLabels(dsi.getLabels());
-                        NodeMetrics.Builder nmb = NodeMetrics.builder().from(b.getHealth());
                         nmb.setHealthy(true);
                         nmb.setTime(dsi.getSystemTime());
                         nmb.setState(NodeMetrics.State.HEALTHY);
-                        b.setHealth(nmb.build());
-                    });
-                }
+                    } else {
+                        nmb.setHealthy(false);
+                        nmb.setState(b.isOn()? NodeMetrics.State.UNHEALTHY : NodeMetrics.State.DISCONNECTED);
+                    }
+                    b.setHealth(nmb.build());
+                });
                 // this check offline status internal and cause status change event
                 nr.getNodeInfo();
             }
@@ -223,6 +226,7 @@ public class NodeStorage implements NodeInfoProvider, NodeRegistry {
 
     NodeRegistrationImpl newRegistration(NodeInfo nodeInfo) {
         NodeRegistrationImpl nr = new NodeRegistrationImpl(this, persistentBusFactory, nodeInfo);
+        nr.setTtl(this.config.getUpdateSeconds() * 2);
         nr.init();
         return nr;
     }
