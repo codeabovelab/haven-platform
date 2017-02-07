@@ -80,6 +80,10 @@ class NodeRegistrationImpl implements NodeRegistration, AutoCloseable {
           .build());
     }
 
+    void init() {
+        renewDocker();
+    }
+
     /**
      * Invoke updating state (save into KV-storage) of node with specified ttl.
      * @param ttl in seconds
@@ -235,11 +239,15 @@ class NodeRegistrationImpl implements NodeRegistration, AutoCloseable {
             if(docker != null && docker.getAddress().equals(address)) {
                 return getDocker();
             }
-            unsubscribe();
-            this.docker = this.nodeStorage.createNodeService(this);
-            subscribe();
+            renewDocker();
             return getDocker();
         }
+    }
+
+    private void renewDocker() {
+        unsubscribe();
+        this.docker = this.nodeStorage.createNodeService(this);
+        subscribe();
     }
 
     private void subscribe() {

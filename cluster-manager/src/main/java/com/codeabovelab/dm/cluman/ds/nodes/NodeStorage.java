@@ -194,14 +194,19 @@ public class NodeStorage implements NodeInfoProvider, NodeRegistry {
     private void checkNodes() {
         // periodically check online status of nodes
         try(TempAuth ta = TempAuth.asSystem()) {
+            log.info("Begin update list of nodes");
             for(NodeRegistrationImpl nr: nodes.values()) {
+                log.info("Update node '{}' of '{}' cluster", nr.getName(), nr.getCluster());
                 nr.getNodeInfo();
             }
+            log.info("End update list of nodes");
         }
     }
 
     NodeRegistrationImpl newRegistration(NodeInfo nodeInfo) {
-        return new NodeRegistrationImpl(this, persistentBusFactory, nodeInfo);
+        NodeRegistrationImpl nr = new NodeRegistrationImpl(this, persistentBusFactory, nodeInfo);
+        nr.init();
+        return nr;
     }
 
     public boolean hasNode(Predicate<Object> predicate, String nodeId) {
