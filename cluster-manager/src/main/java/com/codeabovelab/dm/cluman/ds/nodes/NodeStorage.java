@@ -197,6 +197,24 @@ public class NodeStorage implements NodeInfoProvider, NodeRegistry {
             log.info("Begin update list of nodes");
             for(NodeRegistrationImpl nr: nodes.values()) {
                 log.info("Update node '{}' of '{}' cluster", nr.getName(), nr.getCluster());
+                DockerServiceInfo tmp = null;
+                try {
+                    tmp = nr.getDocker().getInfo();
+                } catch (Exception e) {
+                    log.error("Fail to load node '{}' info due to error: {}", nr.getName(), e.toString());
+                }
+                final DockerServiceInfo dsi = tmp;
+                if(dsi != null) {
+                    nr.updateNodeInfo(b -> {
+                        b.setLabels(dsi.getLabels());
+                        NodeMetrics.Builder nmb = NodeMetrics.builder().from(b.getHealth());
+                        nmb.setHealthy(true);
+                        nmb.setTime(dsi.getSystemTime());
+                        nmb.setState(NodeMetrics.State.HEALTHY);
+                        b.setHealth(nmb.build());
+                    });
+                }
+                // this check offline status internal and cause status change event
                 nr.getNodeInfo();
             }
             log.info("End update list of nodes");
@@ -274,7 +292,7 @@ public class NodeStorage implements NodeInfoProvider, NodeRegistry {
      */
     public NodeRegistration updateNode(String name, int ttl, Consumer<NodeInfoImpl.Builder> updater) {
         NodeRegistrationImpl nr = getOrCreateNodeRegistration(name);
-        nr.update(ttl);// important that it must be before other update methods
+        nr.setTtl(ttl);// important that it must be before other update methods
         nr.updateNodeInfo(updater);
         save(nr);
         return nr;

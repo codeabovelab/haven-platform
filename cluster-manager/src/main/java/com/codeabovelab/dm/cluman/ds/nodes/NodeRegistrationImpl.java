@@ -53,7 +53,6 @@ class NodeRegistrationImpl implements NodeRegistration, AutoCloseable {
     private volatile NodeInfoImpl cache;
     private final NodeInfoImpl.Builder builder;
 
-    private volatile long endTime;
     private final MessageBus<NodeHealthEvent> healthBus;
     private volatile int ttl;
     private final ObjectIdentity oid;
@@ -84,18 +83,12 @@ class NodeRegistrationImpl implements NodeRegistration, AutoCloseable {
         renewDocker();
     }
 
-    /**
-     * Invoke updating state (save into KV-storage) of node with specified ttl.
-     * @param ttl in seconds
-     */
-    public void update(int ttl) {
+    public void setTtl(int ttl) {
         final int min = nodeStorage.getStorageConfig().getMinTtl();
         if(ttl < min) {
             ttl = min;
         }
         synchronized (lock) {
-            //also convert seconds to ms
-            this.endTime = System.currentTimeMillis() + (ttl * 1000L);
             this.ttl = ttl;
         }
     }
@@ -112,8 +105,8 @@ class NodeRegistrationImpl implements NodeRegistration, AutoCloseable {
     }
 
     private boolean isOn() {
-        long now = System.currentTimeMillis();
-        return now <= endTime;
+        DockerService service = this.getDocker();
+        return service != null && service.isOnline();
     }
 
     @Override
