@@ -20,6 +20,7 @@ import com.codeabovelab.dm.cluman.cluster.docker.management.DockerService;
 import com.codeabovelab.dm.cluman.cluster.docker.management.DockerServiceEvent;
 import com.codeabovelab.dm.cluman.cluster.docker.management.argument.GetContainersArg;
 import com.codeabovelab.dm.cluman.cluster.docker.model.EventType;
+import com.codeabovelab.dm.cluman.ds.SwarmUtils;
 import com.codeabovelab.dm.cluman.ds.nodes.NodeStorage;
 import com.codeabovelab.dm.cluman.model.*;
 import com.codeabovelab.dm.common.mb.Subscriptions;
@@ -45,6 +46,7 @@ import java.util.concurrent.*;
 @Slf4j
 @Component
 class ContainerInfoUpdater implements SmartLifecycle {
+    private static final long DELAY = 60_000L;
     private final ContainerStorageImpl containerStorage;
     private final ConcurrentMap<String, RescheduledTask> scheduledNodes;
     private final ScheduledExecutorService scheduledService;
@@ -206,7 +208,8 @@ class ContainerInfoUpdater implements SmartLifecycle {
         }
     }
 
-    @Scheduled(fixedDelay = 5L * 60_000L /* 5 min */)
+    // we use seconds in timeout, but spring require milliseconds
+    @Scheduled(fixedDelayString = "#{${" + SwarmUtils.NODE_UPDATE_TIMEOUT + "}*1000}")
     public void update() {
         try(TempAuth ta = TempAuth.asSystem()) {
             log.info("Begin update containers list");
@@ -216,6 +219,7 @@ class ContainerInfoUpdater implements SmartLifecycle {
                 if(nodeService == null) {
                     continue;
                 }
+                nodeStorage.updateNode(node, ((int)DELAY/1000) * 2, null);
                 updateForNode(nodeService);
             }
             log.info("End update containers list");

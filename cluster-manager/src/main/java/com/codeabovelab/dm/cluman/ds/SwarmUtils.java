@@ -35,6 +35,8 @@ public class SwarmUtils {
     public static final String LABEL_CONSTRAINTS = LABELS_PREFIX + "constraints";
     public static final String LABEL_ID = LABELS_PREFIX + "id";
     public static final String NODE_EQ = "node==";
+    public static final String NODE_UPDATE_TIMEOUT = "dm.nodes.updateSeconds";
+
     private SwarmUtils() {
         throw new IllegalStateException("");
     }

@@ -23,6 +23,7 @@ import com.codeabovelab.dm.cluman.cluster.docker.management.result.ResultCode;
 import com.codeabovelab.dm.cluman.cluster.docker.management.result.ServiceCallResult;
 import com.codeabovelab.dm.cluman.cluster.docker.management.result.SwarmInitResult;
 import com.codeabovelab.dm.cluman.cluster.docker.model.swarm.*;
+import com.codeabovelab.dm.cluman.ds.SwarmUtils;
 import com.codeabovelab.dm.cluman.ds.container.ContainerCreator;
 import com.codeabovelab.dm.cluman.ds.container.ContainerStorage;
 import com.codeabovelab.dm.cluman.ds.nodes.NodeRegistration;
@@ -36,6 +37,7 @@ import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.util.Assert;
 import org.springframework.util.StringUtils;
 
@@ -77,6 +79,8 @@ public class DockerCluster extends AbstractNodesGroup<DockerClusterConfig> {
     private ContainerStorage containerStorage;
     private ContainerCreator containerCreator;
     private ContainersManager containers;
+    private int updateNodesTimeout;
+
     DockerCluster(DiscoveryStorageImpl storage, DockerClusterConfig config) {
         super(config, storage, Collections.singleton(Feature.SWARM_MODE));
         long cacheTimeAfterWrite = config.getConfig().getCacheTimeAfterWrite();
@@ -88,6 +92,11 @@ public class DockerCluster extends AbstractNodesGroup<DockerClusterConfig> {
           .setDaemon(true)
           .setNameFormat(getClass().getSimpleName() + "-" + getName() + "-%d")
           .build());
+    }
+
+    @Autowired
+    void setUpdateNodesTimeout(@Value("${" + SwarmUtils.NODE_UPDATE_TIMEOUT + "}") int updateNodesTimeout) {
+        this.updateNodesTimeout = updateNodesTimeout;
     }
 
     @Autowired
@@ -126,7 +135,7 @@ public class DockerCluster extends AbstractNodesGroup<DockerClusterConfig> {
         this.containers = new DockerClusterContainers(this, this.containerStorage, this.containerCreator);
 
         // so docker does not send any events about new coming nodes, and we must refresh list of them
-        this.scheduledExecutor.scheduleWithFixedDelay(this::updateNodes, 30L, 30L, TimeUnit.SECONDS);
+        this.scheduledExecutor.scheduleWithFixedDelay(this::updateNodes, updateNodesTimeout, updateNodesTimeout, TimeUnit.SECONDS);
         getNodeStorage().getNodeEventSubscriptions().subscribe(this::onNodeEvent);
     }
 
