@@ -259,8 +259,15 @@ public abstract class AbstractNodesGroup<C extends AbstractNodesGroupConfig<C>> 
         validateConfig(config);
         synchronized (lock) {
             this.config = (C) config.clone();
+            onConfig();
         }
         flush();
+    }
+
+    /**
+     * here you can handle config update, before flush
+     */
+    protected void onConfig() {
     }
 
     @Override

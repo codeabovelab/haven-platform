@@ -182,12 +182,7 @@ public final class SwarmCluster extends AbstractNodesGroup<SwarmNodesGroupConfig
 
     public void setClusterConfig(ClusterConfig cc) {
         synchronized (lock) {
-            ClusterConfigImpl newConf;
-            if(getName().equals(cc.getCluster())) {
-                newConf = ClusterConfigImpl.of(cc);
-            } else {
-                newConf = ClusterConfigImpl.builder(cc).cluster(getName()).build();
-            }
+            ClusterConfigImpl newConf = fixConfig(cc);
             onSet("config", this.config.getConfig(), newConf);
             this.config.setConfig(newConf);
         }
@@ -198,5 +193,28 @@ public final class SwarmCluster extends AbstractNodesGroup<SwarmNodesGroupConfig
             ClusterConfigImpl config = this.config.getConfig();
             return config;
         }
+    }
+
+    /**
+     * Sometime external config mey be partially filled, or has wrong value. We can not reject this,
+     * for legacy reasons, therefore need to fix it manually.
+     * @param cc source
+     * @return fixed copy of config
+     */
+    private ClusterConfigImpl fixConfig(ClusterConfig cc) {
+        ClusterConfigImpl newConf;
+        if(getName().equals(cc.getCluster())) {
+            newConf = ClusterConfigImpl.of(cc);
+        } else {
+            newConf = ClusterConfigImpl.builder(cc).cluster(getName()).build();
+        }
+        return newConf;
+    }
+
+    @Override
+    protected void onConfig() {
+        ClusterConfigImpl old = this.config.getConfig();
+        ClusterConfigImpl fixed = fixConfig(old);
+        this.config.setConfig(fixed);
     }
 }

@@ -35,6 +35,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
+import org.springframework.util.Assert;
 
 import javax.annotation.PreDestroy;
 import java.util.*;
@@ -141,7 +142,9 @@ public class DockerServices implements DockerServiceRegistry {
     }
 
     public DockerService getOrCreateCluster(ClusterConfig clusterConfig, Consumer<DockerServiceImpl.Builder> dockerConsumer) {
-        return clusters.computeIfAbsent(clusterConfig.getCluster(), (cid) -> {
+        String cluster = clusterConfig.getCluster();
+        Assert.hasText(cluster, "Cluster field in config is null or empty");
+        return clusters.computeIfAbsent(cluster, (cid) -> {
             ClusterConfig instanceConfig = clusterConfig;
             if (clusterConfig.getHost() == null) {
                 // if no defined swarm hosts then we must create own swarm instance and run it
