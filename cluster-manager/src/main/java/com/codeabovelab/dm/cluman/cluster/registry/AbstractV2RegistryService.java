@@ -263,7 +263,10 @@ abstract class AbstractV2RegistryService implements RegistryService {
             return null;
         }
         Manifest.Entry config = manifest.getConfig();
-        Assert.notNull(config, "Manifest has outdated version for " + name + ":" + reference);
+        if (manifest.getConfig() == null) {
+            log.warn("Manifest has outdated version for {}: {}", name, reference);
+            return null;
+        }
         return config.getDigest();
     }
 
