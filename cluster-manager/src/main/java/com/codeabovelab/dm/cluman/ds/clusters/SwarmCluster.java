@@ -67,6 +67,11 @@ public final class SwarmCluster extends AbstractNodesGroup<SwarmNodesGroupConfig
             return;
         }
         NodeInfo ni = event.getCurrent();
+        boolean delete = false;
+        if(ni == null) {
+            delete = true;
+            ni = event.getOld();
+        }
         String nodeName = ni.getName();
         String cluster = ni.getCluster();
         if (!StringUtils.hasText(cluster) || !getName().equals(cluster)) {
@@ -74,6 +79,14 @@ public final class SwarmCluster extends AbstractNodesGroup<SwarmNodesGroupConfig
         }
         Assert.doesNotContain(cluster, "/", "Bad cluster name: " + cluster);
         String address = ni.getAddress();
+        if(delete) {
+            try {
+                kvmf.getStorage().delete(getDiscoveryKey(cluster, address), null);
+            } catch (Exception e) {
+                log.error("Can not delete swarm registration: of node {} from cluster {}", address, cluster, e);
+            }
+            return;
+        }
         NodeRegistration nr = getNodeStorage().getNodeRegistration(nodeName);
         int ttl = nr.getTtl();
         if (ttl < 1) {

@@ -181,6 +181,9 @@ class ContainerInfoUpdater implements SmartLifecycle {
 
     private void onNodeEvent(NodeEvent nodeEvent) {
         NodeInfo ni = nodeEvent.getCurrent();
+        if(ni == null) {
+            return;
+        }
         String name = ni.getName();
         String action = nodeEvent.getAction();
         if(StandardActions.OFFLINE.equals(action)) {

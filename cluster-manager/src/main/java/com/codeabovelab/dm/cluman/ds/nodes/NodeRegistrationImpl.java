@@ -243,8 +243,11 @@ class NodeRegistrationImpl implements NodeRegistration, AutoCloseable {
 
     private void renewDocker() {
         unsubscribe();
-        this.docker = this.nodeStorage.createNodeService(this);
-        subscribe();
+        this.docker = null;
+        if(this.builder.getAddress() != null) {
+            this.docker = this.nodeStorage.createNodeService(this);
+            subscribe();
+        }
     }
 
     private void subscribe() {

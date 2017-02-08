@@ -64,6 +64,11 @@ public class NodesApi {
         nodeStorage.removeNode(name);
     }
 
+    @RequestMapping(value = "/{name}", method = RequestMethod.PUT)
+    public void addNode(@PathVariable("name") String name, @RequestParam("address") String address) {
+        nodeStorage.registerNode(name, address);
+    }
+
     @RequestMapping(value = "/{name}", method = RequestMethod.GET)
     public NodeInfo getNode(@PathVariable("name") String name) {
         return nodeStorage.getNodeInfo(name);

@@ -159,11 +159,16 @@ public class NodeStorage implements NodeInfoProvider, NodeRegistry {
         }
     }
 
-    void fireNodeModification(NodeRegistration nr, String action, NodeInfoImpl old, NodeInfoImpl current) {
+    void fireNodeModification(NodeRegistrationImpl nr, String action, NodeInfoImpl old, NodeInfoImpl current) {
+        if(old == null && current == null) {
+            log.error("Something wrong:  old and current values of node '{}' is null, at action '{}'", nr.getName());
+            return;
+        }
         // NodeRegistrationImpl - may be null in some cases
         NodeEvent ne = NodeEvent.builder()
           .action(action)
           .current(current)
+          .old(old)
           .build();
         //we use async execution only from another event handler
         this.executorService.execute(() -> {
