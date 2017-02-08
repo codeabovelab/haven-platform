@@ -31,8 +31,6 @@ import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.Map;
 
-import static com.codeabovelab.dm.cluman.ui.UiUtils.convertToGB;
-
 /**
  */
 class DockerInfoParser {
@@ -193,8 +191,7 @@ class DockerInfoParser {
           .containers(info.getContainers())
           .images(info.getImages())
           .ncpu(info.getNcpu())
-          //Convert to GB
-          .memory(convertToGB(info.getMemory()));
+          .memory(info.getMemory());
         ZonedDateTime systemTime = info.getSystemTime();
         if(systemTime != null) {
             this.result.setSystemTime(systemTime.toLocalDateTime());

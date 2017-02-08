@@ -210,6 +210,7 @@ public class NodeStorage implements NodeInfoProvider, NodeRegistry {
                         b.setLabels(dsi.getLabels());
                         nmb.setHealthy(true);
                         nmb.setTime(dsi.getSystemTime());
+                        nmb.setSysMemTotal(dsi.getMemory());
                         nmb.setState(NodeMetrics.State.HEALTHY);
                     } else {
                         nmb.setHealthy(false);

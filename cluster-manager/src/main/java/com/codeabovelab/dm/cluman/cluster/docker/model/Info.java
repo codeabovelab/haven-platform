@@ -38,7 +38,7 @@ public class Info {
     @JsonProperty("NCPU")
     private Integer ncpu;
     @JsonProperty("MemTotal")
-    private Long memory;
+    private long memory;
     @JsonProperty("Name")
     private String name;
 

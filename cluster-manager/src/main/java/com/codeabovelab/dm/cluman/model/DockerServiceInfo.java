@@ -38,7 +38,7 @@ public class DockerServiceInfo {
     private final Integer offContainers;
     private final Integer images;
     private final Integer ncpu;
-    private final Double memory;
+    private final long memory;
     private final Integer nodeCount;
     private final Integer offNodeCount;
     //TODO deprecate this, due to new docker mode require different query for list nodes
@@ -78,7 +78,7 @@ public class DockerServiceInfo {
         private Integer offContainers;
         private Integer images;
         private Integer ncpu;
-        private Double memory;
+        private long memory;
         private Integer nodeCount;
         private Integer offNodeCount;
         private final List<NodeInfo> nodeList = new ArrayList<>();
@@ -144,7 +144,7 @@ public class DockerServiceInfo {
             return this;
         }
 
-        public Builder memory(Double memory) {
+        public Builder memory(long memory) {
             this.memory = memory;
             return this;
         }
