@@ -182,9 +182,12 @@ public class NodeStorage implements NodeInfoProvider, NodeRegistry {
         try {
             if(e instanceof DockerServiceEvent.DockerServiceInfoEvent) {
                 // we update health of all presented nodes
+                // also it work only in standalone swarm cluster, and must be moved out here
                 DockerServiceInfo info = ((DockerServiceEvent.DockerServiceInfoEvent) e).getInfo();
                 for(NodeInfo node: info.getNodeList()) {
-                    NodeRegistrationImpl reg = getOrCreateNodeRegistration(node.getName());
+                    // we must not create nodes here,
+                    // therefore they may be deleted before, and creation will restore its, that is not wanted
+                    NodeRegistrationImpl reg = getNodeRegistrationInternal(node.getName());
                     if(reg != null) {
                         reg.updateHealth(node.getHealth());
                     }
