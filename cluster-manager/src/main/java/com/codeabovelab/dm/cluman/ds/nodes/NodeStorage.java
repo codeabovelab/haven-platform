@@ -204,33 +204,37 @@ public class NodeStorage implements NodeInfoProvider, NodeRegistry {
         try(TempAuth ta = TempAuth.asSystem()) {
             log.info("Begin update list of nodes");
             for(NodeRegistrationImpl nr: nodes.values()) {
-                log.info("Update node '{}' of '{}' cluster", nr.getName(), nr.getCluster());
-                DockerServiceInfo tmp = null;
-                try {
-                    tmp = nr.getDocker().getInfo();
-                } catch (Exception e) {
-                    log.error("Fail to load node '{}' info due to error: {}", nr.getName(), e.toString());
-                }
-                final DockerServiceInfo dsi = tmp;
-                nr.updateNodeInfo(b -> {
-                    NodeMetrics.Builder nmb = NodeMetrics.builder().from(b.getHealth());
-                    if(dsi != null) {
-                        b.setLabels(dsi.getLabels());
-                        nmb.setHealthy(true);
-                        nmb.setTime(dsi.getSystemTime());
-                        nmb.setSysMemTotal(dsi.getMemory());
-                        nmb.setState(NodeMetrics.State.HEALTHY);
-                    } else {
-                        nmb.setHealthy(false);
-                        nmb.setState(b.isOn()? NodeMetrics.State.UNHEALTHY : NodeMetrics.State.DISCONNECTED);
-                    }
-                    b.setHealth(nmb.build());
-                });
-                // this check offline status internal and cause status change event
-                nr.getNodeInfo();
+                checkNode(nr);
             }
             log.info("End update list of nodes");
         }
+    }
+
+    private void checkNode(NodeRegistrationImpl nr) {
+        log.info("Update node '{}' of '{}' cluster", nr.getName(), nr.getCluster());
+        DockerServiceInfo tmp = null;
+        try {
+            tmp = nr.getDocker().getInfo();
+        } catch (Exception e) {
+            log.error("Fail to load node '{}' info due to error: {}", nr.getName(), e.toString());
+        }
+        final DockerServiceInfo dsi = tmp;
+        nr.updateNodeInfo(b -> {
+            NodeMetrics.Builder nmb = NodeMetrics.builder().from(b.getHealth());
+            if(dsi != null) {
+                b.setLabels(dsi.getLabels());
+                nmb.setHealthy(true);
+                nmb.setTime(dsi.getSystemTime());
+                nmb.setSysMemTotal(dsi.getMemory());
+                nmb.setState(NodeMetrics.State.HEALTHY);
+            } else {
+                nmb.setHealthy(false);
+                nmb.setState(b.isOn()? NodeMetrics.State.UNHEALTHY : NodeMetrics.State.DISCONNECTED);
+            }
+            b.setHealth(nmb.build());
+        });
+        // this check offline status internal and cause status change event
+        nr.getNodeInfo();
     }
 
     NodeRegistrationImpl newRegistration(NodeInfo nodeInfo) {
@@ -424,7 +428,13 @@ public class NodeStorage implements NodeInfoProvider, NodeRegistry {
 
     public DockerService registerNode(String nodeName, String address) {
         NodeRegistrationImpl nr = getOrCreateNodeRegistration(nodeName);
-        return nr.setAddress(address);
+        String oldAddr = nr.getAddress();
+        DockerService ds = nr.setAddress(address);
+        if(!Objects.equals(oldAddr, address)) {
+            // address changed, force to update node status
+            checkNode(nr);
+        }
+        return ds;
     }
 
     /**
