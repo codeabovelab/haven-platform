@@ -430,6 +430,7 @@ public class NodeStorage implements NodeInfoProvider, NodeRegistry {
         NodeRegistrationImpl nr = getOrCreateNodeRegistration(nodeName);
         String oldAddr = nr.getAddress();
         DockerService ds = nr.setAddress(address);
+        save(nr);
         if(!Objects.equals(oldAddr, address)) {
             // address changed, force to update node status
             checkNode(nr);
