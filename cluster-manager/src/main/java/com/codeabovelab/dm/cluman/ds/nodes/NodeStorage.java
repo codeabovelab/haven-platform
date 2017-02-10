@@ -143,7 +143,7 @@ public class NodeStorage implements NodeInfoProvider, NodeRegistry {
         try (TempAuth ta = TempAuth.asSystem()) {
             switch (action) {
                 case DELETE: {
-                    NodeRegistrationImpl nr = getNodeRegistrationInternal(key);
+                    NodeRegistrationImpl nr = e.getValue();
                     NodeInfoImpl ni = nr == null? NodeInfoImpl.builder().name(key).build() : nr.getNodeInfo();
                     fireNodeModification(nr, StandardActions.DELETE, ni, null);
                     break;

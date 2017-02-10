@@ -26,6 +26,7 @@ import com.codeabovelab.dm.common.mb.Subscriptions;
 import com.codeabovelab.dm.cluman.security.TempAuth;
 import com.codeabovelab.dm.common.utils.RescheduledTask;
 import com.google.common.base.Throwables;
+import com.google.common.collect.ImmutableSet;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -45,6 +46,7 @@ import java.util.concurrent.*;
 @Slf4j
 @Component
 class ContainerInfoUpdater implements SmartLifecycle {
+    private static final Set<String> ACTIONS_REMOVE = ImmutableSet.of(StandardActions.OFFLINE, StandardActions.DELETE);
     private final ContainerStorageImpl containerStorage;
     private final ConcurrentMap<String, RescheduledTask> scheduledNodes;
     private final ScheduledExecutorService scheduledService;
@@ -180,14 +182,14 @@ class ContainerInfoUpdater implements SmartLifecycle {
     }
 
     private void onNodeEvent(NodeEvent nodeEvent) {
-        NodeInfo ni = nodeEvent.getCurrent();
+        NodeInfo ni = nodeEvent.getNode();
         if(ni == null) {
             return;
         }
         String name = ni.getName();
         String action = nodeEvent.getAction();
-        if(StandardActions.OFFLINE.equals(action)) {
-            log.info("Node '{}' offline remove containers.", name);
+        if(ACTIONS_REMOVE.contains(action)) {
+            log.info("Node '{}' is '{}' remove containers.", name, action);
             containerStorage.removeNodeContainers(name);
             return;
         }
