@@ -427,7 +427,16 @@ public class NodeStorage implements NodeInfoProvider, NodeRegistry {
     }
 
     public DockerService registerNode(String nodeName, String address) {
-        NodeRegistrationImpl nr = getOrCreateNodeRegistration(nodeName);
+        NodeRegistrationImpl nr = getByAddress(address);
+        if(nr != null) {
+            String existsName = nr.getName();
+            if(existsName.equals(nodeName)) {
+                return nr.getDocker();
+            }
+            throw new IllegalArgumentException("Can not register '" + nodeName +
+              "', because already has node '" + existsName + "' with same address: " + address);
+        }
+        nr = getOrCreateNodeRegistration(nodeName);
         String oldAddr = nr.getAddress();
         DockerService ds = nr.setAddress(address);
         save(nr);
@@ -436,6 +445,10 @@ public class NodeStorage implements NodeInfoProvider, NodeRegistry {
             checkNode(nr);
         }
         return ds;
+    }
+
+    private NodeRegistrationImpl getByAddress(String address) {
+        return nodes.values().stream().filter(nr -> address.equals(nr.getAddress())).findFirst().orElse(null);
     }
 
     /**
