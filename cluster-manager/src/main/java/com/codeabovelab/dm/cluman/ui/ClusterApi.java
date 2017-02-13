@@ -147,6 +147,7 @@ public class ClusterApi {
             UiContainer uic = UiContainer.from(container);
             uic.enrich(discoveryStorage, containerStorage);
             uic.setApplication(apps.get(uic.getId()));
+            UiContainer.resolveStatus(uic, nodeRegistry);
             UiPermission.inject(uic, ac, SecuredType.CONTAINER.id(uic.getId()));
             list.add(uic);
         }

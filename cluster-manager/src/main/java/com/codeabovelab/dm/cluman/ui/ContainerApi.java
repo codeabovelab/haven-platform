@@ -157,14 +157,14 @@ public class ContainerApi {
             DockerContainer container = cr.getContainer();
             UiContainer uc = new UiContainer();
             if(container != null) {
-                UiContainer.fromBase(uc, container);
+                UiContainer.from(uc, container);
             } else {
                 uc.setName("<invalid>");
             }
             uc.setNode(cr.getNode());
-            uc.getLabels().putAll(cr.getAdditionalLabels());
-            uc.setCluster(getClusterForNode(cr.getNode()));
+            uc.enrich(discoveryStorage, containerStorage);
             uc.setApplication(app2cont.get(uc.getId()));
+            UiContainer.resolveStatus(uc, nodeStorage);
             return uc;
         }).collect(Collectors.toList());
         containers.sort(null);
@@ -180,15 +180,33 @@ public class ContainerApi {
         ContainerRegistration cr = containerStorage.getContainer(id);
         ExtendedAssert.notFound(cr, "Not found container: " + id);
         String node = cr.getNode();
-        DockerService nodeService = nodeStorage.getNodeService(node);
-        ContainerDetails container = nodeService.getContainer(id);
-        return toContainerDetails(cr, container);
+        DockerService nodeService = (node == null)? null : nodeStorage.getNodeService(node);
+        if(nodeService != null && nodeService.isOnline()) {
+            ContainerDetails container = nodeService.getContainer(id);
+            return toContainerDetails(cr, container);
+        }
+        // it happen on containers from offline nodes and orphans
+        return toContainerDetails(cr, null);
     }
 
     private UIContainerDetails toContainerDetails(ContainerRegistration cr, ContainerDetails container) {
         String node = cr.getNode();
         String id = cr.getId();
-        UIContainerDetails res = UIContainerDetails.from(containerSourceFactory, container);
+        UIContainerDetails res = new UIContainerDetails();
+        res.setId(cr.getId());
+        DockerContainer dc = cr.getContainer();
+        if(container != null) {
+            res.from(containerSourceFactory, container);
+            res.setState(dc.getState());
+        } else {
+            // fallback when something wrong
+            res.setName(dc.getName());
+            res.setImage(dc.getImage());
+            res.setImageId(dc.getImageId());
+            res.setCreated(new Date(dc.getCreated()));
+            res.setRun(false);
+            res.setStatus(UiContainer.NO_NODE);
+        }
         res.setNode(node);
         String cluster = getClusterForNode(node);
         res.setCluster(cluster);

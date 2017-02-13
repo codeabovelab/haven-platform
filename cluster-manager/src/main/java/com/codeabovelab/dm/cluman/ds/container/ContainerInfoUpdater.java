@@ -46,7 +46,6 @@ import java.util.concurrent.*;
 @Slf4j
 @Component
 class ContainerInfoUpdater implements SmartLifecycle {
-    private static final Set<String> ACTIONS_REMOVE = ImmutableSet.of(StandardActions.OFFLINE, StandardActions.DELETE);
     private final ContainerStorageImpl containerStorage;
     private final ConcurrentMap<String, RescheduledTask> scheduledNodes;
     private final ScheduledExecutorService scheduledService;
@@ -188,7 +187,8 @@ class ContainerInfoUpdater implements SmartLifecycle {
         }
         String name = ni.getName();
         String action = nodeEvent.getAction();
-        if(ACTIONS_REMOVE.contains(action)) {
+        // we must keep container in all cases except deletion of node
+        if(StandardActions.DELETE.equals(action)) {
             log.info("Node '{}' is '{}' remove containers.", name, action);
             containerStorage.removeNodeContainers(name);
             return;

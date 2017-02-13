@@ -29,12 +29,4 @@ public class Port {
     private final int publicPort;
     private final ProtocolType type;
 
-    public Port(int privatePort,
-                int publicPort,
-                ProtocolType type) {
-        this.privatePort = privatePort;
-        this.publicPort = publicPort;
-        this.type = type;
-    }
-
 }

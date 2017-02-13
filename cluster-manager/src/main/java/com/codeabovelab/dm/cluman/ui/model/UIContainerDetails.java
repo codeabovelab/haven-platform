@@ -19,6 +19,7 @@ package com.codeabovelab.dm.cluman.ui.model;
 import com.codeabovelab.dm.cluman.cluster.docker.model.ContainerDetails;
 import com.codeabovelab.dm.cluman.cluster.docker.model.ContainerState;
 import com.codeabovelab.dm.cluman.model.ContainerSource;
+import com.codeabovelab.dm.cluman.model.DockerContainer;
 import com.codeabovelab.dm.cluman.source.ContainerSourceFactory;
 import com.codeabovelab.dm.cluman.ui.UiUtils;
 import lombok.Data;
@@ -44,24 +45,24 @@ public class UIContainerDetails extends ContainerSource implements UiContainerIf
     private String lockCause;
     private boolean run;
     private String status;
+    private DockerContainer.State state;
     private UiPermission permission;
 
     public UIContainerDetails() {
     }
 
-    public static UIContainerDetails from(ContainerSourceFactory containerSourceFactory, ContainerDetails container) {
-        UIContainerDetails res = new UIContainerDetails();
-        containerSourceFactory.toSource(container, res);
-        res.setId(container.getId());
-        UiUtils.resolveContainerLock(res, container);
-        res.setArgs(container.getArgs());
-        res.setRestartCount(container.getRestartCount());
+    public UIContainerDetails from(ContainerSourceFactory containerSourceFactory, ContainerDetails container) {
+        containerSourceFactory.toSource(container, this);
+        setId(container.getId());
+        UiUtils.resolveContainerLock(this, container);
+        setArgs(container.getArgs());
+        setRestartCount(container.getRestartCount());
         ContainerState state = container.getState();
-        res.setStatus(state.getStatus());
-        res.setRun(state.isRunning());
-        res.setCreated(container.getCreated());
-        res.setStarted(state.getStartedAt());
-        res.setFinished(state.getFinishedAt());
-        return res;
+        setStatus(state.getStatus());
+        setRun(state.isRunning());
+        setCreated(container.getCreated());
+        setStarted(state.getStartedAt());
+        setFinished(state.getFinishedAt());
+        return this;
     }
 }
