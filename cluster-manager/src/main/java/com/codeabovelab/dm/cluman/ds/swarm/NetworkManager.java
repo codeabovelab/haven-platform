@@ -112,19 +112,7 @@ public class NetworkManager implements Consumer<NodeEvent> {
                 LOG.warn("Node without cluster {}", node);
                 return;
             }
-            String clusterName = cluster.getName();
             cluster.init();
-            NodeGroupState state = cluster.getState();
-            if (!state.isOk()) {
-                LOG.warn("Can not create network due cluster '{}' in '{}' state.", clusterName, state.getMessage());
-                return;
-            }
-            List<Network> networks = cluster.getDocker().getNetworks();
-            LOG.debug("Networks {}", networks);
-            Optional<Network> any = networks.stream().filter(n -> n.getName().equals(clusterName)).findAny();
-            if (!any.isPresent()) {
-                createNetwork(cluster, clusterName);
-            }
         }
     }
 }
