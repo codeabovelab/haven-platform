@@ -121,8 +121,9 @@ public class DockerServices implements DockerServiceRegistry {
     }
 
     /**
+     * Do not use this for obtain cluster service.
      * @param instanceId id of swarm or docker node
-     * @return
+     * @return docker service
      */
     @Override
     public DockerService getService(String instanceId) {
