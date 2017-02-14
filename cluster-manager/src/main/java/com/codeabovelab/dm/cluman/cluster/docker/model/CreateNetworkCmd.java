@@ -23,7 +23,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * TODO It must consider all fields from {@link Network }
+ * https://github.com/docker/docker/blob/a69c4129e086e4e7b86cce7d2682685dfdc6f2d2/api/types/types.go#L418
  */
 @Data
 public class CreateNetworkCmd {
@@ -42,6 +42,9 @@ public class CreateNetworkCmd {
 
     @JsonProperty("Internal")
     private boolean internal;
+
+    @JsonProperty("Attachable")
+    private boolean attachable;
 
     @JsonProperty("IPAM")
     private Network.Ipam ipam;

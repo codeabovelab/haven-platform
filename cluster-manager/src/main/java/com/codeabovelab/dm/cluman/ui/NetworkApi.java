@@ -75,6 +75,7 @@ public class NetworkApi {
         }
         cmd.setName(network);
         cmd.setCheckDuplicate(true);
+        cmd.setAttachable(true);
         CreateNetworkResponse res = networkManager.createNetwork(group, cmd);
         if(res.getCode() == ResultCode.OK) {
             UiNetworkCreateResult uincr = new UiNetworkCreateResult();
