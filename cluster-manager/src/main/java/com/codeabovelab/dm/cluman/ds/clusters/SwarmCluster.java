@@ -20,19 +20,13 @@ import com.codeabovelab.dm.cluman.cluster.docker.ClusterConfig;
 import com.codeabovelab.dm.cluman.cluster.docker.ClusterConfigImpl;
 import com.codeabovelab.dm.cluman.cluster.docker.management.DockerService;
 import com.codeabovelab.dm.cluman.cluster.docker.management.argument.GetContainersArg;
-import com.codeabovelab.dm.cluman.cluster.docker.management.result.*;
-import com.codeabovelab.dm.cluman.cluster.docker.management.result.ResultCode;
-import com.codeabovelab.dm.cluman.cluster.docker.model.CreateNetworkResponse;
-import com.codeabovelab.dm.cluman.cluster.docker.model.Network;
 import com.codeabovelab.dm.cluman.ds.SwarmClusterContainers;
 import com.codeabovelab.dm.cluman.ds.container.ContainerCreator;
 import com.codeabovelab.dm.cluman.ds.nodes.NodeRegistration;
 import com.codeabovelab.dm.cluman.ds.swarm.DockerServices;
-import com.codeabovelab.dm.cluman.ds.swarm.NetworkManager;
 import com.codeabovelab.dm.cluman.model.*;
 import com.codeabovelab.dm.common.kv.WriteOptions;
 import com.codeabovelab.dm.common.kv.mapping.KvMapperFactory;
-import com.google.common.base.MoreObjects;
 import lombok.ToString;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -52,15 +46,9 @@ public final class SwarmCluster extends AbstractNodesGroup<SwarmNodesGroupConfig
     private DockerService docker;
     private ContainersManager containers;
     private ContainerCreator containerCreator;
-    private NetworkManager networkManager;
 
     SwarmCluster(DiscoveryStorageImpl storage, SwarmNodesGroupConfig config) {
         super(config, storage, Collections.singleton(Feature.SWARM));
-    }
-
-    @Autowired
-    void setNetworkManager(NetworkManager networkManager) {
-        this.networkManager = networkManager;
     }
 
     @Autowired
@@ -112,31 +100,7 @@ public final class SwarmCluster extends AbstractNodesGroup<SwarmNodesGroupConfig
         } catch (Exception e) {
             log.error("Can not update swarm registration: of node {} from cluster {}", address, cluster, e);
         }
-        createOverlayNetwork();
-    }
-
-    private void createOverlayNetwork() {
-        NodeGroupState state = getState();
-        if (!state.isOk()) {
-            log.warn("Can not create network due cluster '{}' in '{}' state.", getName(), state.getMessage());
-            return;
-        }
-        List<Network> networks = getDocker().getNetworks();
-        log.debug("Networks {}", networks);
-        final String defaultNetwork;
-        synchronized (lock) {
-            String defaultNetworkConf = this.config.getDefaultNetwork();
-            if(defaultNetworkConf == null) {
-                defaultNetworkConf = getName();
-                this.config.setDefaultNetwork(defaultNetworkConf);
-            }
-            defaultNetwork = defaultNetworkConf;
-        }
-        Optional<Network> any = networks.stream().filter(n -> n.getName().equals(defaultNetwork)).findAny();
-        if (any.isPresent()) {
-            return;
-        }
-        networkManager.createNetwork(this, defaultNetwork);
+        createDefaultNetwork();
     }
 
     private String getDiscoveryKey(String cluster, String address) {

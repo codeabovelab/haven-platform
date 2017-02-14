@@ -120,6 +120,7 @@ public class DockerCluster extends AbstractNodesGroup<DockerClusterConfig> {
             // force update nodes
             scheduledExecutor.execute(this::updateNodes);
         }
+        this.createDefaultNetwork();
     }
 
     protected void closeImpl() {

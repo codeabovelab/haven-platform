@@ -16,6 +16,8 @@
 
 package com.codeabovelab.dm.cluman.ds.clusters;
 
+import com.codeabovelab.dm.cluman.cluster.docker.model.Network;
+import com.codeabovelab.dm.cluman.ds.swarm.NetworkManager;
 import com.codeabovelab.dm.cluman.model.NodeGroupState;
 import com.codeabovelab.dm.cluman.security.AclModifier;
 import com.codeabovelab.dm.cluman.security.SecuredType;
@@ -31,9 +33,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.util.Assert;
 
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 
@@ -56,6 +56,7 @@ public abstract class AbstractNodesGroup<C extends AbstractNodesGroupConfig<C>> 
     protected final Object lock = new Object();
     private final ObjectIdentityData oid;
     protected final AtomicInteger state = new AtomicInteger(S_BEGIN);
+    protected final NetworkManager networkManager;
 
     @SuppressWarnings("unchecked")
     public AbstractNodesGroup(C config,
@@ -70,6 +71,7 @@ public abstract class AbstractNodesGroup<C extends AbstractNodesGroupConfig<C>> 
         this.oid = SecuredType.CLUSTER.id(name);
         this.features = features == null? Collections.emptySet() : ImmutableSet.copyOf(features);
         setConfig(config.clone());
+        this.networkManager = new NetworkManager(this);
     }
 
     /**
@@ -201,6 +203,43 @@ public abstract class AbstractNodesGroup<C extends AbstractNodesGroupConfig<C>> 
     @Override
     public Set<Feature> getFeatures() {
         return this.features;
+    }
+
+    /**
+     * Note that this method may change config
+     * @see AbstractNodesGroupConfig#getDefaultNetwork()
+     * @return non null name of default network
+     */
+    public String getDefaultNetworkName() {
+        String defaultNetwork;
+        synchronized (lock) {
+            defaultNetwork = this.config.getDefaultNetwork();
+            if(defaultNetwork == null) {
+                defaultNetwork = getName();
+            }
+        }
+        return defaultNetwork;
+    }
+
+    protected void createDefaultNetwork() {
+        NodeGroupState state = getState();
+        if (!state.isOk()) {
+            log.warn("Can not create network due cluster '{}' in '{}' state.", getName(), state.getMessage());
+            return;
+        }
+        List<Network> networks = getDocker().getNetworks();
+        log.debug("Networks {}", networks);
+        String defaultNetwork = getDefaultNetworkName();
+        Optional<Network> any = networks.stream().filter(n -> n.getName().equals(defaultNetwork)).findAny();
+        if (any.isPresent()) {
+            return;
+        }
+        networkManager.createNetwork(defaultNetwork);
+    }
+
+    @Override
+    public NetworkManager getNetworks() {
+        return networkManager;
     }
 
     @Override

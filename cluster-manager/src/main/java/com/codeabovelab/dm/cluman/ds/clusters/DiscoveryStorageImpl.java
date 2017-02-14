@@ -141,6 +141,24 @@ public class DiscoveryStorageImpl implements DiscoveryStorage {
             // virtual cluster for nodes without cluster
             getOrCreateGroup(new DefaultNodesGroupConfig(GROUP_ID_ORPHANS, OrphansNodeFilterFactory.FILTER)).updateAcl(aclModifier);
         }
+
+        getNodeStorage().getNodeEventSubscriptions().subscribe(this::onNodeEvent);
+    }
+
+    private void onNodeEvent(NodeEvent nodeEvent) {
+        NodeInfo node = nodeEvent.getCurrent();
+        if (node == null) {
+            return;
+        }
+        // setup cluster (it need only cases when cluster have no one node, for both types of clusters)
+        try(TempAuth ta = TempAuth.asSystem()) {
+            NodesGroup cluster = getClusterForNode(node.getName());
+            if (cluster == null) {
+                log.warn("Node without cluster {}", node);
+                return;
+            }
+            cluster.init();
+        }
     }
 
     public void load() {

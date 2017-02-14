@@ -21,7 +21,6 @@ import com.codeabovelab.dm.cluman.cluster.docker.management.result.ServiceCallRe
 import com.codeabovelab.dm.cluman.cluster.docker.model.*;
 import com.codeabovelab.dm.cluman.ds.container.ContainerRegistration;
 import com.codeabovelab.dm.cluman.ds.container.ContainerStorage;
-import com.codeabovelab.dm.cluman.ds.swarm.NetworkManager;
 import com.codeabovelab.dm.cluman.model.DiscoveryStorage;
 import com.codeabovelab.dm.cluman.model.NodesGroup;
 import com.codeabovelab.dm.cluman.ui.model.*;
@@ -47,13 +46,13 @@ import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 @RequiredArgsConstructor(onConstructor = @__(@Autowired))
 public class NetworkApi {
 
-    private final NetworkManager networkManager;
     private final DiscoveryStorage discoveryStorage;
     private final ContainerStorage containerStorage;
 
     @RequestMapping(path = "list", method = RequestMethod.GET)
     public List<UiNetwork> getNetworks(@RequestParam("cluster") String clusterName) {
-        List<Network> networks = networkManager.getNetworks(clusterName);
+        NodesGroup group = getNodesGroup(clusterName);
+        List<Network> networks = group.getNetworks().getNetworks(clusterName);
         ArrayList<UiNetwork> results = new ArrayList<>(networks.size());
         networks.forEach(src -> {
             UiNetwork res = new UiNetwork();
@@ -76,7 +75,7 @@ public class NetworkApi {
         cmd.setName(network);
         cmd.setCheckDuplicate(true);
         cmd.setAttachable(true);
-        CreateNetworkResponse res = networkManager.createNetwork(group, cmd);
+        CreateNetworkResponse res = group.getNetworks().createNetwork(cmd);
         if(res.getCode() == ResultCode.OK) {
             UiNetworkCreateResult uincr = new UiNetworkCreateResult();
             uincr.setId(res.getId());
