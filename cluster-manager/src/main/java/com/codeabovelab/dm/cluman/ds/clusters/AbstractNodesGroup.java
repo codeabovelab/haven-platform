@@ -210,6 +210,7 @@ public abstract class AbstractNodesGroup<C extends AbstractNodesGroupConfig<C>> 
      * @see AbstractNodesGroupConfig#getDefaultNetwork()
      * @return non null name of default network
      */
+    @Override
     public String getDefaultNetworkName() {
         String defaultNetwork;
         synchronized (lock) {

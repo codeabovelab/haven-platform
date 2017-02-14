@@ -125,4 +125,6 @@ public interface NodesGroup extends Named, WithAcl {
     ContainersManager getContainers();
 
     NetworkManager getNetworks();
+
+    String getDefaultNetworkName();
 }

@@ -305,7 +305,7 @@ public class ContainerCreator {
             if(cluster != null) {
                 NodesGroup ng = discoveryStorage.getCluster(cluster);
                 if (ng != null) {
-                    b.networkMode(ng.getConfig().getDefaultNetwork());
+                    b.networkMode(ng.getDefaultNetworkName());
                     return;
                 }
                 LOG.warn("Cluster \"{}\" does not have any network, so container \"{}\" will be created with default network.", cluster, cc.getName());
