@@ -32,7 +32,6 @@ import com.codeabovelab.dm.cluman.cluster.registry.RegistryService;
 import com.codeabovelab.dm.cluman.cluster.registry.data.ImageCatalog;
 import com.codeabovelab.dm.cluman.cluster.registry.data.SearchResult;
 import com.codeabovelab.dm.cluman.cluster.registry.data.Tags;
-import com.codeabovelab.dm.cluman.ds.DockerServiceRegistry;
 import com.codeabovelab.dm.cluman.ds.clusters.SwarmNodesGroupConfig;
 import com.codeabovelab.dm.cluman.model.*;
 import com.codeabovelab.dm.cluman.source.ContainerSourceFactory;
@@ -65,7 +64,6 @@ import static org.springframework.web.bind.annotation.RequestMethod.GET;
 public class ImagesApi {
 
     private static final Splitter SPLITTER = Splitter.on(",").omitEmptyStrings().trimResults();
-    private final DockerServiceRegistry dockerServices;
     private final DiscoveryStorage discoveryStorage;
     private final RegistryRepository registryRepository;
     private final FilterFactory filterFactory;
@@ -73,7 +71,7 @@ public class ImagesApi {
     @RequestMapping(value = "/clusters/{cluster}/list", method = RequestMethod.GET)
     public List<ImageItem> getImages(@PathVariable("cluster") String cluster) {
         //TODO check usage of this method in CLI and if it not used - remove
-        List<ImageItem> images = dockerServices.getService(cluster).getImages(GetImagesArg.ALL);
+        List<ImageItem> images = discoveryStorage.getService(cluster).getImages(GetImagesArg.ALL);
         return images;
     }
 
@@ -209,7 +207,7 @@ public class ImagesApi {
                 .cluster(cluster)
                 .imageName(imageName)
                 .repository(repository).build();
-        ServiceCallResult res = dockerServices.getService(cluster).createTag(tagImageArg);
+        ServiceCallResult res = discoveryStorage.getService(cluster).createTag(tagImageArg);
 
         return UiUtils.createResponse(res);
     }

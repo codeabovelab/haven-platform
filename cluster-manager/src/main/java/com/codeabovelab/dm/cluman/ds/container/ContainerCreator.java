@@ -20,27 +20,21 @@ import com.codeabovelab.dm.cluman.cluster.docker.management.DockerService;
 import com.codeabovelab.dm.cluman.cluster.docker.management.DockerServiceImpl;
 import com.codeabovelab.dm.cluman.cluster.docker.management.DockerUtils;
 import com.codeabovelab.dm.cluman.cluster.docker.management.argument.CalcNameArg;
-import com.codeabovelab.dm.cluman.model.CreateContainerArg;
+import com.codeabovelab.dm.cluman.model.*;
 import com.codeabovelab.dm.cluman.cluster.docker.management.result.CreateAndStartContainerResult;
 import com.codeabovelab.dm.cluman.cluster.docker.management.result.ProcessEvent;
 import com.codeabovelab.dm.cluman.cluster.docker.management.result.ResultCode;
 import com.codeabovelab.dm.cluman.cluster.docker.management.result.ServiceCallResult;
 import com.codeabovelab.dm.cluman.cluster.docker.model.*;
 import com.codeabovelab.dm.cluman.configs.container.ConfigProvider;
-import com.codeabovelab.dm.cluman.ds.DockerServiceRegistry;
 import com.codeabovelab.dm.cluman.ds.SwarmUtils;
 import com.codeabovelab.dm.cluman.ds.swarm.NetworkManager;
-import com.codeabovelab.dm.cluman.model.ContainerSource;
-import com.codeabovelab.dm.cluman.model.ImageDescriptor;
-import com.codeabovelab.dm.cluman.model.NodeInfo;
-import com.codeabovelab.dm.cluman.model.NodeRegistry;
 import com.codeabovelab.dm.cluman.source.ContainerSourceFactory;
 import com.codeabovelab.dm.cluman.utils.ContainerUtils;
 import com.codeabovelab.dm.cluman.validate.ExtendedAssert;
 import com.codeabovelab.dm.common.utils.Consumers;
 import com.google.common.base.MoreObjects;
 import lombok.Data;
-import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -67,7 +61,7 @@ public class ContainerCreator {
     private static final Logger LOG = LoggerFactory.getLogger(DockerServiceImpl.class);
     private static final int CREATE_CONTAINER_TRIES = 3;
     @Autowired
-    private DockerServiceRegistry dockerServiceRegistry;
+    private DiscoveryStorage discoveryStorage;
     @Autowired
     private NodeRegistry nodeRegistry;
     @Autowired
@@ -330,7 +324,7 @@ public class ContainerCreator {
     }
 
     private DockerService getDockerForCluster(String clusterId) {
-        return dockerServiceRegistry.getService(clusterId);
+        return discoveryStorage.getService(clusterId);
     }
 
     private Ports getBindings(Map<String, String> publish) {

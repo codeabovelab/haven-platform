@@ -22,7 +22,6 @@ import com.codeabovelab.dm.cluman.cluster.docker.management.DockerService;
 import com.codeabovelab.dm.cluman.cluster.docker.management.DockerServiceEvent;
 import com.codeabovelab.dm.cluman.cluster.docker.management.DockerServiceImpl;
 import com.codeabovelab.dm.cluman.ds.DockerServiceFactory;
-import com.codeabovelab.dm.cluman.ds.DockerServiceRegistry;
 import com.codeabovelab.dm.cluman.ds.nodes.NodeStorage;
 import com.codeabovelab.dm.cluman.model.*;
 import com.codeabovelab.dm.common.mb.MessageBus;
@@ -47,7 +46,7 @@ import java.util.function.Consumer;
  * therefore you must use {@link NodesGroup#getDocker()} directly. <p/>
  */
 @Component
-public class DockerServices implements DockerServiceRegistry {
+public class DockerServices {
 
     private final Logger log = LoggerFactory.getLogger(getClass());
     private final ConcurrentMap<String, DockerService> clusters = new ConcurrentHashMap<>();
@@ -125,7 +124,6 @@ public class DockerServices implements DockerServiceRegistry {
      * @param instanceId id of swarm or docker node
      * @return docker service
      */
-    @Override
     public DockerService getService(String instanceId) {
         DockerService service = clusters.get(instanceId);
         return service;
@@ -164,7 +162,6 @@ public class DockerServices implements DockerServiceRegistry {
         });
     }
 
-    @Override
     public Set<String> getServices() {
         return ImmutableSet.copyOf(clusters.keySet());
     }
