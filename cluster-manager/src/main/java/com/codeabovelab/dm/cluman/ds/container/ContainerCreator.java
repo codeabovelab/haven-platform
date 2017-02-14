@@ -71,8 +71,6 @@ public class ContainerCreator {
     @Autowired
     private ContainerStorage containerStorage;
     @Autowired
-    private NetworkManager networkManager;
-    @Autowired
     private ContainerSourceFactory containerSourceFactory;
 
     /**
@@ -294,14 +292,27 @@ public class ContainerCreator {
                 .publishAllPorts(arg.isPublishAllPorts())
                 .restartPolicy(restartPolicy);
 
-        String cluster = arg.getCluster();
-        List<Network> networks = cluster == null ? null : networkManager.getNetworks(cluster);
-        if (networks != null && networks.stream().filter(n -> n.getName().equals(cluster)).count() > 0) {
-            builder.networkMode(cluster);
-        } else {
-            LOG.warn("Cluster \"{}\" does not have any network, so container \"{}\" will be created with default network.", cluster, cc.getName());
-        }
+        makeNetwork(cc, arg, builder);
         return builder.build();
+    }
+
+    private void makeNetwork(CreateContainerContext cc, ContainerSource arg, HostConfig.HostConfigBuilder b) {
+        String networkSrc = arg.getNetwork();
+        List<String> networksSrc = arg.getNetworks();
+        // also we need make support of multiply 'networks'
+        if(networkSrc == null) {
+            String cluster = arg.getCluster();
+            if(cluster != null) {
+                NodesGroup ng = discoveryStorage.getCluster(cluster);
+                if (ng != null) {
+                    b.networkMode(ng.getConfig().getDefaultNetwork());
+                    return;
+                }
+                LOG.warn("Cluster \"{}\" does not have any network, so container \"{}\" will be created with default network.", cluster, cc.getName());
+            }
+        } else {
+            b.networkMode(networkSrc);
+        }
     }
 
     private RestartPolicy getRestartPolicy(CreateContainerContext cc, ContainerSource arg) {
