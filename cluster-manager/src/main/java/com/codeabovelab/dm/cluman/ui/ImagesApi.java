@@ -81,8 +81,7 @@ public class ImagesApi {
         ExtendedAssert.notFound(nodesGroup, "Cluster was not found by " + cluster);
         DockerService service = nodesGroup.getDocker();
         ExtendedAssert.notFound(service, "Service for " + cluster + " is null.");
-        GetContainersArg arg = new GetContainersArg(true);
-        List<DockerContainer> containers = service.getContainers(arg);
+        Collection<DockerContainer> containers = nodesGroup.getContainers().getContainers();
         Map<String, UiDeployedImage> images = new HashMap<>();
         for (DockerContainer container : containers) {
             String imageId = container.getImageId();

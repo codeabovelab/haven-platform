@@ -16,18 +16,18 @@
 
 package com.codeabovelab.dm.cluman.batch;
 
-import com.codeabovelab.dm.cluman.cluster.docker.management.DockerService;
-import com.codeabovelab.dm.cluman.cluster.docker.management.argument.GetContainersArg;
 import com.codeabovelab.dm.cluman.job.JobComponent;
 import com.codeabovelab.dm.cluman.job.JobContext;
 import com.codeabovelab.dm.cluman.job.JobParam;
 import com.codeabovelab.dm.cluman.model.DockerContainer;
+import com.codeabovelab.dm.cluman.model.NodesGroup;
 import com.codeabovelab.dm.cluman.utils.ContainerUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.util.Assert;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 
 /**
@@ -43,7 +43,7 @@ public class LoadContainersOfImageTasklet {
     public static final String JP_IMAGE = "images";
     private static final String PREFIX = "LoadContainersOfImage.";
     public static final String JP_PERCENTAGE = PREFIX + "percentage";
-    private final DockerService dockerService;
+    private final NodesGroup nodesGroup;
     private final JobContext context;
     private ImagesForUpdate images;
     private float percentage = 1f /* all containers, .5 - half */;
@@ -52,8 +52,8 @@ public class LoadContainersOfImageTasklet {
     private String cluster;
 
     @Autowired
-    public LoadContainersOfImageTasklet(DockerService dockerService, JobContext context) {
-        this.dockerService = dockerService;
+    public LoadContainersOfImageTasklet(NodesGroup nodesGroup, JobContext context) {
+        this.nodesGroup = nodesGroup;
         this.context = context;
     }
 
@@ -77,8 +77,7 @@ public class LoadContainersOfImageTasklet {
 
     public List<ProcessedContainer> getContainers(ContainerPredicate predicate) {
         Assert.notNull(this.images, "Need attribute: " + JP_IMAGE);
-        GetContainersArg arg = new GetContainersArg(true);
-        List<DockerContainer> containers = this.dockerService.getContainers(arg);
+        Collection<DockerContainer> containers = this.nodesGroup.getContainers().getContainers();
         List<ProcessedContainer> processedContainers = new ArrayList<>();
         for(DockerContainer container : containers) {
             ImagesForUpdate.Image img = images.findImage(container.getImage(), container.getImageId());
