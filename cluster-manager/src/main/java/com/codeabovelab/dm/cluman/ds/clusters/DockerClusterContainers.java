@@ -19,6 +19,7 @@ package com.codeabovelab.dm.cluman.ds.clusters;
 import com.codeabovelab.dm.cluman.cluster.docker.management.DockerService;
 import com.codeabovelab.dm.cluman.cluster.docker.management.argument.*;
 import com.codeabovelab.dm.cluman.cluster.docker.management.result.ResultCode;
+import com.codeabovelab.dm.cluman.cluster.docker.model.ContainerDetails;
 import com.codeabovelab.dm.cluman.cluster.docker.model.UpdateContainerCmd;
 import com.codeabovelab.dm.cluman.ds.container.ContainerCreator;
 import com.codeabovelab.dm.cluman.model.CreateContainerArg;
@@ -277,6 +278,12 @@ class DockerClusterContainers implements ContainersManager {
         // therefore user must create service, or in future we implement this
         //DockerService ds = getContainerDocker(arg.getContainerId());
         //containerCreator.scale(ds, arg.getScale(), arg.getContainerId());
+    }
+
+    @Override
+    public ContainerDetails getContainer(String id) {
+        DockerService ds = getContainerDocker(id);
+        return ds.getContainer(id);
     }
 
     private ServiceCallResult scaleService(String serviceId, int scale) {
