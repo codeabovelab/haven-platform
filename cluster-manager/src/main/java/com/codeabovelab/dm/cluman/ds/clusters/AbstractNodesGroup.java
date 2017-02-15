@@ -23,6 +23,7 @@ import com.codeabovelab.dm.cluman.security.AclModifier;
 import com.codeabovelab.dm.cluman.security.SecuredType;
 import com.codeabovelab.dm.cluman.ds.nodes.NodeStorage;
 import com.codeabovelab.dm.cluman.model.NodesGroup;
+import com.codeabovelab.dm.cluman.security.TempAuth;
 import com.codeabovelab.dm.common.security.SecurityUtils;
 import com.codeabovelab.dm.common.security.TenantPrincipalSid;
 import com.codeabovelab.dm.common.security.acl.AclSource;
@@ -228,14 +229,18 @@ public abstract class AbstractNodesGroup<C extends AbstractNodesGroupConfig<C>> 
             log.warn("Can not create network due cluster '{}' in '{}' state.", getName(), state.getMessage());
             return;
         }
-        List<Network> networks = getDocker().getNetworks();
-        log.debug("Networks {}", networks);
-        String defaultNetwork = getDefaultNetworkName();
-        Optional<Network> any = networks.stream().filter(n -> n.getName().equals(defaultNetwork)).findAny();
-        if (any.isPresent()) {
-            return;
-        }
-        networkManager.createNetwork(defaultNetwork);
+        getDiscoveryStorage().getExecutor().execute(() -> {
+            try (TempAuth ta = TempAuth.asSystem()) {
+                List<Network> networks = getDocker().getNetworks();
+                log.debug("Networks {}", networks);
+                String defaultNetwork = getDefaultNetworkName();
+                Optional<Network> any = networks.stream().filter(n -> n.getName().equals(defaultNetwork)).findAny();
+                if (any.isPresent()) {
+                    return;
+                }
+                networkManager.createNetwork(defaultNetwork);
+            }
+        });
     }
 
     @Override
