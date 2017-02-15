@@ -16,7 +16,6 @@
 
 package com.codeabovelab.dm.cluman.batch;
 
-import com.codeabovelab.dm.cluman.cluster.docker.management.DockerService;
 import com.codeabovelab.dm.cluman.cluster.docker.management.result.ServiceCallResult;
 import com.codeabovelab.dm.cluman.cluster.docker.model.ContainerDetails;
 import com.codeabovelab.dm.cluman.job.JobComponent;
@@ -51,7 +50,7 @@ public class RollbackTasklet {
     private CreateContainerTasklet containerCreator;
 
     @Autowired
-    private NodesGroup dockerService;
+    private NodesGroup nodesGroup;
 
     @Autowired
     private RollbackData rollbackData;
@@ -146,6 +145,6 @@ public class RollbackTasklet {
     }
 
     private ContainersManager getContainers() {
-        return dockerService.getContainers();
+        return nodesGroup.getContainers();
     }
 }
