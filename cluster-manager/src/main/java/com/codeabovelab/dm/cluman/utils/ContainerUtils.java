@@ -167,16 +167,7 @@ public final class ContainerUtils {
      * @return
      */
     public static String setImageVersion(String image, String version) {
-        assertImageName(image);
-        if (!StringUtils.hasText(version)) {
-            return image;
-        }
-        int i = image.lastIndexOf(':');
-        int slash = image.lastIndexOf('/');
-        if (i < 0 || i < slash) {
-            return image + ":" + version;
-        }
-        return image.substring(0, i + 1) + version;
+        return ImageName.setTag(image, version);
     }
 
     public static boolean isOurContainer(ContainerBaseIface cont) {

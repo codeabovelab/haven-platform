@@ -187,6 +187,11 @@ public class ImageName {
     }
 
     private static String removeTagP(String name) {
+        int tagStart = getTagStart(name);
+        return name.substring(0, tagStart);
+    }
+
+    private static int getTagStart(String name) {
         int catPos = name.indexOf('@');
         int tagStart = name.lastIndexOf(':');
         int regEnd = name.indexOf('/');
@@ -198,7 +203,7 @@ public class ImageName {
             // in thi case image has image id instead of tag, and we must remove it
             tagStart = catPos;
         }
-        return name.substring(0, tagStart);
+        return tagStart;
     }
 
     /**
@@ -212,5 +217,14 @@ public class ImageName {
             return null;
         }
         return removeTagP(name);
+    }
+
+    public static String setTag(String image, String tag) {
+        assertName(image);
+        if (!StringUtils.hasText(tag)) {
+            return image;
+        }
+        int tagStart = getTagStart(image);
+        return image.substring(0, tagStart) + ":" + tag;
     }
 }
