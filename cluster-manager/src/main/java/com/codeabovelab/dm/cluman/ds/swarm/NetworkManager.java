@@ -53,6 +53,7 @@ public class NetworkManager {
         cmd.setName(networkName);
         cmd.setDriver(OVERLAY_DRIVER);
         cmd.setCheckDuplicate(true);
+        cmd.setAttachable(true);
         return createNetwork(cmd);
     }
 
