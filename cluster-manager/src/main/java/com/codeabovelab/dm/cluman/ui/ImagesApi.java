@@ -17,7 +17,6 @@
 package com.codeabovelab.dm.cluman.ui;
 
 import com.codeabovelab.dm.cluman.cluster.docker.management.DockerService;
-import com.codeabovelab.dm.cluman.cluster.docker.management.argument.GetContainersArg;
 import com.codeabovelab.dm.cluman.cluster.docker.management.argument.GetImagesArg;
 import com.codeabovelab.dm.cluman.cluster.docker.management.argument.TagImageArg;
 import com.codeabovelab.dm.cluman.cluster.docker.management.result.ServiceCallResult;
@@ -79,27 +78,25 @@ public class ImagesApi {
     public Collection<UiDeployedImage> getDeployedImages(@PathVariable("cluster") String cluster) {
         NodesGroup nodesGroup = discoveryStorage.getCluster(cluster);
         ExtendedAssert.notFound(nodesGroup, "Cluster was not found by " + cluster);
-        DockerService service = nodesGroup.getDocker();
-        ExtendedAssert.notFound(service, "Service for " + cluster + " is null.");
         Collection<DockerContainer> containers = nodesGroup.getContainers().getContainers();
         Map<String, UiDeployedImage> images = new HashMap<>();
         for (DockerContainer container : containers) {
             String imageId = container.getImageId();
             UiDeployedImage img = images.computeIfAbsent(imageId, UiDeployedImage::new);
             img.addContainer(container);
-            loadImageTagsIfNeed(service, container, img);
+            loadImageTagsIfNeed(nodesGroup, container, img);
         }
         return images.values();
     }
 
-    private void loadImageTagsIfNeed(DockerService service, DockerContainer container, UiDeployedImage img) {
+    private void loadImageTagsIfNeed(NodesGroup service, DockerContainer container, UiDeployedImage img) {
         String imageWithTag = container.getImage();
         if (!CollectionUtils.isEmpty(img.getTags())) {
             return;
         }
         if (ImageName.isId(imageWithTag)) {
             try {
-                ContainerDetails cd = service.getContainer(container.getId());
+                ContainerDetails cd = service.getContainers().getContainer(container.getId());
                 imageWithTag = ContainerSourceFactory.resolveImageName(cd);
                 if (imageWithTag == null || ImageName.isId(imageWithTag)) {
                     return;

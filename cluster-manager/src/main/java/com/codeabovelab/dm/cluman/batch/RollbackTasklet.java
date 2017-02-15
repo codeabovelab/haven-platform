@@ -21,6 +21,8 @@ import com.codeabovelab.dm.cluman.cluster.docker.management.result.ServiceCallRe
 import com.codeabovelab.dm.cluman.cluster.docker.model.ContainerDetails;
 import com.codeabovelab.dm.cluman.job.JobComponent;
 import com.codeabovelab.dm.cluman.job.JobContext;
+import com.codeabovelab.dm.cluman.model.ContainersManager;
+import com.codeabovelab.dm.cluman.model.NodesGroup;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -49,7 +51,7 @@ public class RollbackTasklet {
     private CreateContainerTasklet containerCreator;
 
     @Autowired
-    private DockerService dockerService;
+    private NodesGroup dockerService;
 
     @Autowired
     private RollbackData rollbackData;
@@ -84,7 +86,7 @@ public class RollbackTasklet {
         context.fire("Try remove created \"{0}\"", pc);
         //first we must remove new container
         String name = pc.getName();
-        ContainerDetails currcd = dockerService.getContainer(name);
+        ContainerDetails currcd = getContainers().getContainer(name);
         if(currcd == null) {
             context.fire("Container \"{0}\" is not exists, nothing to remove.", name);
             return;
@@ -106,7 +108,7 @@ public class RollbackTasklet {
         context.fire("Try create removed \"{0}\"", pc);
         // we check that name of new container is not busy,
         String name = pc.getName();
-        ContainerDetails oldcd = dockerService.getContainer(name);
+        ContainerDetails oldcd = getContainers().getContainer(name);
         if(oldcd != null) {
             if(oldcd.getImage().equals(pc.getImage())) {
                 // removed container is exists
@@ -132,14 +134,18 @@ public class RollbackTasklet {
         context.fire("Try to start stopped \"{0}\"", pc);
         // we check that name of new container is not busy,
         String name = pc.getName();
-        ContainerDetails oldcd = dockerService.getContainer(name);
+        ContainerDetails oldcd = getContainers().getContainer(name);
         if(oldcd == null) {
             context.fire("Stopped container \"{0}\" is not exists, nothing to run.", name);
             return;
         }
-        ServiceCallResult res = dockerService.startContainer(name);
+        ServiceCallResult res = getContainers().startContainer(name);
         context.fire("Start container \"{0}\" with result code \"{1}\" and message \"{2}\" (id:{3})",
           pc.getName(), res.getCode(), res.getMessage(), oldcd.getId());
         BatchUtils.checkThatIsOkOrNotModified(res);
+    }
+
+    private ContainersManager getContainers() {
+        return dockerService.getContainers();
     }
 }
