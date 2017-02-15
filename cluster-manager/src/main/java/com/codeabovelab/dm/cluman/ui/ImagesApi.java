@@ -111,7 +111,7 @@ public class ImagesApi {
                 return;
             }
         }
-        String image = ContainerUtils.getRegistryAndImageName(imageWithTag);
+        String image = ImageName.withoutTag(imageWithTag);
         RegistryService registryService = registryRepository.getRegistryByImageName(image);
         if (registryService != null) {
             img.setRegistry(registryService.getConfig().getName());
