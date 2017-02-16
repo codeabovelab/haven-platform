@@ -22,22 +22,22 @@ import org.apache.commons.lang.builder.HashCodeBuilder;
 import org.springframework.util.StringUtils;
 
 /**
- * Represents a host path being bind mounted as a {@link Volume} in a Docker container. The Bind can be in read only or
+ * Represents a host path being bind mounted as a {@link VolumeRef} in a Docker container. The Bind can be in read only or
  * read write access mode.
  */
 public class Bind {
 
     private String path;
 
-    private Volume volume;
+    private VolumeRef volume;
 
     private AccessMode accessMode;
 
-    public Bind(String path, Volume volume) {
+    public Bind(String path, VolumeRef volume) {
         this(path, volume, AccessMode.DEFAULT);
     }
 
-    public Bind(String path, Volume volume, AccessMode accessMode) {
+    public Bind(String path, VolumeRef volume, AccessMode accessMode) {
         this.path = path;
         this.volume = volume;
         this.accessMode = accessMode;
@@ -47,7 +47,7 @@ public class Bind {
         return path;
     }
 
-    public Volume getVolume() {
+    public VolumeRef getVolume() {
         return volume;
     }
 
@@ -69,11 +69,11 @@ public class Bind {
             String[] parts = StringUtils.delimitedListToStringArray(serialized, ":");
             switch (parts.length) {
                 case 2: {
-                    return new Bind(parts[0], new Volume(parts[1]));
+                    return new Bind(parts[0], new VolumeRef(parts[1]));
                 }
                 case 3: {
                     AccessMode accessMode = AccessMode.valueOf(parts[2].toLowerCase());
-                    return new Bind(parts[0], new Volume(parts[1]), accessMode);
+                    return new Bind(parts[0], new VolumeRef(parts[1]), accessMode);
                 }
                 default: {
                     throw new IllegalArgumentException();
@@ -91,7 +91,7 @@ public class Bind {
      * @return
      */
     public static Bind parse(String volumeStr, String pathStr) {
-        Volume volume = new Volume(volumeStr);
+        VolumeRef volume = new VolumeRef(volumeStr);
         String[] parts = StringUtils.split(pathStr, ":");
         if(parts == null) {
             return new Bind(pathStr, volume);

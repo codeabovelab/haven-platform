@@ -31,29 +31,29 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
-@JsonSerialize(using = Volumes.Serializer.class)
-@JsonDeserialize(using = Volumes.Deserializer.class)
+@JsonSerialize(using = VolumeRefs.Serializer.class)
+@JsonDeserialize(using = VolumeRefs.Deserializer.class)
 @Data
-public class Volumes {
+public class VolumeRefs {
 
-    private Volume[] volumes;
+    private VolumeRef[] volumes;
 
-    public Volumes(Volume... volumes) {
+    public VolumeRefs(VolumeRef... volumes) {
         this.volumes = volumes;
     }
 
-    public Volumes(List<Volume> volumes) {
-        this.volumes = volumes.toArray(new Volume[volumes.size()]);
+    public VolumeRefs(List<VolumeRef> volumes) {
+        this.volumes = volumes.toArray(new VolumeRef[volumes.size()]);
     }
 
-    public static class Serializer extends JsonSerializer<Volumes> {
+    public static class Serializer extends JsonSerializer<VolumeRefs> {
 
         @Override
-        public void serialize(Volumes volumes, JsonGenerator jsonGen, SerializerProvider serProvider)
+        public void serialize(VolumeRefs volumes, JsonGenerator jsonGen, SerializerProvider serProvider)
                 throws IOException {
 
             jsonGen.writeStartObject();
-            for (Volume volume : volumes.getVolumes()) {
+            for (VolumeRef volume : volumes.getVolumes()) {
                 jsonGen.writeFieldName(volume.getPath());
                 jsonGen.writeStartObject();
                 jsonGen.writeEndObject();
@@ -63,12 +63,12 @@ public class Volumes {
 
     }
 
-    public static class Deserializer extends JsonDeserializer<Volumes> {
+    public static class Deserializer extends JsonDeserializer<VolumeRefs> {
         @Override
-        public Volumes deserialize(JsonParser jsonParser, DeserializationContext deserializationContext)
+        public VolumeRefs deserialize(JsonParser jsonParser, DeserializationContext deserializationContext)
                 throws IOException {
 
-            List<Volume> volumes = new ArrayList<Volume>();
+            List<VolumeRef> volumes = new ArrayList<VolumeRef>();
             ObjectCodec oc = jsonParser.getCodec();
             JsonNode node = oc.readTree(jsonParser);
             for (Iterator<Map.Entry<String, JsonNode>> it = node.fields(); it.hasNext();) {
@@ -76,11 +76,11 @@ public class Volumes {
                 Map.Entry<String, JsonNode> field = it.next();
                 if (!field.getValue().equals(NullNode.getInstance())) {
                     String path = field.getKey();
-                    Volume volume = new Volume(path);
+                    VolumeRef volume = new VolumeRef(path);
                     volumes.add(volume);
                 }
             }
-            return new Volumes(volumes.toArray(new Volume[0]));
+            return new VolumeRefs(volumes.toArray(new VolumeRef[0]));
         }
     }
 
