@@ -20,6 +20,7 @@ import com.codeabovelab.dm.cluman.cluster.docker.management.DockerService;
 import com.codeabovelab.dm.cluman.cluster.docker.model.ContainerDetails;
 import com.codeabovelab.dm.cluman.job.JobComponent;
 import com.codeabovelab.dm.cluman.model.ContainerSource;
+import com.codeabovelab.dm.cluman.model.NodesGroup;
 import com.codeabovelab.dm.cluman.source.ContainerSourceFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 
@@ -30,14 +31,14 @@ import org.springframework.beans.factory.annotation.Autowired;
 public class ContainerConfigTasklet {
 
     @Autowired
-    private DockerService service;
+    private NodesGroup nodesGroup;
 
     @Autowired
     private ContainerSourceFactory containerSourceFactory;
 
     ProcessedContainer process(ProcessedContainer pc) {
         String id = pc.getId();
-        ContainerDetails container = service.getContainer(id);
+        ContainerDetails container = nodesGroup.getContainers().getContainer(id);
         ContainerSource arg = new ContainerSource();
         containerSourceFactory.toSource(container, arg);
         arg.setCluster(pc.getCluster());

@@ -72,7 +72,7 @@ public class CreateContainerCmd {
     private String image;
 
     @JsonProperty("Volumes")
-    private Volumes volumes = new Volumes();
+    private VolumeRefs volumes = new VolumeRefs();
 
     @JsonProperty("WorkingDir")
     private String workingDir;

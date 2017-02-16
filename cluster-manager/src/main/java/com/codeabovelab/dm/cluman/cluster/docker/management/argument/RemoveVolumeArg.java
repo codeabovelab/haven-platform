@@ -14,19 +14,25 @@
  * limitations under the License.
  */
 
-package com.codeabovelab.dm.cluman.model;
+package com.codeabovelab.dm.cluman.cluster.docker.management.argument;
 
-
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Data;
 
 /**
- * Docker container port
  */
 @Data
-public class Port {
+public class RemoveVolumeArg {
 
-    private final int privatePort;
-    private final int publicPort;
-    private final ProtocolType type;
+    /**
+     * Volume name or id
+     */
+    @JsonIgnore
+    private String name;
+
+    /**
+     * Force the removal of the volume
+     */
+    private Boolean force;
 
 }

@@ -19,9 +19,7 @@ package com.codeabovelab.dm.cluman.source;
 import com.codeabovelab.dm.cluman.cluster.docker.management.DockerService;
 import com.codeabovelab.dm.cluman.cluster.docker.management.argument.GetContainersArg;
 import com.codeabovelab.dm.cluman.cluster.docker.model.*;
-import com.codeabovelab.dm.cluman.ds.clusters.NodesGroupConfig;
-import com.codeabovelab.dm.cluman.ds.clusters.SwarmCluster;
-import com.codeabovelab.dm.cluman.ds.clusters.SwarmNodesGroupConfig;
+import com.codeabovelab.dm.cluman.ds.clusters.*;
 import com.codeabovelab.dm.cluman.job.JobInstance;
 import com.codeabovelab.dm.cluman.job.JobParameters;
 import com.codeabovelab.dm.cluman.job.JobsManager;
@@ -32,6 +30,7 @@ import lombok.AllArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 
@@ -50,28 +49,31 @@ public class SourceService {
      */
     public RootSource getClusterSource(String name) {
         NodesGroup cluster = discoveryStorage.getCluster(name);
-        if(cluster == null || !(cluster instanceof SwarmCluster)) {
+        if(cluster == null) {
             return null;
         }
         RootSource root = new RootSource();
-        root.getClusters().add(getClusterSourceInternal((SwarmCluster) cluster));
+        root.getClusters().add(getClusterSourceInternal(cluster));
         return root;
     }
 
-    private ClusterSource getClusterSourceInternal(SwarmCluster cluster) {
+    private ClusterSource getClusterSourceInternal(NodesGroup cluster) {
         DockerService service = cluster.getDocker();
         ClusterSource clusterSrc = new ClusterSource();
         clusterSrc.setName(cluster.getName());
         List<NodeInfo> nil = service.getInfo().getNodeList();
         List<String> nodes = clusterSrc.getNodes();
         nil.forEach(ni -> nodes.add(ni.getName()));
-        SwarmNodesGroupConfig groupCfg = cluster.getConfig();
+        AbstractNodesGroupConfig<?> groupCfg = cluster.getConfig();
         NodesGroupConfig.copy(groupCfg, clusterSrc);
-        clusterSrc.setConfig(groupCfg.getConfig());
-        List<DockerContainer> containers = service.getContainers(new GetContainersArg(true));
+        if(groupCfg instanceof DockerBasedClusterConfig) {
+            clusterSrc.setConfig(((DockerBasedClusterConfig)groupCfg).getConfig());
+        }
+        ContainersManager cm = cluster.getContainers();
+        Collection<DockerContainer> containers = cm.getContainers();
         List<ContainerSource> containersSrc = clusterSrc.getContainers();
         for(DockerContainer dc: containers) {
-            ContainerSource cd = containerSource(service, dc.getId());
+            ContainerSource cd = containerSource(cluster, dc.getId());
             if(cd == null) {
                 continue;
             }
@@ -81,14 +83,14 @@ public class SourceService {
         return clusterSrc;
     }
 
-    public ContainerSource containerSource(final DockerService service, final String id) {
-        ContainerDetails container = service.getContainer(id);
+    public ContainerSource containerSource(final NodesGroup service, final String id) {
+        ContainerDetails container = service.getContainers().getContainer(id);
         if(container == null) {
             return null;
         }
         ContainerSource res = new ContainerSource();
         containerSourceFactory.toSource(container, res);
-        res.setCluster(service.getCluster());
+        res.setCluster(service.getName());
         return res;
     }
 

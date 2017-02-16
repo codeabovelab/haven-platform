@@ -38,6 +38,8 @@ import com.codeabovelab.dm.common.security.Authorities;
 import com.codeabovelab.dm.common.security.TenantGrantedAuthoritySid;
 import com.codeabovelab.dm.common.security.acl.AceSource;
 import com.codeabovelab.dm.common.utils.Closeables;
+import com.codeabovelab.dm.common.utils.ExecutorUtils;
+import com.codeabovelab.dm.common.utils.Throwables;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import org.slf4j.Logger;
@@ -53,6 +55,7 @@ import javax.annotation.PostConstruct;
 import java.util.Collection;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.ExecutorService;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
@@ -72,6 +75,7 @@ public class DiscoveryStorageImpl implements DiscoveryStorage {
     private final AccessContextFactory aclContextFactory;
     private final MessageBus<NodesGroupEvent> messageBus;
     private final AutowireCapableBeanFactory beanFactory;
+    private final ExecutorService executor;
 
     @Autowired
     public DiscoveryStorageImpl(KvMapperFactory kvmf,
@@ -120,6 +124,12 @@ public class DiscoveryStorageImpl implements DiscoveryStorage {
           .build();
 
         filterFactory.registerFilter(new OrphansNodeFilterFactory(this));
+        this.executor = ExecutorUtils.executorBuilder()
+          .coreSize(1).maxSize(10 /*possible max count of clusters*/)
+          .exceptionHandler(Throwables.uncaughtHandler(log))
+          .daemon(true)
+          .name(getClass().getSimpleName())
+          .build();
     }
 
     @PostConstruct
@@ -141,6 +151,26 @@ public class DiscoveryStorageImpl implements DiscoveryStorage {
             // virtual cluster for nodes without cluster
             getOrCreateGroup(new DefaultNodesGroupConfig(GROUP_ID_ORPHANS, OrphansNodeFilterFactory.FILTER)).updateAcl(aclModifier);
         }
+
+        getNodeStorage().getNodeEventSubscriptions().subscribe(this::onNodeEvent);
+    }
+
+    private void onNodeEvent(NodeEvent nodeEvent) {
+        NodeInfo node = nodeEvent.getCurrent();
+        if (node == null) {
+            return;
+        }
+        NodesGroup cluster = findNodeCluster(node.getName());
+        if (cluster == null) {
+            log.warn("Node without cluster {}", node);
+            return;
+        }
+        executor.execute(() -> {
+            // setup cluster (it need only cases when cluster have no one node, for both types of clusters)
+            try(TempAuth ta = TempAuth.asSystem()) {
+                cluster.init();
+            }
+        });
     }
 
     public void load() {
@@ -172,6 +202,10 @@ public class DiscoveryStorageImpl implements DiscoveryStorage {
 
     public NodeStorage getNodeStorage() {
         return nodeStorage;
+    }
+
+    ExecutorService getExecutor() {
+        return executor;
     }
 
     @Override

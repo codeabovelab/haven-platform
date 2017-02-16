@@ -19,6 +19,7 @@ package com.codeabovelab.dm.cluman.ds;
 import com.codeabovelab.dm.cluman.cluster.docker.management.DockerService;
 import com.codeabovelab.dm.cluman.cluster.docker.management.argument.*;
 import com.codeabovelab.dm.cluman.cluster.docker.management.result.CreateAndStartContainerResult;
+import com.codeabovelab.dm.cluman.cluster.docker.model.ContainerDetails;
 import com.codeabovelab.dm.cluman.model.*;
 import com.codeabovelab.dm.cluman.cluster.docker.management.result.ServiceCallResult;
 import com.codeabovelab.dm.cluman.cluster.docker.model.UpdateContainerCmd;
@@ -99,6 +100,11 @@ public class SwarmClusterContainers extends AbstractContainersManager {
     @Override
     public ServiceCallResult scaleContainer(ScaleContainerArg arg) {
         return containerCreator.scale(getDocker(), arg.getScale(), arg.getContainerId());
+    }
+
+    @Override
+    public ContainerDetails getContainer(String id) {
+        return getDocker().getContainer(id);
     }
 
     @Override

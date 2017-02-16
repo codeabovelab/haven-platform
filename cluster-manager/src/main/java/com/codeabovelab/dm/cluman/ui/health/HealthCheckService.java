@@ -18,7 +18,7 @@ package com.codeabovelab.dm.cluman.ui.health;
 
 import com.codeabovelab.dm.cluman.cluster.docker.management.DockerUtils;
 import com.codeabovelab.dm.cluman.cluster.docker.model.ContainerDetails;
-import com.codeabovelab.dm.cluman.ds.DockerServiceRegistry;
+import com.codeabovelab.dm.cluman.model.DiscoveryStorage;
 import com.codeabovelab.dm.common.healthcheck.ServiceHealthCheckResult;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -32,12 +32,12 @@ import java.util.function.Consumer;
 @Component
 public class HealthCheckService {
 
-    private final DockerServiceRegistry dockerServiceRegistry;
+    private final DiscoveryStorage discoveryStorage;
 
 
     @Autowired
-    public HealthCheckService(DockerServiceRegistry dockerServiceRegistry) {
-        this.dockerServiceRegistry = dockerServiceRegistry;
+    public HealthCheckService(DiscoveryStorage discoveryStorage) {
+        this.discoveryStorage = discoveryStorage;
     }
 
     public void checkAll(Consumer<ServiceHealthCheckResult> callback) {
@@ -54,7 +54,7 @@ public class HealthCheckService {
      */
     public ServiceHealthCheckResult checkContainer(String cluster, String id, long timeout) {
         Assert.hasText(id, "id is null or empty");
-        ContainerDetails container = dockerServiceRegistry.getService(cluster).getContainer(id);
+        ContainerDetails container = discoveryStorage.getService(cluster).getContainer(id);
         if(container == null) {
             throw new RuntimeException("No containers with id: " + id);
         }

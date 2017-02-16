@@ -16,18 +16,19 @@
 
 package com.codeabovelab.dm.cluman.model;
 
-import com.codeabovelab.dm.cluman.ds.DockerServiceRegistry;
+import com.codeabovelab.dm.cluman.cluster.docker.management.DockerService;
 import com.codeabovelab.dm.cluman.ds.clusters.AbstractNodesGroupConfig;
 import com.codeabovelab.dm.cluman.ds.clusters.ClusterConfigFactory;
 
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
+import java.util.Set;
 
 /**
- * Swarm discovery hub service interface @see https://github.com/docker/swarm/tree/master/discovery/token
+ * Hold clusters
  */
-public interface DiscoveryStorage extends DockerServiceRegistry {
+public interface DiscoveryStorage {
 
     String GROUP_ID_ALL = "all";
     String GROUP_ID_ORPHANS = "orphans";
@@ -77,4 +78,8 @@ public interface DiscoveryStorage extends DockerServiceRegistry {
     void deleteNodeGroup(String clusterId);
 
     List<NodesGroup> getClusters();
+
+    DockerService getService(String name);
+
+    Set<String> getServices();
 }

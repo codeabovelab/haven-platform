@@ -14,18 +14,22 @@
  * limitations under the License.
  */
 
-package com.codeabovelab.dm.cluman.ds;
+package com.codeabovelab.dm.cluman.cluster.docker.model;
 
-import com.codeabovelab.dm.cluman.cluster.docker.management.DockerService;
-
-import java.util.Set;
+import lombok.Data;
 
 /**
+ * Represents a bind mounted volume in a Docker container.
+ *
+ * @see Bind
  */
-public interface DockerServiceRegistry {
+@Data
+public class VolumeRef {
 
-    DockerService getService(String name);
+    private String path;
 
-    Set<String> getServices();
+    public VolumeRef(String path) {
+        this.path = path;
+    }
 
 }

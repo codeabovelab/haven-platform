@@ -51,7 +51,7 @@ public class UpgradeImageVersionTasklet {
     public ProcessedContainer execute(ProcessedContainer item) {
         String version = resolveVersion(item);
         final String image = item.getImage();
-        final String newImage = ContainerUtils.setImageVersion(image, version);
+        final String newImage = ImageName.setTag(image, version);
         log.info("updating to {}", newImage);
         item = item.makeNew()
           .image(newImage)

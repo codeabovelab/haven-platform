@@ -26,6 +26,7 @@ import com.codeabovelab.dm.common.mb.Subscriptions;
 import com.codeabovelab.dm.cluman.security.TempAuth;
 import com.codeabovelab.dm.common.utils.RescheduledTask;
 import com.google.common.base.Throwables;
+import com.google.common.collect.ImmutableSet;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -180,11 +181,15 @@ class ContainerInfoUpdater implements SmartLifecycle {
     }
 
     private void onNodeEvent(NodeEvent nodeEvent) {
-        NodeInfo ni = nodeEvent.getCurrent();
+        NodeInfo ni = nodeEvent.getNode();
+        if(ni == null) {
+            return;
+        }
         String name = ni.getName();
         String action = nodeEvent.getAction();
-        if(StandardActions.OFFLINE.equals(action)) {
-            log.info("Node '{}' offline remove containers.", name);
+        // we must keep container in all cases except deletion of node
+        if(StandardActions.DELETE.equals(action)) {
+            log.info("Node '{}' is '{}' remove containers.", name, action);
             containerStorage.removeNodeContainers(name);
             return;
         }

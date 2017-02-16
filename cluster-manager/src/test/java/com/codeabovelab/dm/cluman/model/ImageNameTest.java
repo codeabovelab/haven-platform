@@ -27,4 +27,11 @@ public class ImageNameTest {
             Assert.assertEquals(src[1], res);
         }
     }
+
+    @Test
+    public void testSetTag() {
+        assertEquals("nginx:latest", ImageName.setTag("nginx@sha256:00000000", "latest"));
+        assertEquals("nginx:latest", ImageName.setTag("nginx", "latest"));
+        assertEquals("nginx:latest", ImageName.setTag("nginx:0.00.1", "latest"));
+    }
 }

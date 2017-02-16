@@ -182,8 +182,6 @@ class VirtualDockerService implements DockerService {
     @Override
     public DockerServiceInfo getInfo() {
         List<NodeInfo> nodeList = new ArrayList<>();
-        int containers = 0;
-        int offContainers = 0;
         int offNodes = 0;
         for(NodeInfo nodeInfo: cluster.getNodes()) {
             if(nodeInfo != null) {
@@ -198,24 +196,12 @@ class VirtualDockerService implements DockerService {
             if(nodeInfo == null || !nodeInfo.isOn()) {
                 offNodes++;
             }
-            try {
-                List<DockerContainer> nodeContainer = service.getContainers(new GetContainersArg(true));
-                int running = (int) nodeContainer.stream().filter(DockerContainer::isRun).count();
-                containers += running;
-                offContainers += nodeContainer.size() - running;
-            } catch (AccessDeniedException e) {
-                //nothing
-            } catch (Exception e) {
-                log.warn("Can not list containers on {}, due to error {}", nodeInfo.getName(), e.toString());
-            }
         }
         return DockerServiceInfo.builder()
           .name(getCluster())
           .nodeList(nodeList)
           .nodeCount(nodeList.size() - offNodes)
           .offNodeCount(offNodes)
-          .containers(containers)
-          .offContainers(offContainers)
           .build();
     }
 
@@ -435,6 +421,31 @@ class VirtualDockerService implements DockerService {
 
     @Override
     public Task getTask(String taskId) {
+        return null;
+    }
+
+    @Override
+    public List<Volume> getVolumes(GetVolumesArg arg) {
+        return Collections.emptyList();
+    }
+
+    @Override
+    public Volume createVolume(CreateVolumeCmd cmd) {
+        return null;
+    }
+
+    @Override
+    public ServiceCallResult removeVolume(RemoveVolumeArg arg) {
+        return notSupported();
+    }
+
+    @Override
+    public ServiceCallResult deleteUnusedVolumes(DeleteUnusedVolumesArg arg) {
+        return notSupported();
+    }
+
+    @Override
+    public Volume getVolume(String name) {
         return null;
     }
 }

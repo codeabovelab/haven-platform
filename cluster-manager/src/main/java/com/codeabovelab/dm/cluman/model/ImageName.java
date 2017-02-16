@@ -176,7 +176,7 @@ public class ImageName {
     }
 
     /**
-     * Return 'registry/image' name without version
+     * Return 'registry/image' name without version (also remove image id)
      * example: example.com/com.example.core:172 -> example.com/com.example.core
      * @param name
      * @return name without tag or throw exception
@@ -187,13 +187,23 @@ public class ImageName {
     }
 
     private static String removeTagP(String name) {
+        int tagStart = getTagStart(name);
+        return name.substring(0, tagStart);
+    }
+
+    private static int getTagStart(String name) {
+        int catPos = name.indexOf('@');
         int tagStart = name.lastIndexOf(':');
         int regEnd = name.indexOf('/');
         // we check that ':' is not part or registry name
         if (tagStart < 0 || tagStart <= regEnd) {
             tagStart = name.length();
         }
-        return name.substring(0, tagStart);
+        if(catPos > 0 && catPos < tagStart) {
+            // in thi case image has image id instead of tag, and we must remove it
+            tagStart = catPos;
+        }
+        return tagStart;
     }
 
     /**
@@ -207,5 +217,14 @@ public class ImageName {
             return null;
         }
         return removeTagP(name);
+    }
+
+    public static String setTag(String image, String tag) {
+        assertName(image);
+        if (!StringUtils.hasText(tag)) {
+            return image;
+        }
+        int tagStart = getTagStart(image);
+        return image.substring(0, tagStart) + ":" + tag;
     }
 }

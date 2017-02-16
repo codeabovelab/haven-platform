@@ -18,11 +18,8 @@ package com.codeabovelab.dm.cluman.ui;
 
 import com.codeabovelab.dm.cluman.cluster.docker.ClusterConfigImpl;
 import com.codeabovelab.dm.cluman.cluster.application.ApplicationService;
-import com.codeabovelab.dm.cluman.cluster.docker.management.DockerService;
 import com.codeabovelab.dm.cluman.cluster.docker.management.DockerUtils;
-import com.codeabovelab.dm.cluman.cluster.docker.management.argument.GetContainersArg;
 import com.codeabovelab.dm.cluman.cluster.registry.RegistryRepository;
-import com.codeabovelab.dm.cluman.ds.DockerServiceRegistry;
 import com.codeabovelab.dm.cluman.ds.clusters.*;
 import com.codeabovelab.dm.cluman.ds.container.ContainerStorage;
 import com.codeabovelab.dm.cluman.ds.nodes.NodeStorage;
@@ -47,9 +44,7 @@ import org.springframework.cache.annotation.Cacheable;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.access.annotation.Secured;
-import org.springframework.util.Assert;
 import org.springframework.util.MimeTypeUtils;
 import org.springframework.web.bind.annotation.*;
 
@@ -69,7 +64,6 @@ import static org.springframework.web.bind.annotation.RequestMethod.*;
 @RequiredArgsConstructor(onConstructor = @__(@Autowired))
 public class ClusterApi {
 
-    private final DockerServiceRegistry dockerServiceRegistry;
     private final RegistryRepository registryRepository;
 
     private final NodeStorage nodeRegistry;
@@ -115,15 +109,29 @@ public class ClusterApi {
                 uc.setManagers(((DockerClusterConfig)cfg).getManagers());
             }
         }
+        UiCluster.Entry containersEntry = new UiCluster.Entry();
+        UiCluster.Entry nodeEntry = new UiCluster.Entry();
         try {
-            DockerServiceInfo info = cluster.getDocker().getInfo();
-            uc.setContainers(new UiCluster.Entry(info.getContainers(), info.getOffContainers()));
-            uc.setNodes(new UiCluster.Entry(info.getNodeCount(), info.getOffNodeCount()));
+            List<NodeInfo> nodes = cluster.getNodes();
+            nodes.forEach(ni -> {
+                if(ni.isOn()) {
+                    nodeEntry.incrementOn();
+                } else {
+                    nodeEntry.incrementOff();
+                }
+            });
+            cluster.getContainers().getContainers().forEach(dc -> {
+                if(dc.isRun()) {
+                    containersEntry.incrementOn();
+                } else {
+                    containersEntry.incrementOff();
+                }
+            });
         } catch (Exception e) {
-            uc.setContainers(new UiCluster.Entry(0, 0));
-            uc.setNodes(new UiCluster.Entry(0, 0));
             //nothing
         }
+        uc.setContainers(containersEntry);
+        uc.setNodes(nodeEntry);
         try {
             Set<String> apps = uc.getApplications();
             List<Application> applications = applicationService.getApplications(name);
@@ -147,6 +155,7 @@ public class ClusterApi {
             UiContainer uic = UiContainer.from(container);
             uic.enrich(discoveryStorage, containerStorage);
             uic.setApplication(apps.get(uic.getId()));
+            UiContainer.resolveStatus(uic, nodeRegistry);
             UiPermission.inject(uic, ac, SecuredType.CONTAINER.id(uic.getId()));
             list.add(uic);
         }
@@ -192,7 +201,7 @@ public class ClusterApi {
             }
     )
     public DockerServiceInfo info(@PathVariable("cluster") String cluster) {
-        return dockerServiceRegistry.getService(cluster).getInfo();
+        return discoveryStorage.getService(cluster).getInfo();
     }
 
     @RequestMapping(value = "/clusters/{cluster}/nodes-detailed", method = GET)

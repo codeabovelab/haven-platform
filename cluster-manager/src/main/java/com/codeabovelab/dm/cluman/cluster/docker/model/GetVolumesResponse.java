@@ -14,19 +14,21 @@
  * limitations under the License.
  */
 
-package com.codeabovelab.dm.cluman.model;
+package com.codeabovelab.dm.cluman.cluster.docker.model;
 
-
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Data;
 
+import java.util.List;
+
 /**
- * Docker container port
  */
 @Data
-public class Port {
+public class GetVolumesResponse {
 
-    private final int privatePort;
-    private final int publicPort;
-    private final ProtocolType type;
+    @JsonProperty("Volumes")
+    private final List<Volume> volumes;
 
+    @JsonProperty("Warnings")
+    private final List<String> warnings;
 }

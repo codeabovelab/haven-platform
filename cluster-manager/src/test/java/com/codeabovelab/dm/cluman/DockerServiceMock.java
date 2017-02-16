@@ -161,7 +161,6 @@ public class DockerServiceMock implements DockerService {
     @Override
     public DockerServiceInfo getInfo() {
         DockerServiceInfo.Builder b = DockerServiceInfo.builder().from(info);
-        b.setContainers(containers.size());
         return b.build();
     }
 
@@ -508,6 +507,31 @@ public class DockerServiceMock implements DockerService {
 
     @Override
     public Task getTask(String taskId) {
+        return null;
+    }
+
+    @Override
+    public List<Volume> getVolumes(GetVolumesArg arg) {
+        return Collections.emptyList();
+    }
+
+    @Override
+    public Volume createVolume(CreateVolumeCmd cmd) {
+        return null;
+    }
+
+    @Override
+    public ServiceCallResult removeVolume(RemoveVolumeArg arg) {
+        return resultOk();
+    }
+
+    @Override
+    public ServiceCallResult deleteUnusedVolumes(DeleteUnusedVolumesArg arg) {
+        return resultOk();
+    }
+
+    @Override
+    public Volume getVolume(String name) {
         return null;
     }
 

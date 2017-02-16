@@ -124,7 +124,7 @@ public class ContainerDetails implements ContainerBaseIface {
         private String source;
 
         @JsonProperty("Destination")
-        private Volume destination;
+        private VolumeRef destination;
 
         @JsonProperty("Driver")
         private String driver;

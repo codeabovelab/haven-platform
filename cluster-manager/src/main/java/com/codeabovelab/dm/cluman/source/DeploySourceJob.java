@@ -111,9 +111,6 @@ public class DeploySourceJob implements Runnable {
     private NodeStorage nodeStorage;
 
     @Autowired
-    private NetworkManager networkManager;
-
-    @Autowired
     private JobContext jobContext;
 
     @Override
@@ -185,10 +182,11 @@ public class DeploySourceJob implements Runnable {
         if(nodes.isEmpty()) {
             return;
         }
+        NodesGroup nodesGroup = dc.getNodesGroup();
         i = 0;
         while(true) {
             i++;
-            ServiceCallResult res = networkManager.createNetwork(clusterName);
+            ServiceCallResult res = nodesGroup.getNetworks().createNetwork(clusterName);
             ResultCode code = res.getCode();
             if(code == ResultCode.OK || code == ResultCode.NOT_MODIFIED) {
                 break;

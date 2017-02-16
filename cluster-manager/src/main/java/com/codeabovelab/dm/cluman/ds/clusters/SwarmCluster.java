@@ -67,6 +67,11 @@ public final class SwarmCluster extends AbstractNodesGroup<SwarmNodesGroupConfig
             return;
         }
         NodeInfo ni = event.getCurrent();
+        boolean delete = false;
+        if(ni == null) {
+            delete = true;
+            ni = event.getOld();
+        }
         String nodeName = ni.getName();
         String cluster = ni.getCluster();
         if (!StringUtils.hasText(cluster) || !getName().equals(cluster)) {
@@ -74,6 +79,14 @@ public final class SwarmCluster extends AbstractNodesGroup<SwarmNodesGroupConfig
         }
         Assert.doesNotContain(cluster, "/", "Bad cluster name: " + cluster);
         String address = ni.getAddress();
+        if(delete) {
+            try {
+                kvmf.getStorage().delete(getDiscoveryKey(cluster, address), null);
+            } catch (Exception e) {
+                log.error("Can not delete swarm registration: of node {} from cluster {}", address, cluster, e);
+            }
+            return;
+        }
         NodeRegistration nr = getNodeStorage().getNodeRegistration(nodeName);
         int ttl = nr.getTtl();
         if (ttl < 1) {
@@ -87,6 +100,7 @@ public final class SwarmCluster extends AbstractNodesGroup<SwarmNodesGroupConfig
         } catch (Exception e) {
             log.error("Can not update swarm registration: of node {} from cluster {}", address, cluster, e);
         }
+        createDefaultNetwork();
     }
 
     private String getDiscoveryKey(String cluster, String address) {
@@ -164,15 +178,6 @@ public final class SwarmCluster extends AbstractNodesGroup<SwarmNodesGroupConfig
         dib.getNodeList().sort(null);
         dib.setOffNodeCount(offNodes);
         dib.setNodeCount(dib.getNodeList().size() - offNodes);
-
-        try {
-            List<DockerContainer> nodeContainer = docker.getContainers(new GetContainersArg(true));
-            int running = (int) nodeContainer.stream().filter(DockerContainer::isRun).count();
-            dib.setContainers(running);
-            dib.setOffContainers(nodeContainer.size() - running);
-        } catch (Exception e) {
-            log.warn("Can not list containers on {}, due to error {}", getName(), e.toString());
-        }
     }
 
     @Override
@@ -182,12 +187,7 @@ public final class SwarmCluster extends AbstractNodesGroup<SwarmNodesGroupConfig
 
     public void setClusterConfig(ClusterConfig cc) {
         synchronized (lock) {
-            ClusterConfigImpl newConf;
-            if(getName().equals(cc.getCluster())) {
-                newConf = ClusterConfigImpl.of(cc);
-            } else {
-                newConf = ClusterConfigImpl.builder(cc).cluster(getName()).build();
-            }
+            ClusterConfigImpl newConf = fixConfig(cc);
             onSet("config", this.config.getConfig(), newConf);
             this.config.setConfig(newConf);
         }
@@ -198,5 +198,28 @@ public final class SwarmCluster extends AbstractNodesGroup<SwarmNodesGroupConfig
             ClusterConfigImpl config = this.config.getConfig();
             return config;
         }
+    }
+
+    /**
+     * Sometime external config mey be partially filled, or has wrong value. We can not reject this,
+     * for legacy reasons, therefore need to fix it manually.
+     * @param cc source
+     * @return fixed copy of config
+     */
+    private ClusterConfigImpl fixConfig(ClusterConfig cc) {
+        ClusterConfigImpl newConf;
+        if(getName().equals(cc.getCluster())) {
+            newConf = ClusterConfigImpl.of(cc);
+        } else {
+            newConf = ClusterConfigImpl.builder(cc).cluster(getName()).build();
+        }
+        return newConf;
+    }
+
+    @Override
+    protected void onConfig() {
+        ClusterConfigImpl old = this.config.getConfig();
+        ClusterConfigImpl fixed = fixConfig(old);
+        this.config.setConfig(fixed);
     }
 }

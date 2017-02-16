@@ -42,6 +42,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
+import java.util.function.Supplier;
 
 /**
  */
@@ -53,7 +54,6 @@ class NodeRegistrationImpl implements NodeRegistration, AutoCloseable {
     private volatile NodeInfoImpl cache;
     private final NodeInfoImpl.Builder builder;
 
-    private volatile long endTime;
     private final MessageBus<NodeHealthEvent> healthBus;
     private volatile int ttl;
     private final ObjectIdentity oid;
@@ -80,18 +80,20 @@ class NodeRegistrationImpl implements NodeRegistration, AutoCloseable {
           .build());
     }
 
+    void init() {
+        renewDocker();
+    }
+
     /**
-     * Invoke updating state (save into KV-storage) of node with specified ttl.
-     * @param ttl in seconds
+     * Time while node is actual, in seconds.
+     * @param ttl time in seconds
      */
-    public void update(int ttl) {
+    public void setTtl(int ttl) {
         final int min = nodeStorage.getStorageConfig().getMinTtl();
         if(ttl < min) {
             ttl = min;
         }
         synchronized (lock) {
-            //also convert seconds to ms
-            this.endTime = System.currentTimeMillis() + (ttl * 1000L);
             this.ttl = ttl;
         }
     }
@@ -108,8 +110,8 @@ class NodeRegistrationImpl implements NodeRegistration, AutoCloseable {
     }
 
     private boolean isOn() {
-        long now = System.currentTimeMillis();
-        return now <= endTime;
+        DockerService service = this.getDocker();
+        return service != null && service.isOnline();
     }
 
     @Override
@@ -191,19 +193,23 @@ class NodeRegistrationImpl implements NodeRegistration, AutoCloseable {
     }
 
     public void setCluster(String cluster) {
+        update(this.builder::getCluster, this.builder::setCluster, cluster);
+    }
+
+    private <T> void update(Supplier<T> getter, Consumer<T> setter, T value) {
         NodeInfoImpl ni = null;
-        NodeInfoImpl old = null;
+        NodeInfoImpl oldInfo = null;
         synchronized (lock) {
-            old = cache;
-            String oldCluster = this.builder.getCluster();
-            if(!Objects.equals(oldCluster, cluster)) {
-                this.builder.setCluster(cluster);
+            oldInfo = cache;
+            T oldVal = getter.get();
+            if(!Objects.equals(oldVal, value)) {
+                setter.accept(value);
                 cache = null;
                 ni = getNodeInfo();
             }
         }
         if(ni != null) {
-            fireNodeChanged(StandardActions.UPDATE, old, ni);
+            fireNodeChanged(StandardActions.UPDATE, oldInfo, ni);
         }
     }
 
@@ -229,16 +235,28 @@ class NodeRegistrationImpl implements NodeRegistration, AutoCloseable {
         }
     }
 
+    /**
+     * It change address of node, that cause some side effects: recreation of DockerService for example.
+     * @param address new address of node or null
+     * @return new docker service, or old when address same as old
+     */
     DockerService setAddress(String address) {
         synchronized (lock) {
-            this.builder.setAddress(address);
+            update(this.builder::getAddress, this.builder::setAddress, address);
             if(docker != null && docker.getAddress().equals(address)) {
                 return getDocker();
             }
-            unsubscribe();
+            renewDocker();
+            return getDocker();
+        }
+    }
+
+    private void renewDocker() {
+        unsubscribe();
+        this.docker = null;
+        if(this.builder.getAddress() != null) {
             this.docker = this.nodeStorage.createNodeService(this);
             subscribe();
-            return getDocker();
         }
     }
 

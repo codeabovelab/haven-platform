@@ -19,13 +19,12 @@ package com.codeabovelab.dm.cluman.cluster.application;
 import com.codeabovelab.dm.cluman.cluster.compose.ComposeExecutor;
 import com.codeabovelab.dm.cluman.cluster.docker.management.DockerService;
 import com.codeabovelab.dm.cluman.cluster.docker.model.ContainerDetails;
-import com.codeabovelab.dm.cluman.ds.DockerServiceRegistry;
 import com.codeabovelab.dm.cluman.ds.kv.etcd.EtcdConfiguration;
 import com.codeabovelab.dm.cluman.model.Application;
 import com.codeabovelab.dm.cluman.model.ApplicationImpl;
+import com.codeabovelab.dm.cluman.model.DiscoveryStorage;
 import com.codeabovelab.dm.cluman.source.ContainerSourceFactory;
 import com.codeabovelab.dm.common.json.JacksonConfiguration;
-import com.codeabovelab.dm.common.kv.KeyValueStorage;
 import com.codeabovelab.dm.common.kv.mapping.KvMapperFactory;
 import com.codeabovelab.dm.common.mb.MessageBus;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -85,7 +84,7 @@ public class ApplicationServiceTest {
         @Autowired
         @SuppressWarnings("unchecked")
         ApplicationService applicationService(KvMapperFactory mapper, ContainerSourceFactory srcService) {
-            DockerServiceRegistry dockerServiceRegistry = mock(DockerServiceRegistry.class);
+            DiscoveryStorage dockerServiceRegistry = mock(DiscoveryStorage.class);
             DockerService dockerService = mock(DockerService.class);
             when(dockerServiceRegistry.getService(anyString())).thenReturn(dockerService);
             when(dockerService.getContainer(anyString())).thenReturn(mock(ContainerDetails.class));

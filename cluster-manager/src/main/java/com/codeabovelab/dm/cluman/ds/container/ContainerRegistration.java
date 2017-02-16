@@ -30,7 +30,11 @@ public class ContainerRegistration {
     private final String id;
     @KvMapping
     private Map<String, String> additionalLabels;
-    private final DockerContainer.Builder container;
+    /**
+     * We persist container for detect cases when it quietly removed
+     */
+    @KvMapping
+    private DockerContainer.Builder container;
     private final Object lock = new Object();
     private DockerContainer cached;
     private KvMap<?> map;
@@ -66,7 +70,7 @@ public class ContainerRegistration {
         DockerContainer dc = cached;
         if(dc == null) {
             synchronized (lock) {
-                dc = cached = container.build();
+                dc = cached = container.id(id).build();
             }
         }
         return dc;
@@ -83,12 +87,15 @@ public class ContainerRegistration {
             modifier.accept(this.container);
             validate();
             this.cached = null;
+            this.map.flush(id);
         }
     }
 
     public void from(ContainerBaseIface container, String node) {
         modify((cb) -> {
-            this.container.from(container).setNode(node);
+            synchronized (lock) {
+                this.container.from(container).setNode(node);
+            }
         });
     }
 

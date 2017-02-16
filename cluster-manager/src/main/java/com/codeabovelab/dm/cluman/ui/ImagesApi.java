@@ -17,7 +17,6 @@
 package com.codeabovelab.dm.cluman.ui;
 
 import com.codeabovelab.dm.cluman.cluster.docker.management.DockerService;
-import com.codeabovelab.dm.cluman.cluster.docker.management.argument.GetContainersArg;
 import com.codeabovelab.dm.cluman.cluster.docker.management.argument.GetImagesArg;
 import com.codeabovelab.dm.cluman.cluster.docker.management.argument.TagImageArg;
 import com.codeabovelab.dm.cluman.cluster.docker.management.result.ServiceCallResult;
@@ -32,7 +31,6 @@ import com.codeabovelab.dm.cluman.cluster.registry.RegistryService;
 import com.codeabovelab.dm.cluman.cluster.registry.data.ImageCatalog;
 import com.codeabovelab.dm.cluman.cluster.registry.data.SearchResult;
 import com.codeabovelab.dm.cluman.cluster.registry.data.Tags;
-import com.codeabovelab.dm.cluman.ds.DockerServiceRegistry;
 import com.codeabovelab.dm.cluman.ds.clusters.SwarmNodesGroupConfig;
 import com.codeabovelab.dm.cluman.model.*;
 import com.codeabovelab.dm.cluman.source.ContainerSourceFactory;
@@ -65,7 +63,6 @@ import static org.springframework.web.bind.annotation.RequestMethod.GET;
 public class ImagesApi {
 
     private static final Splitter SPLITTER = Splitter.on(",").omitEmptyStrings().trimResults();
-    private final DockerServiceRegistry dockerServices;
     private final DiscoveryStorage discoveryStorage;
     private final RegistryRepository registryRepository;
     private final FilterFactory filterFactory;
@@ -73,7 +70,7 @@ public class ImagesApi {
     @RequestMapping(value = "/clusters/{cluster}/list", method = RequestMethod.GET)
     public List<ImageItem> getImages(@PathVariable("cluster") String cluster) {
         //TODO check usage of this method in CLI and if it not used - remove
-        List<ImageItem> images = dockerServices.getService(cluster).getImages(GetImagesArg.ALL);
+        List<ImageItem> images = discoveryStorage.getService(cluster).getImages(GetImagesArg.ALL);
         return images;
     }
 
@@ -81,28 +78,25 @@ public class ImagesApi {
     public Collection<UiDeployedImage> getDeployedImages(@PathVariable("cluster") String cluster) {
         NodesGroup nodesGroup = discoveryStorage.getCluster(cluster);
         ExtendedAssert.notFound(nodesGroup, "Cluster was not found by " + cluster);
-        DockerService service = nodesGroup.getDocker();
-        ExtendedAssert.notFound(service, "Service for " + cluster + " is null.");
-        GetContainersArg arg = new GetContainersArg(true);
-        List<DockerContainer> containers = service.getContainers(arg);
+        Collection<DockerContainer> containers = nodesGroup.getContainers().getContainers();
         Map<String, UiDeployedImage> images = new HashMap<>();
         for (DockerContainer container : containers) {
             String imageId = container.getImageId();
             UiDeployedImage img = images.computeIfAbsent(imageId, UiDeployedImage::new);
             img.addContainer(container);
-            loadImageTagsIfNeed(service, container, img);
+            loadImageTagsIfNeed(nodesGroup, container, img);
         }
         return images.values();
     }
 
-    private void loadImageTagsIfNeed(DockerService service, DockerContainer container, UiDeployedImage img) {
+    private void loadImageTagsIfNeed(NodesGroup service, DockerContainer container, UiDeployedImage img) {
         String imageWithTag = container.getImage();
         if (!CollectionUtils.isEmpty(img.getTags())) {
             return;
         }
         if (ImageName.isId(imageWithTag)) {
             try {
-                ContainerDetails cd = service.getContainer(container.getId());
+                ContainerDetails cd = service.getContainers().getContainer(container.getId());
                 imageWithTag = ContainerSourceFactory.resolveImageName(cd);
                 if (imageWithTag == null || ImageName.isId(imageWithTag)) {
                     return;
@@ -113,7 +107,7 @@ public class ImagesApi {
                 return;
             }
         }
-        String image = ContainerUtils.getRegistryAndImageName(imageWithTag);
+        String image = ImageName.withoutTag(imageWithTag);
         RegistryService registryService = registryRepository.getRegistryByImageName(image);
         if (registryService != null) {
             img.setRegistry(registryService.getConfig().getName());
@@ -209,7 +203,7 @@ public class ImagesApi {
                 .cluster(cluster)
                 .imageName(imageName)
                 .repository(repository).build();
-        ServiceCallResult res = dockerServices.getService(cluster).createTag(tagImageArg);
+        ServiceCallResult res = discoveryStorage.getService(cluster).createTag(tagImageArg);
 
         return UiUtils.createResponse(res);
     }

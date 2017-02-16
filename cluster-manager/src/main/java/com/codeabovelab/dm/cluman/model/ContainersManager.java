@@ -22,6 +22,7 @@ import com.codeabovelab.dm.cluman.cluster.docker.management.argument.StopContain
 import com.codeabovelab.dm.cluman.cluster.docker.management.argument.UpdateServiceArg;
 import com.codeabovelab.dm.cluman.cluster.docker.management.result.*;
 import com.codeabovelab.dm.cluman.cluster.docker.management.result.ServiceCallResult;
+import com.codeabovelab.dm.cluman.cluster.docker.model.ContainerDetails;
 
 import java.util.Collection;
 
@@ -63,6 +64,7 @@ public interface ContainersManager {
     ServiceCallResult unpauseContainer(String containerId);
     ServiceCallResult deleteContainer(DeleteContainerArg arg);
     ServiceCallResult scaleContainer(ScaleContainerArg arg);
+    ContainerDetails getContainer(String id);
 
     /**
      * Create service, when cluster does not supported services underline code emulate them.

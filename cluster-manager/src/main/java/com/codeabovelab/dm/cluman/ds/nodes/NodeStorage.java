@@ -21,6 +21,7 @@ import com.codeabovelab.dm.cluman.cluster.docker.ClusterConfigImpl;
 import com.codeabovelab.dm.cluman.cluster.docker.management.DockerService;
 import com.codeabovelab.dm.cluman.cluster.docker.management.DockerServiceEvent;
 import com.codeabovelab.dm.cluman.ds.DockerServiceFactory;
+import com.codeabovelab.dm.cluman.ds.SwarmUtils;
 import com.codeabovelab.dm.cluman.ds.swarm.DockerEventsConfig;
 import com.codeabovelab.dm.cluman.model.*;
 import com.codeabovelab.dm.cluman.persistent.PersistentBusFactory;
@@ -142,7 +143,7 @@ public class NodeStorage implements NodeInfoProvider, NodeRegistry {
         try (TempAuth ta = TempAuth.asSystem()) {
             switch (action) {
                 case DELETE: {
-                    NodeRegistrationImpl nr = getNodeRegistrationInternal(key);
+                    NodeRegistrationImpl nr = e.getValue();
                     NodeInfoImpl ni = nr == null? NodeInfoImpl.builder().name(key).build() : nr.getNodeInfo();
                     fireNodeModification(nr, StandardActions.DELETE, ni, null);
                     break;
@@ -158,11 +159,16 @@ public class NodeStorage implements NodeInfoProvider, NodeRegistry {
         }
     }
 
-    void fireNodeModification(NodeRegistration nr, String action, NodeInfoImpl old, NodeInfoImpl current) {
+    void fireNodeModification(NodeRegistrationImpl nr, String action, NodeInfoImpl old, NodeInfoImpl current) {
+        if(old == null && current == null) {
+            log.error("Something wrong:  old and current values of node '{}' is null, at action '{}'", nr.getName());
+            return;
+        }
         // NodeRegistrationImpl - may be null in some cases
         NodeEvent ne = NodeEvent.builder()
           .action(action)
           .current(current)
+          .old(old)
           .build();
         //we use async execution only from another event handler
         this.executorService.execute(() -> {
@@ -176,9 +182,12 @@ public class NodeStorage implements NodeInfoProvider, NodeRegistry {
         try {
             if(e instanceof DockerServiceEvent.DockerServiceInfoEvent) {
                 // we update health of all presented nodes
+                // also it work only in standalone swarm cluster, and must be moved out here
                 DockerServiceInfo info = ((DockerServiceEvent.DockerServiceInfoEvent) e).getInfo();
                 for(NodeInfo node: info.getNodeList()) {
-                    NodeRegistrationImpl reg = getOrCreateNodeRegistration(node.getName());
+                    // we must not create nodes here,
+                    // therefore they may be deleted before, and creation will restore its, that is not wanted
+                    NodeRegistrationImpl reg = getNodeRegistrationInternal(node.getName());
                     if(reg != null) {
                         reg.updateHealth(node.getHealth());
                     }
@@ -189,18 +198,50 @@ public class NodeStorage implements NodeInfoProvider, NodeRegistry {
         }
     }
 
-    @Scheduled(fixedDelay = 60_000L)
+    @Scheduled(fixedDelayString = SwarmUtils.EXPR_NODES_UPDATE_MS)
     private void checkNodes() {
         // periodically check online status of nodes
         try(TempAuth ta = TempAuth.asSystem()) {
+            log.info("Begin update list of nodes");
             for(NodeRegistrationImpl nr: nodes.values()) {
-                nr.getNodeInfo();
+                checkNode(nr);
             }
+            log.info("End update list of nodes");
         }
     }
 
+    private void checkNode(NodeRegistrationImpl nr) {
+        log.info("Update node '{}' of '{}' cluster", nr.getName(), nr.getCluster());
+        DockerServiceInfo tmp = null;
+        try {
+            tmp = nr.getDocker().getInfo();
+        } catch (Exception e) {
+            log.error("Fail to load node '{}' info due to error: {}", nr.getName(), e.toString());
+        }
+        final DockerServiceInfo dsi = tmp;
+        nr.updateNodeInfo(b -> {
+            NodeMetrics.Builder nmb = NodeMetrics.builder().from(b.getHealth());
+            if(dsi != null) {
+                b.setLabels(dsi.getLabels());
+                nmb.setHealthy(true);
+                nmb.setTime(dsi.getSystemTime());
+                nmb.setSysMemTotal(dsi.getMemory());
+                nmb.setState(NodeMetrics.State.HEALTHY);
+            } else {
+                nmb.setHealthy(false);
+                nmb.setState(b.isOn()? NodeMetrics.State.UNHEALTHY : NodeMetrics.State.DISCONNECTED);
+            }
+            b.setHealth(nmb.build());
+        });
+        // this check offline status internal and cause status change event
+        nr.getNodeInfo();
+    }
+
     NodeRegistrationImpl newRegistration(NodeInfo nodeInfo) {
-        return new NodeRegistrationImpl(this, persistentBusFactory, nodeInfo);
+        NodeRegistrationImpl nr = new NodeRegistrationImpl(this, persistentBusFactory, nodeInfo);
+        nr.setTtl(this.config.getUpdateSeconds() * 2);
+        nr.init();
+        return nr;
     }
 
     public boolean hasNode(Predicate<Object> predicate, String nodeId) {
@@ -268,7 +309,7 @@ public class NodeStorage implements NodeInfoProvider, NodeRegistry {
      */
     public NodeRegistration updateNode(String name, int ttl, Consumer<NodeInfoImpl.Builder> updater) {
         NodeRegistrationImpl nr = getOrCreateNodeRegistration(name);
-        nr.update(ttl);// important that it must be before other update methods
+        nr.setTtl(ttl);// important that it must be before other update methods
         nr.updateNodeInfo(updater);
         save(nr);
         return nr;
@@ -386,8 +427,28 @@ public class NodeStorage implements NodeInfoProvider, NodeRegistry {
     }
 
     public DockerService registerNode(String nodeName, String address) {
-        NodeRegistrationImpl nr = getOrCreateNodeRegistration(nodeName);
-        return nr.setAddress(address);
+        NodeRegistrationImpl nr = getByAddress(address);
+        if(nr != null) {
+            String existsName = nr.getName();
+            if(existsName.equals(nodeName)) {
+                return nr.getDocker();
+            }
+            throw new IllegalArgumentException("Can not register '" + nodeName +
+              "', because already has node '" + existsName + "' with same address: " + address);
+        }
+        nr = getOrCreateNodeRegistration(nodeName);
+        String oldAddr = nr.getAddress();
+        DockerService ds = nr.setAddress(address);
+        save(nr);
+        if(!Objects.equals(oldAddr, address)) {
+            // address changed, force to update node status
+            checkNode(nr);
+        }
+        return ds;
+    }
+
+    private NodeRegistrationImpl getByAddress(String address) {
+        return nodes.values().stream().filter(nr -> address.equals(nr.getAddress())).findFirst().orElse(null);
     }
 
     /**

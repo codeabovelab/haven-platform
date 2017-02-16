@@ -24,7 +24,6 @@ import com.codeabovelab.dm.cluman.cluster.docker.management.DockerService;
 import com.codeabovelab.dm.cluman.cluster.docker.management.argument.StopContainerArg;
 import com.codeabovelab.dm.cluman.cluster.docker.management.result.ResultCode;
 import com.codeabovelab.dm.cluman.cluster.docker.model.ContainerDetails;
-import com.codeabovelab.dm.cluman.ds.DockerServiceRegistry;
 import com.codeabovelab.dm.cluman.model.*;
 import com.codeabovelab.dm.cluman.source.ContainerSourceFactory;
 import com.codeabovelab.dm.cluman.validate.ExtendedAssert;
@@ -54,7 +53,7 @@ import static com.google.common.base.MoreObjects.firstNonNull;
 public class ApplicationServiceImpl implements ApplicationService {
 
     private final KeyValueStorage keyValueStorage;
-    private final DockerServiceRegistry dockerServiceRegistry;
+    private final DiscoveryStorage discoveryStorage;
     private final String appPrefix;
     private final ComposeExecutor composeExecutor;
 
@@ -64,7 +63,7 @@ public class ApplicationServiceImpl implements ApplicationService {
 
     @Autowired
     public ApplicationServiceImpl(KvMapperFactory mapper,
-                                  DockerServiceRegistry dockerServiceRegistry,
+                                  DiscoveryStorage discoveryStorage,
                                   ComposeExecutor composeExecutor,
                                   ContainerSourceFactory sourceService,
                                   @Qualifier(ApplicationEvent.BUS) MessageBus<ApplicationEvent> applicationBus) {
@@ -74,7 +73,7 @@ public class ApplicationServiceImpl implements ApplicationService {
           .mapper(mapper)
           .path(this.appPrefix)
           .build();
-        this.dockerServiceRegistry = dockerServiceRegistry;
+        this.discoveryStorage = discoveryStorage;
         this.composeExecutor = composeExecutor;
         this.applicationBus = applicationBus;
         this.sourceService = sourceService;
@@ -103,15 +102,14 @@ public class ApplicationServiceImpl implements ApplicationService {
     @Override
     public CreateApplicationResult deployCompose(ComposeArg composeArg) throws Exception {
 
-        DockerService service = dockerServiceRegistry.getService(composeArg.getClusterName());
-
+        NodesGroup service = discoveryStorage.getCluster(composeArg.getClusterName());
         return upCompose(composeArg, service);
     }
 
-    private CreateApplicationResult upCompose(ComposeArg composeArg, DockerService service) throws Exception {
-        log.debug("about to launch {} at {}", composeArg, service.getCluster());
+    private CreateApplicationResult upCompose(ComposeArg composeArg, NodesGroup service) throws Exception {
+        log.debug("about to launch {} at {}", composeArg, service.getName());
         fireStartEvent(composeArg);
-        ComposeResult composeResult = composeExecutor.up(composeArg, service);
+        ComposeResult composeResult = composeExecutor.up(composeArg, service.getDocker());
         log.info("result of {} : {}", composeArg, composeResult);
         fireEndEvent(composeResult, composeArg);
         List<ContainerDetails> containerDetails = firstNonNull(composeResult.getContainerDetails(), Collections.emptyList());
@@ -134,7 +132,7 @@ public class ApplicationServiceImpl implements ApplicationService {
 
     @Override
     public void startApplication(String cluster, String id) throws Exception {
-        DockerService service = dockerServiceRegistry.getService(cluster);
+        NodesGroup service = discoveryStorage.getCluster(cluster);
         Application application = getApplication(cluster, id);
 
         if (application.getInitFile() != null) {
@@ -144,7 +142,10 @@ public class ApplicationServiceImpl implements ApplicationService {
             upCompose(composeArg, service);
         } else {
             // starting manually
-            application.getContainers().forEach(c -> service.startContainer(c));
+            ContainersManager containers = service.getContainers();
+            application.getContainers().forEach(c -> {
+                containers.startContainer(c);
+            });
         }
     }
 
@@ -175,15 +176,20 @@ public class ApplicationServiceImpl implements ApplicationService {
     public void stopApplication(String cluster, String id) {
         Application application = getApplication(cluster, id);
 
-        DockerService service = dockerServiceRegistry.getService(application.getCluster());
+        ContainersManager service = getService(cluster);
         application.getContainers().forEach(c -> service.stopContainer(StopContainerArg.builder().id(c).build()));
+    }
+
+    private ContainersManager getService(String cluster) {
+        NodesGroup service = discoveryStorage.getCluster(cluster);
+        return service.getContainers();
     }
 
     @Override
     public Application getApplication(String cluster, String appId) {
         ApplicationImpl applicationInstance = readApplication(cluster, appId);
         ExtendedAssert.notFound(applicationInstance, "application was not found " + appId);
-        DockerService service = dockerServiceRegistry.getService(cluster);
+        ContainersManager service = getService(cluster);
         ApplicationImpl.Builder clone = ApplicationImpl.builder().from(applicationInstance);
         List<String> existedContainers = applicationInstance.getContainers().stream()
                 .filter(c -> service.getContainer(c) != null).collect(Collectors.toList());
@@ -197,7 +203,7 @@ public class ApplicationServiceImpl implements ApplicationService {
         String appName = application.getName();
         ExtendedAssert.matchId(appName, "application name");
 
-        DockerService service = dockerServiceRegistry.getService(application.getCluster());
+        ContainersManager service = getService(application.getCluster());
         List<String> containers = application.getContainers();
         List<String> existedContainers = containers.stream().filter(c -> service.getContainer(c) != null).collect(Collectors.toList());
         Assert.isTrue(!CollectionUtils.isEmpty(existedContainers), "Application doesn't have containers " + application);
@@ -209,7 +215,7 @@ public class ApplicationServiceImpl implements ApplicationService {
     public void removeApplication(String cluster, String id) {
         log.info("about to remove application: {}, in cluster: {}", id, cluster);
         Application application = getApplication(cluster, id);
-        DockerService service = dockerServiceRegistry.getService(application.getCluster());
+        DockerService service = discoveryStorage.getService(application.getCluster());
         composeExecutor.rm(application, service);
         map.remove(buildKey(cluster, id));
 
@@ -218,7 +224,7 @@ public class ApplicationServiceImpl implements ApplicationService {
     @Override
     public ApplicationSource getSource(String cluster, String appId) {
         Application application = getApplication(cluster, appId);
-        DockerService service = dockerServiceRegistry.getService(cluster);
+        ContainersManager service = getService(cluster);
         ApplicationSource src = new ApplicationSource();
         src.setName(application.getName());
         application.getContainers().stream()

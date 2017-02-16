@@ -376,7 +376,7 @@ public class KvMap<T> {
             }
             return null;
         }
-        return holder.get();
+        return val;
     }
 
     /**

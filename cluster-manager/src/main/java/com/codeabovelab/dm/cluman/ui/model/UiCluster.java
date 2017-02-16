@@ -33,10 +33,19 @@ import java.util.Set;
 public class UiCluster extends UiClusterEditablePart implements Comparable<UiCluster>, WithUiPermission {
 
     @AllArgsConstructor
+    @NoArgsConstructor
     @Data
     public static class Entry {
-        private Integer on = 0;
-        private Integer off = 0;
+        private int on;
+        private int off;
+
+        public void incrementOff() {
+            off++;
+        }
+
+        public void incrementOn() {
+            on++;
+        }
     }
 
     private String name;

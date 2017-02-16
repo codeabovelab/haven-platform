@@ -18,6 +18,7 @@ package com.codeabovelab.dm.cluman.model;
 
 import com.codeabovelab.dm.cluman.cluster.docker.management.DockerService;
 import com.codeabovelab.dm.cluman.ds.clusters.AbstractNodesGroupConfig;
+import com.codeabovelab.dm.cluman.ds.swarm.NetworkManager;
 import com.codeabovelab.dm.cluman.security.WithAcl;
 
 import java.util.Collection;
@@ -122,4 +123,8 @@ public interface NodesGroup extends Named, WithAcl {
      * @return non null value
      */
     ContainersManager getContainers();
+
+    NetworkManager getNetworks();
+
+    String getDefaultNetworkName();
 }

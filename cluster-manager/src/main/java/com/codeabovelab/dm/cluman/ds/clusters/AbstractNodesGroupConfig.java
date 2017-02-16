@@ -46,6 +46,8 @@ public abstract class AbstractNodesGroupConfig<T extends AbstractNodesGroupConfi
     @KvMapping
     private String description;
     @KvMapping
+    private String defaultNetwork;
+    @KvMapping
     private AclSource acl;
 
     @Override

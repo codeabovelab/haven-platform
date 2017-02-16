@@ -16,13 +16,12 @@
 
 package com.codeabovelab.dm.cluman.batch;
 
-import com.codeabovelab.dm.cluman.cluster.docker.management.DockerService;
 import com.codeabovelab.dm.cluman.cluster.docker.management.argument.DeleteContainerArg;
 import com.codeabovelab.dm.cluman.cluster.docker.management.result.ServiceCallResult;
 import com.codeabovelab.dm.cluman.job.JobComponent;
 import com.codeabovelab.dm.cluman.job.JobContext;
+import com.codeabovelab.dm.cluman.model.NodesGroup;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.util.Assert;
 
 /**
  * Container processor which is invoke container remove
@@ -31,7 +30,7 @@ import org.springframework.util.Assert;
 public class RemoveContainerTasklet {
 
     @Autowired
-    private DockerService dockerService;
+    private NodesGroup nodesGroup;
 
     @Autowired
     private JobContext context;
@@ -41,7 +40,7 @@ public class RemoveContainerTasklet {
 
     public void execute(ProcessedContainer item) {
         rollback.record(item, RollbackData.Action.DELETE);
-        ServiceCallResult res = dockerService.deleteContainer(DeleteContainerArg.builder().id(item.getId()).build());
+        ServiceCallResult res = nodesGroup.getContainers().deleteContainer(DeleteContainerArg.builder().id(item.getId()).build());
         context.fire("Remove container \"{0}\" with result code \"{1}\" and message \"{2}\" (id:{3})",
           item.getName(),
           res.getCode(),

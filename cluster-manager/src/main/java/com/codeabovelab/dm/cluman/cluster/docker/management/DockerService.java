@@ -267,4 +267,16 @@ public interface DockerService {
 
     List<Task> getTasks(GetTasksArg arg);
     Task getTask(String taskId);
+
+    List<Volume> getVolumes(GetVolumesArg arg);
+    Volume createVolume(CreateVolumeCmd cmd);
+    ServiceCallResult removeVolume(RemoveVolumeArg arg);
+    ServiceCallResult deleteUnusedVolumes(DeleteUnusedVolumesArg arg);
+
+    /**
+     *
+     * @param name Volume name or ID
+     * @return volume or null
+     */
+    Volume getVolume(String name);
 }

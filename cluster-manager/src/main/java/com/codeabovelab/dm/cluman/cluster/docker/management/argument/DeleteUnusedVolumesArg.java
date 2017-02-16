@@ -14,19 +14,19 @@
  * limitations under the License.
  */
 
-package com.codeabovelab.dm.cluman.model;
-
+package com.codeabovelab.dm.cluman.cluster.docker.management.argument;
 
 import lombok.Data;
 
+import java.util.Map;
+
 /**
- * Docker container port
+ * Planned for 'filters':
+ * <pre>
+ *     nothing filters are documented
+ * </pre>
  */
 @Data
-public class Port {
-
-    private final int privatePort;
-    private final int publicPort;
-    private final ProtocolType type;
-
+public class DeleteUnusedVolumesArg {
+    private Map<String, String> filters;
 }

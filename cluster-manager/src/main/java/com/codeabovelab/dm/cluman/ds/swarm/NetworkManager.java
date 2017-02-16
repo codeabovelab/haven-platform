@@ -18,50 +18,29 @@ package com.codeabovelab.dm.cluman.ds.swarm;
 
 import com.codeabovelab.dm.cluman.cluster.docker.management.DockerService;
 import com.codeabovelab.dm.cluman.cluster.docker.management.result.ResultCode;
-import com.codeabovelab.dm.cluman.cluster.docker.management.result.ServiceCallResult;
 import com.codeabovelab.dm.cluman.cluster.docker.model.CreateNetworkCmd;
 import com.codeabovelab.dm.cluman.cluster.docker.model.CreateNetworkResponse;
 import com.codeabovelab.dm.cluman.cluster.docker.model.Network;
+import com.codeabovelab.dm.cluman.ds.clusters.AbstractNodesGroup;
 import com.codeabovelab.dm.cluman.model.*;
-import com.codeabovelab.dm.common.mb.MessageBus;
-import com.codeabovelab.dm.cluman.security.TempAuth;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.stereotype.Component;
 
 import java.util.List;
-import java.util.Optional;
 import java.util.Set;
-import java.util.function.Consumer;
 
-@Component
-public class NetworkManager implements Consumer<NodeEvent> {
+public class NetworkManager {
 
     private static final Logger LOG = LoggerFactory.getLogger(NetworkManager.class);
     private static final String OVERLAY_DRIVER = "overlay";
+    private final AbstractNodesGroup<?> group;
 
-    private final DiscoveryStorage discoveryStorage;
-
-    @Autowired
-    public NetworkManager(DiscoveryStorage discoveryStorage, @Qualifier(NodeEvent.BUS) MessageBus<NodeEvent> bus) {
-        this.discoveryStorage = discoveryStorage;
-        bus.subscribe(this);
+    public NetworkManager(AbstractNodesGroup<?> group) {
+        this.group = group;
     }
 
-    /**
-     * Creates overlay network with cluster name <p/>
-     * all containers will have container.cluster-name DNS address <p/>
-     * Docker daemon should have --cluster-store and --cluster-advertise options. <p/>
-     * @param clusterName
-     */
-    public CreateNetworkResponse createNetwork(String clusterName) {
-        NodesGroup group = discoveryStorage.getCluster(clusterName);
-        return createNetwork(group, clusterName);
-    }
-
-    public CreateNetworkResponse createNetwork(NodesGroup group, String networkName) {
+    public CreateNetworkResponse createNetwork(String networkName) {
+        // remove below code in future
         Set<NodesGroup.Feature> features = group.getFeatures();
         if(!features.contains(NodesGroup.Feature.SWARM) && !features.contains(NodesGroup.Feature.SWARM_MODE)) {
             // non swarm groups does not support network creation
@@ -74,10 +53,11 @@ public class NetworkManager implements Consumer<NodeEvent> {
         cmd.setName(networkName);
         cmd.setDriver(OVERLAY_DRIVER);
         cmd.setCheckDuplicate(true);
-        return createNetwork(group, cmd);
+        cmd.setAttachable(true);
+        return createNetwork(cmd);
     }
 
-    public CreateNetworkResponse createNetwork(NodesGroup group, CreateNetworkCmd cmd) {
+    public CreateNetworkResponse createNetwork(CreateNetworkCmd cmd) {
         DockerService service = group.getDocker();
         LOG.debug("About to create network '{}' for cluster '{}'", cmd, group.getName());
         CreateNetworkResponse res = service.createNetwork(cmd);
@@ -94,37 +74,9 @@ public class NetworkManager implements Consumer<NodeEvent> {
      * @return
      */
     public List<Network> getNetworks(String clusterName) {
-        DockerService service = discoveryStorage.getService(clusterName);
+        DockerService service = group.getDocker();
         List<Network> networks = service.getNetworks();
         LOG.debug("networks for cluster {}: {}", clusterName, networks);
         return networks;
-    }
-
-    @Override
-    public void accept(NodeEvent nodeEvent) {
-        NodeInfo node = nodeEvent.getCurrent();
-        if (node == null) {
-            return;
-        }
-        try(TempAuth ta = TempAuth.asSystem()) {
-            NodesGroup cluster = discoveryStorage.getClusterForNode(node.getName());
-            if (cluster == null) {
-                LOG.warn("Node without cluster {}", node);
-                return;
-            }
-            String clusterName = cluster.getName();
-            cluster.init();
-            NodeGroupState state = cluster.getState();
-            if (!state.isOk()) {
-                LOG.warn("Can not create network due cluster '{}' in '{}' state.", clusterName, state.getMessage());
-                return;
-            }
-            List<Network> networks = cluster.getDocker().getNetworks();
-            LOG.debug("Networks {}", networks);
-            Optional<Network> any = networks.stream().filter(n -> n.getName().equals(clusterName)).findAny();
-            if (!any.isPresent()) {
-                createNetwork(cluster, clusterName);
-            }
-        }
     }
 }

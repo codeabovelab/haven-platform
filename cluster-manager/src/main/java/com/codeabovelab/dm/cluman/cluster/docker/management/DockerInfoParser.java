@@ -27,9 +27,9 @@ import org.slf4j.LoggerFactory;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
 
+import java.time.ZonedDateTime;
 import java.util.List;
-
-import static com.codeabovelab.dm.cluman.ui.UiUtils.convertToGB;
+import java.util.Map;
 
 /**
  */
@@ -188,11 +188,14 @@ class DockerInfoParser {
         LOG.debug("info {}", info);
         this.result.id(info.getId())
           .name(info.getName())
-          .containers(info.getContainers())
           .images(info.getImages())
           .ncpu(info.getNcpu())
-          //Convert to GB
-          .memory(convertToGB(info.getMemory()));
+          .memory(info.getMemory());
+        ZonedDateTime systemTime = info.getSystemTime();
+        if(systemTime != null) {
+            this.result.setSystemTime(systemTime.toLocalDateTime());
+        }
+        parseLabels();
         List<List<String>> statusList = info.getSystemStatus();
         if (statusList == null) {
             // old swarm use DriverStatus, but new - SystemStatus
@@ -207,6 +210,20 @@ class DockerInfoParser {
             result.setNodeCount(swarm.getNodes());
         }
         return result;
+    }
+
+    private void parseLabels() {
+        List<String> labels = info.getLabels();
+        if(labels == null) {
+            return;
+        }
+        Map<String, String> target = this.result.getLabels();
+        labels.forEach(pair -> {
+            String[] kv = StringUtils.split(pair, "=");
+            if(kv != null) {
+                target.put(kv[0], kv[1]);
+            }
+        });
     }
 
     private SwarmInfo convertSwarm(InfoSwarm src) {
