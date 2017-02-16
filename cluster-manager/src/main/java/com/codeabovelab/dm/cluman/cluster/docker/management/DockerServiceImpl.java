@@ -562,6 +562,60 @@ public class DockerServiceImpl implements DockerService {
         }
     }
 
+    private <T> T postOrNullAction(UriComponentsBuilder ub, Object cmd, Class<T> responseType) {
+        String url = ub.toUriString();
+        try {
+            ResponseEntity<T> entity = getSlow(() -> {
+                HttpEntity<?> req = null;
+                if(cmd != null) {
+                    req = wrapEntity(cmd);
+                }
+                return restTemplate.postForEntity(url, req, responseType);
+            });
+            return entity.getBody();
+        } catch (HttpStatusCodeException e) {
+            log.warn("Failed to execute GET on {}, due to {}", url, formatHttpException(e));
+            return null;
+        }
+    }
+
+    private <T extends ServiceCallResult> T getAction(UriComponentsBuilder ub, Class<T> responseType, Supplier<T> factory) {
+        if(factory == null) {
+            factory = () -> BeanUtils.instantiate(responseType);
+        }
+        String url = ub.toUriString();
+        T resp;
+        try {
+            ResponseEntity<T> entity = getFast(() -> {
+                return restTemplate.getForEntity(url, responseType);
+            });
+            resp = entity.getBody();
+            if(resp == null) {
+                resp = factory.get();
+            }
+            resp.setCode(ResultCode.OK);
+            return resp;
+        } catch (HttpStatusCodeException e) {
+            log.warn("Failed to execute GET on {}, due to {}", url, e.toString());
+            resp = factory.get();
+            processStatusCodeException(e, resp);
+            return resp;
+        }
+    }
+
+    private <T> T getOrNullAction(UriComponentsBuilder ub, Class<T> responseType) {
+        String url = ub.toUriString();
+        try {
+            ResponseEntity<T> entity = getFast(() -> {
+                return restTemplate.getForEntity(url, responseType);
+            });
+            return entity.getBody();
+        } catch (HttpStatusCodeException e) {
+            log.warn("Failed to execute GET on {}, due to {}", url, formatHttpException(e));
+            return null;
+        }
+    }
+
     private ServiceCallResult deleteAction(UriComponentsBuilder ub) {
         String url = ub.toUriString();
         try {
@@ -643,18 +697,23 @@ public class DockerServiceImpl implements DockerService {
 
     private void processStatusCodeException(HttpStatusCodeException e, ServiceCallResult res) {
         setCode(e.getStatusCode(), res);
+        String msg = formatHttpException(e);
+        res.setMessage(msg);
+        // we log message as debug because consumer code must log error too, but with high level,
+        // when we log it as warn then error will cause to many duplicate lines in log
+        log.debug("result: {}", msg);
+    }
+
+    private String formatHttpException(HttpStatusCodeException e) {
         try {
-            res.setMessage(MessageFormat.format("Response from server: {0} {1}\n {2}",
-                    e.getStatusCode().value(),
-                    e.getStatusText(),// getResponseBodyAsString - below
-                    org.springframework.util.StringUtils.trimWhitespace(e.getResponseBodyAsString())));
-            // we log message as debug because consumer code must log error too, but with high level,
-            // when we log it as warn then error will cause to many duplicate lines in log
-            log.debug("result: {}", res.getMessage());
+            return MessageFormat.format("Response from server: {0} {1}\n {2}",
+              e.getStatusCode().value(),
+              e.getStatusText(),// getResponseBodyAsString - below
+              org.springframework.util.StringUtils.trimWhitespace(e.getResponseBodyAsString()));
         } catch (Exception ex) {
-            res.setMessage(e.getStatusText());
             log.error("Can not format exception {}", e, ex);
         }
+        return e.getStatusText();
     }
 
     @Override
@@ -1138,27 +1197,49 @@ public class DockerServiceImpl implements DockerService {
 
     @Override
     public List<Volume> getVolumes(GetVolumesArg arg) {
-        return null;
+        UriComponentsBuilder ucb = makeBaseUrl().path("volumes");
+        if(arg.getFilters() != null) {
+            ucb.queryParam("filters", toJson(arg.getFilters()));
+        }
+        GetVolumesResponse res = getOrNullAction(ucb, GetVolumesResponse.class);
+        List<Volume> volumes = null;
+        if(res != null) {
+            volumes = res.getVolumes();
+        }
+        if(volumes == null) {
+            volumes = Collections.emptyList();
+        }
+        return volumes;
     }
 
     @Override
     public Volume createVolume(CreateVolumeCmd cmd) {
-        return null;
+        return postOrNullAction(makeBaseUrl().path("volumes"), cmd, Volume.class);
     }
 
     @Override
     public ServiceCallResult removeVolume(RemoveVolumeArg arg) {
-        return null;
+        UriComponentsBuilder ucb = makeBaseUrl().path("volumes");
+        ucb.path(arg.getName());
+        Boolean force = arg.getForce();
+        if(force != null) {
+            ucb.queryParam("force", force);
+        }
+        return deleteAction(ucb);
     }
 
     @Override
     public ServiceCallResult deleteUnusedVolumes(DeleteUnusedVolumesArg arg) {
-        return null;
+        UriComponentsBuilder ucb = makeBaseUrl().path("volumes/prune");
+        if(arg.getFilters() != null) {
+            ucb.queryParam("filters", toJson(arg.getFilters()));
+        }
+        return postAction(ucb, null);
     }
 
     @Override
     public Volume getVolume(String name) {
-        return null;
+        return getOrNullAction(makeBaseUrl().path("volumes").path(name), Volume.class);
     }
 
     @Override

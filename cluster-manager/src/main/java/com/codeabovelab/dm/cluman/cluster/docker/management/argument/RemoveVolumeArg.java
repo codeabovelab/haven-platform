@@ -33,6 +33,6 @@ public class RemoveVolumeArg {
     /**
      * Force the removal of the volume
      */
-    private boolean force;
+    private Boolean force;
 
 }
