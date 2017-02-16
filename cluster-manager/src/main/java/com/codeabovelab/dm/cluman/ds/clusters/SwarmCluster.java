@@ -178,15 +178,6 @@ public final class SwarmCluster extends AbstractNodesGroup<SwarmNodesGroupConfig
         dib.getNodeList().sort(null);
         dib.setOffNodeCount(offNodes);
         dib.setNodeCount(dib.getNodeList().size() - offNodes);
-
-        try {
-            List<DockerContainer> nodeContainer = docker.getContainers(new GetContainersArg(true));
-            int running = (int) nodeContainer.stream().filter(DockerContainer::isRun).count();
-            dib.setContainers(running);
-            dib.setOffContainers(nodeContainer.size() - running);
-        } catch (Exception e) {
-            log.warn("Can not list containers on {}, due to error {}", getName(), e.toString());
-        }
     }
 
     @Override

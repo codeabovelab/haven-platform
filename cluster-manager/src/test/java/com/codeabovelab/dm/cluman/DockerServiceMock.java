@@ -161,7 +161,6 @@ public class DockerServiceMock implements DockerService {
     @Override
     public DockerServiceInfo getInfo() {
         DockerServiceInfo.Builder b = DockerServiceInfo.builder().from(info);
-        b.setContainers(containers.size());
         return b.build();
     }
 

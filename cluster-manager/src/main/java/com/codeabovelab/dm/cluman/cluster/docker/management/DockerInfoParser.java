@@ -188,7 +188,6 @@ class DockerInfoParser {
         LOG.debug("info {}", info);
         this.result.id(info.getId())
           .name(info.getName())
-          .containers(info.getContainers())
           .images(info.getImages())
           .ncpu(info.getNcpu())
           .memory(info.getMemory());

@@ -34,8 +34,6 @@ public class DockerServiceInfo {
     private final String id;
     private final String name;
     private final LocalDateTime systemTime;
-    private final Integer containers;
-    private final Integer offContainers;
     private final Integer images;
     private final Integer ncpu;
     private final long memory;
@@ -53,8 +51,6 @@ public class DockerServiceInfo {
         this.id = builder.id;
         this.name = builder.name;
         this.systemTime = builder.systemTime;
-        this.containers = builder.containers;
-        this.offContainers = builder.offContainers;
         this.images = builder.images;
         this.ncpu = builder.ncpu;
         this.memory = builder.memory;
@@ -74,8 +70,6 @@ public class DockerServiceInfo {
         private String id;
         private String name;
         private LocalDateTime systemTime;
-        private Integer containers;
-        private Integer offContainers;
         private Integer images;
         private Integer ncpu;
         private long memory;
@@ -96,8 +90,6 @@ public class DockerServiceInfo {
             setId(o.getId());
             setName(o.getName());
             setSystemTime(o.getSystemTime());
-            setContainers(o.getContainers());
-            setOffContainers(o.getOffContainers());
             setImages(o.getImages());
             setNcpu(o.getNcpu());
             setMemory(o.getMemory());
@@ -121,16 +113,6 @@ public class DockerServiceInfo {
 
         public Builder systemTime(LocalDateTime systemTime) {
             setSystemTime(systemTime);
-            return this;
-        }
-
-        public Builder containers(Integer containers) {
-            this.containers = containers;
-            return this;
-        }
-
-        public Builder offContainers(Integer offContainers) {
-            setOffContainers(offContainers);
             return this;
         }
 

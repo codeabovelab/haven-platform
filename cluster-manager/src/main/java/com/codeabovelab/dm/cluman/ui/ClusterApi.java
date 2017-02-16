@@ -109,15 +109,29 @@ public class ClusterApi {
                 uc.setManagers(((DockerClusterConfig)cfg).getManagers());
             }
         }
+        UiCluster.Entry containersEntry = new UiCluster.Entry();
+        UiCluster.Entry nodeEntry = new UiCluster.Entry();
         try {
-            DockerServiceInfo info = cluster.getDocker().getInfo();
-            uc.setContainers(new UiCluster.Entry(info.getContainers(), info.getOffContainers()));
-            uc.setNodes(new UiCluster.Entry(info.getNodeCount(), info.getOffNodeCount()));
+            List<NodeInfo> nodes = cluster.getNodes();
+            nodes.forEach(ni -> {
+                if(ni.isOn()) {
+                    nodeEntry.incrementOn();
+                } else {
+                    nodeEntry.incrementOff();
+                }
+            });
+            cluster.getContainers().getContainers().forEach(dc -> {
+                if(dc.isRun()) {
+                    containersEntry.incrementOn();
+                } else {
+                    containersEntry.incrementOff();
+                }
+            });
         } catch (Exception e) {
-            uc.setContainers(new UiCluster.Entry(0, 0));
-            uc.setNodes(new UiCluster.Entry(0, 0));
             //nothing
         }
+        uc.setContainers(containersEntry);
+        uc.setNodes(nodeEntry);
         try {
             Set<String> apps = uc.getApplications();
             List<Application> applications = applicationService.getApplications(name);

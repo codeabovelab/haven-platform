@@ -492,7 +492,6 @@ public class DockerServiceImpl implements DockerService {
             }
         }
         dib.offNodeCount(0);
-        dib.offContainers(0);
         if(this.infoInterceptor != null) {
             this.infoInterceptor.accept(dib);
         }
