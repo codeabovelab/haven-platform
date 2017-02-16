@@ -387,4 +387,34 @@ public class DockerServiceSecurityWrapper implements DockerService {
         checkServiceAccess(Action.READ);
         return service.getTask(taskId);
     }
+
+    @Override
+    public List<Volume> getVolumes(GetVolumesArg arg) {
+        checkServiceAccess(Action.READ);
+        return null;
+    }
+
+    @Override
+    public Volume createVolume(CreateVolumeCmd cmd) {
+        checkServiceAccess(Action.ALTER_INSIDE);
+        return service.createVolume(cmd);
+    }
+
+    @Override
+    public ServiceCallResult removeVolume(RemoveVolumeArg arg) {
+        checkServiceAccess(Action.ALTER_INSIDE);
+        return service.removeVolume(arg);
+    }
+
+    @Override
+    public ServiceCallResult deleteUnusedVolumes(DeleteUnusedVolumesArg arg) {
+        checkServiceAccess(Action.ALTER_INSIDE);
+        return service.deleteUnusedVolumes(arg);
+    }
+
+    @Override
+    public Volume getVolume(String name) {
+        checkServiceAccess(Action.READ);
+        return service.getVolume(name);
+    }
 }

@@ -510,6 +510,31 @@ public class DockerServiceMock implements DockerService {
         return null;
     }
 
+    @Override
+    public List<Volume> getVolumes(GetVolumesArg arg) {
+        return Collections.emptyList();
+    }
+
+    @Override
+    public Volume createVolume(CreateVolumeCmd cmd) {
+        return null;
+    }
+
+    @Override
+    public ServiceCallResult removeVolume(RemoveVolumeArg arg) {
+        return resultOk();
+    }
+
+    @Override
+    public ServiceCallResult deleteUnusedVolumes(DeleteUnusedVolumesArg arg) {
+        return resultOk();
+    }
+
+    @Override
+    public Volume getVolume(String name) {
+        return null;
+    }
+
     private static class ContainerHolder {
         private final DockerContainer container;
         private String name;

@@ -423,4 +423,29 @@ class VirtualDockerService implements DockerService {
     public Task getTask(String taskId) {
         return null;
     }
+
+    @Override
+    public List<Volume> getVolumes(GetVolumesArg arg) {
+        return Collections.emptyList();
+    }
+
+    @Override
+    public Volume createVolume(CreateVolumeCmd cmd) {
+        return null;
+    }
+
+    @Override
+    public ServiceCallResult removeVolume(RemoveVolumeArg arg) {
+        return notSupported();
+    }
+
+    @Override
+    public ServiceCallResult deleteUnusedVolumes(DeleteUnusedVolumesArg arg) {
+        return notSupported();
+    }
+
+    @Override
+    public Volume getVolume(String name) {
+        return null;
+    }
 }

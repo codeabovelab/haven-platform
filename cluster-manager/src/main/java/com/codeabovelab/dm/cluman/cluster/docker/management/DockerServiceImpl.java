@@ -1137,6 +1137,31 @@ public class DockerServiceImpl implements DockerService {
     }
 
     @Override
+    public List<Volume> getVolumes(GetVolumesArg arg) {
+        return null;
+    }
+
+    @Override
+    public Volume createVolume(CreateVolumeCmd cmd) {
+        return null;
+    }
+
+    @Override
+    public ServiceCallResult removeVolume(RemoveVolumeArg arg) {
+        return null;
+    }
+
+    @Override
+    public ServiceCallResult deleteUnusedVolumes(DeleteUnusedVolumesArg arg) {
+        return null;
+    }
+
+    @Override
+    public Volume getVolume(String name) {
+        return null;
+    }
+
+    @Override
     public String toString() {
         return getClass().getSimpleName() + "{" + getClusterConfig().getHost() + "}";
     }
