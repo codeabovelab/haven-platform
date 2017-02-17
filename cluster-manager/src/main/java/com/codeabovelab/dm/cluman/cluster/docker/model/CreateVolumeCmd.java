@@ -17,11 +17,13 @@
 package com.codeabovelab.dm.cluman.cluster.docker.model;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import lombok.Data;
 
 import java.util.Map;
 
 /**
  */
+@Data
 public class CreateVolumeCmd {
     /**
      * The new volume's name. If not specified, Docker generates a name.

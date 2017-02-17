@@ -43,9 +43,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.annotation.Secured;
-import org.springframework.util.MimeTypeUtils;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.*;
@@ -285,7 +285,7 @@ public class ClusterApi {
     }
 
     @Secured(Authorities.ADMIN_ROLE)
-    @RequestMapping(value = "/clusters/{cluster}/source-upload", method = POST, consumes = MimeTypeUtils.MULTIPART_FORM_DATA_VALUE)
+    @RequestMapping(value = "/clusters/{cluster}/source-upload", method = POST, consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public UiJob uploadClusterSource(@PathVariable("cluster") String cluster,
                                   DeployOptions.Builder options,
                                   @RequestPart("file") RootSource rootSource) {

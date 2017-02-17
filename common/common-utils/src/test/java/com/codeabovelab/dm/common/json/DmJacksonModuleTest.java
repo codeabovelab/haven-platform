@@ -4,7 +4,7 @@ import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import org.junit.Test;
-import org.springframework.util.MimeTypeUtils;
+import org.springframework.http.MediaType;
 
 import static org.junit.Assert.assertEquals;
 
@@ -17,7 +17,7 @@ public class DmJacksonModuleTest {
         ObjectMapper mapper = createMapper();
         SomeStrangeBean bean = new SomeStrangeBean();
         bean.getKeeperProp().accept("new val");
-        bean.setMimeType(MimeTypeUtils.APPLICATION_FORM_URLENCODED);
+        bean.setMimeType(MediaType.APPLICATION_FORM_URLENCODED);
         String s = mapper.writeValueAsString(bean);
         System.out.println(s);
         SomeStrangeBean readed = mapper.readValue(s, SomeStrangeBean.class);
