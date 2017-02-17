@@ -41,9 +41,6 @@ public class ContainerConfigTasklet {
     private NodesGroup nodesGroup;
 
     @Autowired
-    private DiscoveryStorage discoveryStorage;
-
-    @Autowired
     private ContainerSourceFactory containerSourceFactory;
 
     ProcessedContainer process(ProcessedContainer pc) {
@@ -51,7 +48,7 @@ public class ContainerConfigTasklet {
         ContainerDetails container = nodesGroup.getContainers().getContainer(id);
         ContainerSource arg = new ContainerSource();
         containerSourceFactory.toSource(container, arg);
-        cleanArg(arg, pc.getCluster(), container.getImageId());
+        cleanArg(arg, container.getImageId());
         arg.setCluster(pc.getCluster());
         return pc.makeNew().src(arg).build();
     }
@@ -60,12 +57,12 @@ public class ContainerConfigTasklet {
      * Remove env variable and labels inherited from image
      *
      * @param arg
-     * @param cluster
      * @param imageId
      */
-    private void cleanArg(ContainerSource arg, String cluster, String imageId) {
+    private void cleanArg(ContainerSource arg, String imageId) {
         try {
-            ImageDescriptor image = discoveryStorage.getService(cluster).getImage(imageId);
+
+            ImageDescriptor image = nodesGroup.getDocker().getImage(imageId);
             if (image != null) {
 
                 Set<String> labels = image.getContainerConfig().getLabels().keySet();
