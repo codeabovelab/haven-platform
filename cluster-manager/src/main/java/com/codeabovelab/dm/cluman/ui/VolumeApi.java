@@ -42,7 +42,7 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor(onConstructor = @__(@Autowired))
 public class VolumeApi {
 
-    private DiscoveryStorage discoveryStorage;
+    private final DiscoveryStorage discoveryStorage;
 
     private DockerService getDocker(@RequestParam("cluster") String clusterName) {
         NodesGroup cluster = discoveryStorage.getCluster(clusterName);
