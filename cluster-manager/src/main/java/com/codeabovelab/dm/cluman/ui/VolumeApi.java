@@ -17,6 +17,7 @@
 package com.codeabovelab.dm.cluman.ui;
 
 import com.codeabovelab.dm.cluman.cluster.docker.management.DockerService;
+import com.codeabovelab.dm.cluman.cluster.docker.management.argument.DeleteUnusedVolumesArg;
 import com.codeabovelab.dm.cluman.cluster.docker.management.argument.GetVolumesArg;
 import com.codeabovelab.dm.cluman.cluster.docker.management.argument.RemoveVolumeArg;
 import com.codeabovelab.dm.cluman.cluster.docker.model.CreateVolumeCmd;
@@ -89,5 +90,12 @@ public class VolumeApi {
         arg.setName(volume);
         arg.setForce(force);
         docker.removeVolume(arg);
+    }
+
+    @RequestMapping(path = "/delete-unused", method = RequestMethod.DELETE)
+    public void deleteUnused(@RequestParam("cluster") String clusterName) {
+        DockerService docker = getDocker(clusterName);
+        DeleteUnusedVolumesArg arg = new DeleteUnusedVolumesArg();
+        docker.deleteUnusedVolumes(arg);
     }
 }
