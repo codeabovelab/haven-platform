@@ -1129,7 +1129,7 @@ public class DockerServiceImpl implements DockerService {
 
     @Override
     public Volume createVolume(CreateVolumeCmd cmd) {
-        return postOrNullAction(makeBaseUrl().path("volumes"), cmd, Volume.class);
+        return postOrNullAction(makeBaseUrl().path("volumes/create"), cmd, Volume.class);
     }
 
     @Override
