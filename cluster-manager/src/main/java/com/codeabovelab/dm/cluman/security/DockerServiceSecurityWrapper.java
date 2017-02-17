@@ -391,7 +391,7 @@ public class DockerServiceSecurityWrapper implements DockerService {
     @Override
     public List<Volume> getVolumes(GetVolumesArg arg) {
         checkServiceAccess(Action.READ);
-        return null;
+        return service.getVolumes(arg);
     }
 
     @Override
