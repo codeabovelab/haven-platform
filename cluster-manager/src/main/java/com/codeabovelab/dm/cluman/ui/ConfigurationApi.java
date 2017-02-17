@@ -88,7 +88,7 @@ public class ConfigurationApi {
     }
 
     @Secured(Authorities.ADMIN_ROLE)
-    @RequestMapping(path = "source-upload", method = RequestMethod.POST, consumes = MimeTypeUtils.MULTIPART_FORM_DATA_VALUE)
+    @RequestMapping(path = "source-upload", method = RequestMethod.POST, consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public UiJob uploadSource(@RequestPart("file") RootSource root,
                               DeployOptions.Builder options) {
         JobInstance jobInstance = sourceService.setRootSource(root, options.build());
