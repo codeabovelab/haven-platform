@@ -87,8 +87,9 @@ public class ContainerRegistration {
             modifier.accept(this.container);
             validate();
             this.cached = null;
-            this.map.flush(id);
         }
+        // we must not place it in lock, because it consume time
+        this.map.flush(id);
     }
 
     public void from(ContainerBaseIface container, String node) {
