@@ -198,7 +198,7 @@ class NodeRegistrationImpl implements NodeRegistration, AutoCloseable {
 
     private <T> void update(Supplier<T> getter, Consumer<T> setter, T value) {
         NodeInfoImpl ni = null;
-        NodeInfoImpl oldInfo = null;
+        NodeInfoImpl oldInfo;
         synchronized (lock) {
             oldInfo = cache;
             T oldVal = getter.get();

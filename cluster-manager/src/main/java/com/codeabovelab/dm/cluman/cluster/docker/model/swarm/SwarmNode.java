@@ -182,7 +182,7 @@ public class SwarmNode {
         UNKNOWN,
         DOWN,
         READY,
-        DISCONNECTED;
+        DISCONNECTED
     }
 
     /**
@@ -192,7 +192,7 @@ public class SwarmNode {
     public enum Reachability {
         UNKNOWN,
         UNREACHABLE,
-        REACHABLE;
+        REACHABLE
     }
 
     /**
@@ -202,7 +202,7 @@ public class SwarmNode {
     public enum NodeAvailability {
         ACTIVE,
         PAUSE,
-        DRAIN;
+        DRAIN
     }
 
     /**
@@ -211,6 +211,6 @@ public class SwarmNode {
     @JtEnumLower
     public enum NodeRole {
         WORKER,
-        MANAGER;
+        MANAGER
     }
 }

@@ -23,5 +23,5 @@ import com.codeabovelab.dm.common.json.JtEnumLower;
  */
 @JtEnumLower
 public enum ProtocolType {
-    TCP, UDP;
+    TCP, UDP
 }

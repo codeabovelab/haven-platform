@@ -31,6 +31,7 @@ import org.springframework.web.servlet.config.annotation.*;
 import org.springframework.web.util.UrlPathHelper;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
@@ -45,6 +46,7 @@ public class UiConfiguration {
      * @see WebSocketConfiguration
      */
     static final String ALLOWED_ORIGIN = "*";
+    private final List<String> exports = Collections.singletonList("/ui/**");
 
     @Bean
     WebMvcConfigurerAdapter webMvcConfigurerAdapter(YAMLMapper yamlMapper) {
@@ -72,7 +74,7 @@ public class UiConfiguration {
 
             @Override
             public void addCorsMappings(CorsRegistry registry) {
-                List<String> exports = Arrays.asList("/ui/**");
+
                 for(String prefix: exports) {
                     CorsRegistration cr = registry.addMapping(prefix);
                     cr.allowedOrigins(ALLOWED_ORIGIN);

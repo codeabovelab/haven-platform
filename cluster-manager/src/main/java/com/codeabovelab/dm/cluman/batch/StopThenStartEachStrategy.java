@@ -56,7 +56,6 @@ class StopThenStartEachStrategy {
     private ContainerConfigTasklet containerConfig;
 
     /**
-     *
      * @param predicate filter containers
      * @param processor change containers
      */
@@ -66,19 +65,20 @@ class StopThenStartEachStrategy {
     }
 
     protected void updateContainer(List<ProcessedContainer> containers, ContainerProcessor processor) {
-        ProcessedContainer curr = null;
-        try {
-            for(ProcessedContainer container: containers) {
+
+        for (ProcessedContainer container : containers) {
+            try {
                 ProcessedContainer withConfig = containerConfig.process(container);
                 containerStopper.execute(withConfig);
                 containerRemover.execute(withConfig);
                 ProcessedContainer newVersion = processor.apply(withConfig);
                 ProcessedContainer newContainer = containerCreator.execute(newVersion);
                 healthchecker.execute(newContainer);
+            } catch (Exception e) {
+                jobContext.fire("Error on container {0}", container);
+                throw e;
             }
-        } catch (Exception e) {
-            jobContext.fire("Error on container {0}", curr);
-            throw e;
         }
+
     }
 }

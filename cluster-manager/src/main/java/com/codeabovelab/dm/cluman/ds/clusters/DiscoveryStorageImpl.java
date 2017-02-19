@@ -71,7 +71,6 @@ public class DiscoveryStorageImpl implements DiscoveryStorage {
     private final DockerServices services;
     private final NodeStorage nodeStorage;
     private final KvMap<NodesGroup> clusters;
-    private final String prefix;
     private final AccessContextFactory aclContextFactory;
     private final MessageBus<NodesGroupEvent> messageBus;
     private final AutowireCapableBeanFactory beanFactory;
@@ -91,7 +90,7 @@ public class DiscoveryStorageImpl implements DiscoveryStorage {
         this.messageBus = messageBus;
         this.aclContextFactory = aclContextFactory;
         KeyValueStorage storage = kvmf.getStorage();
-        this.prefix = storage.getPrefix() + "/clusters/";
+        String prefix = storage.getPrefix() + "/clusters/";
         this.clusters = KvMap.builder(NodesGroup.class, AbstractNodesGroupConfig.class)
           .path(prefix)
           .mapper(kvmf)

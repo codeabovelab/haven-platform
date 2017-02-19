@@ -269,7 +269,7 @@ public class DockerServiceImpl implements DockerService {
             }
             updated = offlineRef.compareAndSet(old, new OfflineCause(timeout, th));
         }
-        if(updated && old == null) {
+        if(old == null) {
             fireEvent(new DockerServiceEvent(this, StandardActions.OFFLINE));
         }
     }

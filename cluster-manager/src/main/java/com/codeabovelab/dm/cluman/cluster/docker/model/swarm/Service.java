@@ -64,7 +64,7 @@ public class Service {
     public enum UpdateState {
         UPDATING,
         PAUSED,
-        COMPLETED;
+        COMPLETED
     }
 
     @Data
