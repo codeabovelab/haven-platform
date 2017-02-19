@@ -17,17 +17,21 @@
 package com.codeabovelab.dm.cluman.ui;
 
 import com.codeabovelab.dm.cluman.cluster.docker.management.DockerService;
+import com.codeabovelab.dm.cluman.cluster.docker.management.argument.DeleteUnusedVolumesArg;
 import com.codeabovelab.dm.cluman.cluster.docker.management.argument.GetVolumesArg;
 import com.codeabovelab.dm.cluman.cluster.docker.management.argument.RemoveVolumeArg;
+import com.codeabovelab.dm.cluman.cluster.docker.management.result.ServiceCallResult;
 import com.codeabovelab.dm.cluman.cluster.docker.model.CreateVolumeCmd;
 import com.codeabovelab.dm.cluman.cluster.docker.model.Volume;
 import com.codeabovelab.dm.cluman.model.DiscoveryStorage;
 import com.codeabovelab.dm.cluman.model.NodesGroup;
+import com.codeabovelab.dm.cluman.ui.model.UIResult;
 import com.codeabovelab.dm.cluman.ui.model.UiVolume;
 import com.codeabovelab.dm.cluman.validate.ExtendedAssert;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Collection;
@@ -81,13 +85,22 @@ public class VolumeApi {
     }
 
     @RequestMapping(path = "/delete", method = RequestMethod.DELETE)
-    public void delete(@RequestParam("cluster") String clusterName,
-                       @RequestParam("volume") String volume,
-                       @RequestParam(value = "force", required = false) Boolean force) {
+    public ResponseEntity<?> delete(@RequestParam("cluster") String clusterName,
+                                 @RequestParam("volume") String volume,
+                                 @RequestParam(value = "force", required = false) Boolean force) {
         DockerService docker = getDocker(clusterName);
         RemoveVolumeArg arg = new RemoveVolumeArg();
         arg.setName(volume);
         arg.setForce(force);
-        docker.removeVolume(arg);
+        ServiceCallResult scr = docker.removeVolume(arg);
+        return UiUtils.createResponse(scr);
+    }
+
+    @RequestMapping(path = "/delete-unused", method = RequestMethod.DELETE)
+    public ResponseEntity<?> deleteUnused(@RequestParam("cluster") String clusterName) {
+        DockerService docker = getDocker(clusterName);
+        DeleteUnusedVolumesArg arg = new DeleteUnusedVolumesArg();
+        ServiceCallResult scr = docker.deleteUnusedVolumes(arg);
+        return UiUtils.createResponse(scr);
     }
 }

@@ -1129,12 +1129,12 @@ public class DockerServiceImpl implements DockerService {
 
     @Override
     public Volume createVolume(CreateVolumeCmd cmd) {
-        return postOrNullAction(makeBaseUrl().path("volumes"), cmd, Volume.class);
+        return postOrNullAction(makeBaseUrl().path("volumes/create"), cmd, Volume.class);
     }
 
     @Override
     public ServiceCallResult removeVolume(RemoveVolumeArg arg) {
-        UriComponentsBuilder ucb = makeBaseUrl().path("volumes");
+        UriComponentsBuilder ucb = makeBaseUrl().path("volumes/");
         ucb.path(arg.getName());
         Boolean force = arg.getForce();
         if(force != null) {
@@ -1154,7 +1154,7 @@ public class DockerServiceImpl implements DockerService {
 
     @Override
     public Volume getVolume(String name) {
-        return getOrNullAction(makeBaseUrl().path("volumes").path(name), Volume.class);
+        return getOrNullAction(makeBaseUrl().path("volumes/").path(name), Volume.class);
     }
 
     @Override
