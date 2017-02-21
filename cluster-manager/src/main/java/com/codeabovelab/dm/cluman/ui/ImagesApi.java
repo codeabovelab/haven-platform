@@ -31,6 +31,7 @@ import com.codeabovelab.dm.cluman.cluster.registry.RegistryService;
 import com.codeabovelab.dm.cluman.cluster.registry.data.ImageCatalog;
 import com.codeabovelab.dm.cluman.cluster.registry.data.SearchResult;
 import com.codeabovelab.dm.cluman.cluster.registry.data.Tags;
+import com.codeabovelab.dm.cluman.ds.clusters.ClusterUtils;
 import com.codeabovelab.dm.cluman.ds.clusters.SwarmNodesGroupConfig;
 import com.codeabovelab.dm.cluman.model.*;
 import com.codeabovelab.dm.cluman.source.ContainerSourceFactory;
@@ -78,6 +79,7 @@ public class ImagesApi {
     public Collection<UiDeployedImage> getDeployedImages(@PathVariable("cluster") String cluster) {
         NodesGroup nodesGroup = discoveryStorage.getCluster(cluster);
         ExtendedAssert.notFound(nodesGroup, "Cluster was not found by " + cluster);
+        ClusterUtils.checkClusterState(nodesGroup);
         Collection<DockerContainer> containers = nodesGroup.getContainers().getContainers();
         Map<String, UiDeployedImage> images = new HashMap<>();
         for (DockerContainer container : containers) {

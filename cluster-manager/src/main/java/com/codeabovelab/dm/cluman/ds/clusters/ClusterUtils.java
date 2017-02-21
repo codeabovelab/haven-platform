@@ -16,6 +16,9 @@
 
 package com.codeabovelab.dm.cluman.ds.clusters;
 
+import com.codeabovelab.dm.cluman.model.NodeGroupState;
+import com.codeabovelab.dm.cluman.model.NodesGroup;
+import com.codeabovelab.dm.cluman.validate.ExtendedAssert;
 import org.springframework.util.StringUtils;
 
 
@@ -41,4 +44,12 @@ public final class ClusterUtils {
         }
     }
 
+    /**
+     * Report 500 http error when cluster in not OK state.
+     * @param nodesGroup cluster
+     */
+    public static void checkClusterState(NodesGroup nodesGroup) {
+        NodeGroupState state = nodesGroup.getState();
+        ExtendedAssert.error(state.isOk(), "Cluster '" + nodesGroup.getName() + "' is in no OK state: " + state.getMessage());
+    }
 }
