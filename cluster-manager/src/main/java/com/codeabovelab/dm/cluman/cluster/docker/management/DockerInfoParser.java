@@ -228,7 +228,11 @@ class DockerInfoParser {
 
     private SwarmInfo convertSwarm(InfoSwarm src) {
         SwarmInfo.Builder sib = SwarmInfo.builder();
-        sib.setClusterId(src.getCluster().getId());
+        String id = src.getCluster().getId();
+        if(StringUtils.hasText(id)) {
+            // docker can place empty string here
+            sib.setClusterId(id);
+        }
         // is not sure that it mean 'is manager'
         sib.setManager(src.isControlAvailable());
         sib.setNodeId(src.getNodeId());

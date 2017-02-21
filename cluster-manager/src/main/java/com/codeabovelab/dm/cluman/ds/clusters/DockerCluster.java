@@ -161,7 +161,11 @@ public class DockerCluster extends AbstractNodesGroup<DockerClusterConfig> {
             }
             onlineManagers++;
             if(swarm != null) {
-                clusters.computeIfAbsent(swarm.getClusterId(), (k) -> new ArrayList<>()).add(node.name);
+                String clusterId = swarm.getClusterId();
+                if(clusterId == null) {
+                    continue;
+                }
+                clusters.computeIfAbsent(clusterId, (k) -> new ArrayList<>()).add(node.name);
                 if(swarm.isManager()) {
                     selectedManager = node;
                 }
@@ -186,7 +190,7 @@ public class DockerCluster extends AbstractNodesGroup<DockerClusterConfig> {
             if(node == selectedManager) {
                 continue;
             }
-            //TODO node.service.joinSwarm();
+            joinManager(node);
         }
     }
 
@@ -196,8 +200,7 @@ public class DockerCluster extends AbstractNodesGroup<DockerClusterConfig> {
         SwarmInitCmd cmd = new SwarmInitCmd();
         cmd.setSpec(getSwarmConfig());
         DockerService service = manager.getService();
-        String address = service.getAddress();
-        address = AddressUtils.setPort(address, config.getSwarmPort());
+        String address = getSwarmAddress(service);
         cmd.setListenAddr(address);
         SwarmInitResult res = service.initSwarm(cmd);
         if(res.getCode() != ResultCode.OK) {
@@ -205,6 +208,16 @@ public class DockerCluster extends AbstractNodesGroup<DockerClusterConfig> {
         }
         log.info("Initialized swarm-mode cluster on '{}' at address {}", manager.name, address);
         return manager;
+    }
+
+    /**
+     * Return address with swarm port, it differ from usual http port and use some binary protocol.
+     * @see DockerClusterConfig#getSwarmPort()
+     * @param service service of node
+     * @return address with swarm port
+     */
+    private String getSwarmAddress(DockerService service) {
+        return AddressUtils.setPort(service.getAddress(), config.getSwarmPort());
     }
 
     @Override
@@ -325,12 +338,39 @@ public class DockerCluster extends AbstractNodesGroup<DockerClusterConfig> {
         this.managers.forEach((k, v) -> {
             cmd.getManagers().addAll(clusterData.getManagers());
         });
-        cmd.setListen(ds.getAddress());
+        cmd.setListen(getSwarmAddress(ds));
         try {
             ServiceCallResult res = ds.joinSwarm(cmd);
             log.info("Result of joining node '{}': {} {}", name, res.getCode(), res.getMessage());
         } catch (RuntimeException e) {
             log.error("Can not join node '{}' due to error: ", name, e);
+        }
+    }
+
+    private void joinManager(Manager manager) {
+        log.info("Begin join manager node '{}' to '{}'", manager.name, getName());
+        DockerService ds = manager.getService();
+        if(ds == null) {
+            log.warn("Can not join master node '{}', it does not have registered docker service", manager.name);
+            return;
+        }
+        if(!ds.isOnline()) {
+            log.warn("Can not join node '{}', it offline", manager.name);
+            return;
+        }
+        ClusterData clusterData = data.get();
+        String masterToken = clusterData.getManagerToken();
+        SwarmJoinCmd cmd = new SwarmJoinCmd();
+        cmd.setToken(masterToken);
+        this.managers.forEach((k, v) -> {
+            cmd.getManagers().addAll(clusterData.getManagers());
+        });
+        cmd.setListen(getSwarmAddress(ds));
+        try {
+            ServiceCallResult res = ds.joinSwarm(cmd);
+            log.info("Result of joining node '{}': {} {}", manager.name, res.getCode(), res.getMessage());
+        } catch (RuntimeException e) {
+            log.error("Can not join node '{}' due to error: ", manager.name, e);
         }
     }
 
