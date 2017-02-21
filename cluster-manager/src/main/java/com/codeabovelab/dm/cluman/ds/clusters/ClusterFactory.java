@@ -18,6 +18,7 @@ package com.codeabovelab.dm.cluman.ds.clusters;
 
 import com.codeabovelab.dm.cluman.cluster.docker.ClusterConfigImpl;
 import com.codeabovelab.dm.cluman.model.NodesGroup;
+import com.codeabovelab.dm.cluman.security.TempAuth;
 import com.codeabovelab.dm.common.kv.mapping.KvMapperFactory;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
@@ -67,7 +68,11 @@ class ClusterFactory {
         }
         beanFactory.autowireBean(cluster);
         ccc.beforeClusterInit(cluster);
-        cluster.init();
+        storage.getExecutor().execute(() -> {
+            try(TempAuth ta = TempAuth.asSystem()) {
+                cluster.init();
+            }
+        });
         return cluster;
     }
 
