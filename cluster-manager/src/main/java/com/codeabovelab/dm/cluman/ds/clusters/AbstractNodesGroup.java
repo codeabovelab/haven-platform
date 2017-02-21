@@ -91,6 +91,10 @@ public abstract class AbstractNodesGroup<C extends AbstractNodesGroupConfig<C>> 
             }
         } finally {
             if(state.compareAndSet(S_INITING, S_FAILED)) {
+                // NOTE: if cluster may be reinited then initImpl() MUST:
+                // - properly handle any errors
+                // - set status to S_BEGIN after errors which prevent correct initialisation (like node is offline)
+                //otherwise cluster will gone to failed state, which is unrecoverable
                 log.error("Fail to init of cluster '{}'", getName());
             }
         }
