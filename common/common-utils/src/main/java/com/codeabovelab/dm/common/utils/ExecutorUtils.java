@@ -70,13 +70,15 @@ public final class ExecutorUtils {
         private final AtomicInteger count = new AtomicInteger(1);
         private final String prefix;
         private final boolean daemon;
+        private final Thread.UncaughtExceptionHandler ueh;
 
-        ThreadFactoryImpl(String name, boolean daemon) {
+        ThreadFactoryImpl(String name, boolean daemon, Thread.UncaughtExceptionHandler uncaughtExceptionHandler) {
             SecurityManager sm = System.getSecurityManager();
             group = (sm != null)? sm.getThreadGroup():
               Thread.currentThread().getThreadGroup();
             this.prefix = name.endsWith("-")? name : (name + "-");
             this.daemon = daemon;
+            this.ueh = uncaughtExceptionHandler;
         }
 
         @Override
@@ -84,6 +86,9 @@ public final class ExecutorUtils {
             Thread thread = new Thread(group, r, prefix + count.getAndIncrement());
             thread.setDaemon(daemon);
             thread.setPriority(Thread.NORM_PRIORITY);
+            if(this.ueh != null) {
+                thread.setUncaughtExceptionHandler(this.ueh);
+            }
             return thread;
         }
     }
@@ -160,7 +165,7 @@ public final class ExecutorUtils {
         }
 
         public ExecutorService build() {
-            ThreadFactory tf = new ThreadFactoryImpl(name, daemon);
+            ThreadFactory tf = new ThreadFactoryImpl(name, daemon, exceptionHandler);
             return new ThreadPoolExecutor(coreSize, maxSize, keepAlive, TimeUnit.SECONDS, new ArrayBlockingQueue<>(queueSize), tf, rejectedHandler);
         }
     }
