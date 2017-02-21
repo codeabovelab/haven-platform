@@ -309,14 +309,22 @@ public class DockerCluster extends AbstractNodesGroup<DockerClusterConfig> {
             log.warn("Can not join node '{}', it does not have registered docker service", name);
             return;
         }
+        if(!ds.isOnline()) {
+            log.warn("Can not join node '{}', it offline", name);
+            return;
+        }
         SwarmJoinCmd cmd = new SwarmJoinCmd();
         cmd.setToken(workerToken);
         this.managers.forEach((k, v) -> {
             cmd.getManagers().addAll(clusterData.getManagers());
         });
         cmd.setListen(ds.getAddress());
-        ServiceCallResult res = ds.joinSwarm(cmd);
-        log.info("Result of joining node '{}': {} {}", name, res.getCode(), res.getMessage());
+        try {
+            ServiceCallResult res = ds.joinSwarm(cmd);
+            log.info("Result of joining node '{}': {} {}", name, res.getCode(), res.getMessage());
+        } catch (RuntimeException e) {
+            log.error("Can not join node '{}' due to error: ", name, e);
+        }
     }
 
     private void leave(String node, String id) {
