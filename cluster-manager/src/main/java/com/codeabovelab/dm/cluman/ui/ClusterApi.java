@@ -149,17 +149,19 @@ public class ClusterApi {
         List<UiContainer> list = new ArrayList<>();
         NodesGroup nodesGroup = discoveryStorage.getCluster(cluster);
         ExtendedAssert.notFound(nodesGroup, "Cluster was not found by " + cluster);
-        Collection<DockerContainer> containers = nodesGroup.getContainers().getContainers();
-        Map<String, String> apps = UiUtils.mapAppContainer(applicationService, nodesGroup);
-        for (DockerContainer container : containers) {
-            UiContainer uic = UiContainer.from(container);
-            uic.enrich(discoveryStorage, containerStorage);
-            uic.setApplication(apps.get(uic.getId()));
-            UiContainer.resolveStatus(uic, nodeRegistry);
-            UiPermission.inject(uic, ac, SecuredType.CONTAINER.id(uic.getId()));
-            list.add(uic);
+        if(nodesGroup.getState().isOk()) {
+            Collection<DockerContainer> containers = nodesGroup.getContainers().getContainers();
+            Map<String, String> apps = UiUtils.mapAppContainer(applicationService, nodesGroup);
+            for (DockerContainer container : containers) {
+                UiContainer uic = UiContainer.from(container);
+                uic.enrich(discoveryStorage, containerStorage);
+                uic.setApplication(apps.get(uic.getId()));
+                UiContainer.resolveStatus(uic, nodeRegistry);
+                UiPermission.inject(uic, ac, SecuredType.CONTAINER.id(uic.getId()));
+                list.add(uic);
+            }
+            Collections.sort(list);
         }
-        Collections.sort(list);
         return new ResponseEntity<>(list, HttpStatus.OK);
     }
 
