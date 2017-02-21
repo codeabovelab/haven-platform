@@ -151,8 +151,13 @@ public class DockerCluster extends AbstractNodesGroup<DockerClusterConfig> {
                 continue;
             }
             onlineManagers++;
-            DockerServiceInfo info = service.getInfo();
-            SwarmInfo swarm = info.getSwarm();
+            SwarmInfo swarm = null;
+            try {
+                DockerServiceInfo info = service.getInfo();
+                swarm = info.getSwarm();
+            } catch (RuntimeException e) {
+                log.error("Can not get swarm info from manager '{}' due to error:", node.name, e);
+            }
             if(swarm != null) {
                 clusters.computeIfAbsent(swarm.getClusterId(), (k) -> new ArrayList<>()).add(node.name);
                 if(swarm.isManager()) {
