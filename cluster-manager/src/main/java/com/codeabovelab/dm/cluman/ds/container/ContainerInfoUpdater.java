@@ -186,16 +186,16 @@ class ContainerInfoUpdater implements SmartLifecycle {
             return;
         }
         String name = ni.getName();
-        String action = nodeEvent.getAction();
+        NodeEvent.Action action = nodeEvent.getAction();
         // we must keep container in all cases except deletion of node
-        if(StandardActions.DELETE.equals(action)) {
+        if(NodeEvent.Action.DELETE == action) {
             log.info("Node '{}' is '{}' remove containers.", name, action);
             containerStorage.removeNodeContainers(name);
             return;
         }
         // at first event 'ONLINE', node does not have a service, but we ignore second event
         // so we need to wait when docker service is registered
-        if(StandardActions.ONLINE.equals(action)) {
+        if(NodeEvent.Action.ONLINE == action) {
             DockerService dockerService = nodeStorage.getNodeService(name);
             // we do _not_ check service to 'online' here
             if(dockerService != null) {

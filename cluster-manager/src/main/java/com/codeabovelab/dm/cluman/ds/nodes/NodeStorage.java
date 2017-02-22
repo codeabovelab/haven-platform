@@ -145,21 +145,21 @@ public class NodeStorage implements NodeInfoProvider, NodeRegistry {
                 case DELETE: {
                     NodeRegistrationImpl nr = e.getValue();
                     NodeInfoImpl ni = nr == null? NodeInfoImpl.builder().name(key).build() : nr.getNodeInfo();
-                    fireNodeModification(nr, StandardActions.DELETE, ni, null);
+                    fireNodeModification(nr, NodeEvent.Action.DELETE, ni, null);
                     break;
                 }
                 default: {
                     NodeRegistrationImpl nr = this.nodes.getIfPresent(key);
                     // update events will send from node registration
                     if (nr != null && action == KvStorageEvent.Crud.CREATE) {
-                        fireNodeModification(nr, StandardActions.CREATE, null, nr.getNodeInfo());
+                        fireNodeModification(nr, NodeEvent.Action.CREATE, null, nr.getNodeInfo());
                     }
                 }
             }
         }
     }
 
-    void fireNodeModification(NodeRegistrationImpl nr, String action, NodeInfoImpl old, NodeInfoImpl current) {
+    void fireNodeModification(NodeRegistrationImpl nr, NodeEvent.Action action, NodeInfoImpl old, NodeInfoImpl current) {
         if(old == null && current == null) {
             log.error("Something wrong:  old and current values of node '{}' is null, at action '{}'", nr.getName());
             return;

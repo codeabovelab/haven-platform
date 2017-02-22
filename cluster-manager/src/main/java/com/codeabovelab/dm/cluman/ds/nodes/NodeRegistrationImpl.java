@@ -129,12 +129,12 @@ class NodeRegistrationImpl implements NodeRegistration, AutoCloseable {
             }
         }
         if(onlineChanged) {
-            fireNodeChanged(ni.isOn() ? StandardActions.ONLINE : StandardActions.OFFLINE, old, ni);
+            fireNodeChanged(ni.isOn() ? NodeEvent.Action.ONLINE : NodeEvent.Action.OFFLINE, old, ni);
         }
         return ni;
     }
 
-    private void fireNodeChanged(String action, NodeInfoImpl old, NodeInfoImpl ni) {
+    private void fireNodeChanged(NodeEvent.Action action, NodeInfoImpl old, NodeInfoImpl ni) {
         this.nodeStorage.fireNodeModification(this, action, old, ni);
     }
 
@@ -185,7 +185,7 @@ class NodeRegistrationImpl implements NodeRegistration, AutoCloseable {
             ni = getNodeInfo();
         }
         if(!Objects.equals(oldni, ni)) {//we try to reduce count of unnecessary 'update' events
-            fireNodeChanged(StandardActions.UPDATE, oldni, ni);
+            fireNodeChanged(NodeEvent.Action.UPDATE, oldni, ni);
         }
         if(nmnew != null) {
             this.healthBus.accept(new NodeHealthEvent(this.name, cluster, nmnew));
@@ -209,7 +209,7 @@ class NodeRegistrationImpl implements NodeRegistration, AutoCloseable {
             }
         }
         if(ni != null) {
-            fireNodeChanged(StandardActions.UPDATE, oldInfo, ni);
+            fireNodeChanged(NodeEvent.Action.UPDATE, oldInfo, ni);
         }
     }
 

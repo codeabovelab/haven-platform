@@ -25,5 +25,5 @@ public interface WithAction {
      * @see StandardActions
      * @return
      */
-    String getAction();
+    Object getAction();
 }

@@ -16,6 +16,7 @@
 
 package com.codeabovelab.dm.cluman.model;
 
+import com.codeabovelab.dm.common.json.JtEnumLower;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -28,13 +29,19 @@ import org.springframework.util.Assert;
 @Data
 public final class NodeEvent extends Event implements WithCluster, WithAction {
 
+    @JtEnumLower
+    public enum Action {
+        ONLINE, OFFLINE,
+        CREATE, UPDATE, DELETE,
+    }
+
     @EqualsAndHashCode(callSuper = true)
     @Data
     public static class Builder extends Event.Builder<Builder, NodeEvent> {
 
         private NodeInfo old;
         private NodeInfo current;
-        private String action;
+        private Action action;
 
         public Builder old(NodeInfo old) {
             setOld(old);
@@ -51,7 +58,7 @@ public final class NodeEvent extends Event implements WithCluster, WithAction {
          * @param action
          * @return
          */
-        public Builder action(String action) {
+        public Builder action(Action action) {
             setAction(action);
             return this;
         }
@@ -69,7 +76,7 @@ public final class NodeEvent extends Event implements WithCluster, WithAction {
     public static final String BUS = "bus.cluman.node";
     private final NodeInfo old;
     private final NodeInfo current;
-    private final String action;
+    private final Action action;
 
     @JsonCreator
     public NodeEvent(Builder b) {
