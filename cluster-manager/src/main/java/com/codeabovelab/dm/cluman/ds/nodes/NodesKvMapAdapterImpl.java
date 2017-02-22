@@ -46,6 +46,8 @@ class NodesKvMapAdapterImpl implements KvMapAdapter<NodeRegistrationImpl> {
             source.updateNodeInfo(b -> {
                 NodeMetrics om = b.getHealth();
                 b.from(ni);
+                //name may be reset in 'from'
+                b.name(key);
                 b.health(om);
             });
         }

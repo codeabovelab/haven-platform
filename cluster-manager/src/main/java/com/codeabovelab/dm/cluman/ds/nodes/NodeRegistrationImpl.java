@@ -161,9 +161,6 @@ class NodeRegistrationImpl implements NodeRegistration, AutoCloseable {
      */
     void updateNodeInfo(Consumer<NodeInfoImpl.Builder> modifier) {
         checkAccessUpdate();
-        //
-        // do not send node events from this method!
-        //
         NodeMetrics nmnew = null;
         String cluster;
         NodeInfoImpl oldni;
@@ -172,7 +169,14 @@ class NodeRegistrationImpl implements NodeRegistration, AutoCloseable {
             oldni = getNodeInfo();
             NodeMetrics oldMetrics = this.builder.getHealth();
             boolean on = this.builder.isOn();
-            modifier.accept(this.builder);
+            NodeInfoImpl.Builder copy = NodeInfoImpl.builder(this.builder);
+            modifier.accept(copy);
+            validate(copy);
+            boolean cancel = nodeStorage.fireNodePreModification(oldni, copy.build());
+            if(cancel) {
+                return;
+            }
+            this.builder.from(copy);
             NodeMetrics newMetrics = this.builder.getHealth();
             if(!Objects.equals(oldMetrics, newMetrics)) {
                 nmnew = newMetrics;
@@ -192,6 +196,11 @@ class NodeRegistrationImpl implements NodeRegistration, AutoCloseable {
         }
     }
 
+    private void validate(NodeInfoImpl.Builder copy) {
+        Assert.isTrue(Objects.equals(copy.getName(), this.name),
+          "Wrong name of modified node: " + copy.getName() + ", when must be: " + this.name);
+    }
+
     public void setCluster(String cluster) {
         update(this.builder::getCluster, this.builder::setCluster, cluster);
     }
@@ -206,6 +215,17 @@ class NodeRegistrationImpl implements NodeRegistration, AutoCloseable {
                 setter.accept(value);
                 cache = null;
                 ni = getNodeInfo();
+                boolean cancel = true;
+                try {
+                    cancel = nodeStorage.fireNodePreModification(oldInfo, ni);
+                } finally {
+                    if(cancel) {
+                        // it not good practice, and require that setter must be 'safe'
+                        setter.accept(oldVal);
+                        cache = null;
+                        ni = null;
+                    }
+                }
             }
         }
         if(ni != null) {

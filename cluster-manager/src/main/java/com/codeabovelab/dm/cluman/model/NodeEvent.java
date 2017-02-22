@@ -33,6 +33,27 @@ public final class NodeEvent extends Event implements WithCluster, WithAction {
     public enum Action {
         ONLINE, OFFLINE,
         CREATE, UPDATE, DELETE,
+        /**
+         * This event raise before node delete. You can cancel this trought call {@link NodeEvent#cancel()}.
+         */
+        PRE_DELETE(true),
+        /**
+         * This event raise before node delete. You can cancel this trought call {@link NodeEvent#cancel()}.
+         */
+        PRE_UPDATE(true);
+        boolean pre;
+
+        Action() {
+            this(false);
+        }
+
+        Action(boolean pre) {
+            this.pre = pre;
+        }
+
+        public boolean isPre() {
+            return pre;
+        }
     }
 
     @EqualsAndHashCode(callSuper = true)
@@ -42,6 +63,7 @@ public final class NodeEvent extends Event implements WithCluster, WithAction {
         private NodeInfo old;
         private NodeInfo current;
         private Action action;
+        private Runnable canceller;
 
         public Builder old(NodeInfo old) {
             setOld(old);
@@ -63,6 +85,16 @@ public final class NodeEvent extends Event implements WithCluster, WithAction {
             return this;
         }
 
+        /**
+         * callback for cancel. Applicable for {@link Action#PRE_UPDATE }
+         * @param canceller
+         * @return this
+         */
+        public Builder canceller(Runnable canceller) {
+            setCanceller(canceller);
+            return this;
+        }
+
         @Override
         public NodeEvent build() {
             Assert.isTrue(this.current != null || this.old != null, "Old and current values is null.");
@@ -77,6 +109,7 @@ public final class NodeEvent extends Event implements WithCluster, WithAction {
     private final NodeInfo old;
     private final NodeInfo current;
     private final Action action;
+    private final Runnable canceller;
 
     @JsonCreator
     public NodeEvent(Builder b) {
@@ -84,6 +117,7 @@ public final class NodeEvent extends Event implements WithCluster, WithAction {
         this.old = b.old;
         this.current = b.current;
         this.action = b.action;
+        this.canceller = b.canceller;
     }
 
     public static Builder builder() {
@@ -106,5 +140,14 @@ public final class NodeEvent extends Event implements WithCluster, WithAction {
     @Override
     public String getCluster() {
         return getNode().getCluster();
+    }
+
+    /**
+     * Invoke {@link  Builder#getCanceller()} when it exists, otherwise do nothing.
+     */
+    public void cancel() {
+        if(this.canceller != null) {
+            this.canceller.run();
+        }
     }
 }

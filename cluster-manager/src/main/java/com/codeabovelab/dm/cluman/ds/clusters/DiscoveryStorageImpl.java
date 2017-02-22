@@ -159,7 +159,11 @@ public class DiscoveryStorageImpl implements DiscoveryStorage {
         if (node == null) {
             return;
         }
-        NodesGroup cluster = findNodeCluster(node.getName());
+        String clusterName = node.getCluster();
+        if(clusterName == null) {
+            return;
+        }
+        NodesGroup cluster = getCluster(clusterName);
         if (cluster == null) {
             log.warn("Node without cluster {}", node);
             return;

@@ -55,6 +55,7 @@ import javax.annotation.PostConstruct;
 import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.RejectedExecutionException;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 
@@ -170,12 +171,35 @@ public class NodeStorage implements NodeInfoProvider, NodeRegistry {
           .current(current)
           .old(old)
           .build();
-        //we use async execution only from another event handler
+        //TODO we must send event in same thread, an use another thread  - the consumer choice
+        //     we use async execution only from another event handler
         this.executorService.execute(() -> {
             try (TempAuth auth = TempAuth.asSystem()) {
-                this.nodeEventBus.accept(ne);
+                fireNodeEventSync(ne);
             }
         });
+    }
+
+    private void fireNodeEventSync(NodeEvent ne) {
+        this.nodeEventBus.accept(ne);
+    }
+
+    /**
+     *
+     * @param old
+     * @param curr
+     * @return true when {@link NodeEvent#cancel()} was called in one of event consumers
+     */
+    boolean fireNodePreModification(NodeInfoImpl old, NodeInfoImpl curr) {
+        AtomicBoolean cancel = new AtomicBoolean(false);
+        NodeEvent ne = NodeEvent.builder()
+          .canceller(() -> cancel.set(true))
+          .action(NodeEvent.Action.PRE_UPDATE)
+          .old(old)
+          .current(curr)
+          .build();
+        fireNodeEventSync(ne);
+        return cancel.get();
     }
 
     private void onDockerServiceEvent(DockerServiceEvent e) {
@@ -289,7 +313,16 @@ public class NodeStorage implements NodeInfoProvider, NodeRegistry {
         NodeUtils.checkName(name);
         NodeRegistrationImpl nr = getNodeRegistrationInternal(name);
         checkAccess(nr, Action.DELETE);
-        nodes.remove(name);
+        AtomicBoolean cancel = new AtomicBoolean(false);
+        NodeEvent ne = NodeEvent.builder()
+          .action(NodeEvent.Action.PRE_DELETE)
+          .old(nr.getNodeInfo())
+          .canceller(() -> cancel.set(true))
+          .build();
+        fireNodeEventSync(ne);
+        if(!cancel.get()) {
+            nodes.remove(name);
+        }
     }
 
     private NodeRegistrationImpl getOrCreateNodeRegistration(String name) {
