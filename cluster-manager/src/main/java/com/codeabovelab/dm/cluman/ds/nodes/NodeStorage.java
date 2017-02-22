@@ -354,7 +354,7 @@ public class NodeStorage implements NodeInfoProvider, NodeRegistry {
         nodes.flush(nr.getName());
     }
 
-    public void setNodeCluster(String nodeName, String cluster) {
+    public NodeInfo setNodeCluster(String nodeName, String cluster) {
         NodeRegistrationImpl nr = getNodeRegistrationInternal(nodeName);
         if(nr == null) {
             throw new HttpException(HttpStatus.NOT_FOUND, "Node '" + nodeName + "' is not found");
@@ -367,6 +367,7 @@ public class NodeStorage implements NodeInfoProvider, NodeRegistry {
             nr.setCluster(cluster);
             save(nr);
         }
+        return nr.getNodeInfo();
     }
 
     @Override

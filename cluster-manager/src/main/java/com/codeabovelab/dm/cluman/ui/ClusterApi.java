@@ -240,15 +240,15 @@ public class ClusterApi {
         if (cluster.getFeatures().contains(NodesGroup.Feature.FORBID_NODE_ADDITION)) {
             throw new HttpException(HttpStatus.BAD_REQUEST, "Cluster: " + clusterId + " does not allow addition of nodes.");
         }
-        nodeRegistry.setNodeCluster(node, clusterId);
-        return new ResponseEntity<>(HttpStatus.OK);
+        NodeInfo ni = nodeRegistry.setNodeCluster(node, clusterId);
+        return new ResponseEntity<>(Objects.equals(clusterId, ni.getCluster())? HttpStatus.OK : HttpStatus.CONFLICT);
     }
 
     @ApiOperation("Remove node from specified cluster. Also you can use 'all' cluster or any other - node will be correctly removed anyway.")
     @RequestMapping(value = "/clusters/{cluster}/nodes/{node}", method = DELETE)
     public ResponseEntity<?> removeNode(@PathVariable("cluster") String clusterId, @PathVariable("node") String node) {
-        nodeRegistry.setNodeCluster(node, null);
-        return new ResponseEntity<>(HttpStatus.OK);
+        NodeInfo ni = nodeRegistry.setNodeCluster(node, null);
+        return new ResponseEntity<>(ni.getCluster() == null? HttpStatus.OK : HttpStatus.CONFLICT);
     }
 
     @RequestMapping(value = "/clusters/{cluster}/registries", method = GET)

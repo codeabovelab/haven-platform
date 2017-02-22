@@ -110,11 +110,24 @@ public class DockerCluster extends AbstractNodesGroup<DockerClusterConfig> {
     }
 
     private void onNodeEvent(NodeEvent e) {
+        final NodeEvent.Action action = e.getAction();
         NodeInfo old = e.getOld();
         NodeInfo curr = e.getCurrent();
         final String thisCluster = getName();
         boolean nowOur = curr != null && thisCluster.equals(curr.getCluster());
         boolean wasOur = old != null && thisCluster.equals(old.getCluster());
+        if(action.isPre()) {
+            final String nodeName = e.getNode().getName();
+            // we cancel some events only for for master nodes
+            if(!managers.containsKey(nodeName)) {
+                return;
+            }
+            if(action == NodeEvent.Action.PRE_DELETE ||
+               action == NodeEvent.Action.PRE_UPDATE && wasOur && !nowOur) {
+               e.cancel();
+            }
+            return;
+        }
         if (wasOur != nowOur) {
             nodesMap.invalidate();
             // force update nodes
