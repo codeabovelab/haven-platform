@@ -274,7 +274,12 @@ public class DockerCluster extends AbstractNodesGroup<DockerClusterConfig> {
                 }
                 // down node may mean that it simply leave from cluster but not removed, we must try to join it
                 //
-                joinWorker(name);
+                Manager manager = managers.get(name);
+                if(manager != null) {
+                    joinManager(manager);
+                } else {
+                    joinWorker(name);
+                }
 
             });
             // add nodes which is not in cluster
