@@ -131,6 +131,7 @@ public class KvMap<T> {
         private volatile T value;
         private final Map<String, Long> index = new ConcurrentHashMap<>();
         private volatile boolean dirty = true;
+        private volatile boolean barrier = false;
 
         ValueHolder(String key) {
             Assert.notNull(key, "key is null");
@@ -203,20 +204,28 @@ public class KvMap<T> {
         }
 
         synchronized void load() {
-            T old = (dirty && !passDirty)? null : value;
-            Object obj = mapper.load(key, adapter.getType(old));
-            T newVal = null;
-            if(obj != null || old != null) {
-                newVal = adapter.set(this.key, old, obj);
-                if(newVal == null) {
-                    throw new IllegalStateException("Adapter " + adapter + " broke contract: it return null value for non null object.");
-                }
+            if(barrier) {
+                throw new IllegalArgumentException("Recursion detected.");
             }
-            this.dirty = false;
-            //here we must raise local event, but need to use another action like LOAD or SET,
-            // UPDATE and CREATE - is not acceptable here
-            this.value = newVal;
-            onLocal(KvMapLocalEvent.Action.LOAD, this, old, newVal);
+            barrier = true;
+            try {
+                T old = (dirty && !passDirty)? null : value;
+                Object obj = mapper.load(key, adapter.getType(old));
+                T newVal = null;
+                if(obj != null || old != null) {
+                    newVal = adapter.set(this.key, old, obj);
+                    if(newVal == null) {
+                        throw new IllegalStateException("Adapter " + adapter + " broke contract: it return null value for non null object.");
+                    }
+                }
+                this.dirty = false;
+                //here we must raise local event, but need to use another action like LOAD or SET,
+                // UPDATE and CREATE - is not acceptable here
+                this.value = newVal;
+                onLocal(KvMapLocalEvent.Action.LOAD, this, old, newVal);
+            } finally {
+                barrier = false;
+            }
         }
 
         synchronized T getIfPresent() {
