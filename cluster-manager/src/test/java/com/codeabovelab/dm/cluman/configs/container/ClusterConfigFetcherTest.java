@@ -117,6 +117,7 @@ public class ClusterConfigFetcherTest {
               .restTemplate(restTemplate)
               .nodeInfoProvider(mock(NodeInfoProvider.class))
               .eventConsumer(mock(MessageBus.class))
+              .objectMapper(new ObjectMapper())
               .build();
         }
 

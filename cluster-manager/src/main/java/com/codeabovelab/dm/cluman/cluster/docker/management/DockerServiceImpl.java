@@ -32,6 +32,8 @@ import com.codeabovelab.dm.common.utils.Consumers;
 import com.codeabovelab.dm.common.utils.SingleValueCache;
 import com.codeabovelab.dm.common.utils.StringUtils;
 import com.codeabovelab.dm.common.utils.Throwables;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
 import lombok.Data;
@@ -78,6 +80,7 @@ public class DockerServiceImpl implements DockerService {
         private ClusterConfig config;
         private String cluster;
         private String node;
+        private ObjectMapper objectMapper;
         private AsyncRestTemplate restTemplate;
         private NodeInfoProvider nodeInfoProvider;
         private Consumer<DockerServiceEvent> eventConsumer;
@@ -121,6 +124,11 @@ public class DockerServiceImpl implements DockerService {
             return this;
         }
 
+        public Builder objectMapper(ObjectMapper objectMapper) {
+            setObjectMapper(objectMapper);
+            return this;
+        }
+
         public DockerServiceImpl build() {
             return new DockerServiceImpl(this);
         }
@@ -140,6 +148,7 @@ public class DockerServiceImpl implements DockerService {
     private final JsonStreamProcessor<Statistics> statisticsProcessor = new JsonStreamProcessor<>(Statistics.class);
     private final Consumer<DockerServiceEvent> eventConsumer;
     private final Consumer<DockerServiceInfo.Builder> infoInterceptor;
+    private final ObjectMapper objectMapper;
     private final String node;
     private final String cluster;
     private final String id;
@@ -161,6 +170,8 @@ public class DockerServiceImpl implements DockerService {
         this.eventConsumer = b.eventConsumer;
         Assert.notNull(this.eventConsumer, "eventConsumer is null");
         this.infoInterceptor = b.infoInterceptor;
+        this.objectMapper = b.objectMapper;
+        Assert.notNull(this.objectMapper, "objectMapper is null");
 
         this.maxTimeout = Math.max(TimeUnit.SECONDS.toMillis(clusterConfig.getDockerTimeout()), FAST_TIMEOUT * 10);
         this.infoCache = SingleValueCache.builder(this::getInfoForCache)
@@ -810,9 +821,15 @@ public class DockerServiceImpl implements DockerService {
         return postAction(ub, cmd);
     }
 
-    private Object toJson(Object obj) {
-        // it need to pass ObjectMapper into this class
-        throw new UnsupportedOperationException("not supported yet");
+    private String toJson(Object obj) {
+        if(obj == null) {
+            return null;
+        }
+        try {
+            return objectMapper.writeValueAsString(obj);
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException("Can not serialize to json.", e);
+        }
     }
 
     @Override

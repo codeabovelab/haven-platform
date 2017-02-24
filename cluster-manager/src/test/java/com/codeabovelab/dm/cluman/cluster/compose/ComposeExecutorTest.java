@@ -7,6 +7,7 @@ import com.codeabovelab.dm.cluman.cluster.docker.management.DockerService;
 import com.codeabovelab.dm.cluman.cluster.docker.management.DockerServiceImpl;
 import com.codeabovelab.dm.cluman.model.NodeInfoProvider;
 import com.codeabovelab.dm.common.mb.MessageBus;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -39,6 +40,7 @@ public class ComposeExecutorTest {
           .restTemplate(new AsyncRestTemplate())
           .nodeInfoProvider(mock(NodeInfoProvider.class))
           .eventConsumer(mock(MessageBus.class))
+          .objectMapper(new ObjectMapper())
           .cluster("test")
           .build();
         ClassLoader classLoader = getClass().getClassLoader();

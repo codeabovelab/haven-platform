@@ -19,6 +19,7 @@ import com.codeabovelab.dm.cluman.model.DockerContainer;
 import com.codeabovelab.dm.cluman.model.ImageDescriptor;
 import com.codeabovelab.dm.cluman.model.NodeInfoProvider;
 import com.codeabovelab.dm.common.mb.MessageBus;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Ignore;
@@ -54,6 +55,7 @@ public class DockerServiceImplTest {
           .restTemplate(restTemplate)
           .nodeInfoProvider(mock(NodeInfoProvider.class))
           .eventConsumer(mock(MessageBus.class))
+          .objectMapper(new ObjectMapper())
           .build();
     }
 

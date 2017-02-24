@@ -29,6 +29,7 @@ import com.codeabovelab.dm.cluman.security.TempAuth;
 import com.codeabovelab.dm.common.mb.MessageBus;
 import com.codeabovelab.dm.common.utils.Throwables;
 import com.codeabovelab.dm.platform.http.async.NettyRequestFactory;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -64,6 +65,9 @@ public class DockerServiceFactory {
     @Autowired
     private AccessContextFactory aclContextFactory;
 
+    @Autowired
+    private ObjectMapper objectMapper;
+
     public DockerServiceFactory() {
         this.executor = Executors.newSingleThreadExecutor(new ThreadFactoryBuilder()
           .setDaemon(true)
@@ -85,6 +89,7 @@ public class DockerServiceFactory {
         if (dockerConsumer != null) {
             dockerConsumer.accept(b);
         }
+        b.setObjectMapper(objectMapper);
         DockerService ds = b.build();
         ds = securityWrapper(ds);
         return ds;
