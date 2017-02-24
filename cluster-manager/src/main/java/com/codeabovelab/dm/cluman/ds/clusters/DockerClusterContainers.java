@@ -219,10 +219,12 @@ class DockerClusterContainers implements ContainersManager {
 
     @Override
     public ServiceCallResult updateContainer(EditContainerArg arg) {
-        DockerService ds = getContainerDocker(arg.getContainerId());
+        String containerId = arg.getContainerId();
+        DockerService ds = getContainerDocker(containerId);
         UpdateContainerCmd cmd = new UpdateContainerCmd();
         EditableContainerSource src = arg.getSource();
         cmd.from(src);
+        cmd.setId(containerId);
         return ds.updateContainer(cmd);
     }
 

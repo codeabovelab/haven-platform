@@ -765,7 +765,9 @@ public class DockerServiceImpl implements DockerService {
 
     @Override
     public ServiceCallResult updateContainer(UpdateContainerCmd cmd) {
-        UriComponentsBuilder ub = getUrlContainer(cmd.getId(), "update");
+        String id = cmd.getId();
+        Assert.hasText(id, "id is null or empty");
+        UriComponentsBuilder ub = getUrlContainer(id, "update");
         URI uri = ub.build().toUri();
         try {
             ResponseEntity<UpdateContainerResponse> res = getSlow(() -> restTemplate.exchange(uri, HttpMethod.POST,
