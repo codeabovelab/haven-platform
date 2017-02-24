@@ -710,8 +710,20 @@ public class DockerServiceImpl implements DockerService {
 
     private void processStatusCodeException(HttpStatusCodeException e, ServiceCallResult res, URI uri) {
         setCode(e.getStatusCode(), res);
-        String msg = formatHttpException(e);
-        res.setMessage(msg);
+        String msg = null;
+        try {
+            if(MediaType.APPLICATION_JSON.includes(e.getResponseHeaders().getContentType())) {
+                objectMapper.reader().withValueToUpdate(res).readValue(e.getResponseBodyAsString());
+                msg = res.getMessage();
+            }
+        } catch (Exception ex) {
+            log.error("Can not process status code exception message.", ex);
+        }
+        // in some cases msg may be null on success reading value, but anyway we need to make non null value manually
+        if(msg == null) {
+            msg = formatHttpException(e);
+            res.setMessage(msg);
+        }
         // we log message as debug because consumer code must log error too, but with high level,
         // when we log it as warn then error will cause to many duplicate lines in log
         log.warn("Fail to execute '{}' due to error: {}", uri, msg);
