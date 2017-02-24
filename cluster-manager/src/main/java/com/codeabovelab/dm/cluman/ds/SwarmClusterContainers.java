@@ -64,6 +64,7 @@ public class SwarmClusterContainers extends AbstractContainersManager {
         UpdateContainerCmd cmd = new UpdateContainerCmd();
         EditableContainerSource src = arg.getSource();
         cmd.from(src);
+        cmd.setId(arg.getContainerId());
         return getDocker().updateContainer(cmd);
     }
 
