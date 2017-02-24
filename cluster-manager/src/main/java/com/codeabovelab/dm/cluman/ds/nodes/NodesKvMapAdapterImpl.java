@@ -18,7 +18,6 @@ package com.codeabovelab.dm.cluman.ds.nodes;
 
 import com.codeabovelab.dm.cluman.model.NodeInfo;
 import com.codeabovelab.dm.cluman.model.NodeInfoImpl;
-import com.codeabovelab.dm.cluman.model.NodeMetrics;
 import com.codeabovelab.dm.common.kv.mapping.KvMapAdapter;
 
 /**
@@ -44,11 +43,10 @@ class NodesKvMapAdapterImpl implements KvMapAdapter<NodeRegistrationImpl> {
             source = nodeStorage.newRegistration(nib);
         } else {
             source.updateNodeInfo(b -> {
-                NodeMetrics om = b.getHealth();
-                b.from(ni);
-                //name may be reset in 'from'
-                b.name(key);
-                b.health(om);
+                b.address(ni.getAddress());
+                b.setCluster(ni.getCluster());
+                b.setIdInCluster(ni.getIdInCluster());
+                b.setLabels(ni.getLabels());
             });
         }
         return source;
