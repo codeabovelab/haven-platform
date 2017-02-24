@@ -35,6 +35,7 @@ public class NodeInfoImpl implements NodeInfo, Comparable<NodeInfoImpl> {
 
     @Data
     public static final class Builder implements NodeInfo {
+        private long version;
         private String name;
         @NotNull
         @KvMapping
@@ -62,6 +63,7 @@ public class NodeInfoImpl implements NodeInfo, Comparable<NodeInfoImpl> {
                 labels(ni.getLabels());
                 setOn(ni.isOn());
                 setCluster(ni.getCluster());
+                setVersion(ni.getVersion());
                 setIdInCluster(ni.getIdInCluster());
                 setHealth(ni.getHealth());
             }
@@ -99,6 +101,11 @@ public class NodeInfoImpl implements NodeInfo, Comparable<NodeInfoImpl> {
             return this;
         }
 
+        public Builder version(long version) {
+            setVersion(version);
+            return this;
+        }
+
         public Builder address(String host) {
             setAddress(host);
             return this;
@@ -133,6 +140,7 @@ public class NodeInfoImpl implements NodeInfo, Comparable<NodeInfoImpl> {
     }
 
     private final String name;
+    private final long version;
     private final boolean on;
     private final String address;
     private final String cluster;
@@ -143,6 +151,7 @@ public class NodeInfoImpl implements NodeInfo, Comparable<NodeInfoImpl> {
     @JsonCreator
     public NodeInfoImpl(Builder builder) {
         this.name = builder.name;
+        this.version = builder.version;
         this.on = builder.on;
         this.address = builder.address;
         this.cluster = builder.cluster;

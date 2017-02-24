@@ -381,12 +381,17 @@ class VirtualDockerService implements DockerService {
 
     @Override
     public List<SwarmNode> getNodes(GetNodesArg cmd) {
-        return null;
+        return Collections.emptyList();
     }
 
     @Override
     public ServiceCallResult removeNode(RemoveNodeArg arg) {
-        return null;
+        return notSupported();
+    }
+
+    @Override
+    public ServiceCallResult updateNode(UpdateNodeCmd cmd) {
+        return notSupported();
     }
 
     @Override
@@ -406,7 +411,7 @@ class VirtualDockerService implements DockerService {
 
     @Override
     public ServiceCallResult deleteService(String service) {
-        return null;
+        return notSupported();
     }
 
     @Override

@@ -1057,6 +1057,18 @@ public class DockerServiceImpl implements DockerService {
     }
 
     @Override
+    public ServiceCallResult updateNode(UpdateNodeCmd cmd) {
+        Assert.notNull(cmd, "cmd is null");
+        String nodeId = cmd.getNodeId();
+        Assert.hasText(nodeId, "nodeId is null");
+        UriComponentsBuilder ucb = makeUrl("/nodes/").path(nodeId).path("/update");
+        ucb.queryParam("version", cmd.getVersion());
+        return postAction(ucb, cmd);
+    }
+
+
+
+    @Override
     public List<Service> getServices(GetServicesArg arg) {
         Assert.notNull(arg, "arg is null");
         Service[] services = getOrNullAction(makeUrl("/services"), Service[].class);

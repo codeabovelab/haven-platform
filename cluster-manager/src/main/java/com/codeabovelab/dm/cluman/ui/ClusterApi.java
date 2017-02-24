@@ -19,6 +19,7 @@ package com.codeabovelab.dm.cluman.ui;
 import com.codeabovelab.dm.cluman.cluster.docker.ClusterConfigImpl;
 import com.codeabovelab.dm.cluman.cluster.application.ApplicationService;
 import com.codeabovelab.dm.cluman.cluster.docker.management.DockerUtils;
+import com.codeabovelab.dm.cluman.cluster.docker.model.UpdateNodeCmd;
 import com.codeabovelab.dm.cluman.cluster.registry.RegistryRepository;
 import com.codeabovelab.dm.cluman.ds.clusters.*;
 import com.codeabovelab.dm.cluman.ds.container.ContainerStorage;
@@ -249,6 +250,23 @@ public class ClusterApi {
     public ResponseEntity<?> removeNode(@PathVariable("cluster") String clusterId, @PathVariable("node") String node) {
         NodeInfo ni = nodeRegistry.setNodeCluster(node, null);
         return new ResponseEntity<>(ni.getCluster() == null? HttpStatus.OK : HttpStatus.CONFLICT);
+    }
+
+    @RequestMapping(value = "/clusters/{cluster}/nodes/{node}/update", method = POST)
+    public ResponseEntity<?> updateNode(@PathVariable("cluster") String clusterId,
+                                        @PathVariable("node") String node,
+                                        @RequestBody UiUpdateClusterNode body) {
+        NodesGroup ng = discoveryStorage.getCluster(clusterId);
+        ExtendedAssert.notFound(ng, "Cluster was not found by " + clusterId);
+        NodeInfo nodeInfo = nodeRegistry.getNodeInfo(node);
+        ExtendedAssert.notFound(nodeInfo, "NodeInfo was not found by " + node);
+        UpdateNodeCmd cmd = new UpdateNodeCmd();
+        cmd.setNodeId(nodeInfo.getIdInCluster());
+        cmd.setVersion(body.getVersion());
+        cmd.setLabels(body.getLabels());
+        cmd.setAvailability(body.getAvailability());
+        cmd.setRole(body.getRole());
+        return UiUtils.createResponse(ng.getDocker().updateNode(cmd));
     }
 
     @RequestMapping(value = "/clusters/{cluster}/registries", method = GET)

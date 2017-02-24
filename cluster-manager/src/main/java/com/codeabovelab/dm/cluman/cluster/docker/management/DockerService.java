@@ -238,6 +238,7 @@ public interface DockerService {
     List<SwarmNode> getNodes(GetNodesArg cmd);
 
     ServiceCallResult removeNode(RemoveNodeArg arg);
+    ServiceCallResult updateNode(UpdateNodeCmd cmd);
 
     List<Service> getServices(GetServicesArg arg);
     ServiceCreateResult createService(CreateServiceArg arg);

@@ -83,4 +83,9 @@ public class NodeAgentData implements NodeInfo {
     public String getIdInCluster() {
         return null;
     }
+
+    @Override
+    public long getVersion() {
+        return 0;
+    }
 }

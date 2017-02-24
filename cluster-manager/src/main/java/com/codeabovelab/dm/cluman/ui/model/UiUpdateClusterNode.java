@@ -14,15 +14,32 @@
  * limitations under the License.
  */
 
-package com.codeabovelab.dm.cluman.cluster.docker.model.swarm;
+package com.codeabovelab.dm.cluman.ui.model;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
+import com.codeabovelab.dm.cluman.cluster.docker.model.UpdateNodeCmd;
 import lombok.Data;
+
+import java.util.Map;
 
 /**
  */
 @Data
-public class SwarmVersion {
-    @JsonProperty("Index")
-    private final long index;
+public class UiUpdateClusterNode {
+    /**
+     * Code from 'node.version'
+     */
+    private long version;
+
+    private Map<String, String> labels;
+
+    /**
+     * Role of the node.
+     */
+    private UpdateNodeCmd.Role role;
+
+    /**
+     * Availability of the node.
+     */
+    private UpdateNodeCmd.Availability availability;
+
 }

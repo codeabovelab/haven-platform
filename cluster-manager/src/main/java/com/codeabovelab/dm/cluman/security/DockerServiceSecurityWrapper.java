@@ -347,6 +347,12 @@ public class DockerServiceSecurityWrapper implements DockerService {
     }
 
     @Override
+    public ServiceCallResult updateNode(UpdateNodeCmd cmd) {
+        checkServiceAccess(Action.ALTER_INSIDE);
+        return service.updateNode(cmd);
+    }
+
+    @Override
     public Service getService(String service) {
         checkServiceAccess(Action.READ);
         return this.service.getService(service);

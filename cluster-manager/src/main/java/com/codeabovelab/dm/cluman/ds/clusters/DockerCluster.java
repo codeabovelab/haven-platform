@@ -428,6 +428,7 @@ public class DockerCluster extends AbstractNodesGroup<DockerClusterConfig> {
             }
             b.idInCluster(sn.getId());
             b.address(address);
+            b.version(sn.getVersion().getIndex());
             NodeMetrics.Builder nmb = NodeMetrics.builder();
             NodeMetrics.State state = getState(sn);
             nmb.state(state);

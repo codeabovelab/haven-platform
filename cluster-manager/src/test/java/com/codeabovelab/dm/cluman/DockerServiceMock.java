@@ -445,6 +445,10 @@ public class DockerServiceMock implements DockerService {
         return new ServiceCallResult().code(ResultCode.CONFLICT);
     }
 
+    private ServiceCallResult resultNotSupported() {
+        return new ServiceCallResult().code(ResultCode.ERROR).message("Not supported");
+    }
+
     @Override
     public SwarmInspectResponse getSwarm() {
         return null;
@@ -472,7 +476,12 @@ public class DockerServiceMock implements DockerService {
 
     @Override
     public ServiceCallResult removeNode(RemoveNodeArg arg) {
-        return null;
+        return resultNotSupported();
+    }
+
+    @Override
+    public ServiceCallResult updateNode(UpdateNodeCmd cmd) {
+        return resultNotSupported();
     }
 
     @Override
