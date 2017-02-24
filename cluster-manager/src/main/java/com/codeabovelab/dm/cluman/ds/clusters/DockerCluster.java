@@ -432,7 +432,7 @@ public class DockerCluster extends AbstractNodesGroup<DockerClusterConfig> {
             NodeMetrics.Builder nmb = NodeMetrics.builder();
             NodeMetrics.State state = getState(sn);
             nmb.state(state);
-            nmb.manager(managers.containsKey(nodeName));
+            nmb.manager(sn.getManagerStatus() != null);
             nmb.healthy(state == NodeMetrics.State.HEALTHY);
             b.mergeHealth(nmb.build());
             Map<String, String> labels = sn.getDescription().getEngine().getLabels();
