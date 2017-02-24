@@ -276,21 +276,22 @@ public class DockerServiceImpl implements DockerService {
 
     @Override
     public List<ImageItem> getImages(GetImagesArg arg) {
-        try {
-            UriComponentsBuilder builder = makeUrl("images/" + SUFF_JSON);
-            builder.queryParam("all", arg.isAll() ? "1" : "0");
-            // 'filters' have too complex format, we need to implement high level filtering api for it
-            // filters – a JSON encoded value of the filters (a map[string][]string) to process on the images list. Available filters:
-            //   dangling=true
-            //   label=key or label="key=value" of an image label
-            //builder.queryParam("filters", arg.getFilters());
+        UriComponentsBuilder builder = makeUrl("images/" + SUFF_JSON);
+        builder.queryParam("all", arg.isAll() ? "1" : "0");
+        // 'filters' have too complex format, we need to implement high level filtering api for it
+        // filters – a JSON encoded value of the filters (a map[string][]string) to process on the images list. Available filters:
+        //   dangling=true
+        //   label=key or label="key=value" of an image label
+        //builder.queryParam("filters", arg.getFilters());
 
-            //filter - support only full image name with repo, not mask or substring
-            builder.queryParam("filter", arg.getName());
-            ResponseEntity<ImageItem[]> entity = getFast(() -> restTemplate.getForEntity(builder.toUriString(), ImageItem[].class));
+        //filter - support only full image name with repo, not mask or substring
+        builder.queryParam("filter", arg.getName());
+        URI uri = builder.build().toUri();
+        try {
+            ResponseEntity<ImageItem[]> entity = getFast(() -> restTemplate.getForEntity(uri, ImageItem[].class));
             return Arrays.asList(entity.getBody());
         } catch (HttpClientErrorException e) {
-            processStatusCodeException(e, new ServiceCallResult());
+            processStatusCodeException(e, new ServiceCallResult(), uri);
             throw e;
         }
     }
@@ -314,25 +315,29 @@ public class DockerServiceImpl implements DockerService {
      */
     @Override
     public ServiceCallResult createTag(TagImageArg cmd) {
+        URI uri = null;
         try {
-            UriComponentsBuilder ub = makeUrl("images/")
-                    .path(ContainerUtils.buildImageName(cmd.getRepository(), cmd.getImageName(), cmd.getCurrentTag())).path("/tag");
-            ResponseEntity<String> res = getSlow(() -> restTemplate.exchange(ub
-                            .queryParam("force", cmd.getForce())
-                            .queryParam("repo", cmd.getRepository() + "/" + cmd.getImageName())
-                            .queryParam("tag", cmd.getNewTag())
-                            .toUriString(), HttpMethod.POST,
-                    null, String.class));
+            URI localTagUri;
+            {
+                UriComponentsBuilder ub = makeUrl("images/")
+                        .path(ContainerUtils.buildImageName(cmd.getRepository(), cmd.getImageName(), cmd.getCurrentTag())).path("/tag");
+                localTagUri = uri = ub.queryParam("force", cmd.getForce())
+                  .queryParam("repo", cmd.getRepository() + "/" + cmd.getImageName())
+                  .queryParam("tag", cmd.getNewTag())
+                  .build().toUri();
+            }
+            ResponseEntity<String> res = getSlow(() -> restTemplate.exchange(localTagUri, HttpMethod.POST, null, String.class));
             if (Boolean.TRUE.equals(cmd.getRemote())) {
                 HttpAuthInterceptor.setCurrentName(cmd.getRepository());
-                restTemplate.exchange(makeUrl("images/").path(ContainerUtils.buildImageName(cmd.getRepository(), cmd.getImageName(), null))
-                        .path("/push").queryParam("tag", cmd.getNewTag())
-                        .toUriString(), HttpMethod.POST, null, String.class);
+                uri = makeUrl("images/").path(ContainerUtils.buildImageName(cmd.getRepository(), cmd.getImageName(), null))
+                  .path("/push").queryParam("tag", cmd.getNewTag())
+                  .build().toUri();
+                restTemplate.exchange(uri, HttpMethod.POST, null, String.class);
             }
             return DockerUtils.getServiceCallResult(res);
         } catch (HttpStatusCodeException e) {
             ServiceCallResult res = new ServiceCallResult();
-            processStatusCodeException(e, res);
+            processStatusCodeException(e, res, uri);
             return res;
         }
     }
@@ -416,7 +421,7 @@ public class DockerServiceImpl implements DockerService {
     @Override
     public ServiceCallResult getStatistics(GetStatisticsArg arg) {
         Assert.notNull(arg.getId(), "id is null");
-        String url = getUrlContainer(arg.getId(), "stats").queryParam("stream", arg.isStream()).toUriString();
+        URI url = getUrlContainer(arg.getId(), "stats").queryParam("stream", arg.isStream()).build().toUri();
         ServiceCallResult callResult = new ServiceCallResult();
         try {
             ListenableFuture<Object> future = restTemplate.execute(url, HttpMethod.GET, null, response -> {
@@ -427,7 +432,7 @@ public class DockerServiceImpl implements DockerService {
             });
             waitFuture(callResult, future);
         } catch (HttpStatusCodeException e) {
-            processStatusCodeException(e, callResult);
+            processStatusCodeException(e, callResult, url);
         }
         return callResult;
     }
@@ -447,7 +452,7 @@ public class DockerServiceImpl implements DockerService {
             Throwable cause = e.getCause();
             checkOffline(cause);
             if (cause instanceof HttpStatusCodeException) {
-                processStatusCodeException((HttpStatusCodeException) cause, callResult);
+                throw (HttpStatusCodeException)cause;
             } else {
                 throw Throwables.asRuntime(cause);
             }
@@ -526,7 +531,7 @@ public class DockerServiceImpl implements DockerService {
         if(factory == null) {
             factory = () -> BeanUtils.instantiate(responseType);
         }
-        String url = ub.toUriString();
+        URI url = ub.build().toUri();
         T resp;
         try {
             ResponseEntity<T> entity = getSlow(() -> {
@@ -543,9 +548,8 @@ public class DockerServiceImpl implements DockerService {
             resp.setCode(ResultCode.OK);
             return resp;
         } catch (HttpStatusCodeException e) {
-            log.warn("Failed to execute POST on {}, due to {}", url, e.toString());
             resp = factory.get();
-            processStatusCodeException(e, resp);
+            processStatusCodeException(e, resp, url);
             return resp;
         }
     }
@@ -574,11 +578,11 @@ public class DockerServiceImpl implements DockerService {
         if(factory == null) {
             factory = () -> BeanUtils.instantiate(responseType);
         }
-        String url = ub.toUriString();
+        URI uri = ub.build().toUri();
         T resp;
         try {
             ResponseEntity<T> entity = getFast(() -> {
-                return restTemplate.getForEntity(url, responseType);
+                return restTemplate.getForEntity(uri, responseType);
             });
             resp = entity.getBody();
             if(resp == null) {
@@ -587,9 +591,9 @@ public class DockerServiceImpl implements DockerService {
             resp.setCode(ResultCode.OK);
             return resp;
         } catch (HttpStatusCodeException e) {
-            log.warn("Failed to execute GET on {}, due to {}", url, e.toString());
+            log.warn("Failed to execute GET on {}, due to {}", uri, e.toString());
             resp = factory.get();
-            processStatusCodeException(e, resp);
+            processStatusCodeException(e, resp, uri);
             return resp;
         }
     }
@@ -615,16 +619,15 @@ public class DockerServiceImpl implements DockerService {
     }
 
     private ServiceCallResult deleteAction(UriComponentsBuilder ub) {
-        String url = ub.toUriString();
+        URI url = ub.build().toUri();
         try {
             ResponseEntity<String> res = getSlow(() -> {
                 return restTemplate.exchange(url, HttpMethod.DELETE, null, String.class);
             });
             return DockerUtils.getServiceCallResult(res);
         } catch (HttpStatusCodeException e) {
-            log.warn("Failed to execute delete on {}, due to {}", url, e.toString());
             ServiceCallResult callResult = new ServiceCallResult();
-            processStatusCodeException(e, callResult);
+            processStatusCodeException(e, callResult, url);
             return callResult;
         }
     }
@@ -636,20 +639,20 @@ public class DockerServiceImpl implements DockerService {
         ServiceCallResult callResult = new ServiceCallResult();
 
         final Consumer<ProcessEvent> watcher = firstNonNull(arg.getWatcher(), Consumers.<ProcessEvent>nop());
+        boolean stderr = arg.isStderr();
+        boolean stdout = arg.isStdout();
+        if (!stderr && !stdout) {
+            // we need at least one stream (but usually need both )
+            stderr = stdout = true;
+        }
+        URI url = getUrlContainer(arg.getId(), "logs")
+                .queryParam("stderr", stderr)
+                .queryParam("stdout", stdout)
+                .queryParam("follow", arg.isFollow())
+                .queryParam("since", arg.getSince())
+                .queryParam("tail", arg.getTail())
+                .queryParam("timestamps", arg.isTimestamps()).build().toUri();
         try {
-            boolean stderr = arg.isStderr();
-            boolean stdout = arg.isStdout();
-            if (!stderr && !stdout) {
-                // we need at least one stream (but usually need both )
-                stderr = stdout = true;
-            }
-            String url = getUrlContainer(arg.getId(), "logs")
-                    .queryParam("stderr", stderr)
-                    .queryParam("stdout", stdout)
-                    .queryParam("follow", arg.isFollow())
-                    .queryParam("since", arg.getSince())
-                    .queryParam("tail", arg.getTail())
-                    .queryParam("timestamps", arg.isTimestamps()).toUriString();
             ListenableFuture<Object> future = restTemplate.execute(url, HttpMethod.GET, null, response -> {
                 StreamContext<ProcessEvent> context = new StreamContext<>(response.getBody(), watcher);
                 context.getInterrupter().setFuture(arg.getInterrupter());
@@ -658,7 +661,7 @@ public class DockerServiceImpl implements DockerService {
             });
             waitFuture(callResult, future);
         } catch (HttpStatusCodeException e) {
-            processStatusCodeException(e, callResult);
+            processStatusCodeException(e, callResult, url);
         }
         return callResult;
     }
@@ -671,15 +674,16 @@ public class DockerServiceImpl implements DockerService {
     @Override
     public ServiceCallResult subscribeToEvents(GetEventsArg arg) {
         ServiceCallResult callResult = new ServiceCallResult();
+        UriComponentsBuilder ucb = makeUrl("events");
+        if(arg.getSince() != null) {
+            ucb.queryParam("since", arg.getSince());
+        }
+        if(arg.getUntil() != null) {
+            ucb.queryParam("until", arg.getUntil());
+        }
+        URI uri = ucb.build().toUri();
         try {
-            UriComponentsBuilder ucb = makeUrl("events");
-            if(arg.getSince() != null) {
-                ucb.queryParam("since", arg.getSince());
-            }
-            if(arg.getUntil() != null) {
-                ucb.queryParam("until", arg.getUntil());
-            }
-            ListenableFuture<Object> future = restTemplate.execute(ucb.build().toUri(), HttpMethod.GET, null, response -> {
+            ListenableFuture<Object> future = restTemplate.execute(uri, HttpMethod.GET, null, response -> {
                 online();// may be we need schedule it into another thread
                 StreamContext<DockerEvent> context = new StreamContext<>(response.getBody(), arg.getWatcher());
                 context.getInterrupter().setFuture(arg.getInterrupter());
@@ -688,18 +692,18 @@ public class DockerServiceImpl implements DockerService {
             });
             waitFuture(callResult, future);
         } catch (HttpStatusCodeException e) {
-            processStatusCodeException(e, callResult);
+            processStatusCodeException(e, callResult, uri);
         }
         return callResult;
     }
 
-    private void processStatusCodeException(HttpStatusCodeException e, ServiceCallResult res) {
+    private void processStatusCodeException(HttpStatusCodeException e, ServiceCallResult res, URI uri) {
         setCode(e.getStatusCode(), res);
         String msg = formatHttpException(e);
         res.setMessage(msg);
         // we log message as debug because consumer code must log error too, but with high level,
         // when we log it as warn then error will cause to many duplicate lines in log
-        log.debug("result: {}", msg);
+        log.warn("Fail to execute '{}' due to error: {}", uri, msg);
     }
 
     private String formatHttpException(HttpStatusCodeException e) {
@@ -738,10 +742,11 @@ public class DockerServiceImpl implements DockerService {
 
     @Override
     public ServiceCallResult updateContainer(UpdateContainerCmd cmd) {
+        UriComponentsBuilder ub = getUrlContainer(cmd.getId(), "update");
+        URI uri = ub.build().toUri();
         try {
-            UriComponentsBuilder ub = getUrlContainer(cmd.getId(), "update");
-            ResponseEntity<UpdateContainerResponse> res = getSlow(() -> restTemplate.exchange(ub.toUriString(), HttpMethod.POST,
-                    wrapEntity(cmd), UpdateContainerResponse.class));
+            ResponseEntity<UpdateContainerResponse> res = getSlow(() -> restTemplate.exchange(uri, HttpMethod.POST,
+                  wrapEntity(cmd), UpdateContainerResponse.class));
             UpdateContainerResponse body = res.getBody();
             ServiceCallResult scr = DockerUtils.getServiceCallResult(res);
             if(body != null) {
@@ -755,7 +760,7 @@ public class DockerServiceImpl implements DockerService {
             return scr;
         } catch (HttpStatusCodeException e) {
             ServiceCallResult res = new ServiceCallResult();
-            processStatusCodeException(e, res);
+            processStatusCodeException(e, res, uri);
             return res;
         }
     }
@@ -826,13 +831,14 @@ public class DockerServiceImpl implements DockerService {
         if (time > 0) {
             ub.queryParam("t", time);
         }
+        URI uri = ub.build().toUri();
         try {
-            ResponseEntity<String> res = getSlow(() -> restTemplate.postForEntity(ub.toUriString(), null, String.class));
+            ResponseEntity<String> res = getSlow(() -> restTemplate.postForEntity(uri, null, String.class));
             return DockerUtils.getServiceCallResult(res);
         } catch (HttpStatusCodeException e) {
             log.warn("In {}, can't \"{}\" container: {}, code: {}, message: {}", getId(), action, id, e.getStatusCode(), e.getResponseBodyAsString());
             ServiceCallResult callResult = new ServiceCallResult();
-            processStatusCodeException(e, callResult);
+            processStatusCodeException(e, callResult, uri);
             return callResult;
         }
     }
@@ -853,16 +859,16 @@ public class DockerServiceImpl implements DockerService {
     public RemoveImageResult removeImage(RemoveImageArg arg) {
         RemoveImageResult rir = new RemoveImageResult();
         rir.setImage(arg.getImageId());
+        UriComponentsBuilder builder = makeUrl("images/" + arg.getImageId())
+                .queryParam("force", arg.getForce())
+                .queryParam("noprune", arg.getNoPrune());
+        URI uri = builder.build().toUri();
         try {
-            UriComponentsBuilder builder = makeUrl("images/" + arg.getImageId())
-                    .queryParam("force", arg.getForce())
-                    .queryParam("noprune", arg.getNoPrune());
-            ResponseEntity<String> res = getSlow(() -> restTemplate.exchange(builder.toUriString(), HttpMethod.DELETE, null, String.class));
+            ResponseEntity<String> res = getSlow(() -> restTemplate.exchange(uri, HttpMethod.DELETE, null, String.class));
             log.info("image was deleted {}", arg);
             return DockerUtils.getServiceCallResult(res, rir);
         } catch (HttpStatusCodeException e) {
-            processStatusCodeException(e, rir);
-            log.error("can't delete image: {} due to {}", arg.getImageId(), rir.getMessage());
+            processStatusCodeException(e, rir, uri);
             return rir;
         }
     }
@@ -1039,20 +1045,19 @@ public class DockerServiceImpl implements DockerService {
     @Override
     public ServiceCreateResult createService(CreateServiceArg arg) {
         Assert.notNull(arg, "arg is null");
+        URI uri = makeUrl("/services/create").build().toUri();
         try {
             HttpHeaders headers = new HttpHeaders();
             installContentType(headers);
             AuthConfig.install(headers, arg.getRegistryAuth());
             HttpEntity<Service.ServiceSpec> req = new HttpEntity<>(arg.getSpec(), headers);
-            ResponseEntity<ServiceCreateResult> entity = getSlow(() -> {
-                return restTemplate.postForEntity(makeUrl("/services/create").toUriString(), req, ServiceCreateResult.class);
-            });
+            ResponseEntity<ServiceCreateResult> entity = getSlow(() -> restTemplate.postForEntity(uri, req, ServiceCreateResult.class));
             ServiceCreateResult res = entity.getBody();
             res.setCode(ResultCode.OK);
             return res;
         } catch (HttpStatusCodeException e) {
             ServiceCreateResult res = new ServiceCreateResult();
-            processStatusCodeException(e, res);
+            processStatusCodeException(e, res, uri);
             log.error("can't create service, result: {} \n arg:{}", res.getMessage(), arg, e);
             return res;
         }
@@ -1061,26 +1066,27 @@ public class DockerServiceImpl implements DockerService {
     @Override
     public ServiceUpdateResult updateService(UpdateServiceArg arg) {
         Assert.notNull(arg, "arg is null");
+        UriComponentsBuilder ucb = makeUrl("/services/");
+        String service = arg.getService();
+        Assert.hasText(service, "arg.service is null or empty");
+        ucb.path(service);
+        ucb.path("/update");
+        ucb.queryParam("version", arg.getVersion());
+        URI uri = ucb.build().toUri();
         try {
-            UriComponentsBuilder ucb = makeUrl("/services/");
-            String service = arg.getService();
-            Assert.hasText(service, "arg.service is null or empty");
-            ucb.path(service);
-            ucb.path("/update");
-            ucb.queryParam("version", arg.getVersion());
             HttpHeaders headers = new HttpHeaders();
             installContentType(headers);
             AuthConfig.install(headers, arg.getRegistryAuth());
             HttpEntity<Service.ServiceSpec> req = new HttpEntity<>(arg.getSpec(), headers);
             ResponseEntity<ServiceUpdateResult> entity = getSlow(() -> {
-                return restTemplate.postForEntity(ucb.toUriString(), req, ServiceUpdateResult.class);
+                return restTemplate.postForEntity(uri, req, ServiceUpdateResult.class);
             });
             ServiceUpdateResult res = entity.getBody();
             res.setCode(ResultCode.OK);
             return res;
         } catch (HttpStatusCodeException e) {
             ServiceUpdateResult res = new ServiceUpdateResult();
-            processStatusCodeException(e, res);
+            processStatusCodeException(e, res, uri);
             log.error("can't create service, result: {} \n arg:{}", res.getMessage(), arg, e);
             return res;
         }
