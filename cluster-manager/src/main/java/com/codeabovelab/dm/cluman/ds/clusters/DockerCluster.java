@@ -463,12 +463,19 @@ public class DockerCluster extends AbstractNodesGroup<DockerClusterConfig> {
 
         NodeStorage ns = getNodeStorage();
         NodeRegistration nr = ns.updateNode(nodeName, Integer.MAX_VALUE, b -> {
-            String oldCluster = b.getCluster();
+            String nodeCluster = b.getCluster();
             final String cluster = getName();
-            if(oldCluster != null && !cluster.equals(oldCluster)) {
+            final String id = sn.getId();
+            if(!cluster.equals(nodeCluster)) {
+                //node was removed
+                if(Objects.equals(b.getIdInCluster(), id)) {
+                    b.setVersion(0l);
+                    b.setIdInCluster(null);
+                    b.setHealth(NodeMetrics.builder().from(b.getHealth()).manager(null).build());
+                }
                 return;
             }
-            b.idInCluster(sn.getId());
+            b.idInCluster(id);
             b.address(address);
             b.version(sn.getVersion().getIndex());
             NodeMetrics.Builder nmb = NodeMetrics.builder();
