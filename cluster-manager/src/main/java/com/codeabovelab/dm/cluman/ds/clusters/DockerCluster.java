@@ -420,19 +420,33 @@ public class DockerCluster extends AbstractNodesGroup<DockerClusterConfig> {
         }
     }
 
-    private void leave(String node, String id) {
+    private void leave(String node, SwarmNode sn) {
         log.info("Begin leave node '{}' from '{}'", node, getName());
-        DockerService ds = getNodeStorage().getNodeService(node);
-        if(ds == null) {
+        DockerService clusterDocker = getDocker();
+        final String id = sn.getId();
+        if(isManager(sn)) {
+            UpdateNodeCmd un = new UpdateNodeCmd();
+            un.setVersion(sn.getVersion().getIndex());
+            un.setNodeId(id);
+            un.setRole(UpdateNodeCmd.Role.WORKER);
+            un.setAvailability(UpdateNodeCmd.Availability.DRAIN);
+            ServiceCallResult scr = clusterDocker.updateNode(un);
+            log.info("Demote manager node '{}' with result: '{}'", node, scr);
+        }
+        DockerService nodeDocker = getNodeStorage().getNodeService(node);
+        if(nodeDocker == null) {
             log.warn("Can not leave node '{}' from cluster, node does not have registered docker service", node);
             return;
         } else {
-            ServiceCallResult res = ds.leaveSwarm(new SwarmLeaveArg());
+            ServiceCallResult res = nodeDocker.leaveSwarm(new SwarmLeaveArg());
             log.info("Result of leave node '{}' : {} {}", node, res.getCode(), res.getMessage());
         }
-        DockerService docker = getDocker();
-        ServiceCallResult rmres = docker.removeNode(new RemoveNodeArg(id).force(true));
+        ServiceCallResult rmres = clusterDocker.removeNode(new RemoveNodeArg(id).force(true));
         log.info("Result of remove node '{}' from cluster: {} {}", node, rmres.getCode(), rmres.getMessage());
+    }
+
+    private boolean isManager(SwarmNode sn) {
+        return sn.getManagerStatus() != null;
     }
 
     private String getNodeName(SwarmNode sn) {
@@ -460,7 +474,7 @@ public class DockerCluster extends AbstractNodesGroup<DockerClusterConfig> {
             NodeMetrics.Builder nmb = NodeMetrics.builder();
             NodeMetrics.State state = getState(sn);
             nmb.state(state);
-            nmb.manager(sn.getManagerStatus() != null);
+            nmb.manager(isManager(sn));
             nmb.healthy(state == NodeMetrics.State.HEALTHY);
             b.mergeHealth(nmb.build());
             Map<String, String> labels = sn.getDescription().getEngine().getLabels();
@@ -470,7 +484,7 @@ public class DockerCluster extends AbstractNodesGroup<DockerClusterConfig> {
         });
         if(!Objects.equals(getName(), nr.getCluster())) {
             log.info("Node {} is from another cluster: '{}', we remove it from our cluster: '{}'.", nodeName, nr.getCluster(), getName());
-            leave(nodeName, sn.getId());
+            leave(nodeName, sn);
             return null;
         }
         return nr.getNodeInfo();
