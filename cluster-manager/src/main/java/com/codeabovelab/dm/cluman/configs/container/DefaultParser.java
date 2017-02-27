@@ -56,7 +56,7 @@ public class DefaultParser extends AbstractParser {
             arg.getInclude().forEach(a -> parse(new File(file.getParent(), a), context));
             context.addCreateContainerArg(arg);
         } catch (Exception e) {
-            log.error("", e);
+            log.error("can't parse configuration", e.getMessage());
         }
     }
 
