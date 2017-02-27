@@ -17,29 +17,8 @@
 package com.codeabovelab.dm.cluman.cluster.docker.model;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.google.common.base.Objects;
 import lombok.Data;
 
-/**
- * Container restart policy
- *
- * <dl>
- * <dt>no</dt>
- * <dd>Do not restart the container if it dies. (default)</dd>
- *
- * <dt>on-failure</dt>
- * <dd>Restart the container if it exits with a non-zero exit code. Can also accept an optional maximum restart count
- * (e.g. on-failure:5).
- * <dd>
- *
- * <dt>always</dt>
- * <dd>Always restart the container no matter what exit code is returned.
- * <dd>
- * </dl>
- *
- * @author marcus
- *
- */
 @Data
 public class RestartPolicy {
 
@@ -58,90 +37,45 @@ public class RestartPolicy {
         this.name = name;
     }
 
-    /**
-     * Do not restart the container if it dies. (default)
-     */
     public static RestartPolicy noRestart() {
         return new RestartPolicy(NO, 0);
     }
 
-    /**
-     * Always restart the container no matter what exit code is returned.
-     */
     public static RestartPolicy alwaysRestart() {
         return new RestartPolicy(ALWAYS, 0);
     }
 
-    /**
-     * Always restart the container regardless of the exit status, but do not start it on daemon startup if
-     * the container has been put to a stopped state before.
-     */
     public static RestartPolicy unlessStopped() {
         return new RestartPolicy(UNLESS_STOPPED, 0);
     }
 
-    /**
-     * Restart the container if it exits with a non-zero exit code.
-     *
-     * @param maximumRetryCount
-     *            the maximum number of restarts. Set to <code>0</code> for unlimited retries.
-     */
     public static RestartPolicy onFailureRestart(int maximumRetryCount) {
-        return new RestartPolicy("on-failure", maximumRetryCount);
+        return new RestartPolicy(ON_FAILURE, maximumRetryCount);
     }
 
-    public Integer getMaximumRetryCount() {
-        return maximumRetryCount;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    /**
-     * Parses a textual restart polixy specification (as used by the Docker CLI) to a {@link RestartPolicy}.
-     *
-     * @param serialized
-     *            the specification, e.g. <code>on-failure:2</code>
-     * @return a {@link RestartPolicy} matching the specification
-     * @throws IllegalArgumentException
-     *             if the specification cannot be parsed
-     */
     public static RestartPolicy parse(String serialized) throws IllegalArgumentException {
         try {
             String[] parts = serialized.split(":");
             String name = parts[0];
-            if (NO.equals(name)) {
-                return noRestart();
+            switch (name) {
+                case NO:
+                    return noRestart();
+                case ALWAYS:
+                    return alwaysRestart();
+                case UNLESS_STOPPED:
+                    return unlessStopped();
+                case ON_FAILURE:
+                    int count = 0;
+                    if (parts.length == 2) {
+                        count = Integer.parseInt(parts[1]);
+                    }
+                    return onFailureRestart(count);
+                default:
+                    throw new IllegalArgumentException();
             }
-            if (ALWAYS.equals(name)) {
-                return alwaysRestart();
-            }
-            if (UNLESS_STOPPED.equals(name)) {
-                return unlessStopped();
-            }
-            if (ON_FAILURE.equals(name)) {
-                int count = 0;
-                if (parts.length == 2) {
-                    count = Integer.parseInt(parts[1]);
-                }
-                return onFailureRestart(count);
-            }
-            throw new IllegalArgumentException();
         } catch (Exception e) {
             throw new IllegalArgumentException("Error parsing RestartPolicy '" + serialized + "'");
         }
     }
 
-    /**
-     * Returns a string representation of this {@link RestartPolicy}. The format is <code>name[:count]</code>, like the
-     * argument in {@link #parse(String)}.
-     *
-     * @return a string representation of this {@link RestartPolicy}
-     */
-    @Override
-    public String toString() {
-        String result = name.isEmpty() ? "no" : name;
-        return maximumRetryCount > 0 ? result + ":" + maximumRetryCount : result;
-    }
 }
