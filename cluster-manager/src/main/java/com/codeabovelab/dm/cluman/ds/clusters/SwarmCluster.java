@@ -19,7 +19,7 @@ package com.codeabovelab.dm.cluman.ds.clusters;
 import com.codeabovelab.dm.cluman.cluster.docker.ClusterConfig;
 import com.codeabovelab.dm.cluman.cluster.docker.ClusterConfigImpl;
 import com.codeabovelab.dm.cluman.cluster.docker.management.DockerService;
-import com.codeabovelab.dm.cluman.cluster.docker.management.argument.GetContainersArg;
+import com.codeabovelab.dm.cluman.cluster.docker.management.result.ServiceCallResult;
 import com.codeabovelab.dm.cluman.ds.SwarmClusterContainers;
 import com.codeabovelab.dm.cluman.ds.container.ContainerCreator;
 import com.codeabovelab.dm.cluman.ds.nodes.NodeRegistration;
@@ -117,6 +117,11 @@ public final class SwarmCluster extends AbstractNodesGroup<SwarmNodesGroupConfig
     @SuppressWarnings("unchecked")
     public List<NodeInfo> getNodes() {
         return getNodesInfo();
+    }
+
+    @Override
+    public ServiceCallResult updateNode(NodeUpdateArg arg) {
+        return ServiceCallResult.unsupported();
     }
 
     @Override

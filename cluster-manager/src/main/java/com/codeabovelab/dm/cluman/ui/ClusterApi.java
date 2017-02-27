@@ -255,18 +255,11 @@ public class ClusterApi {
     @RequestMapping(value = "/clusters/{cluster}/nodes/{node}/update", method = POST)
     public ResponseEntity<?> updateNode(@PathVariable("cluster") String clusterId,
                                         @PathVariable("node") String node,
-                                        @RequestBody UiUpdateClusterNode body) {
+                                        @RequestBody NodeUpdateArg body) {
+        body.setNode(node);
         NodesGroup ng = discoveryStorage.getCluster(clusterId);
         ExtendedAssert.notFound(ng, "Cluster was not found by " + clusterId);
-        NodeInfo nodeInfo = nodeRegistry.getNodeInfo(node);
-        ExtendedAssert.notFound(nodeInfo, "NodeInfo was not found by " + node);
-        UpdateNodeCmd cmd = new UpdateNodeCmd();
-        cmd.setNodeId(nodeInfo.getIdInCluster());
-        cmd.setVersion(body.getVersion());
-        cmd.setLabels(body.getLabels());
-        cmd.setAvailability(body.getAvailability());
-        cmd.setRole(body.getRole());
-        return UiUtils.createResponse(ng.getDocker().updateNode(cmd));
+        return UiUtils.createResponse(ng.updateNode(body));
     }
 
     @RequestMapping(value = "/clusters/{cluster}/registries", method = GET)

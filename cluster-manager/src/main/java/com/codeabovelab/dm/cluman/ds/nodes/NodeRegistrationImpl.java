@@ -303,6 +303,7 @@ class NodeRegistrationImpl implements NodeRegistration, AutoCloseable {
 
     private void proxyDockerEvent(DockerEvent e) {
         try {
+            log.debug("Node '{}' send log event: {}", name, e);
             DockerLogEvent logEvent = convertToLogEvent(e);
             nodeStorage.acceptDockerLogEvent(logEvent);
         } catch (Exception ex) {

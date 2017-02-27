@@ -17,6 +17,9 @@
 package com.codeabovelab.dm.cluman.model;
 
 import com.codeabovelab.dm.cluman.cluster.docker.management.DockerService;
+import com.codeabovelab.dm.cluman.cluster.docker.management.result.*;
+import com.codeabovelab.dm.cluman.cluster.docker.management.result.ServiceCallResult;
+import com.codeabovelab.dm.cluman.cluster.docker.model.UpdateNodeCmd;
 import com.codeabovelab.dm.cluman.ds.clusters.AbstractNodesGroupConfig;
 import com.codeabovelab.dm.cluman.ds.swarm.NetworkManager;
 import com.codeabovelab.dm.cluman.security.WithAcl;
@@ -92,6 +95,8 @@ public interface NodesGroup extends Named, WithAcl {
      * @return copy of current nodes
      */
     List<NodeInfo> getNodes();
+
+    ServiceCallResult updateNode(NodeUpdateArg arg);
 
     /**
      * Collections with names of other intersected NodesGroups. Note that it

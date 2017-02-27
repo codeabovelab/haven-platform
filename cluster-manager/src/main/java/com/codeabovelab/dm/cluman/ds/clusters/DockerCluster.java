@@ -22,6 +22,7 @@ import com.codeabovelab.dm.cluman.cluster.docker.management.argument.SwarmLeaveA
 import com.codeabovelab.dm.cluman.cluster.docker.management.result.ResultCode;
 import com.codeabovelab.dm.cluman.cluster.docker.management.result.ServiceCallResult;
 import com.codeabovelab.dm.cluman.cluster.docker.management.result.SwarmInitResult;
+import com.codeabovelab.dm.cluman.cluster.docker.model.UpdateNodeCmd;
 import com.codeabovelab.dm.cluman.cluster.docker.model.swarm.*;
 import com.codeabovelab.dm.cluman.ds.SwarmUtils;
 import com.codeabovelab.dm.cluman.ds.container.ContainerCreator;
@@ -32,6 +33,7 @@ import com.codeabovelab.dm.cluman.model.*;
 import com.codeabovelab.dm.cluman.security.TempAuth;
 import com.codeabovelab.dm.cluman.utils.AddressUtils;
 import com.codeabovelab.dm.common.utils.SingleValueCache;
+import com.google.common.base.MoreObjects;
 import com.google.common.collect.ImmutableList;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import lombok.Data;
@@ -79,7 +81,7 @@ public class DockerCluster extends AbstractNodesGroup<DockerClusterConfig> {
     private ContainerStorage containerStorage;
     private ContainerCreator containerCreator;
     private ContainersManager containers;
-    private int updateNodesTimeout;
+    private int rereadNodesTimeout;
 
     DockerCluster(DiscoveryStorageImpl storage, DockerClusterConfig config) {
         super(config, storage, Collections.singleton(Feature.SWARM_MODE));
@@ -95,8 +97,8 @@ public class DockerCluster extends AbstractNodesGroup<DockerClusterConfig> {
     }
 
     @Autowired
-    void setUpdateNodesTimeout(@Value(SwarmUtils.EXPR_NODES_UPDATE) int updateNodesTimeout) {
-        this.updateNodesTimeout = updateNodesTimeout;
+    void setRereadNodesTimeout(@Value(SwarmUtils.EXPR_NODES_UPDATE) int rereadNodesTimeout) {
+        this.rereadNodesTimeout = rereadNodesTimeout;
     }
 
     @Autowired
@@ -129,11 +131,15 @@ public class DockerCluster extends AbstractNodesGroup<DockerClusterConfig> {
             return;
         }
         if (wasOur != nowOur) {
-            nodesMap.invalidate();
-            // force update nodes
-            scheduledExecutor.execute(this::updateNodes);
+            scheduleRereadNodes();
         }
         this.createDefaultNetwork();
+    }
+
+    private void scheduleRereadNodes() {
+        nodesMap.invalidate();
+        // force update nodes
+        scheduledExecutor.execute(this::rereadNodes);
     }
 
     protected void closeImpl() {
@@ -149,7 +155,7 @@ public class DockerCluster extends AbstractNodesGroup<DockerClusterConfig> {
         this.containers = new DockerClusterContainers(this, this.containerStorage, this.containerCreator);
 
         // so docker does not send any events about new coming nodes, and we must refresh list of them
-        this.scheduledExecutor.scheduleWithFixedDelay(this::updateNodes, updateNodesTimeout, updateNodesTimeout, TimeUnit.SECONDS);
+        this.scheduledExecutor.scheduleWithFixedDelay(this::rereadNodes, rereadNodesTimeout, rereadNodesTimeout, TimeUnit.SECONDS);
         getNodeStorage().getNodeEventSubscriptions().subscribe(this::onNodeEvent);
     }
 
@@ -246,6 +252,28 @@ public class DockerCluster extends AbstractNodesGroup<DockerClusterConfig> {
         return b.build();
     }
 
+    @Override
+    public ServiceCallResult updateNode(NodeUpdateArg arg) {
+        final String node = arg.getNode();
+        Assert.hasText(node, "arg.node is null or empty");
+        NodeRegistration nr = getNodeStorage().getNodeRegistration(node);
+        Assert.notNull(node, "Can not find node with name:" + node);
+        NodeInfo nodeInfo = nr.getNodeInfo();
+        UpdateNodeCmd cmd = new UpdateNodeCmd();
+        cmd.setNodeId(nodeInfo.getIdInCluster());
+        cmd.setVersion(arg.getVersion());
+        cmd.setLabels(arg.getLabels());
+        // availability is required, so we set default value
+        cmd.setAvailability(MoreObjects.firstNonNull(arg.getAvailability(), UpdateNodeCmd.Availability.ACTIVE));
+        cmd.setRole(arg.getRole());
+        DockerService docker = getDocker();
+        ServiceCallResult res = docker.updateNode(cmd);
+        if(res.getCode() == ResultCode.OK) {
+            scheduleRereadNodes();
+        }
+        return res;
+    }
+
     private Map<String, SwarmNode> loadNodesMap() {
         DockerService docker = getDockerOrNull();
         if(docker == null) {
@@ -269,7 +297,7 @@ public class DockerCluster extends AbstractNodesGroup<DockerClusterConfig> {
         return map;
     }
 
-    private void updateNodes() {
+    private void rereadNodes() {
         try (TempAuth ta = TempAuth.asSystem()) {
             Map<String, SwarmNode> map = nodesMap.get();
             if(map == null) {
@@ -315,7 +343,7 @@ public class DockerCluster extends AbstractNodesGroup<DockerClusterConfig> {
                 return;
             }
             map.forEach((name, sn) -> {
-                NodeInfo ni = updateNode(sn);
+                NodeInfo ni = rereadNode(sn);
             });
         } catch (Exception e) {
             log.error("Can not update list of nodes due to error.", e);
@@ -411,7 +439,7 @@ public class DockerCluster extends AbstractNodesGroup<DockerClusterConfig> {
         return sn.getDescription().getHostname();
     }
 
-    private NodeInfo updateNode(SwarmNode sn) {
+    private NodeInfo rereadNode(SwarmNode sn) {
         String nodeName = getNodeName(sn);
         String address = getNodeAddress(sn);
         if(StringUtils.isEmpty(address)) {

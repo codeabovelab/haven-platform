@@ -35,4 +35,11 @@ public class ServiceCallResult {
         setMessage(message);
         return this;
     }
+
+    public static ServiceCallResult unsupported() {
+        ServiceCallResult scr = new ServiceCallResult();
+        scr.setCode(ResultCode.ERROR);
+        scr.setMessage("Not supported operation.");
+        return scr;
+    }
 }

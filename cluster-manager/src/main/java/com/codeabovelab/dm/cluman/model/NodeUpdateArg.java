@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 Code Above Lab LLC
+ * Copyright 2017 Code Above Lab LLC
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,23 +16,31 @@
 
 package com.codeabovelab.dm.cluman.model;
 
+import com.codeabovelab.dm.cluman.cluster.docker.model.UpdateNodeCmd;
 import lombok.Data;
 
+import java.util.Map;
+
 /**
- * Result of call service
  */
 @Data
-public class ServiceCallResult {
-    private String message;
-    private ResultCode code;
+public class NodeUpdateArg {
+    /**
+     * Code from 'node.version'
+     */
+    private long version;
+    private String node;
 
-    public ServiceCallResult code(ResultCode code) {
-        setCode(code);
-        return this;
-    }
+    private Map<String, String> labels;
 
-    public ServiceCallResult message(String message) {
-        setMessage(message);
-        return this;
-    }
+    /**
+     * Role of the node.
+     */
+    private UpdateNodeCmd.Role role;
+
+    /**
+     * Availability of the node.
+     */
+    private UpdateNodeCmd.Availability availability;
+
 }

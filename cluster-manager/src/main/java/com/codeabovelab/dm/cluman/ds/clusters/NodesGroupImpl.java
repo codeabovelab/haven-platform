@@ -18,6 +18,7 @@ package com.codeabovelab.dm.cluman.ds.clusters;
 
 import com.codeabovelab.dm.cluman.cluster.docker.management.DockerService;
 import com.codeabovelab.dm.cluman.cluster.docker.management.argument.GetContainersArg;
+import com.codeabovelab.dm.cluman.cluster.docker.management.result.ServiceCallResult;
 import com.codeabovelab.dm.cluman.cluster.filter.Filter;
 import com.codeabovelab.dm.cluman.cluster.filter.FilterFactory;
 import com.codeabovelab.dm.cluman.ds.SwarmClusterContainers;
@@ -25,10 +26,7 @@ import com.codeabovelab.dm.cluman.ds.container.ContainerCreator;
 import com.codeabovelab.dm.cluman.ds.container.ContainerRegistration;
 import com.codeabovelab.dm.cluman.ds.container.ContainerStorage;
 import com.codeabovelab.dm.cluman.ds.nodes.NodeStorage;
-import com.codeabovelab.dm.cluman.model.ContainersManager;
-import com.codeabovelab.dm.cluman.model.DockerContainer;
-import com.codeabovelab.dm.cluman.model.Node;
-import com.codeabovelab.dm.cluman.model.NodeInfo;
+import com.codeabovelab.dm.cluman.model.*;
 import com.google.common.collect.ImmutableSet;
 import lombok.Builder;
 import lombok.Singular;
@@ -146,6 +144,11 @@ class NodesGroupImpl extends AbstractNodesGroup<DefaultNodesGroupConfig> {
     @SuppressWarnings("unchecked")
     public List<NodeInfo> getNodes() {
         return getNodesInternal();
+    }
+
+    @Override
+    public ServiceCallResult updateNode(NodeUpdateArg arg) {
+        return ServiceCallResult.unsupported();
     }
 
     private List<NodeInfo> getNodesInternal() {
