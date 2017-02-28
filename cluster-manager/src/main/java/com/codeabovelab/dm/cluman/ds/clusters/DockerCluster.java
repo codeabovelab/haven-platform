@@ -304,6 +304,8 @@ public class DockerCluster extends AbstractNodesGroup<DockerClusterConfig> {
                 log.error("Can not load map of cluster nodes.");
                 return;
             }
+            // flag which mean that e change internal cluster node list, and must reread them
+            boolean[] modified = new boolean[]{false};
             //check that all nodes marked 'our' is in map
             Collection<NodeInfo> nodes = getNodeStorage().getNodes(this::isFromSameCluster);
             Map<String, SwarmNode> localMap = map;
@@ -324,7 +326,6 @@ public class DockerCluster extends AbstractNodesGroup<DockerClusterConfig> {
 
             });
             // add nodes which is not in cluster
-            boolean[] modified = new boolean[]{false};
             map.forEach((name, sn) -> {
                 SwarmNode.State status = sn.getStatus();
                 String address = getNodeAddress(sn);
