@@ -20,23 +20,29 @@ import com.codeabovelab.dm.cluman.model.ContainerBaseIface;
 import com.codeabovelab.dm.cluman.model.DockerContainer;
 import com.codeabovelab.dm.common.kv.mapping.KvMap;
 import com.codeabovelab.dm.common.kv.mapping.KvMapperFactory;
+import com.codeabovelab.dm.common.utils.Throwables;
 import com.google.common.collect.ImmutableList;
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
+import javax.annotation.PostConstruct;
+import javax.annotation.PreDestroy;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 @Component
 @Slf4j
-public class ContainerStorageImpl implements ContainerStorage, InitializingBean {
+public class ContainerStorageImpl implements ContainerStorage {
 
     final KvMap<ContainerRegistration> map;
+    final ScheduledExecutorService executorService;
 
     @Autowired
     public ContainerStorageImpl(KvMapperFactory kvmf) {
@@ -46,11 +52,21 @@ public class ContainerStorageImpl implements ContainerStorage, InitializingBean 
           .path(prefix)
           .factory((key, type) -> new ContainerRegistration(this, key))
           .build();
+        this.executorService = Executors.newSingleThreadScheduledExecutor(new ThreadFactoryBuilder()
+          .setDaemon(true)
+          .setNameFormat(getClass().getSimpleName() + "-scheduled-%d")
+          .setUncaughtExceptionHandler(Throwables.uncaughtHandler(log))
+          .build());
     }
 
-    @Override
-    public void afterPropertiesSet() {
+    @PostConstruct
+    public void postConstruct() {
         this.map.load();
+    }
+
+    @PreDestroy
+    private void preDestroy() {
+        this.executorService.shutdown();
     }
 
     @Override
@@ -58,6 +74,7 @@ public class ContainerStorageImpl implements ContainerStorage, InitializingBean 
         ContainerRegistration cr = map.remove(id);
         if(cr != null) {
             log.info("Container remove: {} ", cr.forLog());
+            cr.close();
         }
     }
 

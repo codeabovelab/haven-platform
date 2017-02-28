@@ -20,14 +20,17 @@ import com.codeabovelab.dm.cluman.model.DockerContainer;
 import com.codeabovelab.dm.common.kv.mapping.KvMap;
 import com.codeabovelab.dm.common.kv.mapping.KvMapping;
 import com.codeabovelab.dm.cluman.model.ContainerBaseIface;
+import com.codeabovelab.dm.common.utils.RescheduledTask;
 import org.springframework.util.Assert;
 
 import java.util.Collections;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
 public class ContainerRegistration {
     private final String id;
+    private final RescheduledTask resheduleTask;
     @KvMapping
     private Map<String, String> additionalLabels;
     /**
@@ -44,6 +47,11 @@ public class ContainerRegistration {
         Assert.notNull(id, "id is null");
         this.container = DockerContainer.builder().id(id);
         this.map = csi.map;
+        this.resheduleTask = RescheduledTask.builder()
+          .maxDelay(10L, TimeUnit.SECONDS)
+          .service(csi.executorService)
+          .runnable(this::flush)
+          .build();
     }
 
     public String getId() {
@@ -58,6 +66,9 @@ public class ContainerRegistration {
         return additionalLabels == null? Collections.emptyMap() : Collections.unmodifiableMap(additionalLabels);
     }
 
+    public void scheduleFlush() {
+        this.resheduleTask.schedule(10L, TimeUnit.SECONDS);
+    }
     public void flush() {
         map.flush(id);
     }
@@ -82,14 +93,17 @@ public class ContainerRegistration {
         }
     }
 
+    /**
+     * Note that this method do 'flush' in different thread.
+     * @param modifier callback which can modify container, and must not block thread.
+     */
     public void modify(Consumer<DockerContainer.Builder> modifier) {
         synchronized (lock) {
             modifier.accept(this.container);
             validate();
             this.cached = null;
         }
-        // we must not place it in lock, because it consume time
-        this.map.flush(id);
+        scheduleFlush();
     }
 
     public void from(ContainerBaseIface container, String node) {
@@ -116,5 +130,9 @@ public class ContainerRegistration {
             return sb.append(" \'").append(container.getName()).append("\' of \'")
               .append(container.getImage()).append('\'').toString();
         }
+    }
+
+    protected void close() {
+        resheduleTask.close();
     }
 }

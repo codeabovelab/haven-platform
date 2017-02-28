@@ -109,35 +109,35 @@ class ContainerInfoUpdater implements SmartLifecycle {
             return;
         }
         final ContainerBase container = dle.getContainer();
-        if (container != null) {
-            final String id = container.getId();
-            ContainerRegistration cr = null;
-            String action = dle.getAction();
-            switch(action) {
-                case StandardActions.DELETE: {
-                    containerStorage.deleteContainer(id);
-                    break;
-                }
-                default: {
-                    cr = containerStorage.getContainer(id);
-                }
-            }
-            if(cr != null) {
-                cr.modify(cb -> {
-                    DockerContainer.State state = container.getState();
-                    if(state != null) {
-                        cb.setState(state);
-                        // we can not retrieve status from event
-                        // but old status may confuse user
-                        cb.setStatus(null);
-                    }
-                });
-            }
-            String node = dle.getNode();
-            log.info("Schedule node '{}' update due to container '{}' changed to: {}", node, id, action);
-            scheduleNodeUpdate(node);
+        if (container == null) {
+            return;
         }
-
+        final String id = container.getId();
+        ContainerRegistration cr = null;
+        String action = dle.getAction();
+        switch(action) {
+            case StandardActions.DELETE: {
+                containerStorage.deleteContainer(id);
+                break;
+            }
+            default: {
+                cr = containerStorage.getContainer(id);
+            }
+        }
+        if(cr != null) {
+            cr.modify(cb -> {
+                DockerContainer.State state = container.getState();
+                if(state != null) {
+                    cb.setState(state);
+                    // we can not retrieve status from event
+                    // but old status may confuse user
+                    cb.setStatus(null);
+                }
+            });
+        }
+        String node = dle.getNode();
+        log.info("Schedule node '{}' update due to container '{}' changed to: {}", node, id, action);
+        scheduleNodeUpdate(node);
     }
 
     /**
@@ -191,6 +191,7 @@ class ContainerInfoUpdater implements SmartLifecycle {
         if(NodeEvent.Action.DELETE == action) {
             log.info("Node '{}' is '{}' remove containers.", name, action);
             containerStorage.removeNodeContainers(name);
+            scheduledNodes.remove(name);
             return;
         }
         // at first event 'ONLINE', node does not have a service, but we ignore second event

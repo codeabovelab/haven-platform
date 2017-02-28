@@ -116,7 +116,7 @@ public class RescheduledTask implements AutoCloseable {
     }
 
     @Override
-    public void close() throws Exception {
+    public void close() {
         ScheduledFuture<?> sf;
         synchronized (lock) {
             sf = this.sf;
