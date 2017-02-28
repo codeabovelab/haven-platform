@@ -95,14 +95,11 @@ public class SingleValueCache<T> implements Supplier<T> {
 
     @Override
     public T get() {
-        while(true) {
-            if(lock.tryLock()) {
-                try {
-                    return loadIfNeed();
-                } finally {
-                    lock.unlock();
-                }
-            }
+        lock.lock();
+        try {
+            return loadIfNeed();
+        } finally {
+            lock.unlock();
         }
     }
 
