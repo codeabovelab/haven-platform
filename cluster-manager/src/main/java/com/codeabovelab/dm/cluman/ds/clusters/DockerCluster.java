@@ -550,13 +550,42 @@ public class DockerCluster extends AbstractNodesGroup<DockerClusterConfig> {
     }
 
     private DockerService getDockerOrNull() {
+        // sometime offline service is online, but it need test request
+        // therefore we hold one of them for cases when no choice
+        DockerService candidate = null;
+        // we can not force load, because it may cause recursion when predefined managers is offline
+        Map<String, SwarmNode> nodesMap = this.nodesMap.getOldValue();
+        if(nodesMap != null) {
+            for(Map.Entry<String, SwarmNode> e: nodesMap.entrySet()) {
+                if(!isManager(e.getValue())) {
+                    continue;
+                }
+                String node = e.getKey();
+                NodeRegistration nr = getNodeStorage().getNodeRegistration(node);
+                if(nr == null) {
+                    continue;
+                }
+                DockerService service = nr.getDocker();
+                if(service != null) {
+                    if(service.isOnline()) {
+                        return service;
+                    } else {
+                        candidate = service;
+                    }
+                }
+            }
+        }
+        // when no other managers we try to use one of predefined
         for (Manager node : managers.values()) {
             DockerService service = node.getService();
             if (service != null) {
-                return service;
+                if(service.isOnline()) {
+                    return service;
+                }
+                candidate = service;
             }
         }
-        return null;
+        return candidate;
     }
 
     private SwarmSpec getSwarmConfig() {
