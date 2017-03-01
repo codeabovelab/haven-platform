@@ -66,6 +66,7 @@ public interface ContainersManager {
     ServiceCallResult scaleContainer(ScaleContainerArg arg);
     ContainerDetails getContainer(String id);
 
+    ContainerService getService(String id);
     /**
      * Create service, when cluster does not supported services underline code emulate them.
      * @param arg argument

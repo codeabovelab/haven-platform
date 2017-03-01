@@ -38,6 +38,7 @@ public class ContainerService {
         private String id;
         private String name;
         private String cluster;
+        private long version;
         private final List<String> command = new ArrayList<>();
         private final List<Port> ports = new ArrayList<>();
         private LocalDateTime created;
@@ -75,6 +76,7 @@ public class ContainerService {
     private final String id;
     private final String name;
     private final String cluster;
+    private final long version;
     private final LocalDateTime created;
     private final LocalDateTime updated;
     private final Map<String, String> labels;
@@ -87,6 +89,7 @@ public class ContainerService {
         this.id = b.id;
         this.name = b.name;
         this.cluster = b.cluster;
+        this.version = b.version;
         this.created = b.created;
         this.updated = b.updated;
         this.labels = ImmutableMap.copyOf(b.labels);

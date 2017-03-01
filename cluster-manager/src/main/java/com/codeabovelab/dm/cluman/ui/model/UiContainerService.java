@@ -19,8 +19,8 @@ package com.codeabovelab.dm.cluman.ui.model;
 import com.codeabovelab.dm.cluman.model.*;
 import com.codeabovelab.dm.common.utils.Comparables;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 
-import javax.validation.constraints.NotNull;
 import java.time.LocalDateTime;
 import java.util.*;
 
@@ -28,19 +28,14 @@ import java.util.*;
  * UI representation for Container service.
  * @see ContainerService
  */
+@EqualsAndHashCode(callSuper = true)
 @Data
-public class UiContainerService implements Comparable<UiContainerService>, WithUiPermission {
-    @NotNull protected String id;
-    @NotNull protected String name;
-    @NotNull protected String image;
-    @NotNull protected String imageId;
+public class UiContainerService extends UiContainerServiceCore implements Comparable<UiContainerService>, WithUiPermission {
+    protected long version;
     protected String application;
-    protected String cluster;
-    protected final List<String> command = new ArrayList<>();
     protected final List<Port> ports = new ArrayList<>();
     protected LocalDateTime created;
     protected LocalDateTime updated;
-    protected final Map<String, String> labels = new HashMap<>();
     private UiPermission permission;
 
     @Override
@@ -66,6 +61,7 @@ public class UiContainerService implements Comparable<UiContainerService>, WithU
         uic.setId(s.getId());
         uic.setName(s.getName());
         uic.setCluster(s.getCluster());
+        uic.setVersion(s.getVersion());
         uic.setCreated(s.getCreated());
         uic.setUpdated(s.getUpdated());
         uic.setImage(s.getImage());

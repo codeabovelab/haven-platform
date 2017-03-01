@@ -70,27 +70,30 @@ class DockerClusterContainers implements ContainersManager {
     private Map<String, ContainerService> loadServices() {
         List<Service> services = getDocker().getServices(new GetServicesArg());
         ImmutableMap.Builder<String, ContainerService> ilb = ImmutableMap.builder();
-        services.forEach((s) -> {
-            ContainerService.Builder csb = ContainerService.builder();
-            csb.setCluster(dc.getName());
-            csb.setCreated(s.getCreated());
-            csb.setUpdated(s.getUpdated());
-            csb.setId(s.getId());
-            Service.ServiceSpec spec = s.getSpec();
-            csb.setLabels(spec.getLabels());
-            csb.setName(spec.getName());
-            Task.TaskSpec task = spec.getTaskTemplate();
-            ContainerSpec container = task.getContainer();
-            String image = container.getImage();
-            ImageName im = ImageName.parse(image);
-            csb.setImage(im.getFullName());
-            csb.setImageId(im.getId());
-            csb.setCommand(container.getCommand());
-            convertPorts(s.getEndpoint().getPorts(), csb.getPorts());
-            ilb.put(s.getId(), csb.build());
-        });
+        services.forEach((s) -> ilb.put(s.getId(), convertService(s)));
         Map<String, ContainerService> map = ilb.build();
         return map;
+    }
+
+    private ContainerService convertService(Service s) {
+        ContainerService.Builder csb = ContainerService.builder();
+        csb.setCluster(dc.getName());
+        csb.setVersion(s.getVersion().getIndex());
+        csb.setCreated(s.getCreated());
+        csb.setUpdated(s.getUpdated());
+        csb.setId(s.getId());
+        Service.ServiceSpec spec = s.getSpec();
+        csb.setLabels(spec.getLabels());
+        csb.setName(spec.getName());
+        Task.TaskSpec task = spec.getTaskTemplate();
+        ContainerSpec container = task.getContainer();
+        String image = container.getImage();
+        ImageName im = ImageName.parse(image);
+        csb.setImage(im.getFullName());
+        csb.setImageId(im.getId());
+        csb.setCommand(container.getCommand());
+        convertPorts(s.getEndpoint().getPorts(), csb.getPorts());
+        return csb.build();
     }
 
     protected DockerService getDocker() {
@@ -169,6 +172,15 @@ class DockerClusterContainers implements ContainersManager {
                 return DockerContainer.State.DEAD;
         }
         return null;
+    }
+
+    @Override
+    public ContainerService getService(String id) {
+        Service service = getDocker().getService(id);
+        if(service == null) {
+            return null;
+        }
+        return convertService(service);
     }
 
     @Override

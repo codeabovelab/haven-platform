@@ -150,6 +150,25 @@ public class ImageName {
         return imageId.substring(start, start + ImageName.NAME_ID_LEN);
     }
 
+    /**
+     * Concatenate name and id. It support on new docker versions only.
+     * @return name + '@' + id, also correct nadle null.
+     */
+    public static String nameWithId(String name, String id) {
+        String res = name;
+        if(id != null) {
+            if(!isId(id)) {
+                throw new IllegalArgumentException("Id of '" + name + "' is invalid: " + id);
+            }
+            if(res != null) {
+                res = res + "@" + id;
+            } else {
+                res = id;
+            }
+        }
+        return res;
+    }
+
     public static boolean isId(String image) {
         // see https://docs.docker.com/registry/spec/api/#/content-digests
         int length = SHA256.length();

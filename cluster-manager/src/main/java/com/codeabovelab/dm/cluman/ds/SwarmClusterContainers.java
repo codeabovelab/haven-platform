@@ -109,17 +109,22 @@ public class SwarmClusterContainers extends AbstractContainersManager {
     }
 
     @Override
+    public ContainerService getService(String id) {
+        return null;
+    }
+
+    @Override
     public ServiceCallResult createService(CreateServiceArg arg) {
-        throw new UnsupportedOperationException("Not implemented yet.");
+        return ServiceCallResult.unsupported();
     }
 
     @Override
     public ServiceCallResult updateService(UpdateServiceArg arg) {
-        throw new UnsupportedOperationException("Not implemented yet.");
+        return ServiceCallResult.unsupported();
     }
 
     @Override
     public ServiceCallResult deleteService(String service) {
-        throw new UnsupportedOperationException("Not implemented yet.");
+        return ServiceCallResult.unsupported();
     }
 }
