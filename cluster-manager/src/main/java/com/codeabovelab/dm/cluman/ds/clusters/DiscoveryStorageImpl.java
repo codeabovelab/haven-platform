@@ -37,6 +37,7 @@ import com.codeabovelab.dm.common.security.Action;
 import com.codeabovelab.dm.common.security.Authorities;
 import com.codeabovelab.dm.common.security.TenantGrantedAuthoritySid;
 import com.codeabovelab.dm.common.security.acl.AceSource;
+import com.codeabovelab.dm.common.security.acl.AclSource;
 import com.codeabovelab.dm.common.utils.Closeables;
 import com.codeabovelab.dm.common.utils.ExecutorUtils;
 import com.codeabovelab.dm.common.utils.Throwables;
@@ -134,15 +135,7 @@ public class DiscoveryStorageImpl implements DiscoveryStorage {
     @PostConstruct
     public void init() {
         try(TempAuth ta = TempAuth.asSystem()) {
-            AclModifier aclModifier = (asb) -> {
-                //here we add default rights to read this groups by all users
-                asb.addEntry(AceSource.builder()
-                  .permission(Action.READ)
-                  .granting(true)
-                  .sid(TenantGrantedAuthoritySid.from(Authorities.USER))
-                  .build());
-                return true;
-            };
+            AclModifier aclModifier = this::addDefaultAce;
             // virtual cluster for any nodes
             NodesGroup allGroup = getOrCreateGroup(new DefaultNodesGroupConfig(GROUP_ID_ALL, FilterFactory.ANY));
             allGroup.updateAcl(aclModifier);
@@ -152,6 +145,23 @@ public class DiscoveryStorageImpl implements DiscoveryStorage {
         }
 
         getNodeStorage().getNodeEventSubscriptions().subscribe(this::onNodeEvent);
+    }
+
+    private boolean addDefaultAce(AclSource.Builder asb) {
+        //here we add default rights to read this groups by all users
+        TenantGrantedAuthoritySid tgas = TenantGrantedAuthoritySid.from(Authorities.USER);
+        Action read = Action.READ;
+        for(AceSource aces: asb.getEntries().values()) {
+            if(aces.isGranting() && tgas.equals(aces.getSid()) && aces.getPermission().getMask() == read.getMask()) {
+                return false;
+            }
+        }
+        asb.addEntry(AceSource.builder()
+          .permission(read)
+          .granting(true)
+          .sid(tgas)
+          .build());
+        return true;
     }
 
     private void onNodeEvent(NodeEvent nodeEvent) {
