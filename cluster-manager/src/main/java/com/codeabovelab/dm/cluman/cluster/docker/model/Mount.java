@@ -18,6 +18,8 @@ package com.codeabovelab.dm.cluman.cluster.docker.model;
 
 import com.codeabovelab.dm.common.json.JtEnumLower;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 
 import java.util.Map;
@@ -27,6 +29,8 @@ import java.util.Map;
  * https://github.com/docker/docker/blob/master/api/types/mount/mount.go
  */
 @Data
+@AllArgsConstructor
+@Builder(builderClassName = "Builder")
 public class Mount {
 
     @JsonProperty("Type")
@@ -82,6 +86,8 @@ public class Mount {
      * BindOptions defines options specific to mounts of type "bind".
      */
     @Data
+    @AllArgsConstructor
+    @lombok.Builder(builderClassName = "Builder")
     public static class BindOptions {
         @JsonProperty("Propagation")
         private final Propagation propagation;
@@ -91,6 +97,8 @@ public class Mount {
      * VolumeOptions represents the options for a mount of type volume.
      */
     @Data
+    @AllArgsConstructor
+    @lombok.Builder(builderClassName = "Builder")
     public static class VolumeOptions {
         @JsonProperty("NoCopy")
         private final boolean noCopy;
@@ -104,6 +112,8 @@ public class Mount {
      * Driver represents a volume driver.
      */
     @Data
+    @AllArgsConstructor
+    @lombok.Builder(builderClassName = "Builder")
     public static class Driver {
         @JsonProperty("Name")
         private final String name;
@@ -115,6 +125,8 @@ public class Mount {
      * TmpfsOptions defines options specific to mounts of type "tmpfs".
      */
     @Data
+    @AllArgsConstructor
+    @lombok.Builder(builderClassName = "Builder")
     public static class TmpfsOptions {
         /**
          * Size sets the size of the tmpfs, in bytes.

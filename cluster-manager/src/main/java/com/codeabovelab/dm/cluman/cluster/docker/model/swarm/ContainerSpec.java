@@ -110,6 +110,8 @@ public class ContainerSpec {
 //    Secrets   []*SecretReference
 
     @Data
+    @AllArgsConstructor
+    @lombok.Builder(builderClassName = "Builder")
     public static class DnsConfig {
         /**
          * specifies the IP addresses of the name servers

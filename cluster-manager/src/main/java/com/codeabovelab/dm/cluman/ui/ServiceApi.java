@@ -29,11 +29,14 @@ import com.codeabovelab.dm.cluman.model.NodesGroup;
 import com.codeabovelab.dm.cluman.ui.model.UiContainerService;
 import com.codeabovelab.dm.cluman.ui.model.UiContainerServiceCreate;
 import com.codeabovelab.dm.cluman.validate.ExtendedAssert;
+import com.google.common.base.MoreObjects;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import javax.validation.Valid;
 
 
 /**
@@ -62,9 +65,8 @@ public class ServiceApi {
     }
 
     @RequestMapping(path = "/create", method = RequestMethod.POST)
-    public ResponseEntity<?> create(@RequestParam(name = "cluster") String cluster,
-                                    @RequestBody UiContainerServiceCreate body) {
-        NodesGroup ng = getNodesGroup(cluster);
+    public ResponseEntity<?> create(@RequestBody UiContainerServiceCreate body) {
+        NodesGroup ng = getNodesGroup(body.getCluster());
         CreateServiceArg arg = new CreateServiceArg();
         arg.setSpec(body.toServiceSpec().build());
         arg.setRegistryAuth(getRegistryAuth(body));
@@ -73,12 +75,10 @@ public class ServiceApi {
     }
 
     @RequestMapping(path = "/update", method = RequestMethod.POST)
-    public ResponseEntity<?> update(@RequestParam(name = "cluster") String cluster,
-                                    @RequestParam(name = "id") String id,
-                                    @RequestBody UiContainerServiceCreate body) {
-        NodesGroup ng = getNodesGroup(cluster);
+    public ResponseEntity<?> update(@RequestBody @Valid UiContainerServiceCreate body) {
+        NodesGroup ng = getNodesGroup(body.getCluster());
         UpdateServiceArg arg = new UpdateServiceArg();
-        arg.setService(id);
+        arg.setService(MoreObjects.firstNonNull(body.getId(), body.getName()));
         arg.setVersion(body.getVersion());
         arg.setSpec(body.toServiceSpec().build());
         arg.setRegistryAuth(getRegistryAuth(body));
@@ -95,7 +95,7 @@ public class ServiceApi {
     }
 
     private AuthConfig getRegistryAuth(UiContainerServiceCreate body) {
-        RegistryService registry = registryRepository.getRegistryByImageName(body.getImage());
+        RegistryService registry = registryRepository.getRegistryByImageName(body.getContainer().getImage());
         if(registry == null) {
             return null;
         }

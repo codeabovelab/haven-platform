@@ -17,13 +17,13 @@
 package com.codeabovelab.dm.cluman.ui.model;
 
 import com.codeabovelab.dm.cluman.model.ContainerService;
+import com.codeabovelab.dm.cluman.model.ContainerSource;
 import lombok.Data;
 
 import javax.validation.constraints.NotNull;
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
+
 
 /**
  * UI representation of core part Container service.
@@ -31,15 +31,12 @@ import java.util.Map;
  */
 @Data
 public class UiContainerServiceCore {
-    @NotNull
     protected String id;
     @NotNull
     protected String name;
     @NotNull
-    protected String image;
-    @NotNull
-    protected String imageId;
     protected String cluster;
-    protected final List<String> command = new ArrayList<>();
-    protected final Map<String, String> labels = new HashMap<>();
+    private final Map<String, String> labels = new HashMap<>();
+    @NotNull
+    private ContainerSource container;
 }

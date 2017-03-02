@@ -19,6 +19,8 @@ package com.codeabovelab.dm.cluman.cluster.docker.model.swarm;
 import com.codeabovelab.dm.cluman.model.ProtocolType;
 import com.codeabovelab.dm.common.json.JtEnumLower;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 
 import java.util.List;
@@ -38,6 +40,8 @@ public class Endpoint {
     private final List<EndpointVirtualIP> virtualIPs;
 
     @Data
+    @AllArgsConstructor
+    @Builder(builderClassName = "Builder")
     public static class EndpointSpec {
         /**
          * The mode of resolution to use for internal load balancing between tasks (vip or dnsrr).
@@ -82,6 +86,8 @@ public class Endpoint {
      * PortConfig represents the config of a port.
      */
     @Data
+    @AllArgsConstructor
+    @Builder(builderClassName = "Builder")
     public static class PortConfig {
 
         @JsonProperty("Name")
@@ -127,6 +133,8 @@ public class Endpoint {
      * EndpointVirtualIP represents the virtual ip of a port.
      */
     @Data
+    @AllArgsConstructor
+    @Builder(builderClassName = "Builder")
     public static class EndpointVirtualIP {
         @JsonProperty("NetworkID")
         private final String networkId;

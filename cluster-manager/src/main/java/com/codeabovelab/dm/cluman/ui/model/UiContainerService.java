@@ -40,6 +40,8 @@ public class UiContainerService extends UiContainerServiceCore implements Compar
 
     @Override
     public int compareTo(UiContainerService o) {
+        ContainerSource cs = getContainer();
+        ContainerSource ocs = o.getContainer();
         int comp = Comparables.compare(cluster, o.cluster);
         if(comp == 0) {
             comp = Comparables.compare(application, o.application);
@@ -48,7 +50,7 @@ public class UiContainerService extends UiContainerServiceCore implements Compar
             comp = Comparables.compare(name, o.name);
         }
         if(comp == 0) {
-            comp = Comparables.compare(image, o.image);
+            comp = Comparables.compare(cs.getImage(), ocs.getImage());
         }
         if(comp == 0) {
             comp = Comparables.compare(id, o.id);
@@ -64,11 +66,13 @@ public class UiContainerService extends UiContainerServiceCore implements Compar
         uic.setVersion(s.getVersion());
         uic.setCreated(s.getCreated());
         uic.setUpdated(s.getUpdated());
-        uic.setImage(s.getImage());
-        uic.setImageId(s.getImageId());
+        ContainerSource cs = new ContainerSource();
+        cs.setImage(s.getImage());
+        cs.setImageId(s.getImageId());
+        cs.getCommand().addAll(s.getCommand());
+        uic.setContainer(cs);
         uic.getLabels().putAll(s.getLabels());
         uic.getPorts().addAll(s.getPorts());
-        uic.getCommand().addAll(s.getCommand());
         return uic;
     }
 }
