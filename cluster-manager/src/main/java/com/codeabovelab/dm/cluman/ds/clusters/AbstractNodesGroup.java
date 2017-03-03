@@ -16,6 +16,7 @@
 
 package com.codeabovelab.dm.cluman.ds.clusters;
 
+import com.codeabovelab.dm.cluman.cluster.docker.management.DockerService;
 import com.codeabovelab.dm.cluman.cluster.docker.model.Network;
 import com.codeabovelab.dm.cluman.ds.swarm.NetworkManager;
 import com.codeabovelab.dm.cluman.model.NodeGroupState;
@@ -36,6 +37,8 @@ import org.springframework.util.Assert;
 
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Consumer;
 
 /**
@@ -58,6 +61,7 @@ public abstract class AbstractNodesGroup<C extends AbstractNodesGroupConfig<C>> 
     private final ObjectIdentityData oid;
     protected final AtomicInteger state = new AtomicInteger(S_BEGIN);
     protected final NetworkManager networkManager;
+    private final CreateNetworkTask createNetworkTask = new CreateNetworkTask();
 
     @SuppressWarnings("unchecked")
     public AbstractNodesGroup(C config,
@@ -233,18 +237,7 @@ public abstract class AbstractNodesGroup<C extends AbstractNodesGroupConfig<C>> 
             log.warn("Can not create network due cluster '{}' in '{}' state.", getName(), state.getMessage());
             return;
         }
-        getDiscoveryStorage().getExecutor().execute(() -> {
-            try (TempAuth ta = TempAuth.asSystem()) {
-                List<Network> networks = getDocker().getNetworks();
-                log.debug("Networks {}", networks);
-                String defaultNetwork = getDefaultNetworkName();
-                Optional<Network> any = networks.stream().filter(n -> n.getName().equals(defaultNetwork)).findAny();
-                if (any.isPresent()) {
-                    return;
-                }
-                networkManager.createNetwork(defaultNetwork);
-            }
-        });
+        getDiscoveryStorage().getExecutor().execute(createNetworkTask);
     }
 
     @Override
@@ -334,6 +327,36 @@ public abstract class AbstractNodesGroup<C extends AbstractNodesGroupConfig<C>> 
         AclSource acl = config.getAcl();
         if(acl != null && !oid.equals(acl.getObjectIdentity())) {
             throw new IllegalArgumentException("Bad acl.objectIdentity in config: " + config);
+        }
+    }
+
+    private class CreateNetworkTask implements Runnable {
+
+        private final Lock lock = new ReentrantLock();
+
+        @Override
+        public void run() {
+            if(!lock.tryLock()) {
+                // this case actual when one of tasks already in execution
+                return;
+            }
+            try (TempAuth ta = TempAuth.asSystem()) {
+                DockerService docker = getDocker();
+                if(docker == null || !docker.isOnline()) {
+                    log.warn("Can not create networks in '{}' cluster due to null or offline docker", getName());
+                    return;
+                }
+                List<Network> networks = docker.getNetworks();
+                log.debug("Networks {}", networks);
+                String defaultNetwork = getDefaultNetworkName();
+                Optional<Network> any = networks.stream().filter(n -> n.getName().equals(defaultNetwork)).findAny();
+                if (any.isPresent()) {
+                    return;
+                }
+                networkManager.createNetwork(defaultNetwork);
+            } finally {
+                lock.unlock();
+            }
         }
     }
 }
