@@ -112,6 +112,7 @@ public class DockerCluster extends AbstractNodesGroup<DockerClusterConfig> {
     }
 
     private void onNodeEvent(NodeEvent e) {
+        System.out.println(e);
         final NodeEvent.Action action = e.getAction();
         NodeInfo old = e.getOld();
         NodeInfo curr = e.getCurrent();
@@ -152,11 +153,14 @@ public class DockerCluster extends AbstractNodesGroup<DockerClusterConfig> {
         hosts.forEach(host -> managers.putIfAbsent(host, new Manager(host)));
         initCluster(hosts.get(0));
 
-        this.containers = new DockerClusterContainers(this, this.containerStorage, this.containerCreator);
+        if(state.get() == S_INITING) {
+            // we do this only if initialization process is success
+            this.containers = new DockerClusterContainers(this, this.containerStorage, this.containerCreator);
 
-        // so docker does not send any events about new coming nodes, and we must refresh list of them
-        this.scheduledExecutor.scheduleWithFixedDelay(this::rereadNodes, rereadNodesTimeout, rereadNodesTimeout, TimeUnit.SECONDS);
-        getNodeStorage().getNodeEventSubscriptions().subscribe(this::onNodeEvent);
+            // so docker does not send any events about new coming nodes, and we must refresh list of them
+            this.scheduledExecutor.scheduleWithFixedDelay(this::rereadNodes, rereadNodesTimeout, rereadNodesTimeout, TimeUnit.SECONDS);
+            getNodeStorage().getNodeEventSubscriptions().subscribe(this::onNodeEvent);
+        }
     }
 
     private void initCluster(String leaderName) {
