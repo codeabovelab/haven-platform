@@ -16,8 +16,12 @@
 
 package com.codeabovelab.dm.cluman.ui.model;
 
+import com.codeabovelab.dm.cluman.cluster.docker.model.swarm.Endpoint;
+import com.codeabovelab.dm.cluman.cluster.docker.model.swarm.Service;
 import com.codeabovelab.dm.cluman.model.*;
+import com.codeabovelab.dm.cluman.source.SourceUtil;
 import com.codeabovelab.dm.common.utils.Comparables;
+import com.codeabovelab.dm.common.utils.Sugar;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
@@ -60,19 +64,25 @@ public class UiContainerService extends UiContainerServiceCore implements Compar
 
     public static UiContainerService from(ContainerService s) {
         UiContainerService uic = new UiContainerService();
-        uic.setId(s.getId());
-        uic.setName(s.getName());
+        Service srv = s.getService();
+        uic.setId(srv.getId());
+        Service.ServiceSpec srvSpec = srv.getSpec();
+        uic.setName(srvSpec.getName());
         uic.setCluster(s.getCluster());
-        uic.setVersion(s.getVersion());
-        uic.setCreated(s.getCreated());
-        uic.setUpdated(s.getUpdated());
+        uic.setVersion(srv.getVersion().getIndex());
+        uic.setCreated(srv.getCreated());
+        uic.setUpdated(srv.getUpdated());
         ContainerSource cs = new ContainerSource();
-        cs.setImage(s.getImage());
-        cs.setImageId(s.getImageId());
-        cs.getCommand().addAll(s.getCommand());
+        SourceUtil.toSource(srvSpec.getTaskTemplate(), cs);
+        cs.setCluster(s.getCluster());
         uic.setContainer(cs);
-        uic.getLabels().putAll(s.getLabels());
-        uic.getPorts().addAll(s.getPorts());
+        Sugar.setIfNotNull(uic.getLabels()::putAll, srvSpec.getLabels());
+        List<Endpoint.PortConfig> ports = srv.getEndpoint().getPorts();
+        if(ports != null) {
+            ports.forEach(pc -> {
+                uic.getPorts().add(new Port(pc.getTargetPort(), pc.getPublishedPort(), pc.getProtocol()));
+            });
+        }
         return uic;
     }
 }

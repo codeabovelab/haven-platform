@@ -25,17 +25,13 @@ import com.codeabovelab.dm.cluman.ds.container.ContainerCreator;
 import com.codeabovelab.dm.cluman.model.CreateContainerArg;
 import com.codeabovelab.dm.cluman.cluster.docker.management.result.*;
 import com.codeabovelab.dm.cluman.cluster.docker.management.result.ServiceCallResult;
-import com.codeabovelab.dm.cluman.cluster.docker.model.swarm.ContainerSpec;
 import com.codeabovelab.dm.cluman.cluster.docker.model.swarm.Endpoint;
 import com.codeabovelab.dm.cluman.cluster.docker.model.swarm.Service;
-import com.codeabovelab.dm.cluman.cluster.docker.model.swarm.Task;
 import com.codeabovelab.dm.cluman.ds.container.ContainerRegistration;
 import com.codeabovelab.dm.cluman.ds.container.ContainerStorage;
 import com.codeabovelab.dm.cluman.model.*;
-import com.codeabovelab.dm.common.utils.Functions;
 import com.codeabovelab.dm.common.utils.SingleValueCache;
 import com.google.common.base.Joiner;
-import com.google.common.base.MoreObjects;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import lombok.extern.slf4j.Slf4j;
@@ -78,21 +74,7 @@ class DockerClusterContainers implements ContainersManager {
     private ContainerService convertService(Service s) {
         ContainerService.Builder csb = ContainerService.builder();
         csb.setCluster(dc.getName());
-        csb.setVersion(s.getVersion().getIndex());
-        csb.setCreated(s.getCreated());
-        csb.setUpdated(s.getUpdated());
-        csb.setId(s.getId());
-        Service.ServiceSpec spec = s.getSpec();
-        csb.setLabels(spec.getLabels());
-        csb.setName(spec.getName());
-        Task.TaskSpec task = spec.getTaskTemplate();
-        ContainerSpec container = task.getContainer();
-        String image = container.getImage();
-        ImageName im = ImageName.parse(image);
-        csb.setImage(im.getFullName());
-        csb.setImageId(im.getId());
-        csb.setCommand(container.getCommand());
-        convertPorts(s.getEndpoint().getPorts(), csb.getPorts());
+        csb.setService(s);
         return csb.build();
     }
 
@@ -124,24 +106,6 @@ class DockerClusterContainers implements ContainersManager {
         return getContainersInternal();
     }
 
-    private DockerContainer.Builder fromTask(Task task, DockerContainer.Builder dcb) {
-        ContainerSpec container = task.getSpec().getContainer();
-        //dcb.setLabels(task.getLabels());
-        List<String> command = container.getCommand();
-        if(command != null) {
-            dcb.setCommand(JOINER.join(command));
-        }
-        //dcb.setCreated(TimeUtils.toMillis(task.getCreated()));
-        Task.TaskStatus status = task.getStatus();
-        Task.PortStatus portStatus = status.getPortStatus();
-        if(portStatus != null) {
-            convertPorts(portStatus.getPorts(), dcb.getPorts());
-        }
-        dcb.setState(convertState(status.getState()));
-        dcb.setStatus(MoreObjects.firstNonNull(status.getError(), status.getMessage()));
-        return dcb;
-    }
-
     private void convertPorts(List<Endpoint.PortConfig> ports, List<Port> target) {
         if(ports == null) {
             return;
@@ -149,29 +113,6 @@ class DockerClusterContainers implements ContainersManager {
         ports.forEach(pc -> {
             target.add(new Port(pc.getTargetPort(), pc.getPublishedPort(), pc.getProtocol()));
         });
-    }
-
-    private DockerContainer.State convertState(Task.TaskState state) {
-        switch (state) {
-            case NEW:
-            case ALLOCATED:
-            case PENDING:
-            case ASSIGNED:
-            case ACCEPTED:
-            case PREPARING:
-            case READY:
-            case STARTING:
-                return DockerContainer.State.CREATED;
-            case RUNNING:
-                return DockerContainer.State.RUNNING;
-            case COMPLETE:
-            case SHUTDOWN:
-                return DockerContainer.State.EXITED;
-            case FAILED:
-            case REJECTED:
-                return DockerContainer.State.DEAD;
-        }
-        return null;
     }
 
     @Override
