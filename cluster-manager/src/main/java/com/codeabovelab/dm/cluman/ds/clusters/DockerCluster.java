@@ -112,7 +112,6 @@ public class DockerCluster extends AbstractNodesGroup<DockerClusterConfig> {
     }
 
     private void onNodeEvent(NodeEvent e) {
-        System.out.println(e);
         final NodeEvent.Action action = e.getAction();
         NodeInfo old = e.getOld();
         NodeInfo curr = e.getCurrent();
