@@ -106,15 +106,6 @@ class DockerClusterContainers implements ContainersManager {
         return getContainersInternal();
     }
 
-    private void convertPorts(List<Endpoint.PortConfig> ports, List<Port> target) {
-        if(ports == null) {
-            return;
-        }
-        ports.forEach(pc -> {
-            target.add(new Port(pc.getTargetPort(), pc.getPublishedPort(), pc.getProtocol()));
-        });
-    }
-
     @Override
     public ContainerService getService(String id) {
         Service service = getDocker().getService(id);

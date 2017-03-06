@@ -17,11 +17,8 @@
 package com.codeabovelab.dm.cluman.source;
 
 import com.codeabovelab.dm.cluman.cluster.docker.model.Mount;
-import com.codeabovelab.dm.cluman.cluster.docker.model.swarm.ContainerSpec;
-import com.codeabovelab.dm.cluman.cluster.docker.model.swarm.Task;
-import com.codeabovelab.dm.cluman.model.ContainerSource;
-import com.codeabovelab.dm.cluman.model.ImageName;
-import com.codeabovelab.dm.cluman.model.RootSource;
+import com.codeabovelab.dm.cluman.cluster.docker.model.swarm.*;
+import com.codeabovelab.dm.cluman.model.*;
 import com.codeabovelab.dm.common.utils.Sugar;
 import com.google.common.base.CharMatcher;
 import com.google.common.base.Splitter;
@@ -50,8 +47,79 @@ public class SourceUtil {
           version + " when support: " + RootSource.V_1_0);
     }
 
-    public static void toSource(Task.TaskSpec taskSpec, ContainerSource cs) {
+    public static void toSource(Service.ServiceSpec srvSpec, ServiceSource srv) {
+        srv.setName(srvSpec.getName());
+        Sugar.setIfNotNull(srv.getLabels()::putAll, srvSpec.getLabels());
+        List<Endpoint.PortConfig> ports = srvSpec.getEndpointSpec().getPorts();
+        if(ports != null) {
+            ports.forEach(pc -> {
+                srv.getPorts().add(new Port(pc.getTargetPort(), pc.getPublishedPort(), pc.getProtocol(), pc.getPublishMode()));
+            });
+        }
+
+        Task.TaskSpec taskSpec = srvSpec.getTaskTemplate();
+        ContainerSource cs = srv.getContainer();
         ContainerSpec conSpec = taskSpec.getContainer();
+        toSource(conSpec, cs);
+        Task.ResourceRequirements rrs = taskSpec.getResources();
+        if(rrs != null) {
+            TaskResources limits = rrs.getLimits();
+            if(limits != null) {
+                cs.setMemoryLimit(limits.getMemory());
+            }
+            TaskResources reserv = rrs.getReservations();
+            if(reserv != null) {
+                cs.setMemoryReservation(reserv.getMemory());
+            }
+        }
+        Task.Placement placement = taskSpec.getPlacement();
+        if(placement != null) {
+            Sugar.setIfNotNull(srv.getConstraints()::addAll, placement.getConstraints());
+        }
+
+    }
+
+    public static void fromSource(ServiceSource srv, Service.ServiceSpec.Builder ssb) {
+        ssb.name(srv.getName());
+        ssb.labels(srv.getLabels());
+        Endpoint.EndpointSpec.Builder esb = Endpoint.EndpointSpec.builder();
+        srv.getPorts().forEach(p -> {
+            esb.port(Endpoint.PortConfig.builder()
+              .publishedPort(p.getPublicPort())
+              .targetPort(p.getPrivatePort())
+              .protocol(p.getType())
+              .publishMode(p.getMode())
+              .build());
+        });
+        ssb.endpointSpec(esb.build());
+
+        Task.TaskSpec.Builder tsb = Task.TaskSpec.builder();
+        ContainerSource cont = srv.getContainer();
+        ContainerSpec.Builder csb = ContainerSpec.builder();
+        fromSource(cont, csb);
+        tsb.container(csb.build());
+
+        Task.ResourceRequirements.Builder rrsb = Task.ResourceRequirements.builder();
+        {
+            Long memoryLimit = cont.getMemoryLimit();
+            if(memoryLimit != null) {
+                rrsb.limits(TaskResources.builder().memory(memoryLimit).build());
+            }
+        }
+        {
+            Long memoryReservation = cont.getMemoryReservation();
+            if(memoryReservation != null) {
+                rrsb.limits(TaskResources.builder().memory(memoryReservation).build());
+            }
+        }
+        tsb.resources(rrsb.build());
+
+        tsb.placement(Task.Placement.builder().constraints(srv.getConstraints()).build());
+
+        ssb.taskTemplate(tsb.build());
+    }
+
+    private static void toSource(ContainerSpec conSpec, ContainerSource cs) {
         hostsToSource(conSpec.getHosts(), cs.getExtraHosts());
         ContainerSpec.DnsConfig dc = conSpec.getDnsConfig();
         if(dc != null) {
@@ -69,20 +137,18 @@ public class SourceUtil {
         cs.setHostname(conSpec.getHostname());
     }
 
-    public static void fromSource(ContainerSource c, Task.TaskSpec.Builder builder) {
-        ContainerSpec.Builder csb = ContainerSpec.builder();
-        csb.hosts(hostsFromSource(c.getExtraHosts()));
+    private static void fromSource(ContainerSource cont, ContainerSpec.Builder csb) {
+        csb.hosts(hostsFromSource(cont.getExtraHosts()));
         csb.dnsConfig(ContainerSpec.DnsConfig.builder()
-          .servers(c.getDns())
-          .search(c.getDnsSearch())
+          .servers(cont.getDns())
+          .search(cont.getDnsSearch())
           .build());
-        csb.mounts(convertMounts(c));
-        csb.image(ImageName.nameWithId(c.getImage(), c.getImageId()))
-          .labels(c.getLabels())
-          .command(c.getCommand())
-          .env(c.getEnvironment())
-          .hostname(c.getHostname());
-        builder.container(csb.build());
+        csb.mounts(convertMounts(cont));
+        csb.image(ImageName.nameWithId(cont.getImage(), cont.getImageId()))
+          .labels(cont.getLabels())
+          .command(cont.getCommand())
+          .env(cont.getEnvironment())
+          .hostname(cont.getHostname());
     }
 
     private static List<Mount> convertMounts(ContainerSource c) {

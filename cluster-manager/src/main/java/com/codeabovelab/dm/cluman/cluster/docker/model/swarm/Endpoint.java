@@ -22,6 +22,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
+import lombok.Singular;
 
 import java.util.List;
 
@@ -54,6 +55,7 @@ public class Endpoint {
          * List of exposed ports that this service is accessible on from the outside.
          * Ports can only be provided if vip resolution mode is used.
          */
+        @Singular
         @JsonProperty("Ports")
         private final List<PortConfig> ports;
     }
@@ -112,7 +114,7 @@ public class Endpoint {
          * PublishMode is the mode in which port is published
          */
         @JsonProperty("PublishMode")
-        private final PortConfigPublishMode PublishMode;
+        private final PortConfigPublishMode publishMode;
     }
 
     @JtEnumLower
