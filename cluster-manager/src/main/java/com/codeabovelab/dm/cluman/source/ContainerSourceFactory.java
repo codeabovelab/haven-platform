@@ -67,6 +67,7 @@ public class ContainerSourceFactory {
             }
         }
         Sugar.setIfNotNull(nc.getEnvironment()::addAll, config.getEnv());
+        Sugar.setIfNotNull(nc.getCommand()::addAll, config.getCmd());
         Sugar.setIfNotNull(nc.getExtraHosts()::addAll, hostConfig.getExtraHosts());
         nc.setHostname(config.getHostName());
         Sugar.setIfNotNull(nc.getLabels()::putAll, config.getLabels());
