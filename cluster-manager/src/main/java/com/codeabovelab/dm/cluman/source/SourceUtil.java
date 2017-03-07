@@ -101,23 +101,27 @@ public class SourceUtil {
         tsb.container(csb.build());
 
         Task.ResourceRequirements.Builder rrsb = Task.ResourceRequirements.builder();
-        {
-            Long memoryLimit = cont.getMemoryLimit();
-            if(memoryLimit != null) {
-                rrsb.limits(TaskResources.builder().memory(memoryLimit).build());
-            }
-        }
-        {
-            Long memoryReservation = cont.getMemoryReservation();
-            if(memoryReservation != null) {
-                rrsb.limits(TaskResources.builder().memory(memoryReservation).build());
-            }
-        }
+        rrsb.limits(toTaskResources(cont.getMemoryLimit(), cont.getCpuQuota()));
+        rrsb.reservations(toTaskResources(cont.getMemoryReservation(), cont.getCpuPeriod()));
         tsb.resources(rrsb.build());
 
         tsb.placement(Task.Placement.builder().constraints(srv.getConstraints()).build());
 
         ssb.taskTemplate(tsb.build());
+    }
+
+    private static TaskResources toTaskResources(Long mem, Integer cpu) {
+        if(mem == null && cpu == null) {
+            return null;
+        }
+        TaskResources.Builder trb = TaskResources.builder();
+        if(mem != null) {
+            trb.memory(mem);
+        }
+        if(cpu != null) {
+            trb.nanoCPUs(cpu * 1000L);
+        }
+        return trb.build();
     }
 
     private static void toSource(ContainerSpec conSpec, ContainerSource cs) {
