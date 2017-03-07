@@ -100,17 +100,25 @@ public class ContainerSourceFactory {
     }
 
     private static void loadMounts(List<ContainerDetails.MountPoint> srcPoints, List<Mount> srcMounts, List<MountSource> dest) {
-        if(srcPoints != null) {
-            srcPoints.forEach(p -> {
-                MountSource ms = SourceUtil.toMountSource(p);
+        // docker place all mounts to MountPoints, but this does not provide enough info
+        // otherwise hostConfig.mounts have full info but sometime may be empty, therefore we use both sources
+        Map<String, MountSource> converted = new HashMap<>();
+        if(srcMounts != null) {
+            srcMounts.forEach(m -> {
+                MountSource ms = SourceUtil.toMountSource(m);
                 if (ms != null) {
+                    converted.put(ms.getTarget(), ms);
                     dest.add(ms);
                 }
             });
         }
-        if(srcMounts != null) {
-            srcMounts.forEach(m -> {
-                MountSource ms = SourceUtil.toMountSource(m);
+        if(srcPoints != null) {
+            srcPoints.forEach(p -> {
+                if(converted.containsKey(p.getDestination())) {
+                    // we prevent appearing same mount from multiple source
+                    return;
+                }
+                MountSource ms = SourceUtil.toMountSource(p);
                 if (ms != null) {
                     dest.add(ms);
                 }
