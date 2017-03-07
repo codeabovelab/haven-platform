@@ -73,6 +73,7 @@ public class Mount {
     /**
      * Propagation represents the propagation of a mount.
      */
+    @JtEnumLower
     public enum Propagation {
         RPRIVATE,
         PRIVATE,

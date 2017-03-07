@@ -16,6 +16,7 @@
 
 package com.codeabovelab.dm.cluman.source;
 
+import com.codeabovelab.dm.cluman.cluster.docker.model.ContainerDetails;
 import com.codeabovelab.dm.cluman.cluster.docker.model.Mount;
 import com.codeabovelab.dm.cluman.cluster.docker.model.swarm.*;
 import com.codeabovelab.dm.cluman.model.*;
@@ -151,6 +152,7 @@ public class SourceUtil {
           .hostname(cont.getHostname());
     }
 
+    @SuppressWarnings("deprecation")
     private static List<Mount> convertMounts(ContainerSource c) {
         List<Mount> res = new ArrayList<>();
         final String volumeDriver = c.getVolumeDriver();
@@ -310,5 +312,87 @@ public class SourceUtil {
                 dst.add(i.next() + ":" + ip);
             }
         });
+    }
+
+    public static MountSource toMountSource(Mount m) {
+        Mount.Type type = m.getType();
+        MountSource ms;
+        switch (type) {
+            case BIND: {
+                MountSource.BindSource bs = new MountSource.BindSource();
+                Mount.BindOptions bo = m.getBindOptions();
+                if(bo != null) {
+                    bs.setPropagation(bo.getPropagation());
+                }
+                ms = bs;
+            }
+            break;
+            case TMPFS: {
+                MountSource.TmpfsSource ts = new MountSource.TmpfsSource();
+                Mount.TmpfsOptions to = m.getTmpfsOptions();
+                if(to != null) {
+                    ts.setMode(to.getMode());
+                    ts.setSize(to.getSize());
+                }
+                ms = ts;
+            }
+            break;
+            case VOLUME: {
+                MountSource.VolumeSource vs = new MountSource.VolumeSource();
+                Mount.VolumeOptions vo = m.getVolumeOptions();
+                if(vo != null) {
+                    Mount.Driver dc = vo.getDriverConfig();
+                    if(dc != null) {
+                        vs.setDriver(dc.getName());
+                        Sugar.setIfNotNull(vs.getDriverOpts()::putAll, dc.getOptions());
+                    }
+                    Sugar.setIfNotNull(vs.getLabels()::putAll, vo.getLabels());
+                    vs.setNoCopy(vo.isNoCopy());
+                }
+                ms = vs;
+            }
+            break;
+            default:
+                // for unsupported type
+                return null;
+        }
+        ms.setReadonly(m.isReadonly());
+        ms.setSource(m.getSource());
+        ms.setTarget(m.getTarget());
+        ms.setType(type);
+        return ms;
+    }
+
+    public static MountSource toMountSource(ContainerDetails.MountPoint p) {
+        Mount.Type type = p.getType();
+        MountSource ms;
+        switch (type) {
+            case BIND: {
+                MountSource.BindSource bs = new MountSource.BindSource();
+                bs.setPropagation(p.getPropagation());
+                ms = bs;
+            }
+            break;
+            case TMPFS: {
+                MountSource.TmpfsSource ts = new MountSource.TmpfsSource();
+                // mount point does not provide enough info
+                ms = ts;
+            }
+            break;
+            case VOLUME: {
+                MountSource.VolumeSource vs = new MountSource.VolumeSource();
+                vs.setDriver(p.getDriver());
+                ms = vs;
+            }
+            break;
+            default:
+                // for unsupported type
+                return null;
+        }
+        ms.setReadonly(!p.isRw());
+        ms.setSource(p.getSource());
+        ms.setTarget(p.getDestination());
+        ms.setType(type);
+        return ms;
     }
 }

@@ -66,6 +66,7 @@ public class ContainerSource extends EditableContainerSource implements Cloneabl
      * The comma-delimited `options` are [rw|ro], [z|Z], [[r]shared|[r]slave|[r]private], and [nocopy]. <p/>
      * <a href="https://docs.docker.com/engine/tutorials/dockervolumes/">See docs.docker.com</a>
      */
+    @Deprecated
     @Setter(AccessLevel.NONE)
     private List<String> volumes = new ArrayList<>();
     /**
@@ -75,17 +76,23 @@ public class ContainerSource extends EditableContainerSource implements Cloneabl
      * The 'host-src' is an absolute path or a name value.<p/>
      * <a href="https://docs.docker.com/engine/tutorials/dockervolumes/">See docs.docker.com</a>
      */
+    @Deprecated
     @Setter(AccessLevel.NONE)
     private List<String> volumeBinds = new ArrayList<>();
     /**
      *
      */
+    @Deprecated
     private String volumeDriver;
     /**
      * List of entris like <code>container:['rw'|'ro']</code> which is used as volume source
      */
+    @Deprecated
     @Setter(AccessLevel.NONE)
     private List<String> volumesFrom = new ArrayList<>();
+
+    @Setter(AccessLevel.NONE)
+    private List<MountSource> mounts = new ArrayList<>();
     /**
      * Name must comply with requirements for hostname. Simply it allow only 'a'-'z' chars and '-'.
      */
@@ -107,12 +114,6 @@ public class ContainerSource extends EditableContainerSource implements Cloneabl
     private List<String> command = new ArrayList<>();
     @Setter(AccessLevel.NONE)
     private List<String> entrypoint = new ArrayList<>();
-    /**
-     * List of dependencies, note that deps may be in reverse order (mean that specified
-     * container must be depended from this). Also, system consider dependencies placed as {@link #links }
-     * TODO we need to split it to url, container, and reverse container deps (we need that current object must be flat)
-     */
-    // private final List<ContainerDependency> deps = new ArrayList<>();
 
     /**
      * List of dns servers for container, when null container will use it from host settings.
@@ -155,6 +156,7 @@ public class ContainerSource extends EditableContainerSource implements Cloneabl
         clone.volumes = Cloneables.clone(clone.volumes);
         clone.volumeBinds = Cloneables.clone(clone.volumeBinds);
         clone.volumesFrom = Cloneables.clone(clone.volumesFrom);
+        clone.mounts = Cloneables.clone(clone.mounts);
         clone.ports = Cloneables.clone(clone.ports);
         clone.labels = Cloneables.clone(clone.labels);
         clone.links = Cloneables.clone(clone.links);

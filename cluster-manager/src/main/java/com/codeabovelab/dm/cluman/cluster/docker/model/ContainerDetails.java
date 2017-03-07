@@ -28,6 +28,7 @@ import java.util.Map;
 
 /**
  * Detailed info for container
+ * https://github.com/docker/docker/blob/e1da516598e6f4e8f58964fce62ff13be1d8cc09/api/types/types.go#L331
  */
 @JsonIgnoreProperties(ignoreUnknown = true)
 @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -91,14 +92,8 @@ public class ContainerDetails implements ContainerBaseIface {
     @JsonProperty("State")
     private ContainerState state;
 
-    @JsonProperty("Volumes")
-    private Map<String, String> volumes;
-
-    @JsonProperty("VolumesRW")
-    private Map<String, Boolean> volumesRW;
-
     @JsonProperty("Mounts")
-    private List<Mount> mounts;
+    private List<MountPoint> mounts;
 
     @JsonProperty("Node")
     private Node node;
@@ -115,7 +110,10 @@ public class ContainerDetails implements ContainerBaseIface {
 
     @JsonIgnoreProperties(ignoreUnknown = true)
     @Data
-    public static class Mount {
+    public static class MountPoint {
+
+        @JsonProperty("Type")
+        private Mount.Type type;
 
         @JsonProperty("Name")
         private String name;
@@ -124,7 +122,7 @@ public class ContainerDetails implements ContainerBaseIface {
         private String source;
 
         @JsonProperty("Destination")
-        private VolumeRef destination;
+        private String destination;
 
         @JsonProperty("Driver")
         private String driver;
@@ -133,7 +131,9 @@ public class ContainerDetails implements ContainerBaseIface {
         private String mode;
 
         @JsonProperty("RW")
-        private Boolean rw;
+        private boolean rw;
 
+        @JsonProperty("Propagation")
+        private final Mount.Propagation propagation;
     }
 }

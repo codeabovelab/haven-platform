@@ -100,14 +100,6 @@ public final class UiUtils {
         return convertToMb((long)memory);
     }
 
-    public static List<String> bindsToString(List<Bind> binds) {
-        List<String> list = new ArrayList<>();
-        for (Bind bind : binds) {
-            list.add(bind.toString());
-        }
-        return list;
-    }
-
     public static String convertToStringFromJiffies(Long jiffies) {
         LocalTime timeOfDay = LocalTime.fromMillisOfDay(jiffies / 1000_000L);
         String time = timeOfDay.toString("HH:mm:ss");
