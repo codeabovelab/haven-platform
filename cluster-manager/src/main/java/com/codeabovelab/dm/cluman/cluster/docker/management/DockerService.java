@@ -229,6 +229,7 @@ public interface DockerService {
      */
     ServiceCallResult joinSwarm(SwarmJoinCmd cmd);
     ServiceCallResult leaveSwarm(SwarmLeaveArg arg);
+    ServiceCallResult deployStack(StackArg arg);
 
     /**
      * Get list of nodes. Work only for docker in swarm-mode.

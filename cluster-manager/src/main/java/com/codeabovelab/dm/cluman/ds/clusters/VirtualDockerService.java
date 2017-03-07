@@ -380,6 +380,11 @@ class VirtualDockerService implements DockerService {
     }
 
     @Override
+    public ServiceCallResult deployStack(StackArg arg) {
+        return null;
+    }
+
+    @Override
     public List<SwarmNode> getNodes(GetNodesArg cmd) {
         return Collections.emptyList();
     }

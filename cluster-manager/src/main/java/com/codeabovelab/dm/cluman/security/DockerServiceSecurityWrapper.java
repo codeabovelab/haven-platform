@@ -51,19 +51,28 @@ public class DockerServiceSecurityWrapper implements DockerService {
     }
 
     private void checkServiceAccessInternal(AccessContext context, Action action) {
+        checkClusterAccess(context, action);
+        String node = getNode();
+        if(node != null) {
+            boolean granted = context.isGranted(SecuredType.NODE.id(node), action);
+            if(!granted) {
+                throw new AccessDeniedException("Access to node docker service '" + node + "' with " + action + " is denied.");
+            }
+        }
+    }
+
+    public void checkClusterAccess(Action action) {
+        AccessContext context = aclContextFactory.getContext();
+        checkClusterAccess(context, action);
+    }
+
+    public void checkClusterAccess(AccessContext context, Action action) {
         Assert.notNull(action, "Action is null");
         String cluster = getCluster();
         if(cluster != null) {
             boolean granted = context.isGranted(SecuredType.CLUSTER.id(cluster), action);
             if(!granted) {
                 throw new AccessDeniedException("Access to cluster docker service '" + cluster + "' with " + action + " is denied.");
-            }
-        }
-        String node = getNode();
-        if(node != null) {
-            boolean granted = context.isGranted(SecuredType.NODE.id(node), action);
-            if(!granted) {
-                throw new AccessDeniedException("Access to node docker service '" + node + "' with " + action + " is denied.");
             }
         }
     }
@@ -264,9 +273,8 @@ public class DockerServiceSecurityWrapper implements DockerService {
     public List<Network> getNetworks() {
         AccessContext context = aclContextFactory.getContext();
         checkServiceAccessInternal(context, Action.READ);
-        return service.getNetworks().stream().filter((net) -> {
-            return context.isGranted(SecuredType.NETWORK.id(net.getId()), Action.READ);
-        }).collect(Collectors.toList());
+        return service.getNetworks().stream().filter((net) -> context.isGranted(SecuredType.NETWORK.id(net.getId()), Action.READ))
+                .collect(Collectors.toList());
     }
 
     @Override
@@ -332,6 +340,12 @@ public class DockerServiceSecurityWrapper implements DockerService {
     public ServiceCallResult leaveSwarm(SwarmLeaveArg arg) {
         checkServiceAccess(Action.UPDATE);
         return service.leaveSwarm(arg);
+    }
+
+    @Override
+    public ServiceCallResult deployStack(StackArg arg) {
+        checkClusterAccess(Action.UPDATE);
+        return service.deployStack(arg);
     }
 
     @Override
