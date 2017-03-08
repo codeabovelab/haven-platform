@@ -343,12 +343,6 @@ public class DockerServiceSecurityWrapper implements DockerService {
     }
 
     @Override
-    public ServiceCallResult deployStack(StackArg arg) {
-        checkClusterAccess(Action.UPDATE);
-        return service.deployStack(arg);
-    }
-
-    @Override
     public List<SwarmNode> getNodes(GetNodesArg cmd) {
         checkServiceAccess(Action.READ);
         return service.getNodes(cmd);

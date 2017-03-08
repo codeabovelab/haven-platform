@@ -1036,18 +1036,6 @@ public class DockerServiceImpl implements DockerService {
         return postAction(ucb, null);
     }
 
-    /**
-     * /api/v1/stack/
-     * @param arg
-     * @return
-     */
-    @Override
-    public ServiceCallResult deployStack(StackArg arg) {
-        Assert.notNull(arg, "arg is null");
-        UriComponentsBuilder ucb = makeUrl("/api/v1/stack/");
-        return postAction(ucb, arg.getStack());
-    }
-
     @Override
     public List<SwarmNode> getNodes(GetNodesArg cmd) {
         SwarmNode[] nodes = getOrNullAction(makeUrl("/nodes"), SwarmNode[].class);
