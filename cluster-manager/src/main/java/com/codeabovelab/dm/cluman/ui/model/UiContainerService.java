@@ -34,30 +34,26 @@ import java.util.*;
  */
 @EqualsAndHashCode(callSuper = true)
 @Data
-public class UiContainerService extends UiContainerServiceCore implements Comparable<UiContainerService>, WithUiPermission {
+public class UiContainerService extends ServiceSource implements WithUiPermission {
     protected long version;
-    protected String application;
-    protected final List<Port> ports = new ArrayList<>();
     protected LocalDateTime created;
     protected LocalDateTime updated;
     private UiPermission permission;
 
     @Override
-    public int compareTo(UiContainerService o) {
-        ContainerSource cs = getContainer();
-        ContainerSource ocs = o.getContainer();
-        int comp = Comparables.compare(cluster, o.cluster);
+    public int compareTo(ServiceSource o) {
+        int comp = Comparables.compare(getCluster(), o.getCluster());
         if(comp == 0) {
-            comp = Comparables.compare(application, o.application);
+            comp = Comparables.compare(getApplication(), o.getApplication());
         }
         if(comp == 0) {
-            comp = Comparables.compare(name, o.name);
+            comp = Comparables.compare(getName(), o.getName());
         }
         if(comp == 0) {
-            comp = Comparables.compare(cs.getImage(), ocs.getImage());
+            comp = Comparables.compare(getImage(), o.getImage());
         }
         if(comp == 0) {
-            comp = Comparables.compare(id, o.id);
+            comp = Comparables.compare(getId(), o.getId());
         }
         return comp;
     }
@@ -67,22 +63,11 @@ public class UiContainerService extends UiContainerServiceCore implements Compar
         Service srv = s.getService();
         uic.setId(srv.getId());
         Service.ServiceSpec srvSpec = srv.getSpec();
-        uic.setName(srvSpec.getName());
-        uic.setCluster(s.getCluster());
         uic.setVersion(srv.getVersion().getIndex());
         uic.setCreated(srv.getCreated());
         uic.setUpdated(srv.getUpdated());
-        ContainerSource cs = new ContainerSource();
-        SourceUtil.toSource(srvSpec.getTaskTemplate(), cs);
-        cs.setCluster(s.getCluster());
-        uic.setContainer(cs);
-        Sugar.setIfNotNull(uic.getLabels()::putAll, srvSpec.getLabels());
-        List<Endpoint.PortConfig> ports = srv.getEndpoint().getPorts();
-        if(ports != null) {
-            ports.forEach(pc -> {
-                uic.getPorts().add(new Port(pc.getTargetPort(), pc.getPublishedPort(), pc.getProtocol()));
-            });
-        }
+        SourceUtil.toSource(srvSpec, uic);
+        uic.setCluster(s.getCluster());
         return uic;
     }
 }

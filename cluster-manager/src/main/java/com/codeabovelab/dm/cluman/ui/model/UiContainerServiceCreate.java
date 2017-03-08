@@ -20,6 +20,7 @@ import com.codeabovelab.dm.cluman.cluster.docker.model.swarm.Service;
 import com.codeabovelab.dm.cluman.cluster.docker.model.swarm.Task;
 import com.codeabovelab.dm.cluman.model.ContainerService;
 import com.codeabovelab.dm.cluman.model.Port;
+import com.codeabovelab.dm.cluman.model.ServiceSource;
 import com.codeabovelab.dm.cluman.source.SourceUtil;
 import io.swagger.annotations.ApiModelProperty;
 import lombok.Data;
@@ -35,7 +36,7 @@ import java.util.List;
  */
 @EqualsAndHashCode(callSuper = true)
 @Data
-public class UiContainerServiceCreate extends UiContainerServiceCore {
+public class UiContainerServiceCreate extends ServiceSource {
 
     @ApiModelProperty("service.version, need for update")
     protected long version;
@@ -43,12 +44,7 @@ public class UiContainerServiceCreate extends UiContainerServiceCore {
 
     public Service.ServiceSpec.Builder toServiceSpec() {
         Service.ServiceSpec.Builder ssb = Service.ServiceSpec.builder();
-        ssb.name(getName());
-        ssb.labels(getLabels());
-        ssb.endpointSpec(Endpoint.EndpointSpec.builder().build());
-        Task.TaskSpec.Builder tsb = Task.TaskSpec.builder();
-        SourceUtil.fromSource(getContainer(), tsb);
-        ssb.taskTemplate(tsb.build());
+        SourceUtil.fromSource(this, ssb);
         return ssb;
     }
 }

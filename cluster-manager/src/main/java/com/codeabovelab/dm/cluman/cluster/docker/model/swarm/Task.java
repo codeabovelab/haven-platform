@@ -112,6 +112,8 @@ public class Task {
      * Resource requirements which apply to each individual container created as part of the service.
      */
     @Data
+    @AllArgsConstructor
+    @Builder(builderClassName = "Builder")
     public static class ResourceRequirements {
 
         @JsonProperty("Limits")
@@ -126,6 +128,8 @@ public class Task {
      * Specification for the restart policy which applies to containers created as part of this service.
      */
     @Data
+    @AllArgsConstructor
+    @Builder(builderClassName = "Builder")
     public static class RestartPolicy {
 
         @JsonProperty("Condition")
@@ -206,7 +210,7 @@ public class Task {
     public static class ContainerStatus {
 
         @JsonProperty("ContainerID")
-        private final String containerID;
+        private final String containerId;
 
         @JsonProperty("PID")
         private final int pid;
@@ -220,6 +224,8 @@ public class Task {
      * service has published host ports
      */
     @Data
+    @AllArgsConstructor
+    @Builder(builderClassName = "Builder")
     public static class PortStatus {
 
         @JsonProperty("Ports")
@@ -230,6 +236,8 @@ public class Task {
      * Placement represents orchestration parameters.
      */
     @Data
+    @AllArgsConstructor
+    @Builder(builderClassName = "Builder")
     public static class Placement {
 
         @JsonProperty("Constraints")

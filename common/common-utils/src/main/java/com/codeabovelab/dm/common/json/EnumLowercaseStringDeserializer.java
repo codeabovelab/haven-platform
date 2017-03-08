@@ -20,6 +20,7 @@ import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.*;
 import com.fasterxml.jackson.databind.deser.ContextualDeserializer;
 import org.springframework.util.Assert;
+import org.springframework.util.StringUtils;
 
 import java.io.IOException;
 
@@ -41,6 +42,9 @@ class EnumLowercaseStringDeserializer extends JsonDeserializer<Enum<?>> implemen
     @SuppressWarnings("unchecked")
     public Enum<?> deserialize(JsonParser p, DeserializationContext ctxt) throws IOException {
         String name = p.getValueAsString();
+        if(StringUtils.isEmpty(name)) {
+            return null;
+        }
         JavaType type;
         if(property != null) {
             type = property.getType();

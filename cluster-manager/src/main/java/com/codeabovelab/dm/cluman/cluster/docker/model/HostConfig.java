@@ -158,6 +158,12 @@ public class HostConfig {
     @JsonProperty("VolumeDriver")
     private String volumeDriver;
 
+    /**
+     * Usually used in creation. In 'inspect' may be null.
+     */
+    @JsonProperty("Mounts")
+    private List<Mount> mounts;
+
     @JsonProperty("ShmSize")
     private String shmSize;
 

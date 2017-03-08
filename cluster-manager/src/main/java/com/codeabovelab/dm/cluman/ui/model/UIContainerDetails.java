@@ -39,6 +39,7 @@ public class UIContainerDetails extends ContainerSource implements UiContainerIf
     private Date created;
     private Date started;
     private Date finished;
+    @Deprecated
     private List<String> args;
     private Integer restartCount;
     private boolean lock;
