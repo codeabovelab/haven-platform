@@ -39,9 +39,9 @@ import java.util.Map;
 })
 @JsonPropertyOrder({"type", "source", "target"})
 @Data
+@JsonTypeInfo(use = JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.EXISTING_PROPERTY, visible = true, property = "type")
 public class MountSource<T extends MountSource<T>> implements Cloneable {
 
-    @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.PROPERTY, visible = true)
     private Mount.Type type;
     /**
      * Source specifies the name of the mount. Depending on mount type, this

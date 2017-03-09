@@ -318,6 +318,46 @@ public class SourceUtil {
         });
     }
 
+    public static Mount fromMountSource(MountSource m) {
+        Mount.Type type = m.getType();
+        Mount.Builder mb = Mount.builder();
+        switch (type) {
+            case BIND: {
+                MountSource.BindSource bs = (MountSource.BindSource) m;
+                mb.bindOptions(Mount.BindOptions.builder().propagation(bs.getPropagation()).build());
+            }
+            break;
+            case TMPFS: {
+                MountSource.TmpfsSource ts = (MountSource.TmpfsSource) m;
+                mb.tmpfsOptions(Mount.TmpfsOptions.builder()
+                  .mode(ts.getMode())
+                  .size(ts.getSize())
+                  .build());
+            }
+            break;
+            case VOLUME: {
+                MountSource.VolumeSource vs = (MountSource.VolumeSource) m;
+                Mount.VolumeOptions.Builder vob = Mount.VolumeOptions.builder();
+                vob.driverConfig(Mount.Driver.builder()
+                  .name(vs.getDriver())
+                  .options(vs.getDriverOpts())
+                  .build());
+                vob.labels(vs.getLabels());
+                vob.noCopy(vs.isNoCopy());
+                mb.volumeOptions(vob.build());
+            }
+            break;
+            default:
+                // for unsupported type
+                return null;
+        }
+        mb.readonly(m.isReadonly());
+        mb.source(m.getSource());
+        mb.target(m.getTarget());
+        mb.type(type);
+        return mb.build();
+    }
+
     public static MountSource toMountSource(Mount m) {
         Mount.Type type = m.getType();
         MountSource ms;
