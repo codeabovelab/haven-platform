@@ -49,8 +49,10 @@ public class UiContainerService extends ServiceSource implements WithUiPermissio
         if(comp == 0) {
             comp = Comparables.compare(getName(), o.getName());
         }
-        if(comp == 0) {
-            comp = Comparables.compare(getImage(), o.getImage());
+        ContainerSource cs = getContainer();
+        ContainerSource ocs = o.getContainer();
+        if(comp == 0 && cs != null && ocs != null) {
+            comp = Comparables.compare(cs.getImage(), ocs.getImage());
         }
         if(comp == 0) {
             comp = Comparables.compare(getId(), o.getId());

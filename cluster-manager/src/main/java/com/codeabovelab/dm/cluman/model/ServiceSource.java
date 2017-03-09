@@ -37,8 +37,6 @@ import java.util.Map;
 public class ServiceSource implements Cloneable, Comparable<ServiceSource> {
     private String id;
     private String name;
-    private String image;
-    private String imageId;
     /**
      * Name of swarm in which container will be created
      */

@@ -30,6 +30,7 @@ import org.springframework.util.StringUtils;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  */
@@ -131,7 +132,12 @@ public class SourceUtil {
             Sugar.setIfNotNull(cs.getDnsSearch()::addAll, dc.getSearch());
             Sugar.setIfNotNull(cs.getDns()::addAll, dc.getServers());
         }
-        mountsToSource(conSpec.getMounts(), cs);
+        List<Mount> mounts = conSpec.getMounts();
+        if(mounts != null) {
+            mounts.forEach(m -> {
+                cs.getMounts().add(toMountSource(m));
+            });
+        }
         String image = conSpec.getImage();
         ImageName in = ImageName.parse(image);
         cs.setImage(in.getFullName());
@@ -148,122 +154,12 @@ public class SourceUtil {
           .servers(cont.getDns())
           .search(cont.getDnsSearch())
           .build());
-        csb.mounts(convertMounts(cont));
+        csb.mounts(cont.getMounts().stream().map(SourceUtil::fromMountSource).collect(Collectors.toList()));
         csb.image(ImageName.nameWithId(cont.getImage(), cont.getImageId()))
           .labels(cont.getLabels())
           .command(cont.getCommand())
           .env(cont.getEnvironment())
           .hostname(cont.getHostname());
-    }
-
-    @SuppressWarnings("deprecation")
-    private static List<Mount> convertMounts(ContainerSource c) {
-        List<Mount> res = new ArrayList<>();
-        final String volumeDriver = c.getVolumeDriver();
-        c.getVolumeBinds().forEach(vb -> {
-            Iterator<String> i = SP_VOLUMES.split(vb).iterator();
-            Mount.Builder mb = Mount.builder();
-            mb.source(i.next());
-            mb.target(i.next());
-            Mount.VolumeOptions.Builder vob = Mount.VolumeOptions.builder();
-            if(i.hasNext()) {
-                Mount.BindOptions.Builder bo = Mount.BindOptions.builder();
-                for(String opt : SP_VOLUMES_OPTS.split(i.next())) {
-                    switch (opt) {
-                        case "ro":
-                            mb.readonly(true);
-                            break;
-                        case "rw":
-                            mb.readonly(false);
-                            break;
-                        case "rshared":
-                            bo.propagation(Mount.Propagation.RSHARED);
-                            break;
-                        case "rslave":
-                            bo.propagation(Mount.Propagation.RSLAVE);
-                            break;
-                        case "rprivate":
-                            bo.propagation(Mount.Propagation.RPRIVATE);
-                            break;
-                        case "shared":
-                            bo.propagation(Mount.Propagation.SHARED);
-                            break;
-                        case "slave":
-                            bo.propagation(Mount.Propagation.SLAVE);
-                            break;
-                        case "private":
-                            bo.propagation(Mount.Propagation.PRIVATE);
-                            break;
-                        case "nocopy":
-                            vob.noCopy(true);
-                            break;
-                    }
-                }
-                mb.bindOptions(bo.build());
-            }
-            if(volumeDriver != null) {
-                vob.driverConfig(Mount.Driver.builder().name(volumeDriver).build());
-            }
-            mb.volumeOptions(vob.build());
-            res.add(mb.build());
-        });
-        //c.getVolumesFrom() - not supported by services
-        return res;
-    }
-
-
-    private static void mountsToSource(List<Mount> mounts, ContainerSource cs) {
-        if(mounts == null) {
-            return;
-        }
-        String driver = null;
-        for(Mount mount: mounts) {
-            Mount.Type type = mount.getType();
-            if(type != Mount.Type.BIND && type != Mount.Type.VOLUME) {
-                log.warn("Unsupported type: {} of mount {}", type, mount);
-                continue;
-            }
-            StringBuilder sb = new StringBuilder();
-            sb.append(mount.getSource()).append(':').append(mount.getTarget()).append(':');
-            appendOpt(sb, mount.isReadonly()? "ro" : "rw");
-            Mount.VolumeOptions vo = mount.getVolumeOptions();
-            if(vo != null) {
-                Mount.Driver dc = vo.getDriverConfig();
-                if(dc != null) {
-                    String name = dc.getName();
-                    if(name != null) {
-                        if(driver != null) {
-                            if(!name.equals(driver)) {
-                                log.error("Unsupported, different volume drivers: {} and {} in one container: {}", name, driver, cs);
-                                break;
-                            }
-                        } else {
-                            driver = name;
-                        }
-                    }
-                }
-                if(vo.isNoCopy()) {
-                    appendOpt(sb, "nocopy");
-                }
-            }
-            Mount.BindOptions bo = mount.getBindOptions();
-            if(bo != null) {
-                Mount.Propagation propagation = bo.getPropagation();
-                if(propagation != null) {
-                    appendOpt(sb, propagation.name().toLowerCase());
-                }
-            }
-            cs.getVolumeBinds().add(sb.toString());
-        }
-        cs.setVolumeDriver(driver);
-    }
-
-    private static void appendOpt(StringBuilder sb, String s) {
-        int len = sb.length() - 1;
-        if(len > 0 && sb.charAt(len) != ',') {
-            sb.append(',');
-        }
-        sb.append(s);
     }
 
     /**
