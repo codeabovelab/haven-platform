@@ -152,7 +152,7 @@ public class ContainerSourceFactory {
                 ExposedPort key = exposedPortEntry.getKey();
                 Ports.Binding[] value = exposedPortEntry.getValue();
                 for (Ports.Binding binding : value) {
-                    map.put(Integer.toString(key.getPort()), binding.getHostPortSpec().toString());
+                    map.put(Integer.toString(key.getPort()), binding.getHostPortSpec());
                 }
             }
             return map;

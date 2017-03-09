@@ -473,7 +473,7 @@ public class DockerCluster extends AbstractNodesGroup<DockerClusterConfig> {
             if(!cluster.equals(nodeCluster)) {
                 //node was removed
                 if(Objects.equals(b.getIdInCluster(), id)) {
-                    b.setVersion(0l);
+                    b.setVersion(0L);
                     b.setIdInCluster(null);
                     b.setHealth(NodeMetrics.builder().from(b.getHealth()).manager(null).build());
                 }
