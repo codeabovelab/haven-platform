@@ -208,7 +208,7 @@ public class AmqpReporter extends ScheduledReporter {
 
 
         this.connectionFactoryProvider = builder.connectionFactoryProvider;
-        Assert.notNull(this.connectionFactoryProvider);
+        Assert.notNull(this.connectionFactoryProvider, "connectionFactoryProvider can't be null");
 
         objectMapper.registerModules(new HealthCheckModule(),
           new MetricsModule(builder.rateUnit, builder.durationUnit, false /* if enable histogram data will be serialized */));

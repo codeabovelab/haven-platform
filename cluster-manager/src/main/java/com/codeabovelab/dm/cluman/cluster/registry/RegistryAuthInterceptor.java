@@ -35,7 +35,7 @@ class RegistryAuthInterceptor implements ClientHttpRequestInterceptor {
 
     RegistryAuthInterceptor(RegistryAuthAdapter adapter) {
         this.adapter = adapter;
-        Assert.notNull(adapter);
+        Assert.notNull(adapter, "adapter can't be null");
     }
 
     @Override

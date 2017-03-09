@@ -272,7 +272,7 @@ public class DockerServiceMock implements DockerService {
     public CreateContainerResponse createContainer(CreateContainerCmd cmd) {
         synchronized (containers) {
             String name = cmd.getName();
-            Assert.notNull(name, "name is null");
+            Assert.notNull(name, "name can't be null in " + cmd);
             ContainerHolder ch = getContainerHolderByName(name);
             if(ch != null) {
                 CreateContainerResponse r = new CreateContainerResponse();
@@ -280,7 +280,7 @@ public class DockerServiceMock implements DockerService {
                 return r;
             }
             String image = cmd.getImage();
-            Assert.notNull(image, "image is null");
+            Assert.notNull(image, "image can't be null in " + cmd);
             DockerContainer dc = DockerContainer.builder()
               .id(makeId())
               .name(name)

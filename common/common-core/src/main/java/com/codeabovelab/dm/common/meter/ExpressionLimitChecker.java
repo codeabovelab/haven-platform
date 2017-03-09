@@ -31,8 +31,8 @@ public class ExpressionLimitChecker implements LimitChecker {
     private final Expression expression;
 
     public ExpressionLimitChecker(Expression expression, long period, TimeUnit timeUnit) {
-        Assert.notNull(expression);
-        Assert.notNull(timeUnit);
+        Assert.notNull(expression, "expression can't be null");
+        Assert.notNull(timeUnit, "timeUnit can't be null");
         this.period = period;
         this.timeUnit = timeUnit;
         this.expression = expression;

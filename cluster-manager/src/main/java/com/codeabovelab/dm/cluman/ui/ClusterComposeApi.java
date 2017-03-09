@@ -61,7 +61,6 @@ public class ClusterComposeApi {
     @RequestMapping(value = "clusters/{cluster}/compose", method = POST, consumes = {MULTIPART_FORM_DATA_VALUE})
     public ResponseEntity<ComposeResult> deployClusterFromCompose(@PathVariable("cluster") String cluster,
                                                                   @RequestPart(value = "data") MultipartFile multipartFile) throws Exception {
-        Assert.notNull(multipartFile);
         //String root, String cluster, String app, String fileName
         File file = ComposeUtils.clusterPath(composeExecutor.getBasedir(), cluster, multipartFile.getName());
         Files.write(multipartFile.getBytes(), file);

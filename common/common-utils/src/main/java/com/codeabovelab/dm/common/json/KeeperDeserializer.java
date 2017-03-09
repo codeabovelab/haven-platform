@@ -68,7 +68,7 @@ class KeeperDeserializer extends JsonDeserializer<Object> implements ContextualD
     }
 
     private JavaType resolve(final JavaType type) {
-        Assert.notNull(type);
+        Assert.notNull(type, "type can't be null");
         JavaType tmp = type;
         while(Keeper.class.equals(tmp.getRawClass())) {
             TypeBindings bindings = tmp.getBindings();

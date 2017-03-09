@@ -135,7 +135,7 @@ public class DiscoveryNodeController {
                                                       @PathVariable("agentName") String agentName,
                                                       @RequestParam(value = "node", required = false) String node) {
         URL url = Thread.currentThread().getContextClassLoader().getResource("static/res/agent/node-agent.py");
-        Assert.notNull(url);//if it happen then it a bug
+        Assert.notNull(url, "can't load node-agent.py");//if it happen then it a bug
         if(agentName == null) {
             agentName = "node-agent.py";
         }

@@ -81,7 +81,7 @@ public class ChunkedInputStream<T> extends InputStream {
         if(this.closed) {
             throw new IllegalStateException("Is closed.");
         }
-        Assert.notNull(chunk);
+        Assert.notNull(chunk, "chunk can't be null");
         this.adapter.onAdd(chunk);
         queue.add(chunk);
     }

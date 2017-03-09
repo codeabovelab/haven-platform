@@ -122,7 +122,7 @@ public class KvMap<T> {
         }
 
         public KvMap<T> build() {
-            Assert.notNull(type);
+            Assert.notNull(type, "type can't be null");
             return new KvMap<>(this);
         }
     }

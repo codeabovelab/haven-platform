@@ -39,7 +39,7 @@ public class SwarmClusterContainers extends AbstractContainersManager {
 
     public SwarmClusterContainers(Supplier<DockerService> supplier, ContainerCreator containerCreator) {
         super(supplier);
-        Assert.notNull(supplier);
+        Assert.notNull(supplier, "supplier can't be null");
         this.containerCreator = containerCreator;
     }
 
