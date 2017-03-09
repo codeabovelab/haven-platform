@@ -143,7 +143,8 @@ public class SourceUtil {
         cs.setImage(in.getFullName());
         cs.setImageId(in.getId());
         Sugar.setIfNotNull(cs.getLabels()::putAll, conSpec.getLabels());
-        Sugar.setIfNotNull(cs.getCommand()::addAll, conSpec.getCommand());
+        Sugar.setIfNotNull(cs.getEntrypoint()::addAll, conSpec.getCommand());
+        Sugar.setIfNotNull(cs.getCommand()::addAll, conSpec.getArgs());
         Sugar.setIfNotNull(cs.getEnvironment()::addAll, conSpec.getEnv());
         cs.setHostname(conSpec.getHostname());
     }
@@ -157,7 +158,8 @@ public class SourceUtil {
         csb.mounts(cont.getMounts().stream().map(SourceUtil::fromMountSource).collect(Collectors.toList()));
         csb.image(ImageName.nameWithId(cont.getImage(), cont.getImageId()))
           .labels(cont.getLabels())
-          .command(cont.getCommand())
+          .command(cont.getEntrypoint())
+          .args(cont.getCommand())
           .env(cont.getEnvironment())
           .hostname(cont.getHostname());
     }
