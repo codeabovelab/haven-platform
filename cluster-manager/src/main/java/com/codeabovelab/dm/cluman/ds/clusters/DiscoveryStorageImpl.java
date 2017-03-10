@@ -329,7 +329,7 @@ public class DiscoveryStorageImpl implements DiscoveryStorage {
 
     private boolean isPredefined(NodesGroup nodesGroup) {
         String name = nodesGroup.getName();
-        return GROUP_ID_ALL.equals(name) || GROUP_ID_ORPHANS.equals(name);
+        return SYSTEM_GROUPS.contains(name);
     }
 
     private void deleteGroup(String clusterId) {
@@ -350,8 +350,7 @@ public class DiscoveryStorageImpl implements DiscoveryStorage {
 
         NodesGroup cluster = clusters.get(clusterId);
         Assert.notNull(cluster, "GroupId: " + clusterId + " is not found.");
-        Assert.isTrue(!(cluster instanceof SwarmCluster), "Can not delete a real cluster: " + clusterId);
-        Assert.isTrue(!SYSTEM_GROUPS.contains(clusterId), "Can't delete system group");
+        Assert.isTrue(!isPredefined(cluster), "Can't delete predefined cluster");
         deleteGroup(clusterId);
     }
 

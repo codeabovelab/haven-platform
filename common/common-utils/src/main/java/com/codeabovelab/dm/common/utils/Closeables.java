@@ -19,6 +19,8 @@ package com.codeabovelab.dm.common.utils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.List;
+
 /**
  * A util for closeables (you can se many similar utilites in guava and apache common-io, but we need some logging)
  */
@@ -51,5 +53,16 @@ public final class Closeables {
         if(mayBeCloseable instanceof AutoCloseable) {
             close((AutoCloseable) mayBeCloseable);
         }
+    }
+
+    /**
+     * Apply {@link #close(AutoCloseable)} to each items in collection.
+     * @param closeables any iterable or null
+     */
+    public static void closeAll(Iterable<? extends AutoCloseable> closeables) {
+        if(closeables == null) {
+            return;
+        }
+        closeables.forEach(Closeables::close);
     }
 }
