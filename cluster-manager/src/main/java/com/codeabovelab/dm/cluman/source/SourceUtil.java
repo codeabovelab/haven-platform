@@ -68,10 +68,12 @@ public class SourceUtil {
             TaskResources limits = rrs.getLimits();
             if(limits != null) {
                 cs.setMemoryLimit(limits.getMemory());
+                cs.setCpuQuota((int)(limits.getNanoCPUs() / 1000L));
             }
             TaskResources reserv = rrs.getReservations();
             if(reserv != null) {
                 cs.setMemoryReservation(reserv.getMemory());
+                cs.setCpuPeriod((int)(reserv.getNanoCPUs() / 1000L));
             }
         }
         Task.Placement placement = taskSpec.getPlacement();
