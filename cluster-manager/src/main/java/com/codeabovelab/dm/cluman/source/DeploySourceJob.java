@@ -198,7 +198,7 @@ public class DeploySourceJob implements Runnable {
         }
     }
 
-    private void deployApp(Ctx dc, ApplicationSource appSrc) throws Exception {
+    private void deployApp(Ctx dc, ApplicationSource appSrc) {
         dc.setApp(appSrc);
         jobContext.fire("Begin create app {0}", appSrc.getName());
         List<String> containerNames = new ArrayList<>();

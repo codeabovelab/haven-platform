@@ -52,7 +52,7 @@ class EnumLowercaseStringDeserializer extends JsonDeserializer<Enum<?>> implemen
             type = ctxt.getContextualType();
         }
         Assert.notNull(type, "Type of current property is null.");
-        Class clazz = (Class) type.getRawClass();
+        Class clazz = type.getRawClass();
         Assert.isTrue(clazz.isEnum(), "The " + clazz + " is not an enum type.");
         return Enum.valueOf(clazz, name.toUpperCase());
     }

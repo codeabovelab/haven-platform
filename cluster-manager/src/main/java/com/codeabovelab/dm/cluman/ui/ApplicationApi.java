@@ -93,7 +93,7 @@ public class ApplicationApi {
 
     @RequestMapping(value = "{cluster}/{appId}/add", method = PUT)
     public void addApplication(@PathVariable("cluster") String cluster, @PathVariable("appId") String appId,
-                               @RequestParam("containers") List<String> containers) throws Exception {
+                               @RequestParam("containers") List<String> containers) {
         ApplicationImpl application = ApplicationImpl.builder()
                 .creatingDate(new Date())
                 .name(appId)
@@ -109,7 +109,7 @@ public class ApplicationApi {
     }
 
     @RequestMapping(value = "{cluster}/{appId}", method = DELETE)
-    public void deleteApplication(@PathVariable("cluster") String cluster, @PathVariable("appId") String appId) throws Exception {
+    public void deleteApplication(@PathVariable("cluster") String cluster, @PathVariable("appId") String appId) {
         applicationService.removeApplication(cluster, appId);
     }
 

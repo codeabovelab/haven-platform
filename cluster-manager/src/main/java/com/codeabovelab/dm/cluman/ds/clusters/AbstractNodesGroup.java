@@ -315,7 +315,7 @@ public abstract class AbstractNodesGroup<C extends AbstractNodesGroupConfig<C>> 
     @Override
     public void updateConfig(Consumer<AbstractNodesGroupConfig<?>> consumer) {
         synchronized (lock) {
-            C clone = (C) config.clone();
+            C clone = config.clone();
             consumer.accept(clone);
             validateConfig(clone);
             this.config = clone;

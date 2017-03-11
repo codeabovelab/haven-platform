@@ -106,7 +106,7 @@ public class SourceService {
             if(!(group instanceof SwarmCluster)) {
                 continue;
             }
-            ClusterSource cs = getClusterSourceInternal((SwarmCluster) group);
+            ClusterSource cs = getClusterSourceInternal(group);
             clustersSrc.add(cs);
         }
         clustersSrc.sort(null);

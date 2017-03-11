@@ -72,7 +72,7 @@ public class ClusterComposeApi {
         return new ResponseEntity<>(composeResult, UiUtils.toStatus(composeResult.getResultCode()));
     }
 
-    private void createApplications(ComposeResult composeResult, String cluster) throws Exception {
+    private void createApplications(ComposeResult composeResult, String cluster) {
         List<ContainerDetails> containers = composeResult.getContainerDetails();
         if(containers == null) {
             log.warn("Null list of containers from compose for cluster: '{}'", cluster);
