@@ -84,6 +84,6 @@ public class MultiTenancySupport {
      * @return true if tenant is null
      */
     public static boolean isNoTenant(Object o) {
-        return getTenant(o) == NO_TENANT;
+        return NO_TENANT.equals(getTenant(o));
     }
 }

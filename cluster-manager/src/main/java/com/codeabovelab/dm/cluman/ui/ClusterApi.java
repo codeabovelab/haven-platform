@@ -62,7 +62,7 @@ import static org.springframework.web.bind.annotation.RequestMethod.*;
  */
 @RestController
 @Slf4j
-@RequestMapping(value = "/ui/api", produces = APPLICATION_JSON_VALUE)
+@RequestMapping(value = "/ui/api/clusters", produces = APPLICATION_JSON_VALUE)
 @RequiredArgsConstructor(onConstructor = @__(@Autowired))
 public class ClusterApi {
 
@@ -76,7 +76,7 @@ public class ClusterApi {
     private final FilterApi filterApi;
     private final AccessContextFactory aclContextFactory;
 
-    @RequestMapping(value = "/clusters/", method = GET)
+    @RequestMapping(value = "/", method = GET)
     public List<UiCluster> listClusters() {
         AccessContext ac = aclContextFactory.getContext();
         Collection<NodesGroup> clusters = this.discoveryStorage.getClusters();
@@ -85,10 +85,7 @@ public class ClusterApi {
         return ucs;
     }
 
-    @RequestMapping(value = {
-      "/cluster/{cluster}", // deprecated path
-      "/clusters/{cluster}"
-    }, method = GET)
+    @RequestMapping(value = { "/{cluster}" }, method = GET)
     public UiCluster getCluster(@PathVariable("cluster") String cluster) {
         AccessContext ac = aclContextFactory.getContext();
         NodesGroup nodesGroup = discoveryStorage.getCluster(cluster);
@@ -145,7 +142,7 @@ public class ClusterApi {
         return uc;
     }
 
-    @RequestMapping(value = "/clusters/{cluster}/containers", method = GET)
+    @RequestMapping(value = "/{cluster}/containers", method = GET)
     public ResponseEntity<Collection<UiContainer>> listContainers(@PathVariable("cluster") String cluster) {
         AccessContext ac = aclContextFactory.getContext();
         List<UiContainer> list = new ArrayList<>();
@@ -167,7 +164,7 @@ public class ClusterApi {
         return new ResponseEntity<>(list, HttpStatus.OK);
     }
 
-    @RequestMapping(value = "/clusters/{cluster}/containers", method = PUT)
+    @RequestMapping(value = "/{cluster}/containers", method = PUT)
     public ResponseEntity<Collection<UiContainer>> filteredListContainers(@PathVariable("cluster") String cluster,
                                                                           @RequestBody UISearchQuery searchQuery) {
         ResponseEntity<Collection<UiContainer>> listResponseEntity = listContainers(cluster);
@@ -177,7 +174,7 @@ public class ClusterApi {
 
     }
 
-    @RequestMapping(value = "/clusters/{cluster}/services", method = GET)
+    @RequestMapping(value = "/{cluster}/services", method = GET)
     public ResponseEntity<Collection<UiContainerService>> listServices(@PathVariable("cluster") String cluster) {
         AccessContext ac = aclContextFactory.getContext();
         NodesGroup nodesGroup = discoveryStorage.getCluster(cluster);
@@ -195,7 +192,7 @@ public class ClusterApi {
         return new ResponseEntity<>(list, HttpStatus.OK);
     }
 
-    @RequestMapping(value = "/clusters/{cluster}/info", method = GET)
+    @RequestMapping(value = "/{cluster}/info", method = GET)
     @Cacheable("SwarmInfo")
     @DefineCache(
             expireAfterWrite = 120_000,
@@ -208,7 +205,7 @@ public class ClusterApi {
         return discoveryStorage.getService(cluster).getInfo();
     }
 
-    @RequestMapping(value = "/clusters/{cluster}/nodes-detailed", method = GET)
+    @RequestMapping(value = "/{cluster}/nodes-detailed", method = GET)
     @Cacheable("UINode")
     @DefineCache(
             expireAfterWrite = 120_000,
@@ -227,14 +224,14 @@ public class ClusterApi {
         return cluster.getNodes();
     }
 
-    @RequestMapping(value = "/clusters/{cluster}/nodes", method = GET)
+    @RequestMapping(value = "/{cluster}/nodes", method = GET)
     public List<String> listNodes(@PathVariable("cluster") String cluster) {
         return DockerUtils.listNodes(getNodesInternal(cluster));
     }
 
     @Secured(Authorities.ADMIN_ROLE)
     @ApiOperation("Add node to specified cluster. Node must be present in same environment wit cluster.")
-    @RequestMapping(value = "/clusters/{cluster}/nodes/{node}", method = POST)
+    @RequestMapping(value = "/{cluster}/nodes/{node}", method = POST)
     public ResponseEntity<?> addNode(@PathVariable("cluster") String clusterId, @PathVariable("node") String node) {
         // we setup cluster
         NodesGroup cluster = discoveryStorage.getOrCreateCluster(clusterId, null);
@@ -247,13 +244,13 @@ public class ClusterApi {
     }
 
     @ApiOperation("Remove node from specified cluster. Also you can use 'all' cluster or any other - node will be correctly removed anyway.")
-    @RequestMapping(value = "/clusters/{cluster}/nodes/{node}", method = DELETE)
+    @RequestMapping(value = "/{cluster}/nodes/{node}", method = DELETE)
     public ResponseEntity<?> removeNode(@PathVariable("cluster") String clusterId, @PathVariable("node") String node) {
         NodeInfo ni = nodeRegistry.setNodeCluster(node, null);
         return new ResponseEntity<>(ni.getCluster() == null? HttpStatus.OK : HttpStatus.CONFLICT);
     }
 
-    @RequestMapping(value = "/clusters/{cluster}/nodes/{node}/update", method = POST)
+    @RequestMapping(value = "/{cluster}/nodes/{node}/update", method = POST)
     public ResponseEntity<?> updateNode(@PathVariable("cluster") String clusterId,
                                         @PathVariable("node") String node,
                                         @RequestBody NodeUpdateArg body) {
@@ -263,7 +260,7 @@ public class ClusterApi {
         return UiUtils.createResponse(ng.updateNode(body));
     }
 
-    @RequestMapping(value = "/clusters/{cluster}/registries", method = GET)
+    @RequestMapping(value = "/{cluster}/registries", method = GET)
     public List<String> getRegistriesForCluster(@PathVariable("cluster") String cluster) {
         Collection<String> availableRegistries = registryRepository.getAvailableRegistries();
         NodesGroup nodesGroup = discoveryStorage.getCluster(cluster);
@@ -278,7 +275,7 @@ public class ClusterApi {
     }
 
 
-    @RequestMapping(path = "/clusters/{cluster}/networks", method = RequestMethod.GET)
+    @RequestMapping(path = "/{cluster}/networks", method = RequestMethod.GET)
     public List<UiNetwork> getNetworks(@PathVariable("cluster") String clusterName) {
         NodesGroup group = discoveryStorage.getCluster(clusterName);
         ExtendedAssert.notFound(group, "Can not find cluster: " + clusterName);
@@ -294,7 +291,7 @@ public class ClusterApi {
     }
 
 
-    @RequestMapping(value = "/clusters/{cluster}/source", method = GET, produces = YamlUtils.MIME_TYPE_VALUE)
+    @RequestMapping(value = "/{cluster}/source", method = GET, produces = YamlUtils.MIME_TYPE_VALUE)
     public ResponseEntity<RootSource> getClusterSource(@PathVariable("cluster") String cluster) {
         RootSource root = sourceService.getClusterSource(cluster);
         ExtendedAssert.notFound(root, "Can not find cluster with name: " + cluster);
@@ -308,7 +305,7 @@ public class ClusterApi {
     }
 
     @Secured(Authorities.ADMIN_ROLE)
-    @RequestMapping(value = "/clusters/{cluster}/source", method = POST, consumes = YamlUtils.MIME_TYPE_VALUE)
+    @RequestMapping(value = "/{cluster}/source", method = POST, consumes = YamlUtils.MIME_TYPE_VALUE)
     public UiJob setClusterSource(@PathVariable("cluster") String cluster,
                                   DeployOptions.Builder options,
                                   @RequestBody RootSource rootSource) {
@@ -316,7 +313,7 @@ public class ClusterApi {
     }
 
     @Secured(Authorities.ADMIN_ROLE)
-    @RequestMapping(value = "/clusters/{cluster}/source-upload", method = POST, consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @RequestMapping(value = "/{cluster}/source-upload", method = POST, consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public UiJob uploadClusterSource(@PathVariable("cluster") String cluster,
                                   DeployOptions.Builder options,
                                   @RequestPart("file") RootSource rootSource) {
@@ -338,7 +335,7 @@ public class ClusterApi {
     }
 
     @Secured({Authorities.ADMIN_ROLE, SecuredType.CLUSTER_ADMIN})
-    @RequestMapping(value = "/clusters/{cluster}", method = DELETE)
+    @RequestMapping(value = "/{cluster}", method = DELETE)
     public void deleteCluster(@PathVariable("cluster") String cluster) {
         discoveryStorage.deleteCluster(cluster);
     }
@@ -348,7 +345,7 @@ public class ClusterApi {
      * @param data
      */
     @Secured({Authorities.ADMIN_ROLE, SecuredType.CLUSTER_ADMIN})
-    @RequestMapping(value = "/clusters/{cluster}", method = PUT)
+    @RequestMapping(value = "/{cluster}", method = PUT)
     public void createCluster(@PathVariable("cluster") String name, @RequestBody(required = false) UiClusterEditablePart data) {
         log.info("about to create cluster: [{}], {}", name, data);
         AtomicBoolean flag = new AtomicBoolean(false);// we can not use primitives in closure
@@ -380,7 +377,7 @@ public class ClusterApi {
     }
 
     @Secured({Authorities.ADMIN_ROLE, SecuredType.CLUSTER_ADMIN})
-    @RequestMapping(value = "/clusters/{cluster}", method = PATCH)
+    @RequestMapping(value = "/{cluster}", method = PATCH)
     public void updateCluster(@PathVariable("cluster") String name, @RequestBody UiClusterEditablePart data) {
         log.info("Begin update cluster: [{}], {}", name, data);
         NodesGroup cluster = discoveryStorage.getCluster(name);

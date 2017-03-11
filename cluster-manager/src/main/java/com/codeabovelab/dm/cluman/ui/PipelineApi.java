@@ -47,7 +47,7 @@ import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 import static org.springframework.web.bind.annotation.RequestMethod.*;
 
 @RestController
-@RequestMapping(value = "/ui/api/pipeline", produces = APPLICATION_JSON_VALUE)
+@RequestMapping(value = "/ui/api/pipelines", produces = APPLICATION_JSON_VALUE)
 @RequiredArgsConstructor(onConstructor = @__(@Autowired))
 @Slf4j
 public class PipelineApi {
@@ -83,9 +83,9 @@ public class PipelineApi {
         ).collect(Collectors.toList());
     }
 
-    @RequestMapping(value = "promote/{pipelineInstance}", method = PUT)
+    @RequestMapping(value = "/promote/{pipeline}", method = PUT)
     @ApiOperation("Promote pipeline")
-    public void promote(@PathVariable("pipelineInstance") String pipelineInstance,
+    public void promote(@PathVariable("pipeline") String pipelineInstance,
                         @RequestBody UIPipelinePromote uiPipelinePromote) {
 
         PipelinePromoteArg pipelinePromoteArg = PipelinePromoteArg.builder()
@@ -94,12 +94,17 @@ public class PipelineApi {
                 .action(uiPipelinePromote.getAction())
                 .build();
         pipelineService.promote(pipelinePromoteArg);
-
     }
 
-    @RequestMapping(value = "deploy/{pipelineStageName}", method = PUT)
+    @RequestMapping(value = "/{id}", method = DELETE)
+    @ApiOperation("Delete pipelineInstances by pipelineId")
+    public void deletePipeline(@PathVariable("id") String pipelineId) {
+        pipelineService.deletePipeline(pipelineId);
+    }
+
+    @RequestMapping(value = "/deploy/{pipeline}", method = PUT)
     @ApiOperation("Promote pipeline")
-    public void deploy(@PathVariable("pipelineInstance") String pipelineInstance,
+    public void deploy(@PathVariable("pipeline") String pipelineInstance,
                        @RequestBody UIPipelineDeploy uiPipelineDeploy) {
 
         ContainerSource container = uiPipelineDeploy.getUiContainer();
@@ -116,7 +121,7 @@ public class PipelineApi {
         pipelineService.deploy(deployArg);
     }
 
-    @RequestMapping(value = "pipelines", method = GET)
+    @RequestMapping(value = "/", method = GET)
     @ApiOperation("List of pipelines")
     Map<String, UIPipeline> pipelinesMap() {
         return convertPipelines(pipelineService.getPipelinesMap());
@@ -135,8 +140,8 @@ public class PipelineApi {
                 .collect(Collectors.toList());
     }
 
-    @RequestMapping(value = "pipelines/{pipelineId}", method = GET)
-    UIPipeline getPipeline(@PathVariable("pipelineId") String pipelineId) {
+    @RequestMapping(value = "/{id}", method = GET)
+    UIPipeline getPipeline(@PathVariable("id") String pipelineId) {
         PipelineSchema p = pipelineService.getPipeline(pipelineId);
         if (p == null) {
             throw new NotFoundException("pipelineId was not found " + pipelineId);
@@ -145,7 +150,7 @@ public class PipelineApi {
 
     }
 
-    @RequestMapping(value = "pipelineInstances", method = GET)
+    @RequestMapping(value = "/instances", method = GET)
     @ApiOperation("List of pipelineInstances")
     Map<String, UIPipelineInstance> instancesMap() {
         Map<String, PipelineInstance> instancesMap = pipelineService.getInstancesMap();
@@ -173,8 +178,8 @@ public class PipelineApi {
                 .collect(Collectors.toMap(u -> u.getStage(), u -> u));
     }
 
-    @RequestMapping(value = "pipelineInstances/{pipelineInstance}", method = GET)
-    public UIPipelineInstance getInstance(@PathVariable("pipelineInstance") String pipelineInstance) {
+    @RequestMapping(value = "instances/{id}", method = GET)
+    public UIPipelineInstance getInstance(@PathVariable("id") String pipelineInstance) {
         PipelineInstance p = pipelineService.getInstance(pipelineInstance);
         if (p == null) {
             throw new NotFoundException("pipelineId was not found " + pipelineInstance);
@@ -183,23 +188,17 @@ public class PipelineApi {
                 convertHistory(p.getHistories()), p.getArgs());
     }
 
-    @RequestMapping(value = "pipelineInstances/byPipeline/{pipelineId}", method = GET)
+    @RequestMapping(value = "instances/byPipeline/{id}", method = GET)
     @ApiOperation("List of pipelineInstances by name of pipeline")
-    public Map<String, UIPipelineInstance> getInstancesByPipeline(@PathVariable("pipelineId") String pipelineId) {
+    public Map<String, UIPipelineInstance> getInstancesByPipeline(@PathVariable("id") String pipelineId) {
         Map<String, PipelineInstance> instancesMapByPipeline = pipelineService.getInstancesMapByPipeline(pipelineId);
         return convertInstances(instancesMapByPipeline);
     }
 
-    @RequestMapping(value = "pipelineInstances/{pipelineInstanceId}", method = DELETE)
+    @RequestMapping(value = "instances/{id}", method = DELETE)
     @ApiOperation("Delete pipelineInstances by pipelineInstanceId")
-    public void deleteInstance(@PathVariable("pipelineInstanceId") String pipelineInstanceId) {
+    public void deleteInstance(@PathVariable("id") String pipelineInstanceId) {
         pipelineService.deleteInstance(pipelineInstanceId);
-    }
-
-    @RequestMapping(value = "pipeline/{pipelineId}", method = DELETE)
-    @ApiOperation("Delete pipelineInstances by pipelineId")
-    public void deletePipeline(@PathVariable("pipelineId") String pipelineId) {
-        pipelineService.deletePipeline(pipelineId);
     }
 
 }

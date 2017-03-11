@@ -35,25 +35,25 @@ import java.util.Collection;
 import static org.springframework.web.bind.annotation.RequestMethod.*;
 
 @RestController
-@RequestMapping(value = "/ui/api/mail", produces = MediaType.APPLICATION_JSON_VALUE)
+@RequestMapping(value = "/ui/api/mail/notices", produces = MediaType.APPLICATION_JSON_VALUE)
 @RequiredArgsConstructor(onConstructor = @__(@Autowired))
 @Slf4j
 public class EmailApi {
 
     private final MailNotificationsService mailNotificationsService;
 
-    @RequestMapping(value = "/notices/", method = GET)
+    @RequestMapping(value = "/", method = GET)
     public Collection<MailSubscription> list() {
         return mailNotificationsService.list();
     }
 
-    @RequestMapping(value = "/notices/{eventSource}", method = GET)
+    @RequestMapping(value = "/{eventSource}", method = GET)
     public MailSubscription get(@PathVariable("eventSource") String eventSource) {
         return mailNotificationsService.get(eventSource);
     }
 
     @Secured(Authorities.ADMIN_ROLE)
-    @RequestMapping(value = "/notices/", method = POST)
+    @RequestMapping(value = "/", method = POST)
     public void add(@RequestBody @Valid MailSubscription subscription) {
         mailNotificationsService.put(subscription);
     }
