@@ -17,7 +17,6 @@
 package com.codeabovelab.dm.cluman.cluster.docker.model.swarm;
 
 import com.codeabovelab.dm.common.json.JtEnumLower;
-import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -107,7 +106,7 @@ public class Service {
 
     @Data
     @AllArgsConstructor
-    @Builder(builderClassName = "Builder")
+    @Builder(builderClassName = "Builder", toBuilder = true)
     public static class ServiceMode {
 
         @JsonProperty("Replicated")

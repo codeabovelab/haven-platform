@@ -49,20 +49,6 @@ public class NetworkApi {
     private final DiscoveryStorage discoveryStorage;
     private final ContainerStorage containerStorage;
 
-    @RequestMapping(path = "list", method = RequestMethod.GET)
-    public List<UiNetwork> getNetworks(@RequestParam("cluster") String clusterName) {
-        NodesGroup group = getNodesGroup(clusterName);
-        List<Network> networks = group.getNetworks().getNetworks(clusterName);
-        ArrayList<UiNetwork> results = new ArrayList<>(networks.size());
-        networks.forEach(src -> {
-            UiNetwork res = new UiNetwork();
-            res.from(src, containerStorage);
-            res.setCluster(clusterName);
-            results.add(res);
-        });
-        return results;
-    }
-
     @RequestMapping(path = "create", method = RequestMethod.POST)
     public ResponseEntity<?> createNetwork(@RequestParam("cluster") String clusterName,
                                                   @RequestParam("network") String network,

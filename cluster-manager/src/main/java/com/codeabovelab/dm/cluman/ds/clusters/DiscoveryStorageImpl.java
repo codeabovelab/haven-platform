@@ -17,9 +17,7 @@
 package com.codeabovelab.dm.cluman.ds.clusters;
 
 import com.codeabovelab.dm.cluman.cluster.docker.management.DockerService;
-import com.codeabovelab.dm.cluman.cluster.docker.management.argument.GetContainersArg;
 import com.codeabovelab.dm.cluman.cluster.filter.FilterFactory;
-import com.codeabovelab.dm.cluman.ds.container.ContainerStorage;
 import com.codeabovelab.dm.cluman.ds.nodes.NodeStorage;
 import com.codeabovelab.dm.cluman.ds.swarm.DockerServices;
 import com.codeabovelab.dm.cluman.model.*;
@@ -325,8 +323,13 @@ public class DiscoveryStorageImpl implements DiscoveryStorage {
     public void deleteCluster(String clusterId) {
         NodesGroup cluster = clusters.get(clusterId);
         ExtendedAssert.notFound(cluster, "Cluster: " + clusterId + " is not found.");
-        Assert.isTrue(cluster instanceof SwarmCluster, "Can not delete non real cluster: " + clusterId);
+        Assert.isTrue(!isPredefined(cluster), "Can not delete predefined cluster: " + clusterId);
         deleteGroup(clusterId);
+    }
+
+    private boolean isPredefined(NodesGroup nodesGroup) {
+        String name = nodesGroup.getName();
+        return SYSTEM_GROUPS.contains(name);
     }
 
     private void deleteGroup(String clusterId) {
@@ -347,8 +350,7 @@ public class DiscoveryStorageImpl implements DiscoveryStorage {
 
         NodesGroup cluster = clusters.get(clusterId);
         Assert.notNull(cluster, "GroupId: " + clusterId + " is not found.");
-        Assert.isTrue(!(cluster instanceof SwarmCluster), "Can not delete a real cluster: " + clusterId);
-        Assert.isTrue(!SYSTEM_GROUPS.contains(clusterId), "Can't delete system group");
+        Assert.isTrue(!isPredefined(cluster), "Can't delete predefined cluster");
         deleteGroup(clusterId);
     }
 

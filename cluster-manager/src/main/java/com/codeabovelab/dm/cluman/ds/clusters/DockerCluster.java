@@ -32,6 +32,7 @@ import com.codeabovelab.dm.cluman.ds.nodes.NodeStorage;
 import com.codeabovelab.dm.cluman.model.*;
 import com.codeabovelab.dm.cluman.security.TempAuth;
 import com.codeabovelab.dm.cluman.utils.AddressUtils;
+import com.codeabovelab.dm.common.utils.Closeables;
 import com.codeabovelab.dm.common.utils.SingleValueCache;
 import com.google.common.base.MoreObjects;
 import com.google.common.collect.ImmutableList;
@@ -44,10 +45,7 @@ import org.springframework.util.Assert;
 import org.springframework.util.StringUtils;
 
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 
 /**
  * A kind of nodegroup which is managed by 'docker' in 'swarm mode'.
@@ -82,6 +80,7 @@ public class DockerCluster extends AbstractNodesGroup<DockerClusterConfig> {
     private ContainerCreator containerCreator;
     private ContainersManager containers;
     private int rereadNodesTimeout;
+    private volatile List<AutoCloseable> closeables;
 
     DockerCluster(DiscoveryStorageImpl storage, DockerClusterConfig config) {
         super(config, storage, Collections.singleton(Feature.SWARM_MODE));
@@ -143,6 +142,7 @@ public class DockerCluster extends AbstractNodesGroup<DockerClusterConfig> {
     }
 
     protected void closeImpl() {
+        Closeables.closeAll(this.closeables);
         this.scheduledExecutor.shutdownNow();
     }
 
@@ -153,12 +153,15 @@ public class DockerCluster extends AbstractNodesGroup<DockerClusterConfig> {
         initCluster(hosts.get(0));
 
         if(state.get() == S_INITING) {
+            ArrayList<AutoCloseable> closeables = new ArrayList<>();
+            this.closeables = closeables;
             // we do this only if initialization process is success
             this.containers = new DockerClusterContainers(this, this.containerStorage, this.containerCreator);
 
             // so docker does not send any events about new coming nodes, and we must refresh list of them
-            this.scheduledExecutor.scheduleWithFixedDelay(this::rereadNodes, rereadNodesTimeout, rereadNodesTimeout, TimeUnit.SECONDS);
-            getNodeStorage().getNodeEventSubscriptions().subscribe(this::onNodeEvent);
+            ScheduledFuture<?> sf = this.scheduledExecutor.scheduleWithFixedDelay(this::rereadNodes, rereadNodesTimeout, rereadNodesTimeout, TimeUnit.SECONDS);
+            closeables.add(() -> sf.cancel(true));
+            closeables.add(getNodeStorage().getNodeEventSubscriptions().openSubscription(this::onNodeEvent));
         }
     }
 

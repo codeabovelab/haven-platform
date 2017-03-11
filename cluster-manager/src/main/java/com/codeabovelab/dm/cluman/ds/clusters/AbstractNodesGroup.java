@@ -109,7 +109,7 @@ public abstract class AbstractNodesGroup<C extends AbstractNodesGroupConfig<C>> 
     }
 
     @Override
-    public void close() {
+    public final void close() {
         closeImpl();
     }
 

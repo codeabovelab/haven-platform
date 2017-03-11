@@ -30,6 +30,7 @@ import com.codeabovelab.dm.cluman.configs.container.ConfigProvider;
 import com.codeabovelab.dm.cluman.ds.SwarmUtils;
 import com.codeabovelab.dm.cluman.ds.swarm.NetworkManager;
 import com.codeabovelab.dm.cluman.source.ContainerSourceFactory;
+import com.codeabovelab.dm.cluman.source.SourceUtil;
 import com.codeabovelab.dm.cluman.utils.ContainerUtils;
 import com.codeabovelab.dm.cluman.validate.ExtendedAssert;
 import com.codeabovelab.dm.common.utils.Consumers;
@@ -291,7 +292,7 @@ public class ContainerCreator {
                 .portBindings(getBindings(arg.getPorts()))
                 .publishAllPorts(arg.isPublishAllPorts())
                 .restartPolicy(restartPolicy);
-
+        builder.mounts(arg.getMounts().stream().map(SourceUtil::fromMountSource).collect(Collectors.toList()));
         makeNetwork(cc, arg, builder);
         return builder.build();
     }

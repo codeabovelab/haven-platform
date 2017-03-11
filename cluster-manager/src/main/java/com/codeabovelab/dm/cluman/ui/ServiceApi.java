@@ -20,10 +20,12 @@ import com.codeabovelab.dm.cluman.cluster.docker.management.argument.CreateServi
 import com.codeabovelab.dm.cluman.cluster.docker.management.argument.UpdateServiceArg;
 import com.codeabovelab.dm.cluman.cluster.docker.management.result.ServiceCallResult;
 import com.codeabovelab.dm.cluman.cluster.docker.model.AuthConfig;
+import com.codeabovelab.dm.cluman.cluster.docker.model.swarm.Service;
 import com.codeabovelab.dm.cluman.cluster.registry.RegistryRepository;
 import com.codeabovelab.dm.cluman.cluster.registry.RegistryService;
 import com.codeabovelab.dm.cluman.cluster.registry.model.RegistryCredentials;
 import com.codeabovelab.dm.cluman.model.ContainerService;
+import com.codeabovelab.dm.cluman.model.ContainersManager;
 import com.codeabovelab.dm.cluman.model.DiscoveryStorage;
 import com.codeabovelab.dm.cluman.model.NodesGroup;
 import com.codeabovelab.dm.cluman.ui.model.UiContainerService;
@@ -85,6 +87,34 @@ public class ServiceApi {
         ServiceCallResult res = ng.getContainers().updateService(arg);
         return UiUtils.createResponse(res);
     }
+
+    @RequestMapping(path = "/scale", method = RequestMethod.POST)
+    public ResponseEntity<?> scale(@RequestParam(name = "cluster") String cluster,
+                                    @RequestParam(name = "id") String id,
+                                    @RequestParam(name = "scale") int scale) {
+        NodesGroup ng = getNodesGroup(cluster);
+        ContainersManager cm = ng.getContainers();
+        ContainerService cs = cm.getService(id);
+        UpdateServiceArg arg = new UpdateServiceArg();
+        arg.setService(id);
+        Service service = cs.getService();
+        arg.setVersion(service.getVersion().getIndex());
+        Service.ServiceSpec spec = service.getSpec();
+        Service.ServiceMode mode = spec.getMode();
+        Service.ReplicatedService replicated = mode.getReplicated();
+        if(replicated == null) {
+            throw new IllegalArgumentException("Service " + id + " is not a replicated.");
+        }
+        ServiceCallResult res = ServiceCallResult.unmodified();
+        if(replicated.getReplicas() != scale) {
+            arg.setSpec(spec.toBuilder().mode(mode.toBuilder()
+                .replicated(new Service.ReplicatedService(scale))
+              .build()).build());
+            res = cm.updateService(arg);
+        }
+        return UiUtils.createResponse(res);
+    }
+
 
     @RequestMapping(path = "/delete", method = RequestMethod.POST)
     public ResponseEntity<?> delete(@RequestParam(name = "id") String id,

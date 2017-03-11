@@ -42,4 +42,11 @@ public class ServiceCallResult {
         scr.setMessage("Not supported operation.");
         return scr;
     }
+
+    public static ServiceCallResult unmodified() {
+        ServiceCallResult scr = new ServiceCallResult();
+        scr.setCode(ResultCode.NOT_MODIFIED);
+        scr.setMessage("Not modified.");
+        return scr;
+    }
 }

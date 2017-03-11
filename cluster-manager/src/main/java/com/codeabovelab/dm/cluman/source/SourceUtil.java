@@ -30,6 +30,7 @@ import org.springframework.util.StringUtils;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  */
@@ -67,10 +68,12 @@ public class SourceUtil {
             TaskResources limits = rrs.getLimits();
             if(limits != null) {
                 cs.setMemoryLimit(limits.getMemory());
+                cs.setCpuQuota((int)(limits.getNanoCPUs() / 1000L));
             }
             TaskResources reserv = rrs.getReservations();
             if(reserv != null) {
                 cs.setMemoryReservation(reserv.getMemory());
+                cs.setCpuPeriod((int)(reserv.getNanoCPUs() / 1000L));
             }
         }
         Task.Placement placement = taskSpec.getPlacement();
@@ -131,13 +134,19 @@ public class SourceUtil {
             Sugar.setIfNotNull(cs.getDnsSearch()::addAll, dc.getSearch());
             Sugar.setIfNotNull(cs.getDns()::addAll, dc.getServers());
         }
-        mountsToSource(conSpec.getMounts(), cs);
+        List<Mount> mounts = conSpec.getMounts();
+        if(mounts != null) {
+            mounts.forEach(m -> {
+                cs.getMounts().add(toMountSource(m));
+            });
+        }
         String image = conSpec.getImage();
         ImageName in = ImageName.parse(image);
         cs.setImage(in.getFullName());
         cs.setImageId(in.getId());
         Sugar.setIfNotNull(cs.getLabels()::putAll, conSpec.getLabels());
-        Sugar.setIfNotNull(cs.getCommand()::addAll, conSpec.getCommand());
+        Sugar.setIfNotNull(cs.getEntrypoint()::addAll, conSpec.getCommand());
+        Sugar.setIfNotNull(cs.getCommand()::addAll, conSpec.getArgs());
         Sugar.setIfNotNull(cs.getEnvironment()::addAll, conSpec.getEnv());
         cs.setHostname(conSpec.getHostname());
     }
@@ -148,122 +157,13 @@ public class SourceUtil {
           .servers(cont.getDns())
           .search(cont.getDnsSearch())
           .build());
-        csb.mounts(convertMounts(cont));
+        csb.mounts(cont.getMounts().stream().map(SourceUtil::fromMountSource).collect(Collectors.toList()));
         csb.image(ImageName.nameWithId(cont.getImage(), cont.getImageId()))
           .labels(cont.getLabels())
-          .command(cont.getCommand())
+          .command(cont.getEntrypoint())
+          .args(cont.getCommand())
           .env(cont.getEnvironment())
           .hostname(cont.getHostname());
-    }
-
-    @SuppressWarnings("deprecation")
-    private static List<Mount> convertMounts(ContainerSource c) {
-        List<Mount> res = new ArrayList<>();
-        final String volumeDriver = c.getVolumeDriver();
-        c.getVolumeBinds().forEach(vb -> {
-            Iterator<String> i = SP_VOLUMES.split(vb).iterator();
-            Mount.Builder mb = Mount.builder();
-            mb.source(i.next());
-            mb.target(i.next());
-            Mount.VolumeOptions.Builder vob = Mount.VolumeOptions.builder();
-            if(i.hasNext()) {
-                Mount.BindOptions.Builder bo = Mount.BindOptions.builder();
-                for(String opt : SP_VOLUMES_OPTS.split(i.next())) {
-                    switch (opt) {
-                        case "ro":
-                            mb.readonly(true);
-                            break;
-                        case "rw":
-                            mb.readonly(false);
-                            break;
-                        case "rshared":
-                            bo.propagation(Mount.Propagation.RSHARED);
-                            break;
-                        case "rslave":
-                            bo.propagation(Mount.Propagation.RSLAVE);
-                            break;
-                        case "rprivate":
-                            bo.propagation(Mount.Propagation.RPRIVATE);
-                            break;
-                        case "shared":
-                            bo.propagation(Mount.Propagation.SHARED);
-                            break;
-                        case "slave":
-                            bo.propagation(Mount.Propagation.SLAVE);
-                            break;
-                        case "private":
-                            bo.propagation(Mount.Propagation.PRIVATE);
-                            break;
-                        case "nocopy":
-                            vob.noCopy(true);
-                            break;
-                    }
-                }
-                mb.bindOptions(bo.build());
-            }
-            if(volumeDriver != null) {
-                vob.driverConfig(Mount.Driver.builder().name(volumeDriver).build());
-            }
-            mb.volumeOptions(vob.build());
-            res.add(mb.build());
-        });
-        //c.getVolumesFrom() - not supported by services
-        return res;
-    }
-
-
-    private static void mountsToSource(List<Mount> mounts, ContainerSource cs) {
-        if(mounts == null) {
-            return;
-        }
-        String driver = null;
-        for(Mount mount: mounts) {
-            Mount.Type type = mount.getType();
-            if(type != Mount.Type.BIND && type != Mount.Type.VOLUME) {
-                log.warn("Unsupported type: {} of mount {}", type, mount);
-                continue;
-            }
-            StringBuilder sb = new StringBuilder();
-            sb.append(mount.getSource()).append(':').append(mount.getTarget()).append(':');
-            appendOpt(sb, mount.isReadonly()? "ro" : "rw");
-            Mount.VolumeOptions vo = mount.getVolumeOptions();
-            if(vo != null) {
-                Mount.Driver dc = vo.getDriverConfig();
-                if(dc != null) {
-                    String name = dc.getName();
-                    if(name != null) {
-                        if(driver != null) {
-                            if(!name.equals(driver)) {
-                                log.error("Unsupported, different volume drivers: {} and {} in one container: {}", name, driver, cs);
-                                break;
-                            }
-                        } else {
-                            driver = name;
-                        }
-                    }
-                }
-                if(vo.isNoCopy()) {
-                    appendOpt(sb, "nocopy");
-                }
-            }
-            Mount.BindOptions bo = mount.getBindOptions();
-            if(bo != null) {
-                Mount.Propagation propagation = bo.getPropagation();
-                if(propagation != null) {
-                    appendOpt(sb, propagation.name().toLowerCase());
-                }
-            }
-            cs.getVolumeBinds().add(sb.toString());
-        }
-        cs.setVolumeDriver(driver);
-    }
-
-    private static void appendOpt(StringBuilder sb, String s) {
-        int len = sb.length() - 1;
-        if(len > 0 && sb.charAt(len) != ',') {
-            sb.append(',');
-        }
-        sb.append(s);
     }
 
     /**
@@ -316,6 +216,46 @@ public class SourceUtil {
                 dst.add(i.next() + ":" + ip);
             }
         });
+    }
+
+    public static Mount fromMountSource(MountSource m) {
+        Mount.Type type = m.getType();
+        Mount.Builder mb = Mount.builder();
+        switch (type) {
+            case BIND: {
+                MountSource.BindSource bs = (MountSource.BindSource) m;
+                mb.bindOptions(Mount.BindOptions.builder().propagation(bs.getPropagation()).build());
+            }
+            break;
+            case TMPFS: {
+                MountSource.TmpfsSource ts = (MountSource.TmpfsSource) m;
+                mb.tmpfsOptions(Mount.TmpfsOptions.builder()
+                  .mode(ts.getMode())
+                  .size(ts.getSize())
+                  .build());
+            }
+            break;
+            case VOLUME: {
+                MountSource.VolumeSource vs = (MountSource.VolumeSource) m;
+                Mount.VolumeOptions.Builder vob = Mount.VolumeOptions.builder();
+                vob.driverConfig(Mount.Driver.builder()
+                  .name(vs.getDriver())
+                  .options(vs.getDriverOpts())
+                  .build());
+                vob.labels(vs.getLabels());
+                vob.noCopy(vs.isNoCopy());
+                mb.volumeOptions(vob.build());
+            }
+            break;
+            default:
+                // for unsupported type
+                return null;
+        }
+        mb.readonly(m.isReadonly());
+        mb.source(m.getSource());
+        mb.target(m.getTarget());
+        mb.type(type);
+        return mb.build();
     }
 
     public static MountSource toMountSource(Mount m) {
