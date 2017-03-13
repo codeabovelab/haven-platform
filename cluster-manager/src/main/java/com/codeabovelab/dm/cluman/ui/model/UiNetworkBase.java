@@ -35,20 +35,20 @@ public class UiNetworkBase {
     private String driver;
     private final Map<String, String> labels = new HashMap<>();
     private final Map<String, String> options = new HashMap<>();
-    private boolean enableIpv6;
-    private boolean internal;
+    private Boolean enableIpv6;
+    private Boolean internal;
     private Ipam ipam;
 
     public void to(CreateNetworkCmd cmd) {
-        cmd.setName(getName());
-        cmd.setDriver(getDriver());
+        Sugar.setIfNotNull(cmd::setName, getName());
+        Sugar.setIfNotNull(cmd::setDriver, getDriver());
         Sugar.setIfNotNull(cmd.getOptions()::putAll, getOptions());
         Ipam ipam = getIpam();
         if(ipam != null) {
             cmd.setIpam(ipam.to());
         }
-        cmd.setInternal(isInternal());
-        cmd.setEnableIpv6(isEnableIpv6());
+        Sugar.setIfNotNull(cmd::setInternal, getInternal());
+        Sugar.setIfNotNull(cmd::setEnableIpv6, getEnableIpv6());
         Sugar.setIfNotNull(cmd.getLabels()::putAll, getLabels());
     }
 

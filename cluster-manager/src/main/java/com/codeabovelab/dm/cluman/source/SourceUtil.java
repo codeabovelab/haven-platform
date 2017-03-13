@@ -25,9 +25,11 @@ import com.google.common.base.CharMatcher;
 import com.google.common.base.Splitter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.util.Assert;
+import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -81,6 +83,13 @@ public class SourceUtil {
             Sugar.setIfNotNull(srv.getConstraints()::addAll, placement.getConstraints());
         }
 
+        List<SwarmNetwork.NetworkAttachmentConfig> netsSpecs = taskSpec.getNetworks();
+        if(!CollectionUtils.isEmpty(netsSpecs)) {
+            cs.setNetwork(netsSpecs.get(0).getTarget());
+            for(int i = 1; i < netsSpecs.size(); ++i) {
+                cs.getNetworks().add(netsSpecs.get(i).getTarget());
+            }
+        }
     }
 
     public static void fromSource(ServiceSource srv, Service.ServiceSpec.Builder ssb) {
@@ -110,7 +119,27 @@ public class SourceUtil {
 
         tsb.placement(Task.Placement.builder().constraints(srv.getConstraints()).build());
 
+        networksFromSource(tsb, cont);
+
         ssb.taskTemplate(tsb.build());
+    }
+
+    private static void networksFromSource(Task.TaskSpec.Builder tsb, ContainerSource cont) {
+        List<String> nets = new ArrayList<>();
+        {
+            String mainNet = cont.getNetwork();
+            if(mainNet != null) {
+                nets.add(mainNet);
+            }
+        }
+        nets.addAll(cont.getNetworks());
+        if(nets.isEmpty()) {
+            return;
+        }
+        tsb.networks(nets.stream()
+          .filter(net -> !"default".equals(net))
+          .map(net -> new SwarmNetwork.NetworkAttachmentConfig(net, Collections.emptyList()))
+          .collect(Collectors.toList()));
     }
 
     private static TaskResources toTaskResources(Long mem, Integer cpu) {
