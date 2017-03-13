@@ -16,17 +16,14 @@
 
 package com.codeabovelab.dm.cluman.ui.model;
 
-import com.codeabovelab.dm.cluman.cluster.docker.model.swarm.Endpoint;
 import com.codeabovelab.dm.cluman.cluster.docker.model.swarm.Service;
 import com.codeabovelab.dm.cluman.model.*;
-import com.codeabovelab.dm.cluman.source.SourceUtil;
+import com.codeabovelab.dm.cluman.source.ServiceSourceConverter;
 import com.codeabovelab.dm.common.utils.Comparables;
-import com.codeabovelab.dm.common.utils.Sugar;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
 import java.time.LocalDateTime;
-import java.util.*;
 
 /**
  * UI representation for Container service.
@@ -60,7 +57,13 @@ public class UiContainerService extends ServiceSource implements WithUiPermissio
         return comp;
     }
 
-    public static UiContainerService from(ContainerService s) {
+    /**
+     * Convert service to its ui presentation
+     * @param ng group which contains specified service
+     * @param s service
+     * @return ui presentation of service
+     */
+    public static UiContainerService from(NodesGroup ng, ContainerService s) {
         UiContainerService uic = new UiContainerService();
         Service srv = s.getService();
         uic.setId(srv.getId());
@@ -68,7 +71,10 @@ public class UiContainerService extends ServiceSource implements WithUiPermissio
         uic.setVersion(srv.getVersion().getIndex());
         uic.setCreated(srv.getCreated());
         uic.setUpdated(srv.getUpdated());
-        SourceUtil.toSource(srvSpec, uic);
+        ServiceSourceConverter ssc = new ServiceSourceConverter();
+        ssc.setNodesGroup(ng);
+        ssc.setServiceSpec(srvSpec);
+        ssc.toSource(uic);
         uic.setCluster(s.getCluster());
         return uic;
     }

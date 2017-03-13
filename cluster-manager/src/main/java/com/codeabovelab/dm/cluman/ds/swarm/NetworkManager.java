@@ -23,20 +23,38 @@ import com.codeabovelab.dm.cluman.cluster.docker.model.CreateNetworkResponse;
 import com.codeabovelab.dm.cluman.cluster.docker.model.Network;
 import com.codeabovelab.dm.cluman.ds.clusters.AbstractNodesGroup;
 import com.codeabovelab.dm.cluman.model.*;
+import com.codeabovelab.dm.common.utils.SingleValueCache;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.List;
-import java.util.Set;
+import java.util.*;
+import java.util.concurrent.TimeUnit;
 
 public class NetworkManager {
 
     private static final Logger LOG = LoggerFactory.getLogger(NetworkManager.class);
-    private static final String OVERLAY_DRIVER = "overlay";
+    public static final String OVERLAY_DRIVER = "overlay";
+    private final SingleValueCache<Map<String, Network>> networksCache;
     private final AbstractNodesGroup<?> group;
 
     public NetworkManager(AbstractNodesGroup<?> group) {
         this.group = group;
+        this.networksCache  = SingleValueCache.builder(this::loadNetworks)
+          .timeAfterWrite(TimeUnit.MINUTES, 5L)
+          .build();
+    }
+
+    private Map<String, Network> loadNetworks() {
+        DockerService service = group.getDocker();
+        List<Network> networks = service.getNetworks();
+        LOG.debug("Load networks for cluster {}: {}", group.getName(), networks);
+        Map<String, Network> map = new HashMap<>();
+        if(networks != null) {
+            networks.forEach(network -> {
+                map.put(network.getId(), network);
+            });
+        }
+        return Collections.unmodifiableMap(map);
     }
 
     public CreateNetworkResponse createNetwork(String networkName) {
@@ -59,6 +77,7 @@ public class NetworkManager {
 
     public CreateNetworkResponse createNetwork(CreateNetworkCmd cmd) {
         DockerService service = group.getDocker();
+        this.networksCache.invalidate();
         LOG.debug("About to create network '{}' for cluster '{}'", cmd, group.getName());
         CreateNetworkResponse res = service.createNetwork(cmd);
         if (res.getCode() == ResultCode.ERROR) {
@@ -69,14 +88,10 @@ public class NetworkManager {
 
     /**
      * List networks
-     *
-     * @param clusterName
-     * @return
+     * @return unmodifiable map of group networks
      */
-    public List<Network> getNetworks(String clusterName) {
-        DockerService service = group.getDocker();
-        List<Network> networks = service.getNetworks();
-        LOG.debug("networks for cluster {}: {}", clusterName, networks);
-        return networks;
+    public Map<String, Network> getNetworks() {
+        Map<String, Network> map = this.networksCache.get();
+        return map == null? Collections.emptyMap() : map;
     }
 }

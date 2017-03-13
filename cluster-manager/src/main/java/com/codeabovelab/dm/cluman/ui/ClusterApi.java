@@ -20,7 +20,6 @@ import com.codeabovelab.dm.cluman.cluster.docker.ClusterConfigImpl;
 import com.codeabovelab.dm.cluman.cluster.application.ApplicationService;
 import com.codeabovelab.dm.cluman.cluster.docker.management.DockerUtils;
 import com.codeabovelab.dm.cluman.cluster.docker.model.Network;
-import com.codeabovelab.dm.cluman.cluster.docker.model.UpdateNodeCmd;
 import com.codeabovelab.dm.cluman.cluster.registry.RegistryRepository;
 import com.codeabovelab.dm.cluman.ds.clusters.*;
 import com.codeabovelab.dm.cluman.ds.container.ContainerStorage;
@@ -183,7 +182,7 @@ public class ClusterApi {
         Map<String, String> apps = UiUtils.mapAppContainer(applicationService, nodesGroup);
         List<UiContainerService> list = new ArrayList<>();
         for (ContainerService service : services) {
-            UiContainerService uic = UiContainerService.from(service);
+            UiContainerService uic = UiContainerService.from(nodesGroup, service);
             uic.setApplication(apps.get(uic.getId()));
             UiPermission.inject(uic, ac, SecuredType.SERVICE.id(uic.getId()));
             list.add(uic);
@@ -279,9 +278,9 @@ public class ClusterApi {
     public List<UiNetwork> getNetworks(@PathVariable("cluster") String clusterName) {
         NodesGroup group = discoveryStorage.getCluster(clusterName);
         ExtendedAssert.notFound(group, "Can not find cluster: " + clusterName);
-        List<Network> networks = group.getNetworks().getNetworks(clusterName);
+        Map<String, Network> networks = group.getNetworks().getNetworks();
         ArrayList<UiNetwork> results = new ArrayList<>(networks.size());
-        networks.forEach(src -> {
+        networks.forEach((id, src) -> {
             UiNetwork res = new UiNetwork();
             res.from(src, containerStorage);
             res.setCluster(clusterName);

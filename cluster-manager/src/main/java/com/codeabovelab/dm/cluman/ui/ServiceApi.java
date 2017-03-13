@@ -63,7 +63,7 @@ public class ServiceApi {
         NodesGroup ng = getNodesGroup(cluster);
         ContainerService service = ng.getContainers().getService(id);
         ExtendedAssert.notFound(service, "can not find service: " + id);
-        return UiContainerService.from(service);
+        return UiContainerService.from(ng, service);
     }
 
     @RequestMapping(path = "/create", method = RequestMethod.POST)
