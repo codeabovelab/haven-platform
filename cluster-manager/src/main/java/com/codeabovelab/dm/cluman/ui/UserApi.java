@@ -135,7 +135,7 @@ public class UserApi {
     }
 
     @Secured(Authorities.USER_ROLE)
-    @RequestMapping(value = "/current", method = RequestMethod.GET)
+    @RequestMapping(value = "/current/", method = RequestMethod.GET)
     public UiUser getCurrentUser() {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         UserDetails userDetails = (UserDetails) auth.getPrincipal();
