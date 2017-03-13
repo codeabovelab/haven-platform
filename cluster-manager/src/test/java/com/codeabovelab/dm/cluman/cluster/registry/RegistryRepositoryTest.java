@@ -11,6 +11,7 @@ import com.codeabovelab.dm.common.kv.mapping.KvMapperFactory;
 import com.codeabovelab.dm.cluman.model.ImageDescriptor;
 import com.codeabovelab.dm.common.json.JacksonConfiguration;
 import com.codeabovelab.dm.common.mb.MessageBus;
+import org.junit.Assert;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -23,7 +24,6 @@ import org.springframework.context.annotation.Import;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
-import org.springframework.util.Assert;
 import org.springframework.util.CollectionUtils;
 
 import java.util.Collection;
@@ -63,25 +63,25 @@ public class RegistryRepositoryTest {
     @Test
     public void checkHeath() throws Exception {
         RegistryService dhub = registryRepository.getByName(null);
-        Assert.isTrue(dhub.checkHealth());
+        Assert.assertTrue(dhub.checkHealth());
 
         RegistryService pdhub = registryRepository.getByName("codeabovelab");
-        Assert.isTrue(pdhub.checkHealth());
+        Assert.assertTrue(pdhub.checkHealth());
 
         RegistryService awshub = registryRepository.getByName(AWS_REGISTRY);
-        Assert.isTrue(awshub.checkHealth());
+        Assert.assertTrue(awshub.checkHealth());
 
         RegistryService privHub = registryRepository.getByName(PRIVATE_REGISTRY);
-        Assert.isTrue(privHub.checkHealth());
+        Assert.assertTrue(privHub.checkHealth());
     }
 
     @Test
     public void getCatalog() throws Exception {
         List<ImageCatalog> catalog = registryRepository.getCatalog(Collections.singletonList(AWS_REGISTRY));
-        Assert.notNull(catalog);
+        Assert.assertNotNull(catalog);
 
         List<ImageCatalog> catalogni1Full = registryRepository.getCatalog(Collections.singletonList(PRIVATE_REGISTRY));
-        Assert.notNull(catalogni1Full);
+        Assert.assertNotNull(catalogni1Full);
     }
 
     @Test
@@ -89,28 +89,28 @@ public class RegistryRepositoryTest {
 
         RegistryService privHub = registryRepository.getByName(PRIVATE_REGISTRY);
         Tags ni1Tags = privHub.getTags("cluster-manager");
-        Assert.notNull(ni1Tags);
-        Assert.isTrue(ni1Tags.getTags().size() > 0);
+        Assert.assertNotNull(ni1Tags);
+        Assert.assertTrue(ni1Tags.getTags().size() > 0);
 
         RegistryService awshub = registryRepository.getByName(AWS_REGISTRY);
         Tags tagsAmazone = awshub.getTags("cluster-manager");
-        Assert.notNull(tagsAmazone);
-        Assert.isTrue(tagsAmazone.getTags().size() > 0);
+        Assert.assertNotNull(tagsAmazone);
+        Assert.assertTrue(tagsAmazone.getTags().size() > 0);
 
         RegistryService pdhub = registryRepository.getByName("codeabovelab");
         Tags tags = pdhub.getTags("cluster-manager");
-        Assert.notNull(tags);
-        Assert.isTrue(tags.getTags().size() > 0);
+        Assert.assertNotNull(tags);
+        Assert.assertTrue(tags.getTags().size() > 0);
 
         RegistryService dhub = registryRepository.getByName(null);
         Tags tagsTutum = dhub.getTags("tutum/ubuntu");
-        Assert.notNull(tagsTutum);
-        Assert.isTrue(tagsTutum.getTags().size() > 0);
+        Assert.assertNotNull(tagsTutum);
+        Assert.assertTrue(tagsTutum.getTags().size() > 0);
 
         dhub = registryRepository.getByName(null);
         Tags tagsUbuntu = dhub.getTags("ubuntu");
-        Assert.notNull(tagsUbuntu);
-        Assert.isTrue(tagsUbuntu.getTags().size() > 0);
+        Assert.assertNotNull(tagsUbuntu);
+        Assert.assertTrue(tagsUbuntu.getTags().size() > 0);
 
     }
 
@@ -119,28 +119,28 @@ public class RegistryRepositoryTest {
 
         RegistryService privHub = registryRepository.getRegistryByImageName(PRIVATE_REGISTRY + "/cluster-manager");
         Tags ni1Tags = privHub.getTags("cluster-manager");
-        Assert.notNull(ni1Tags);
-        Assert.isTrue(ni1Tags.getTags().size() > 0);
+        Assert.assertNotNull(ni1Tags);
+        Assert.assertTrue(ni1Tags.getTags().size() > 0);
 
         RegistryService awshub = registryRepository.getRegistryByImageName(AWS_REGISTRY+ "/cluster-manager");
         Tags tagsAmazone = awshub.getTags("cluster-manager");
-        Assert.notNull(tagsAmazone);
-        Assert.isTrue(tagsAmazone.getTags().size() > 0);
+        Assert.assertNotNull(tagsAmazone);
+        Assert.assertTrue(tagsAmazone.getTags().size() > 0);
 
         RegistryService pdhub = registryRepository.getRegistryByImageName("codeabovelab"+ "/cluster-manager");
         Tags tags = pdhub.getTags("cluster-manager");
-        Assert.notNull(tags);
-        Assert.isTrue(tags.getTags().size() > 0);
+        Assert.assertNotNull(tags);
+        Assert.assertTrue(tags.getTags().size() > 0);
 
         RegistryService dhub = registryRepository.getRegistryByImageName("tutum/ubuntu");
         Tags tagsTutum = dhub.getTags("ubuntu");
-        Assert.notNull(tagsTutum);
-        Assert.isTrue(tagsTutum.getTags().size() > 0);
+        Assert.assertNotNull(tagsTutum);
+        Assert.assertTrue(tagsTutum.getTags().size() > 0);
 
         dhub = registryRepository.getRegistryByImageName("ubuntu");
         Tags tagsUbuntu = dhub.getTags("ubuntu");
-        Assert.notNull(tagsUbuntu);
-        Assert.isTrue(tagsUbuntu.getTags().size() > 0);
+        Assert.assertNotNull(tagsUbuntu);
+        Assert.assertTrue(tagsUbuntu.getTags().size() > 0);
 
     }
 //
@@ -152,19 +152,19 @@ public class RegistryRepositoryTest {
     @Test
     public void getImage() throws Exception {
         ImageDescriptor image = registryRepository.getByName(PRIVATE_REGISTRY).getImage("cluster-manager", "latest");
-        Assert.notNull(image);
+        Assert.assertNotNull(image);
 
         ImageDescriptor imageUbuntu = registryRepository.getByName(null).getImage("ubuntu", "latest");
-        Assert.notNull(imageUbuntu);
+        Assert.assertNotNull(imageUbuntu);
 
 //        ImageDescriptor tutumUbuntu = registryRepository.getImage("ubuntu", "latest", "tutum");
-//        Assert.notNull(tutumUbuntu);
+//        Assert.assertNotNull(tutumUbuntu);
     }
 
     @Test
     public void getAvailableRegistries() throws Exception {
         Collection<String> availableRegistries = registryRepository.getAvailableRegistries();
-        Assert.isTrue(!availableRegistries.isEmpty());
+        Assert.assertTrue(!availableRegistries.isEmpty());
     }
 
 
@@ -172,8 +172,8 @@ public class RegistryRepositoryTest {
     public void testSearch() throws Exception {
         DockerHubRegistry defaultRegisrty = (DockerHubRegistry) registryRepository.getDefaultRegistry();
         SearchResult ubuntu = defaultRegisrty.search("ubuntu", 0, 1000);
-        Assert.notNull(ubuntu.getResults());
-        Assert.notNull(ubuntu);
+        Assert.assertNotNull(ubuntu.getResults());
+        Assert.assertNotNull(ubuntu);
     }
 
     @Test
@@ -181,10 +181,10 @@ public class RegistryRepositoryTest {
     public void deleteTag() throws Exception {
         RegistryService privHub = registryRepository.getByName(PRIVATE_REGISTRY);
         List<String> tags = privHub.getTags("balancer-web").getTags();
-        Assert.isTrue(!CollectionUtils.isEmpty(tags));
+        Assert.assertTrue(!CollectionUtils.isEmpty(tags));
         String tag = tags.get(0);
         ImageDescriptor ni1 = privHub.getImage("balancer-web", tag);
-        Assert.notNull(ni1);
+        Assert.assertNotNull(ni1);
         privHub.deleteTag("balancer-web", ni1.getId());
 
     }
