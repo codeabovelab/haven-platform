@@ -62,7 +62,7 @@ public class JobApi {
           .collect(Collectors.toList());
     }
 
-    @RequestMapping(value = "/jobtypes/", method = GET)
+    @RequestMapping(value = "/types-name/", method = GET)
     public Set<String> listTypes() {
         return jobsManager.getTypes();
     }
