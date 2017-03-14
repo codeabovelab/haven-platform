@@ -34,11 +34,11 @@ public final class NodeEvent extends Event implements WithCluster, WithAction {
         ONLINE, OFFLINE,
         CREATE, UPDATE, DELETE,
         /**
-         * This event raise before node delete. You can cancel this trought call {@link NodeEvent#cancel()}.
+         * This event raise before node delete. You can cancel this through call {@link NodeEvent#cancel()}.
          */
         PRE_DELETE(true),
         /**
-         * This event raise before node delete. You can cancel this trought call {@link NodeEvent#cancel()}.
+         * This event raise before node delete. You can cancel this through call {@link NodeEvent#cancel()}.
          */
         PRE_UPDATE(true);
         boolean pre;
