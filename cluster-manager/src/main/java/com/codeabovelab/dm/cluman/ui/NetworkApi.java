@@ -33,8 +33,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.ArrayList;
-import java.util.List;
 
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 
@@ -100,7 +98,7 @@ public class NetworkApi {
               .build();
             cmd.setConfig(config);
         }
-        ServiceCallResult res = ng.getDocker().connectNetwork(cmd);
+        ServiceCallResult res = ng.getNetworks().connectNetwork(cmd);
         return UiUtils.createResponse(res);
     }
 
@@ -113,7 +111,7 @@ public class NetworkApi {
         cmd.setContainer(container);
         cmd.setNetwork(network);
         cmd.setForce(true);
-        ServiceCallResult res = ng.getDocker().disconnectNetwork(cmd);
+        ServiceCallResult res = ng.getNetworks().disconnectNetwork(cmd);
         return UiUtils.createResponse(res);
     }
 
@@ -133,7 +131,7 @@ public class NetworkApi {
     public ResponseEntity<?> deleteNetwork(@RequestParam("cluster") String clusterName,
                                            @RequestParam("network") String network) {
         NodesGroup group = getNodesGroup(clusterName);
-        ServiceCallResult res = group.getDocker().deleteNetwork(network);
+        ServiceCallResult res = group.getNetworks().deleteNetwork(network);
         return UiUtils.createResponse(res);
     }
 

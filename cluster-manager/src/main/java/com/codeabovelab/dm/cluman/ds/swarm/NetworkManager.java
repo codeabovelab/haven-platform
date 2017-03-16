@@ -18,9 +18,8 @@ package com.codeabovelab.dm.cluman.ds.swarm;
 
 import com.codeabovelab.dm.cluman.cluster.docker.management.DockerService;
 import com.codeabovelab.dm.cluman.cluster.docker.management.result.ResultCode;
-import com.codeabovelab.dm.cluman.cluster.docker.model.CreateNetworkCmd;
-import com.codeabovelab.dm.cluman.cluster.docker.model.CreateNetworkResponse;
-import com.codeabovelab.dm.cluman.cluster.docker.model.Network;
+import com.codeabovelab.dm.cluman.cluster.docker.management.result.ServiceCallResult;
+import com.codeabovelab.dm.cluman.cluster.docker.model.*;
 import com.codeabovelab.dm.cluman.ds.clusters.AbstractNodesGroup;
 import com.codeabovelab.dm.cluman.model.*;
 import com.codeabovelab.dm.common.utils.SingleValueCache;
@@ -93,5 +92,23 @@ public class NetworkManager {
     public Map<String, Network> getNetworks() {
         Map<String, Network> map = this.networksCache.get();
         return map == null? Collections.emptyMap() : map;
+    }
+
+    public ServiceCallResult deleteNetwork(String network) {
+        DockerService service = group.getDocker();
+        networksCache.invalidate();
+        return service.deleteNetwork(network);
+    }
+
+    public ServiceCallResult connectNetwork(ConnectNetworkCmd cmd) {
+        DockerService service = group.getDocker();
+        networksCache.invalidate();
+        return service.connectNetwork(cmd);
+    }
+
+    public ServiceCallResult disconnectNetwork(DisconnectNetworkCmd cmd) {
+        DockerService service = group.getDocker();
+        networksCache.invalidate();
+        return service.disconnectNetwork(cmd);
     }
 }

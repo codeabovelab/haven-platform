@@ -18,6 +18,7 @@ package com.codeabovelab.dm.cluman.ui.model;
 
 import com.codeabovelab.dm.cluman.cluster.docker.model.CreateNetworkCmd;
 import com.codeabovelab.dm.cluman.cluster.docker.model.Network;
+import com.codeabovelab.dm.common.utils.Comparables;
 import com.codeabovelab.dm.common.utils.Sugar;
 import lombok.Data;
 
@@ -29,7 +30,7 @@ import java.util.Map;
 /**
  */
 @Data
-public class UiNetworkBase {
+public class UiNetworkBase implements Comparable<UiNetworkBase> {
     private String name;
     private String cluster;
     private String driver;
@@ -64,6 +65,11 @@ public class UiNetworkBase {
         setEnableIpv6(net.isEnableIpv6());
         Sugar.setIfNotNull(getLabels()::putAll, net.getLabels());
         return this;
+    }
+
+    @Override
+    public int compareTo(UiNetworkBase o) {
+        return Comparables.compare(this.getName(), o.getName());
     }
 
     @Data

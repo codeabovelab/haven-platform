@@ -286,6 +286,7 @@ public class ClusterApi {
             res.setCluster(clusterName);
             results.add(res);
         });
+        results.sort(null);
         return results;
     }
 
