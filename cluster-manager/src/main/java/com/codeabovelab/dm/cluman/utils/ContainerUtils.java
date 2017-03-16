@@ -179,7 +179,9 @@ public final class ContainerUtils {
         String hostName = OSUtils.getHostName();
         String id = ContainerDetector.getId();
         String pcid = cont.getId();
-        return cont.getName().equals(hostName) || (id == null ? pcid.startsWith(hostName) : pcid.equals(id));
+        boolean sameName = hostName.equals(cont.getName());
+        boolean sameId = id == null ? pcid.startsWith(hostName) : pcid.equals(id);
+        return sameName || sameId;
     }
 
     public static String fetchTagSuffix(String imageVersion) {
