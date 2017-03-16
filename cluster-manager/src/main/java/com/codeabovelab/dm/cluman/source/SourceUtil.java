@@ -21,26 +21,17 @@ import com.codeabovelab.dm.cluman.cluster.docker.model.Mount;
 import com.codeabovelab.dm.cluman.cluster.docker.model.swarm.*;
 import com.codeabovelab.dm.cluman.model.*;
 import com.codeabovelab.dm.common.utils.Sugar;
-import com.google.common.base.CharMatcher;
-import com.google.common.base.Splitter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.util.Assert;
 import org.springframework.util.StringUtils;
 
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
  */
 @Slf4j
 public class SourceUtil {
-
-    private static final Splitter SP_VOLUMES = Splitter.on(':').limit(3);
-    private static final Splitter SP_VOLUMES_OPTS = Splitter.on(',');
-    private static final Splitter SP_HOSTS = Splitter.on(CharMatcher.anyOf(" \t"));
-
 
     public static void validateSource(RootSource source) {
         Assert.notNull(source, "source is null");
@@ -49,39 +40,6 @@ public class SourceUtil {
           version + " when support: " + RootSource.V_1_0);
     }
 
-    public static void toSource(Service.ServiceSpec srvSpec, ServiceSource srv) {
-        srv.setName(srvSpec.getName());
-        Sugar.setIfNotNull(srv.getLabels()::putAll, srvSpec.getLabels());
-        List<Endpoint.PortConfig> ports = srvSpec.getEndpointSpec().getPorts();
-        if(ports != null) {
-            ports.forEach(pc -> {
-                srv.getPorts().add(new Port(pc.getTargetPort(), pc.getPublishedPort(), pc.getProtocol(), pc.getPublishMode()));
-            });
-        }
-
-        Task.TaskSpec taskSpec = srvSpec.getTaskTemplate();
-        ContainerSource cs = srv.getContainer();
-        ContainerSpec conSpec = taskSpec.getContainer();
-        toSource(conSpec, cs);
-        Task.ResourceRequirements rrs = taskSpec.getResources();
-        if(rrs != null) {
-            TaskResources limits = rrs.getLimits();
-            if(limits != null) {
-                cs.setMemoryLimit(limits.getMemory());
-                cs.setCpuQuota((int)(limits.getNanoCPUs() / 1000L));
-            }
-            TaskResources reserv = rrs.getReservations();
-            if(reserv != null) {
-                cs.setMemoryReservation(reserv.getMemory());
-                cs.setCpuPeriod((int)(reserv.getNanoCPUs() / 1000L));
-            }
-        }
-        Task.Placement placement = taskSpec.getPlacement();
-        if(placement != null) {
-            Sugar.setIfNotNull(srv.getConstraints()::addAll, placement.getConstraints());
-        }
-
-    }
 
     public static void fromSource(ServiceSource srv, Service.ServiceSpec.Builder ssb) {
         ssb.name(srv.getName());
@@ -110,7 +68,27 @@ public class SourceUtil {
 
         tsb.placement(Task.Placement.builder().constraints(srv.getConstraints()).build());
 
+        networksFromSource(tsb, cont);
+
         ssb.taskTemplate(tsb.build());
+    }
+
+    private static void networksFromSource(Task.TaskSpec.Builder tsb, ContainerSource cont) {
+        List<String> nets = new ArrayList<>();
+        {
+            String mainNet = cont.getNetwork();
+            if(mainNet != null) {
+                nets.add(mainNet);
+            }
+        }
+        nets.addAll(cont.getNetworks());
+        if(nets.isEmpty()) {
+            return;
+        }
+        tsb.networks(nets.stream()
+          .filter(net -> !"default".equals(net))
+          .map(net -> new SwarmNetwork.NetworkAttachmentConfig(net, Collections.emptyList()))
+          .collect(Collectors.toList()));
     }
 
     private static TaskResources toTaskResources(Long mem, Integer cpu) {
@@ -125,30 +103,6 @@ public class SourceUtil {
             trb.nanoCPUs(cpu * 1000L);
         }
         return trb.build();
-    }
-
-    private static void toSource(ContainerSpec conSpec, ContainerSource cs) {
-        hostsToSource(conSpec.getHosts(), cs.getExtraHosts());
-        ContainerSpec.DnsConfig dc = conSpec.getDnsConfig();
-        if(dc != null) {
-            Sugar.setIfNotNull(cs.getDnsSearch()::addAll, dc.getSearch());
-            Sugar.setIfNotNull(cs.getDns()::addAll, dc.getServers());
-        }
-        List<Mount> mounts = conSpec.getMounts();
-        if(mounts != null) {
-            mounts.forEach(m -> {
-                cs.getMounts().add(toMountSource(m));
-            });
-        }
-        String image = conSpec.getImage();
-        ImageName in = ImageName.parse(image);
-        cs.setImage(in.getFullName());
-        cs.setImageId(in.getId());
-        Sugar.setIfNotNull(cs.getLabels()::putAll, conSpec.getLabels());
-        Sugar.setIfNotNull(cs.getEntrypoint()::addAll, conSpec.getCommand());
-        Sugar.setIfNotNull(cs.getCommand()::addAll, conSpec.getArgs());
-        Sugar.setIfNotNull(cs.getEnvironment()::addAll, conSpec.getEnv());
-        cs.setHostname(conSpec.getHostname());
     }
 
     private static void fromSource(ContainerSource cont, ContainerSpec.Builder csb) {
@@ -185,37 +139,6 @@ public class SourceUtil {
             }
         });
         return res;
-    }
-
-    /**
-     *
-     * @param src lines of /etc/hosts file
-     * @param dst pairs like 'name:ip'
-     */
-    private static void hostsToSource(List<String> src, List<String> dst) {
-        if(src == null) {
-            return;
-        }
-        src.forEach((hostLine) -> {
-            // line in /etc/hosts file
-            int sharpPos = hostLine.indexOf("#");
-            if(sharpPos == 0) {
-                // skip comments
-                return;
-            }
-            String data = hostLine;
-            if(sharpPos > 0) {
-                data = hostLine.substring(0, sharpPos);
-            }
-            Iterator<String> i = SP_HOSTS.split(data).iterator();
-            if(!i.hasNext()) {
-                return;
-            }
-            String ip = i.next();
-            while(i.hasNext()) {
-                dst.add(i.next() + ":" + ip);
-            }
-        });
     }
 
     public static Mount fromMountSource(MountSource m) {

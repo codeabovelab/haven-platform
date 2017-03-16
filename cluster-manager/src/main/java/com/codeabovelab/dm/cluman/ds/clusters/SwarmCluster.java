@@ -63,7 +63,7 @@ public final class SwarmCluster extends AbstractNodesGroup<SwarmNodesGroupConfig
 
     private void onNodeEvent(NodeEvent event) {
         NodeEvent.Action action = event.getAction();
-        if(NodeEvent.Action.OFFLINE == action) {
+        if(NodeEvent.Action.OFFLINE == action || action.isPre()) {
             return;
         }
         NodeInfo ni = event.getCurrent();

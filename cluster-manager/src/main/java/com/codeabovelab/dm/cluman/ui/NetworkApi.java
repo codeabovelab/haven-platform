@@ -25,6 +25,7 @@ import com.codeabovelab.dm.cluman.model.DiscoveryStorage;
 import com.codeabovelab.dm.cluman.model.NodesGroup;
 import com.codeabovelab.dm.cluman.ui.model.*;
 import com.codeabovelab.dm.cluman.validate.ExtendedAssert;
+import io.swagger.annotations.ApiOperation;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -49,18 +50,20 @@ public class NetworkApi {
     private final DiscoveryStorage discoveryStorage;
     private final ContainerStorage containerStorage;
 
+    @ApiOperation("By default make 'overlay' attachable network, prevent duplicates.")
     @RequestMapping(path = "create", method = RequestMethod.POST)
     public ResponseEntity<?> createNetwork(@RequestParam("cluster") String clusterName,
                                                   @RequestParam("network") String network,
-                                                  @RequestBody UiNetworkBase body) {
+                                                  @RequestBody(required = false) UiNetworkBase body) {
         NodesGroup group = getNodesGroup(clusterName);
         CreateNetworkCmd cmd = new CreateNetworkCmd();
-        if(body != null) {
-            body.to(cmd);
-        }
         cmd.setName(network);
         cmd.setCheckDuplicate(true);
         cmd.setAttachable(true);
+        cmd.setDriver("overlay");
+        if(body != null) {
+            body.to(cmd);
+        }
         CreateNetworkResponse res = group.getNetworks().createNetwork(cmd);
         if(res.getCode() == ResultCode.OK) {
             UiNetworkCreateResult uincr = new UiNetworkCreateResult();
