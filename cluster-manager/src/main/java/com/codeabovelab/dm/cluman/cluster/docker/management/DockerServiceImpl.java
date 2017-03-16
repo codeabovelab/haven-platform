@@ -1014,8 +1014,16 @@ public class DockerServiceImpl implements DockerService {
     @Override
     public SwarmInitResult initSwarm(SwarmInitCmd cmd) {
         Assert.notNull(cmd, "cmd is null");
+        URI uri = makeUrl("/swarm/init").build().toUri();
         SwarmInitResult res = new SwarmInitResult();
-        postAction(makeUrl("/swarm/init"), cmd, SwarmInitResult.class, () -> res);
+        try {
+            ResponseEntity<String> e = getSlow(() -> restTemplate.postForEntity(uri, wrapEntity(cmd), String.class));
+            res.setNodeId(e.getBody());
+            res.code(ResultCode.OK);
+        } catch (HttpStatusCodeException e) {
+            log.error("can't init swarm, result: {} \n cmd:{}", cmd, e);
+            processStatusCodeException(e, res, uri);
+        }
         return res;
     }
 
