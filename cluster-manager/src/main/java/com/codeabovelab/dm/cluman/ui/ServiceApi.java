@@ -51,7 +51,8 @@ public class ServiceApi {
     private final DiscoveryStorage ds;
     private final RegistryRepository registryRepository;
 
-    private NodesGroup getNodesGroup(@RequestParam(name = "cluster") String cluster) {
+    private NodesGroup getNodesGroup(String cluster) {
+        ExtendedAssert.badRequest(cluster != null, "Cluster name is null");
         NodesGroup ng = ds.getCluster(cluster);
         ExtendedAssert.notFound(ng, "can not find cluster: " + cluster);
         return ng;
