@@ -35,6 +35,7 @@ public class SwarmUtils {
     public static final String LABEL_CONSTRAINTS = LABELS_PREFIX + "constraints";
     public static final String LABEL_ID = LABELS_PREFIX + "id";
     public static final String NODE_EQ = "node==";
+    public static final String LABEL_SERVICE_ID = "com.docker.swarm.service.id";
     private static final String PROP_NODES_UPDATE = "dm.nodeStorage.updateSeconds";
     public static final String EXPR_NODES_UPDATE = "${" + SwarmUtils.PROP_NODES_UPDATE + "}";
     // we use seconds in timeout, but spring require milliseconds

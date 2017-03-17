@@ -21,17 +21,16 @@ import com.codeabovelab.dm.cluman.cluster.docker.management.argument.*;
 import com.codeabovelab.dm.cluman.cluster.docker.management.result.ResultCode;
 import com.codeabovelab.dm.cluman.cluster.docker.model.ContainerDetails;
 import com.codeabovelab.dm.cluman.cluster.docker.model.UpdateContainerCmd;
+import com.codeabovelab.dm.cluman.ds.SwarmUtils;
 import com.codeabovelab.dm.cluman.ds.container.ContainerCreator;
 import com.codeabovelab.dm.cluman.model.CreateContainerArg;
 import com.codeabovelab.dm.cluman.cluster.docker.management.result.*;
 import com.codeabovelab.dm.cluman.cluster.docker.management.result.ServiceCallResult;
-import com.codeabovelab.dm.cluman.cluster.docker.model.swarm.Endpoint;
 import com.codeabovelab.dm.cluman.cluster.docker.model.swarm.Service;
 import com.codeabovelab.dm.cluman.ds.container.ContainerRegistration;
 import com.codeabovelab.dm.cluman.ds.container.ContainerStorage;
 import com.codeabovelab.dm.cluman.model.*;
 import com.codeabovelab.dm.common.utils.SingleValueCache;
-import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import lombok.extern.slf4j.Slf4j;
@@ -46,9 +45,6 @@ import java.util.concurrent.TimeUnit;
  */
 @Slf4j
 class DockerClusterContainers implements ContainersManager {
-    public static final Joiner JOINER = Joiner.on(' ');
-    public static final String LABEL_TASK_ID = "com.docker.swarm.task.id";
-    public static final String LABEL_SERVICE_ID = "com.docker.swarm.service.id";
     protected final DockerCluster dc;
     protected final ContainerStorage containerStorage;
     protected final SingleValueCache<Map<String, ContainerService>> svcmap;
@@ -215,7 +211,7 @@ class DockerClusterContainers implements ContainersManager {
         if(cr == null) {
             return new ServiceCallResult().code(ResultCode.NOT_FOUND).message(containerId + " is not registered");
         }
-        String serviceId = cr.getContainer().getLabels().get(LABEL_SERVICE_ID);
+        String serviceId = cr.getContainer().getLabels().get(SwarmUtils.LABEL_SERVICE_ID);
         if(serviceId != null) {
             return scaleService(serviceId, arg.getScale());
         }
