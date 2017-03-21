@@ -107,7 +107,11 @@ public class WsTtyHandler implements WebSocketHandler {
 
     @Override
     public void afterConnectionClosed(WebSocketSession session, CloseStatus closeStatus) {
-        TtyProxy.close(session);
+        TtyProxy tty = TtyProxy.get(session);
+        if(tty != null) {
+            tty.closeCausedFront();
+        }
+
     }
 
     @Override

@@ -8,7 +8,7 @@
         var ws; //websocket
         window.onload = function() {
             term = new Terminal();
-            term.open(document.getElementById('#terminal'));
+            term.open(document.getElementById('terminal'));
         }
         function openContainer() {
             if(ws) {
@@ -25,6 +25,6 @@
     </head>
     <body>
       <input id="containerId" type="text" /> <button onclick="openContainer()">connect</button>
-      <div id="terminal"></div>
+      <div id="terminal" style="font-family:monospace;"></div>
     </body>
 </html>

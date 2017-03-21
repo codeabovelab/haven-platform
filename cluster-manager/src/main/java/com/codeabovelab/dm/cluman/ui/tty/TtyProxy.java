@@ -49,16 +49,21 @@ class TtyProxy implements WebSocketHandler {
         return (TtyProxy) session.getAttributes().get(KEY);
     }
 
-    static void close(WebSocketSession session) {
-        TtyProxy tty = (TtyProxy) session.getAttributes().get(KEY);
-        if(tty != null) {
-            tty.close();
-        }
+    void closeCausedBack() {
+        // split close method for easy resolve cause of closing
+        log.info("Close caused back of {}", this);
+        close();
+    }
+
+    void closeCausedFront() {
+        // split close method for easy resolve cause of closing
+        log.info("Close caused front of {}", this);
+        close();
     }
 
     private void close() {
-        boolean removed = frontend.getAttributes().remove(KEY, this);
-        log.info("Close {}, attr removed: ", this, removed);
+        frontend.getAttributes().remove(KEY, this);
+        // usually this method called twice - at close frontend, and at close backend
         WebSocketSession localBackend;
         synchronized (backendLock) {
             localBackend = this.backend;
@@ -77,7 +82,8 @@ class TtyProxy implements WebSocketHandler {
         }
         try {
             if(!localBackend.isOpen()) {
-                close();
+                log.warn("Message to closed backend, {}", this);
+                closeCausedBack();
                 return;
             }
             localBackend.sendMessage(message);
@@ -98,7 +104,8 @@ class TtyProxy implements WebSocketHandler {
     public void handleMessage(WebSocketSession session, WebSocketMessage<?> message) {
         try {
             if(!frontend.isOpen()) {
-                close();
+                log.warn("Message to closed frontend, {}", this);
+                closeCausedFront();
                 return;
             }
             frontend.sendMessage(message);
@@ -114,7 +121,7 @@ class TtyProxy implements WebSocketHandler {
 
     @Override
     public void afterConnectionClosed(WebSocketSession session, CloseStatus closeStatus) {
-        close();
+        closeCausedBack();
     }
 
     @Override
