@@ -36,6 +36,7 @@ import com.codeabovelab.dm.common.utils.Closeables;
 import com.codeabovelab.dm.common.utils.SingleValueCache;
 import com.google.common.base.MoreObjects;
 import com.google.common.collect.ImmutableList;
+import com.google.common.net.InetAddresses;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
@@ -46,6 +47,8 @@ import org.springframework.util.StringUtils;
 
 import java.util.*;
 import java.util.concurrent.*;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 /**
  * A kind of nodegroup which is managed by 'docker' in 'swarm mode'.
@@ -313,10 +316,11 @@ public class DockerCluster extends AbstractNodesGroup<DockerClusterConfig> {
             // flag which mean that e change internal cluster node list, and must reread them
             boolean[] modified = new boolean[]{false};
             //check that all nodes marked 'our' is in map
-            Collection<NodeInfo> nodes = getNodeStorage().getNodes(this::isFromSameCluster);
+            Map<String, NodeInfo> nodes = getNodeStorage().getNodes(this::isFromSameCluster)
+              .stream()
+              .collect(Collectors.toMap(NodeInfo::getName, Function.identity()));
             Map<String, SwarmNode> localMap = map;
-            nodes.forEach((ni) -> {
-                String name = ni.getName();
+            nodes.forEach((name, ni) -> {
                 SwarmNode sn = localMap.get(name);
                 if(sn != null && sn.getStatus().getState() != SwarmNode.NodeState.DOWN) {
                     return;
@@ -335,7 +339,9 @@ public class DockerCluster extends AbstractNodesGroup<DockerClusterConfig> {
             map.forEach((name, sn) -> {
                 SwarmNode.State status = sn.getStatus();
                 String address = getNodeAddress(sn);
-                if(StringUtils.isEmpty(address) || status.getState() != SwarmNode.NodeState.DOWN) {
+                if(StringUtils.isEmpty(address) ||
+                   status.getState() != SwarmNode.NodeState.READY ||
+                   nodes.containsKey(name)) {
                     return;
                 }
                 registerNode(name, address);
