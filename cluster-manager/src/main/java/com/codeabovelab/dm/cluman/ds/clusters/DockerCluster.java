@@ -363,6 +363,12 @@ public class DockerCluster extends AbstractNodesGroup<DockerClusterConfig> {
         }
     }
 
+    /**
+     * Retrieve node address. Note that node may report incorrect address (for example 127.0.0.1), therefore we
+     * must not prefer it over manually entered value (in other words - not replace existed address).
+     * @param sn swarm node object
+     * @return string with host and port
+     */
     private String getNodeAddress(SwarmNode sn) {
         String address = sn.getStatus().getAddress();
         if(StringUtils.isEmpty(address)) {
@@ -489,7 +495,10 @@ public class DockerCluster extends AbstractNodesGroup<DockerClusterConfig> {
                 return;
             }
             b.idInCluster(id);
-            b.address(address);
+            if(b.getAddress() == null) {
+                // we must not update address, because cluster node may report wrong value
+                b.address(address);
+            }
             b.version(sn.getVersion().getIndex());
             NodeMetrics.Builder nmb = NodeMetrics.builder();
             NodeMetrics.State state = getState(sn);
