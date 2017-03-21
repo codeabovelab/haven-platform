@@ -16,6 +16,8 @@
 
 package com.codeabovelab.dm.cluman.ui.tty;
 
+import com.codeabovelab.dm.common.utils.Closeables;
+import com.google.common.base.MoreObjects;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.socket.CloseStatus;
 import org.springframework.web.socket.WebSocketHandler;
@@ -30,6 +32,7 @@ class TtyProxy implements WebSocketHandler {
     private static final String KEY = TtyProxy.class.getName();
     private final String containerId;
     private final WebSocketSession frontend;
+    private final Object backendLock = new Object();
     private volatile WebSocketSession backend;
 
 
@@ -46,51 +49,85 @@ class TtyProxy implements WebSocketHandler {
         return (TtyProxy) session.getAttributes().get(KEY);
     }
 
-    static void close(WebSocketSession session) throws Exception {
+    static void close(WebSocketSession session) {
         TtyProxy tty = (TtyProxy) session.getAttributes().get(KEY);
-        tty.close();
-    }
-
-    private synchronized void close() throws Exception {
-        frontend.getAttributes().remove(KEY, this);
-        WebSocketSession localBackend = this.backend;
-        if(localBackend != null) {
-            localBackend.close();
+        if(tty != null) {
+            tty.close();
         }
     }
 
-    synchronized void toBackend(WebSocketMessage<?> message) throws Exception {
-        WebSocketSession localBackend = this.backend;
-        if(localBackend != null) {
+    private void close() {
+        boolean removed = frontend.getAttributes().remove(KEY, this);
+        log.info("Close {}, attr removed: ", this, removed);
+        WebSocketSession localBackend;
+        synchronized (backendLock) {
+            localBackend = this.backend;
+        }
+        Closeables.close(localBackend);
+        Closeables.close(frontend);
+    }
+
+    void toBackend(WebSocketMessage<?> message) {
+        WebSocketSession localBackend;
+        synchronized (backendLock) {
+            localBackend = this.backend;
+        }
+        if(localBackend == null) {
+            return;
+        }
+        try {
+            if(!localBackend.isOpen()) {
+                close();
+                return;
+            }
             localBackend.sendMessage(message);
+        } catch (Exception e) {
+            log.error("In {}, can no send message to backend due to: ", this, e);
         }
     }
 
     @Override
-    public void afterConnectionEstablished(WebSocketSession session) throws Exception {
-        synchronized (this) {
-            this.backend = backend;
+    public void afterConnectionEstablished(WebSocketSession session) {
+        synchronized (backendLock) {
+            this.backend = session;
         }
-        log.info("Success connect to backed with sessions: front={}, back={}", frontend, backend);
+        log.info("Success connect to backed with sessions: front={}, back={}", frontend, session);
     }
 
     @Override
-    public void handleMessage(WebSocketSession session, WebSocketMessage<?> message) throws Exception {
-        frontend.sendMessage(message);
+    public void handleMessage(WebSocketSession session, WebSocketMessage<?> message) {
+        try {
+            if(!frontend.isOpen()) {
+                close();
+                return;
+            }
+            frontend.sendMessage(message);
+        } catch (Exception e) {
+            log.error("In {}, can no send message to frontend due to: ", this, e);
+        }
     }
 
     @Override
-    public void handleTransportError(WebSocketSession session, Throwable exception) throws Exception {
+    public void handleTransportError(WebSocketSession session, Throwable exception) {
         log.error("Backend transport error:", exception);
     }
 
     @Override
-    public void afterConnectionClosed(WebSocketSession session, CloseStatus closeStatus) throws Exception {
+    public void afterConnectionClosed(WebSocketSession session, CloseStatus closeStatus) {
         close();
     }
 
     @Override
     public boolean supportsPartialMessages() {
         return false;
+    }
+
+    @Override
+    public String toString() {
+        return MoreObjects.toStringHelper(this)
+          .add("containerId", containerId)
+          .add("frontend", frontend)
+          .add("backend", backend)
+          .toString();
     }
 }

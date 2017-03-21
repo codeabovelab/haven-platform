@@ -20,9 +20,11 @@ import com.codeabovelab.dm.cluman.ds.container.ContainerRegistration;
 import com.codeabovelab.dm.cluman.ds.container.ContainerStorage;
 import com.codeabovelab.dm.cluman.ds.nodes.NodeRegistration;
 import com.codeabovelab.dm.cluman.ds.nodes.NodeStorage;
+import com.codeabovelab.dm.cluman.security.TempAuth;
 import com.codeabovelab.dm.cluman.validate.ExtendedAssert;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Component;
 import org.springframework.util.MultiValueMap;
 import org.springframework.util.concurrent.ListenableFuture;
@@ -33,6 +35,8 @@ import org.springframework.web.socket.WebSocketSession;
 import org.springframework.web.socket.client.WebSocketClient;
 import org.springframework.web.util.UriComponents;
 import org.springframework.web.util.UriComponentsBuilder;
+
+import java.net.URI;
 
 /**
  */
@@ -50,11 +54,26 @@ public class WsTtyHandler implements WebSocketHandler {
     private WebSocketClient webSocketClient;
 
     @Override
-    public void afterConnectionEstablished(WebSocketSession session) throws Exception {
-        UriComponents uc = UriComponentsBuilder.fromUri(session.getUri()).build();
-        MultiValueMap<String, String> params = uc.getQueryParams();
+    public void afterConnectionEstablished(WebSocketSession session) {
+        URI uri = session.getUri();
+        try {
+            UriComponents uc = UriComponentsBuilder.fromUri(uri).build();
+            MultiValueMap<String, String> params = uc.getQueryParams();
+            String containerId = params.getFirst("container");
+            try(TempAuth ta = withAuth(session)) {
+                connectToContainer(session, containerId);
+            };
+        } catch (Exception e) {
+            log.error("Can not establish connection for '{}' due to error:", uri, e);
+        }
+    }
 
-        String containerId = params.getFirst("container");
+    private TempAuth withAuth(WebSocketSession session) {
+        Authentication auth = (Authentication) session.getPrincipal();
+        return TempAuth.open(auth);
+    }
+
+    private void connectToContainer(WebSocketSession session, String containerId) {
         ContainerRegistration containerReg = containerStorage.getContainer(containerId);
         ExtendedAssert.notFound(containerReg, "Can not find container: " + containerId);
         NodeRegistration nodeReg = nodeStorage.getNodeRegistration(containerReg.getNode());
@@ -62,18 +81,18 @@ public class WsTtyHandler implements WebSocketHandler {
         TtyProxy.set(session, tty);
         ListenableFuture<WebSocketSession> future = webSocketClient.doHandshake(tty, getContainerUri(containerReg.getId(), nodeReg));
         future.addCallback((r) -> {}, (e) -> {
-          log.error("failure to open backend connection to '{}' of cluster '{}' due to error: ", containerId, nodeReg.getCluster(), e);
+            log.error("failure to open backend connection to '{}' of cluster '{}' due to error: ", containerId, nodeReg.getCluster(), e);
         });
     }
 
     private String getContainerUri(String containerId, NodeRegistration nr) {
         String addr = nr.getNodeInfo().getAddress();
-        return "ws://" + addr + ":2375/containers/" + containerId +
+        return "ws://" + addr + "/containers/" + containerId +
           "/attach/ws?stream=true&stdin=true&stdout=true&stderr=true";
     }
 
     @Override
-    public void handleMessage(WebSocketSession session, WebSocketMessage<?> message) throws Exception {
+    public void handleMessage(WebSocketSession session, WebSocketMessage<?> message) {
         TtyProxy tty = TtyProxy.get(session);
         if(tty == null) {
             return;
@@ -82,12 +101,12 @@ public class WsTtyHandler implements WebSocketHandler {
     }
 
     @Override
-    public void handleTransportError(WebSocketSession session, Throwable exception) throws Exception {
+    public void handleTransportError(WebSocketSession session, Throwable exception) {
         log.error("Frontend transport error: ", exception);
     }
 
     @Override
-    public void afterConnectionClosed(WebSocketSession session, CloseStatus closeStatus) throws Exception {
+    public void afterConnectionClosed(WebSocketSession session, CloseStatus closeStatus) {
         TtyProxy.close(session);
     }
 

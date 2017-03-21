@@ -1,0 +1,30 @@
+<!doctype html>
+  <html>
+    <head>
+      <link rel="stylesheet" href="/res/xterm.js/xterm.css" />
+      <script src="/res/xterm.js/xterm.js"></script>
+      <script src="/res/xterm.js/attach.js"></script>
+      <script type="text/javascript">
+        var ws; //websocket
+        window.onload = function() {
+            term = new Terminal();
+            term.open(document.getElementById('#terminal'));
+        }
+        function openContainer() {
+            if(ws) {
+                term.detach(ws)
+                ws.close();
+            }
+            term.clear();
+            var container = document.getElementById("containerId").value;
+            ws = new WebSocket("ws://" + window.location.host +
+              "/ui/tty?container=" + container);
+            term.attach(ws, true, true);
+        }
+      </script>
+    </head>
+    <body>
+      <input id="containerId" type="text" /> <button onclick="openContainer()">connect</button>
+      <div id="terminal"></div>
+    </body>
+</html>
