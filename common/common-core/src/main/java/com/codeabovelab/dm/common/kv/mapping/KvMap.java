@@ -472,6 +472,7 @@ public class KvMap<T> {
     }
 
     private ValueHolder getOrCreateHolder(String key) {
+        Assert.hasText(key, "key is null or empty");
         synchronized (map) {
             return map.computeIfAbsent(key, ValueHolder::new);
         }
