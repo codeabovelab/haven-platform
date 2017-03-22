@@ -17,12 +17,12 @@
 package com.codeabovelab.dm.cluman.ui.tty;
 
 import com.codeabovelab.dm.common.utils.Closeables;
+import com.google.common.base.Joiner;
 import com.google.common.base.MoreObjects;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.web.socket.CloseStatus;
-import org.springframework.web.socket.WebSocketHandler;
-import org.springframework.web.socket.WebSocketMessage;
-import org.springframework.web.socket.WebSocketSession;
+import org.springframework.web.socket.*;
+
+import java.util.Map;
 
 /**
  */
@@ -30,15 +30,18 @@ import org.springframework.web.socket.WebSocketSession;
 class TtyProxy implements WebSocketHandler {
 
     private static final String KEY = TtyProxy.class.getName();
+    private static final Joiner.MapJoiner DIJOINER = Joiner.on("\n\r ").withKeyValueSeparator(" = ");
     private final String containerId;
     private final WebSocketSession frontend;
     private final Object backendLock = new Object();
+    private final Map<String, String> diagnosticInfo;
     private volatile WebSocketSession backend;
 
 
-    TtyProxy(String containerId, WebSocketSession frontend) {
+    TtyProxy(String containerId, WebSocketSession frontend, Map<String, String> diagInfo) {
         this.containerId = containerId;
         this.frontend = frontend;
+        this.diagnosticInfo = diagInfo;
     }
 
     static void set(WebSocketSession session, TtyProxy ttyProxy) {
@@ -98,6 +101,16 @@ class TtyProxy implements WebSocketHandler {
             this.backend = session;
         }
         log.info("Success connect to backed with sessions: front={}, back={}", frontend, session);
+        // below we sent some diagnostic info to frontend only
+        send(frontend, "Connect to container: " + containerId + "\n\r " + DIJOINER.join(diagnosticInfo.entrySet()) + "\n\r");
+    }
+
+    private void send(WebSocketSession session, String msg) {
+        try {
+            session.sendMessage(new TextMessage(msg));
+        } catch (Exception e) {
+            log.error("Can not send message to {} due to error:", session, e);
+        }
     }
 
     @Override

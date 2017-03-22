@@ -20,8 +20,11 @@ import com.codeabovelab.dm.cluman.ds.container.ContainerRegistration;
 import com.codeabovelab.dm.cluman.ds.container.ContainerStorage;
 import com.codeabovelab.dm.cluman.ds.nodes.NodeRegistration;
 import com.codeabovelab.dm.cluman.ds.nodes.NodeStorage;
+import com.codeabovelab.dm.cluman.model.DockerContainer;
+import com.codeabovelab.dm.cluman.model.NodeInfo;
 import com.codeabovelab.dm.cluman.security.TempAuth;
 import com.codeabovelab.dm.cluman.validate.ExtendedAssert;
+import com.google.common.collect.ImmutableMap;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
@@ -77,7 +80,15 @@ public class WsTtyHandler implements WebSocketHandler {
         ContainerRegistration containerReg = containerStorage.getContainer(containerId);
         ExtendedAssert.notFound(containerReg, "Can not find container: " + containerId);
         NodeRegistration nodeReg = nodeStorage.getNodeRegistration(containerReg.getNode());
-        TtyProxy tty = new TtyProxy(containerReg.getId(), session);
+        DockerContainer dc = containerReg.getContainer();
+        NodeInfo nodeInfo = nodeReg.getNodeInfo();
+        TtyProxy tty = new TtyProxy(containerReg.getId(), session, ImmutableMap.<String, String>builder()
+          .put("container.name", dc.getName())
+          .put("container.image", dc.getImage())
+          .put("node.name", nodeInfo.getName())
+          .put("node.addr", nodeInfo.getAddress())
+          .build()
+        );
         TtyProxy.set(session, tty);
         ListenableFuture<WebSocketSession> future = webSocketClient.doHandshake(tty, getContainerUri(containerReg.getId(), nodeReg));
         future.addCallback((r) -> {}, (e) -> {
