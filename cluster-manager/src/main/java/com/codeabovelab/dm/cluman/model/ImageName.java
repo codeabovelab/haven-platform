@@ -17,7 +17,6 @@
 package com.codeabovelab.dm.cluman.model;
 
 import lombok.Data;
-import org.springframework.util.Assert;
 import org.springframework.util.StringUtils;
 
 /**
@@ -49,11 +48,11 @@ public class ImageName {
     private final String id;
 
     // do not publish this constructor
-    ImageName(String registry, String name, String tag) {
+    ImageName(String registry, String name, String tag, String id) {
         this.registry = registry;
         this.name = name;
         this.tag = tag;
-        this.id = null;
+        this.id = id;
         this.fullName = toFullName(registry, name, tag);
     }
 
@@ -117,6 +116,9 @@ public class ImageName {
         }
         int at = src.indexOf('@');
         if(at < 0) {
+            if(isId(src)) {
+                return new ImageName("", src);
+            }
             return new ImageName(src, null);
         }
         return new ImageName(src.substring(0, at), src.substring(at + 1));
@@ -152,7 +154,7 @@ public class ImageName {
 
     /**
      * Concatenate name and id. It support on new docker versions only.
-     * @return name + '@' + id, also correct nadle null.
+     * @return name + '@' + id, also correct handle null.
      */
     public static String nameWithId(String name, String id) {
         String res = name;
@@ -160,7 +162,7 @@ public class ImageName {
             if(!isId(id)) {
                 throw new IllegalArgumentException("Id of '" + name + "' is invalid: " + id);
             }
-            if(res != null) {
+            if(!StringUtils.isEmpty(res)) {
                 res = res + "@" + id;
             } else {
                 res = id;
@@ -170,6 +172,9 @@ public class ImageName {
     }
 
     public static boolean isId(String image) {
+        if(StringUtils.isEmpty(image)) {
+            return false;
+        }
         // see https://docs.docker.com/registry/spec/api/#/content-digests
         int length = SHA256.length();
         if(image.regionMatches(true, 0, SHA256, 0, length)) {

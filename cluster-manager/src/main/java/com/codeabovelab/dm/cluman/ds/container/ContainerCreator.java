@@ -197,8 +197,8 @@ public class ContainerCreator {
     protected CreateContainerCmd buildCreateContainer(CreateContainerContext cc) {
         DockerService dockerService = cc.dockerService;
         ContainerSource nc = cc.arg.getContainer();
-        String imageName = nc.getImage();
-        ImageDescriptor image = dockerService.pullImage(imageName, cc.watcher);
+        ImageDescriptor image = getImage(cc);
+        String imageName = resolveImageName(nc);
         ContainerSource result = nc;
         if (cc.arg.isEnrichConfigs()) {
             result = configProvider.resolveProperties(nc.getCluster(), image, imageName, nc);
@@ -243,6 +243,43 @@ public class ContainerCreator {
         LOG.info("Command for execution: {}", cmd);
         ProcessEvent.watch(cc.watcher, "Command for execution: {0}", cmd);
         return cmd;
+    }
+
+    private ImageDescriptor getImage(CreateContainerContext cc) {
+        DockerService dockerService = cc.dockerService;
+        ContainerSource nc = cc.arg.getContainer();
+        ImageDescriptor image = null;
+        String imageId = resolveImageId(nc);
+        String imageName = resolveImageName(nc);
+        if(ImageName.isId(imageId)) {
+            // we can not pull images by id, and must try to find its on nodes
+            image = dockerService.getImage(imageId);
+        }
+        if(image == null && !Objects.equals(imageName, imageId)) {
+            image = dockerService.pullImage(imageName, cc.watcher);
+        }
+        Assert.notNull(image, "Can not resolve image from imageName=" + imageName + ", imageId=" + imageId + " on service=" + dockerService.getId());
+        return image;
+    }
+
+    private static String resolveImageName(ContainerSource nc) {
+        String name = ContainerUtils.getFixedImageName(nc);
+        if(name == null) {
+            //getFixedImageName skip getImage value when it is Id
+            name = MoreObjects.firstNonNull(nc.getImageId(), nc.getImage());
+        }
+        return name;
+    }
+
+    private static String resolveImageId(ContainerSource nc) {
+        String imageId = nc.getImageId();
+        if(imageId == null) {
+            ImageName in = ImageName.parse(nc.getImage());
+            if(in != null) {
+                imageId = in.getId();
+            }
+        }
+        return imageId;
     }
 
     private String[] convertAndFilter(List<String> strings) {
