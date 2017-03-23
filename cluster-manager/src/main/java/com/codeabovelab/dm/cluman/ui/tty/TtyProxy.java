@@ -33,7 +33,6 @@ class TtyProxy implements WebSocketHandler {
     private static final Joiner.MapJoiner DIJOINER = Joiner.on("\n\r ").withKeyValueSeparator(" = ");
     private final String containerId;
     private final WebSocketSession frontend;
-    private final Object backendLock = new Object();
     private final Map<String, String> diagnosticInfo;
     private volatile WebSocketSession backend;
 
@@ -52,7 +51,7 @@ class TtyProxy implements WebSocketHandler {
         return (TtyProxy) session.getAttributes().get(KEY);
     }
 
-    void closeCausedBack() {
+    private void closeCausedBack() {
         // split close method for easy resolve cause of closing
         log.info("Close caused back of {}", this);
         close();
@@ -67,19 +66,12 @@ class TtyProxy implements WebSocketHandler {
     private void close() {
         frontend.getAttributes().remove(KEY, this);
         // usually this method called twice - at close frontend, and at close backend
-        WebSocketSession localBackend;
-        synchronized (backendLock) {
-            localBackend = this.backend;
-        }
-        Closeables.close(localBackend);
+        Closeables.close(backend);
         Closeables.close(frontend);
     }
 
     void toBackend(WebSocketMessage<?> message) {
-        WebSocketSession localBackend;
-        synchronized (backendLock) {
-            localBackend = this.backend;
-        }
+        WebSocketSession localBackend = this.backend;
         if(localBackend == null) {
             return;
         }
@@ -97,9 +89,7 @@ class TtyProxy implements WebSocketHandler {
 
     @Override
     public void afterConnectionEstablished(WebSocketSession session) {
-        synchronized (backendLock) {
-            this.backend = session;
-        }
+        this.backend = session;
         log.info("Success connect to backed with sessions: front={}, back={}", frontend, session);
         // below we sent some diagnostic info to frontend only
         send(frontend, "Connect to container: " + containerId + "\n\r " + DIJOINER.join(diagnosticInfo.entrySet()) + "\n\r");
