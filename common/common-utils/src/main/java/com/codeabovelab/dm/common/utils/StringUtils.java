@@ -192,6 +192,9 @@ public class StringUtils {
      */
     public static boolean match(String str, IntPredicate predicate) {
         final int len = str.length();
+        if(len == 0) {
+            return false;
+        }
         for(int i = 0; i < len; i++) {
             if(!predicate.test(str.charAt(i))) {
                 return false;
