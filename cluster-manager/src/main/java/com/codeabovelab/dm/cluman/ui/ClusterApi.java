@@ -265,9 +265,9 @@ public class ClusterApi {
         NodesGroup nodesGroup = discoveryStorage.getCluster(cluster);
         List<String> registries = new ArrayList<>();
         ExtendedAssert.notFound(nodesGroup, "Cluster was not found by " + cluster);
-        if (nodesGroup.getConfig() instanceof SwarmNodesGroupConfig) {
-            SwarmNodesGroupConfig swarmNodesGroupConfig = (SwarmNodesGroupConfig) nodesGroup.getConfig();
-            registries.addAll(swarmNodesGroupConfig.getConfig().getRegistries());
+        if (nodesGroup.getConfig() instanceof DockerBasedClusterConfig) {
+            DockerBasedClusterConfig ngc = (DockerBasedClusterConfig) nodesGroup.getConfig();
+            registries.addAll(ngc.getConfig().getRegistries());
         }
         registries.retainAll(availableRegistries);
         return registries;

@@ -32,7 +32,7 @@ import com.codeabovelab.dm.cluman.cluster.registry.data.ImageCatalog;
 import com.codeabovelab.dm.cluman.cluster.registry.data.SearchResult;
 import com.codeabovelab.dm.cluman.cluster.registry.data.Tags;
 import com.codeabovelab.dm.cluman.ds.clusters.ClusterUtils;
-import com.codeabovelab.dm.cluman.ds.clusters.SwarmNodesGroupConfig;
+import com.codeabovelab.dm.cluman.ds.clusters.DockerBasedClusterConfig;
 import com.codeabovelab.dm.cluman.model.*;
 import com.codeabovelab.dm.cluman.source.ContainerSourceFactory;
 import com.codeabovelab.dm.cluman.ui.model.*;
@@ -129,9 +129,9 @@ public class ImagesApi {
                                  @RequestParam(value = "size") int size) {
 
         List<String> registries = new ArrayList<>();
-        SwarmNodesGroupConfig swarmNodesGroupConfig = getSwarmNodesGroupConfig(cluster);
-        if (swarmNodesGroupConfig != null) {
-            registries.addAll(swarmNodesGroupConfig.getConfig().getRegistries());
+        DockerBasedClusterConfig dcngConfig = getDockerBasedGroupsConfig(cluster);
+        if (dcngConfig != null) {
+            registries.addAll(dcngConfig.getConfig().getRegistries());
         }
 
         try {
@@ -352,21 +352,21 @@ public class ImagesApi {
         }
     }
 
-    private SwarmNodesGroupConfig getSwarmNodesGroupConfig(String cluster) {
+    private DockerBasedClusterConfig getDockerBasedGroupsConfig(String cluster) {
         if (StringUtils.hasText(cluster)) {
             NodesGroup nodesGroup = discoveryStorage.getCluster(cluster);
             ExtendedAssert.notFound(nodesGroup, "Cluster not found " + cluster);
-            if (nodesGroup.getConfig() instanceof SwarmNodesGroupConfig) {
-                return (SwarmNodesGroupConfig) nodesGroup.getConfig();
+            if (nodesGroup.getConfig() instanceof DockerBasedClusterConfig) {
+                return (DockerBasedClusterConfig) nodesGroup.getConfig();
             }
         }
         return null;
     }
 
     private Filter calculateImageFilter(String filter, String cluster) {
-        SwarmNodesGroupConfig swarmNodesGroupConfig = getSwarmNodesGroupConfig(cluster);
-        if (!StringUtils.hasText(filter) && swarmNodesGroupConfig != null) {
-            filter = swarmNodesGroupConfig.getImageFilter();
+        DockerBasedClusterConfig dbngConfig = getDockerBasedGroupsConfig(cluster);
+        if (!StringUtils.hasText(filter) && dbngConfig != null) {
+            filter = dbngConfig.getImageFilter();
         }
         if (!StringUtils.hasText(filter)) {
             return Filter.any();
