@@ -334,6 +334,7 @@ public class ContainerApi {
         String cluster = container.getCluster();
         if(node != null) {
             NodeInfo nodeInfo = nodeStorage.getNodeInfo(node);
+            ExtendedAssert.notFound(nodeInfo, "Can not find node: " + node);
             String nodeCluster = nodeInfo.getCluster();
             if(!Objects.equals(nodeCluster, cluster)) {
                 if(cluster != null) {
