@@ -47,7 +47,7 @@ class OrphansNodeFilterFactory implements FilterFactory.Factory {
             //also we want see nodes which cluster has been deleted
             try(TempAuth ta = TempAuth.asSystem()) {
                 NodesGroup group = ds.getCluster(cluster);
-                return group == null || !group.getFeatures().contains(NodesGroup.Feature.SWARM);
+                return group == null || !ClusterUtils.isDockerBased(group);
             }
         };
     }

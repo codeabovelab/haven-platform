@@ -297,7 +297,7 @@ public class ImagesApi {
         for (NodesGroup nodesGroup : nodesGroups) {
             // we gather images from real clusters and orphans nodes
             String groupName = nodesGroup.getName();
-            if (!nodesGroup.getFeatures().contains(NodesGroup.Feature.SWARM) &&
+            if (!ClusterUtils.isDockerBased(nodesGroup) &&
                     !DiscoveryStorage.GROUP_ID_ORPHANS.equals(groupName)) {
                 continue;
             }

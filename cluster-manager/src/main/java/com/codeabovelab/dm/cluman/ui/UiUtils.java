@@ -16,6 +16,7 @@
 
 package com.codeabovelab.dm.cluman.ui;
 
+import com.codeabovelab.dm.cluman.ds.clusters.ClusterUtils;
 import com.codeabovelab.dm.cluman.utils.ContainerUtils;
 import com.codeabovelab.dm.cluman.cluster.application.ApplicationService;
 import com.codeabovelab.dm.cluman.cluster.docker.management.result.ResultCode;
@@ -158,7 +159,7 @@ public final class UiUtils {
     static Map<String, String> mapAppContainer(ApplicationService applicationService, NodesGroup cluster) {
         try {
             Map<String, String> containerApp = new HashMap<>();
-            if(cluster.getFeatures().contains(NodesGroup.Feature.SWARM)) {
+            if(ClusterUtils.isDockerBased(cluster)) {
                 addContainerMapping(applicationService, cluster.getName(), containerApp);
             } else {
                 for(String child: cluster.getGroups()) {

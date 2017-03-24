@@ -21,6 +21,7 @@ import com.codeabovelab.dm.cluman.cluster.docker.management.result.ResultCode;
 import com.codeabovelab.dm.cluman.cluster.docker.management.result.ServiceCallResult;
 import com.codeabovelab.dm.cluman.cluster.docker.model.*;
 import com.codeabovelab.dm.cluman.ds.clusters.AbstractNodesGroup;
+import com.codeabovelab.dm.cluman.ds.clusters.ClusterUtils;
 import com.codeabovelab.dm.cluman.model.*;
 import com.codeabovelab.dm.common.utils.SingleValueCache;
 import org.slf4j.Logger;
@@ -58,8 +59,7 @@ public class NetworkManager {
 
     public CreateNetworkResponse createNetwork(String networkName) {
         // remove below code in future
-        Set<NodesGroup.Feature> features = group.getFeatures();
-        if(!features.contains(NodesGroup.Feature.SWARM) && !features.contains(NodesGroup.Feature.SWARM_MODE)) {
+        if(!ClusterUtils.isDockerBased(group)) {
             // non swarm groups does not support network creation
             CreateNetworkResponse res = new CreateNetworkResponse();
             res.code(ResultCode.NOT_MODIFIED).message("not supported for this group type");

@@ -23,6 +23,7 @@ import com.codeabovelab.dm.cluman.cluster.docker.management.argument.GetLogConta
 import com.codeabovelab.dm.cluman.cluster.docker.management.argument.GetStatisticsArg;
 import com.codeabovelab.dm.cluman.cluster.docker.management.result.ProcessEvent;
 import com.codeabovelab.dm.cluman.cluster.docker.model.DockerEvent;
+import com.codeabovelab.dm.cluman.ds.clusters.ClusterUtils;
 import com.codeabovelab.dm.cluman.ds.nodes.NodeRegistration;
 import com.codeabovelab.dm.cluman.ds.nodes.NodeStorage;
 import com.codeabovelab.dm.cluman.events.EventsUtils;
@@ -128,7 +129,7 @@ class EventSources {
             esuc.putAll(systemSubs);
             List<NodesGroup> clusters = clusterStorage.getClusters();
             for(NodesGroup ng: clusters) {
-                if(!ng.getFeatures().contains(NodesGroup.Feature.SWARM)) {
+                if(!ClusterUtils.isDockerBased(ng)) {
                     continue;
                 }
                 String id = "cluster:" + ng.getName() + ":docker";
