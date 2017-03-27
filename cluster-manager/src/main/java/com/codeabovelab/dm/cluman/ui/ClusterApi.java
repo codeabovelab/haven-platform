@@ -137,6 +137,7 @@ public class ClusterApi {
         } catch (Exception e) {
             //nothing
         }
+        uc.setState(cluster.getState());
         UiPermission.inject(uc, ac, SecuredType.CLUSTER.id(name));
         return uc;
     }
@@ -178,6 +179,7 @@ public class ClusterApi {
         AccessContext ac = aclContextFactory.getContext();
         NodesGroup nodesGroup = discoveryStorage.getCluster(cluster);
         ExtendedAssert.notFound(nodesGroup, "Cluster was not found by " + cluster);
+        ClusterUtils.checkClusterState(nodesGroup);
         Collection<ContainerService> services = nodesGroup.getContainers().getServices();
         Map<String, String> apps = UiUtils.mapAppContainer(applicationService, nodesGroup);
         List<UiContainerService> list = new ArrayList<>();
@@ -278,6 +280,7 @@ public class ClusterApi {
     public List<UiNetwork> getNetworks(@PathVariable("cluster") String clusterName) {
         NodesGroup group = discoveryStorage.getCluster(clusterName);
         ExtendedAssert.notFound(group, "Can not find cluster: " + clusterName);
+        ClusterUtils.checkClusterState(group);
         Map<String, Network> networks = group.getNetworks().getNetworks();
         ArrayList<UiNetwork> results = new ArrayList<>(networks.size());
         networks.forEach((id, src) -> {
