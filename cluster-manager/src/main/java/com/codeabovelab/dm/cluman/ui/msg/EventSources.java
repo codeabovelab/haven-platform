@@ -133,9 +133,8 @@ class EventSources {
                     continue;
                 }
                 String id = "cluster:" + ng.getName() + ":docker";
-                DockerService docker = ng.getDocker();
                 //swarm produce events only after 1.2.4 version
-                esuc.update(id, (i) -> makeDocker(docker, id));
+                esuc.update(id, (i) -> makeDocker(ng.getDocker(), id));
             }
             Collection<NodeInfo> nodes = nodeStorage.getNodes((nr) -> true);
             for(NodeInfo ni: nodes) {

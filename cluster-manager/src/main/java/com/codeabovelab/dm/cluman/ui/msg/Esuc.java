@@ -18,6 +18,7 @@ package com.codeabovelab.dm.cluman.ui.msg;
 
 import com.codeabovelab.dm.common.mb.Subscriptions;
 import com.codeabovelab.dm.common.utils.Closeables;
+import lombok.extern.slf4j.Slf4j;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -26,6 +27,7 @@ import java.util.function.Function;
 /**
  * event source update context
  */
+@Slf4j
 class Esuc {
     private final Map<String, Subscriptions<?>> newMap;
     private final Map<String, Subscriptions<?>> oldMap;
@@ -38,7 +40,11 @@ class Esuc {
     void update(String key, Function<String, Subscriptions<?>> factory) {
         Subscriptions<?> subs = this.oldMap.get(key);
         if(subs == null) {
-            subs = factory.apply(key);
+            try {
+                subs = factory.apply(key);
+            } catch (Exception e) {
+                log.error("Can not update subscriptions for '{}' key, due to error:", key, e);
+            }
         }
         newMap.put(key, subs);
     }
