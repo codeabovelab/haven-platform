@@ -14,7 +14,6 @@ import com.codeabovelab.dm.cluman.configs.container.ConfigProvider;
 import com.codeabovelab.dm.cluman.configs.container.DefaultParser;
 import com.codeabovelab.dm.cluman.configs.container.Parser;
 import com.codeabovelab.dm.cluman.ds.SwarmClusterContainers;
-import com.codeabovelab.dm.cluman.ds.clusters.SwarmCluster;
 import com.codeabovelab.dm.cluman.ds.container.*;
 import com.codeabovelab.dm.cluman.ds.swarm.NetworkManager;
 import com.codeabovelab.dm.cluman.job.*;
@@ -33,7 +32,6 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.ObjectFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.actuate.autoconfigure.EndpointWebMvcAutoConfiguration;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
@@ -44,6 +42,8 @@ import org.springframework.context.annotation.Import;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
+import javax.validation.Validation;
+import javax.validation.Validator;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
@@ -67,9 +67,13 @@ public class UpdateTest {
     static final String TESTIMAGE = "testimage";
     static final String SRC_VERSION = "1";
     static final String TARGET_VERSION = "2";
+    static final String IMAGE_SRC = TESTIMAGE + ":" + SRC_VERSION;
+    static final String IMAGE_SRC_ID = "sha256:6b86b273ff34fce19d6b804eff5a3f5747ada4eaa22f1d49c01e52ddb7875b4b";
     static final String IMAGE_TARGET = TESTIMAGE + ":" + TARGET_VERSION;
+    static final String IMAGE_TARGET_ID = "sha256:d4735e3a265e16eee03f59718b9b5d03019c07d8b6c51f90da3a666eec13ab35";
     static final String TESTCLUSTER = "testcluster";
     static final String IMAGE_ID = "sha256:4355a46b19d348dc2f57c046f8ef63d4538ebb936000f3c9ee954a27460dd865";
+    private static final String C_IGNORE = "ignore-container";
 
     @Import({JobConfiguration.class, UpdateContainersConfiguration.class})
     @Configuration
@@ -144,6 +148,11 @@ public class UpdateTest {
             return s;
         }
 
+        @Bean
+        Validator validator() {
+            return Validation.buildDefaultValidatorFactory().getValidator();
+        }
+
 
     }
 
@@ -179,15 +188,26 @@ public class UpdateTest {
 
         initCluster();
 
-        addContainer("one-container", TESTIMAGE + ":" + SRC_VERSION);
-        addContainer("two-container", TESTIMAGE + ":" + SRC_VERSION);
-        addContainer("three-container", TESTIMAGE + ":" + SRC_VERSION);
+        addContainer("one-container", IMAGE_SRC);
+        addContainer("two-container", IMAGE_SRC);
+        addContainer("three-container", IMAGE_SRC);
+        addContainer(C_IGNORE, IMAGE_SRC);
         addContainer("buggy-container", IMAGE_ID);
     }
 
     private void initCluster() {
         DockerServiceMock ds = new DockerServiceMock(DockerServiceInfo.builder()
           .name(TESTCLUSTER)
+          .build());
+        ds.defineImage(DockerServiceMock.ImageStub.builder()
+          .id(IMAGE_SRC_ID)
+          .name(IMAGE_SRC)
+          .labels(Collections.emptyMap())
+          .build());
+        ds.defineImage(DockerServiceMock.ImageStub.builder()
+          .id(IMAGE_TARGET_ID)
+          .name(IMAGE_TARGET)
+          .labels(Collections.emptyMap())
           .build());
         when(discoveryStorage.getService(ds.getCluster())).thenReturn(ds);
 
@@ -218,7 +238,12 @@ public class UpdateTest {
                 continue;
             }
             String currVersion = ContainerUtils.getImageVersion(image);
-            assertEquals(expectedVersion, currVersion);
+            if(dc.getName().equals(C_IGNORE)) {
+                // it must never changed
+                assertEquals(SRC_VERSION, currVersion);
+            } else {
+                assertEquals(expectedVersion, currVersion);
+            }
         }
         assertEquals(names.size(), containers.size());
     }
@@ -259,6 +284,7 @@ public class UpdateTest {
         b.parameter(BatchUtils.JP_CLUSTER, TESTCLUSTER);
         b.parameter(LoadContainersOfImageTasklet.JP_IMAGE, ImagesForUpdate.builder()
           .addImage(TESTIMAGE, SRC_VERSION, TARGET_VERSION)
+          .getExclude().addContainer(C_IGNORE).end()
           .build());
 
         b.parameter(HealthCheckContainerTasklet.JP_HEALTH_CHECK_ENABLED, true);

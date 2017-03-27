@@ -12,7 +12,10 @@ import com.codeabovelab.dm.cluman.cluster.docker.model.swarm.*;
 import com.codeabovelab.dm.cluman.model.*;
 import com.codeabovelab.dm.cluman.model.Node;
 import com.codeabovelab.dm.common.utils.PojoBeanUtils;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import lombok.Builder;
+import lombok.Data;
 import org.springframework.beans.BeanUtils;
 import org.springframework.security.crypto.codec.Hex;
 import org.springframework.util.Assert;
@@ -33,6 +36,7 @@ public class DockerServiceMock implements DockerService {
     static final int ID_LEN = 12;
     private final Map<String, ContainerHolder> containers = new HashMap<>();
     private final Map<String, NetworkHolder> networks = new ConcurrentHashMap<>();
+    private final Map<String, ImageStub> images = new ConcurrentHashMap<>();
     private final ClusterConfig cc = ClusterConfigImpl.builder().build();
     private final DockerServiceInfo info;
     //we need to make list of nodes
@@ -326,11 +330,6 @@ public class DockerServiceMock implements DockerService {
     }
 
     @Override
-    public ServiceCallResult createTag(TagImageArg cmd) {
-        return resultOk();
-    }
-
-    @Override
     public ServiceCallResult updateContainer(UpdateContainerCmd cmd) {
         synchronized (containers) {
             ContainerHolder ch = getContainerHolder(cmd.getId());
@@ -405,19 +404,47 @@ public class DockerServiceMock implements DockerService {
     }
 
     @Override
+    public ServiceCallResult createTag(TagImageArg cmd) {
+        //TODO
+        return resultOk();
+    }
+
+    public void defineImage(ImageStub imageStub) {
+        images.put(imageStub.getId(), imageStub);
+    }
+
+    @Override
     public List<ImageItem> getImages(GetImagesArg arg) {
+        return images.values().stream()
+          .map(is -> {
+              Date created = is.getCreated();
+              return ImageItem.builder()
+                .id(is.getId())
+                .labels(is.getLabels())
+                .created(created == null? 0L : created.getTime())
+                .repoTags(ImmutableList.copyOf(getTags(is)))
+                .build();
+          })
+          .collect(Collectors.toList());
+    }
+
+    private Collection<String> getTags(ImageStub is) {
+        //TODO
         return Collections.emptyList();
     }
 
     @Override
     public ImageDescriptor pullImage(String name, Consumer<ProcessEvent> watcher) {
-        //TODO
-        return null;
+        return getImage(name);
     }
 
     @Override
     public ImageDescriptor getImage(String name) {
-        return null;
+        ImageStub is = images.get(name);
+        if(is == null) {
+            is = images.values().stream().filter(i -> i.getName().equals(name)).findFirst().orElse(null);
+        }
+        return is;
     }
 
     @Override
@@ -659,6 +686,26 @@ public class DockerServiceMock implements DockerService {
             Network.Builder nb = Network.builder();
             nb.name(name);
             return nb.build();
+        }
+    }
+
+    @Data
+    @Builder(builderClassName = "Builder")
+    public static class ImageStub implements ImageDescriptor {
+        private final String id;
+        private final String name;
+        private final Date created;
+        private final ContainerConfig containerConfig;
+        private final Map<String, String> labels;
+
+        public ContainerConfig getContainerConfig() {
+            if(containerConfig != null) {
+                return containerConfig;
+            }
+            return ContainerConfig.builder()
+              .env(Collections.emptyList())
+              .labels(Collections.emptyMap())
+              .build();
         }
     }
 }

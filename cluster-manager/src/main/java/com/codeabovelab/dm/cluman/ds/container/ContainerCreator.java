@@ -255,7 +255,8 @@ public class ContainerCreator {
             // we can not pull images by id, and must try to find its on nodes
             image = dockerService.getImage(imageId);
         }
-        if(image == null && !Objects.equals(imageName, imageId)) {
+        if(image == null && !ImageName.isId(imageName)) {
+            // pulling of images by its id is not supported
             image = dockerService.pullImage(imageName, cc.watcher);
         }
         Assert.notNull(image, "Can not resolve image from imageName=" + imageName + ", imageId=" + imageId + " on service=" + dockerService.getId());
