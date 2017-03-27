@@ -129,7 +129,7 @@ class EventSources {
             esuc.putAll(systemSubs);
             List<NodesGroup> clusters = clusterStorage.getClusters();
             for(NodesGroup ng: clusters) {
-                if(!ClusterUtils.isDockerBased(ng)) {
+                if(!ClusterUtils.isDockerBased(ng) || !ng.getState().isOk()) {
                     continue;
                 }
                 String id = "cluster:" + ng.getName() + ":docker";

@@ -23,6 +23,8 @@ import com.codeabovelab.dm.common.utils.Cloneables;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
+import javax.validation.constraints.NotNull;
+import javax.validation.constraints.Size;
 import java.util.List;
 
 /**
@@ -38,6 +40,8 @@ public class DockerClusterConfig extends AbstractNodesGroupConfig<DockerClusterC
     /**
      * List of managers nodes.
      */
+    @NotNull
+    @Size(min = 1)
     @KvMapping
     private List<String> managers;
 

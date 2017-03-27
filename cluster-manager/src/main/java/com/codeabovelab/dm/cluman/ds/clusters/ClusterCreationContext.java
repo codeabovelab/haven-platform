@@ -16,7 +16,6 @@
 
 package com.codeabovelab.dm.cluman.ds.clusters;
 
-import com.codeabovelab.dm.cluman.cluster.docker.ClusterConfigImpl;
 import lombok.Data;
 import org.springframework.util.Assert;
 
@@ -29,6 +28,11 @@ public class ClusterCreationContext {
     private final ClusterFactory factory;
     private final String cluster;
     private Consumer<AbstractNodesGroup<?>> beforeClusterInit;
+    /**
+     * Note: be careful when config loaded from storage - this cases must not
+     * been validated, because user can not delete not loaded clusters.
+     */
+    private boolean mustValidated;
 
     ClusterCreationContext(ClusterFactory factory, String cluster) {
         this.factory = factory;
@@ -36,7 +40,7 @@ public class ClusterCreationContext {
     }
 
     void beforeClusterInit(AbstractNodesGroup<?> cluster) {
-        if(beforeClusterInit != null) {
+        if (beforeClusterInit != null) {
             beforeClusterInit.accept(cluster);
         }
     }
@@ -58,7 +62,7 @@ public class ClusterCreationContext {
             default:
                 throw new IllegalArgumentException("Unsupported type of cluster: " + type);
         }
-        if(config instanceof DockerBasedClusterConfig) {
+        if (config instanceof DockerBasedClusterConfig) {
             factory.initDefaultConfig((DockerBasedClusterConfig) config);
         }
         config.setName(getCluster());

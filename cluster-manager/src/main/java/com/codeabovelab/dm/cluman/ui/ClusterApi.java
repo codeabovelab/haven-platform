@@ -369,6 +369,7 @@ public class ClusterApi {
                 }
                 data.toCluster(gc);
             }
+            ccc.setMustValidated(true);
             flag.set(true);
             return gc;
         });

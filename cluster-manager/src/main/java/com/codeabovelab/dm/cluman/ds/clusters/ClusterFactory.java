@@ -20,10 +20,19 @@ import com.codeabovelab.dm.cluman.cluster.docker.ClusterConfigImpl;
 import com.codeabovelab.dm.cluman.model.NodesGroup;
 import com.codeabovelab.dm.cluman.security.TempAuth;
 import com.codeabovelab.dm.common.kv.mapping.KvMapperFactory;
+import com.codeabovelab.dm.common.validate.JsrValidityImpl;
+import com.codeabovelab.dm.common.validate.ValidationUtils;
+import com.codeabovelab.dm.common.validate.Validity;
+import com.codeabovelab.dm.common.validate.ValidityException;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.config.AutowireCapableBeanFactory;
 import org.springframework.util.Assert;
+
+import javax.validation.ConstraintViolation;
+import javax.validation.Validator;
+import java.util.Set;
 
 /**
  */
@@ -36,7 +45,7 @@ class ClusterFactory {
     private ClusterConfigFactory configFactory;
     private KvMapperFactory kvmf;
     private final AutowireCapableBeanFactory beanFactory;
-
+    private final Validator validator;
 
     public ClusterFactory config(AbstractNodesGroupConfig<?> config) {
         setConfig(config);
@@ -102,6 +111,10 @@ class ClusterFactory {
         }
         if(config instanceof DockerBasedClusterConfig) {
             fixConfig((DockerBasedClusterConfig)config);
+        }
+        if(ccc.isMustValidated()) {
+            String clusterName = config.getName();
+            ValidationUtils.assertValid(validator, config, clusterName, "Config of " + clusterName + " is invalid.");
         }
     }
 }
