@@ -396,7 +396,9 @@ public class ClusterApi {
             }
             data.toCluster(cc);
         });
-        cluster.flush();
+        if(!cluster.getState().isInited()) {
+            cluster.init();
+        }
         log.info("Cluster updated: {}", cluster);
     }
 }

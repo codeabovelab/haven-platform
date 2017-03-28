@@ -43,6 +43,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.util.Assert;
+import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
 
 import java.util.*;
@@ -151,7 +152,12 @@ public class DockerCluster extends AbstractNodesGroup<DockerClusterConfig> {
 
     protected void initImpl() {
         List<String> hosts = this.config.getManagers();
-        Assert.notEmpty(hosts, "Cluster config '" + getName() + "' must contains at least one manager host.");
+        if(CollectionUtils.isEmpty(hosts)) {
+            log.warn("Cluster config '{}' must contains at least one manager host.", getName());
+            // waiting when cluster will be properly reconfigured
+            state.compareAndSet(S_INITING, S_BEGIN);
+            return;
+        }
         hosts.forEach(host -> managers.putIfAbsent(host, new Manager(host)));
         initCluster(hosts.get(0));
 
