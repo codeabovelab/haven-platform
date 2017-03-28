@@ -112,7 +112,7 @@ public class ClusterApi {
         try {
             List<NodeInfo> nodes = cluster.getNodes();
             nodes.forEach(ni -> {
-                if(ni.isOn()) {
+                if(ni.isOn() && ni.getHealth().getHealthy()) {
                     nodeEntry.incrementOn();
                 } else {
                     nodeEntry.incrementOff();

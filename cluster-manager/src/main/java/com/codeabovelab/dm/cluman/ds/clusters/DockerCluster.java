@@ -36,7 +36,6 @@ import com.codeabovelab.dm.common.utils.Closeables;
 import com.codeabovelab.dm.common.utils.SingleValueCache;
 import com.google.common.base.MoreObjects;
 import com.google.common.collect.ImmutableList;
-import com.google.common.net.InetAddresses;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
@@ -48,8 +47,6 @@ import org.springframework.util.StringUtils;
 
 import java.util.*;
 import java.util.concurrent.*;
-import java.util.function.Function;
-import java.util.stream.Collectors;
 
 /**
  * A kind of nodegroup which is managed by 'docker' in 'swarm mode'.
@@ -258,11 +255,22 @@ public class DockerCluster extends AbstractNodesGroup<DockerClusterConfig> {
     public List<NodeInfo> getNodes() {
         Map<String, SwarmNode> map = nodesMap.get();
         ImmutableList.Builder<NodeInfo> b = ImmutableList.builder();
-        map.forEach((k, v) -> {
-            NodeInfo ni = getNodeStorage().getNodeInfo(getNodeName(v));
-            if(ni != null && Objects.equals(ni.getCluster(), getName())) {
-                b.add(ni);
+        getNodeStorage().forEach(nr -> {
+            NodeInfo ni = nr.getNodeInfo();
+            SwarmNode sn = map.get(ni.getName());
+            if(!isFromSameCluster(ni) && sn == null) {
+                return;
             }
+            NodeMetrics.State state =(sn != null)? getState(sn) : NodeMetrics.State.DISCONNECTED;
+            NodeMetrics metrics = ni.getHealth();
+            if(metrics.getState() != state) {
+                NodeMetrics.Builder nmb = NodeMetrics.builder().from(metrics);
+                setNodeState(nmb, state);
+                ni = NodeInfoImpl.builder(ni)
+                  .health(nmb.build())
+                  .build();
+            }
+            b.add(ni);
         });
         return b.build();
     }
@@ -314,23 +322,30 @@ public class DockerCluster extends AbstractNodesGroup<DockerClusterConfig> {
 
     private void rereadNodes() {
         try (TempAuth ta = TempAuth.asSystem()) {
-            Map<String, SwarmNode> map = nodesMap.get();
-            if(map == null) {
+            Map<String, SwarmNode> factNodes = nodesMap.get();
+            if(factNodes == null) {
                 log.error("Can not load map of cluster nodes.");
                 return;
             }
             // flag which mean that e change internal cluster node list, and must reread them
             boolean[] modified = new boolean[]{false};
             //check that all nodes marked 'our' is in map
-            Map<String, NodeInfo> nodes = getNodeStorage().getNodes(this::isFromSameCluster)
-              .stream()
-              .collect(Collectors.toMap(NodeInfo::getName, Function.identity()));
-            Map<String, SwarmNode> localMap = map;
-            nodes.forEach((name, ni) -> {
+            Map<String, NodeInfo> registeredNodes = new HashMap<>();
+            getNodeStorage().forEach(nr -> {
+                NodeInfo ni = nr.getNodeInfo();
+                if(!this.isFromSameCluster(ni)) {
+                    return;
+                }
+                registeredNodes.put(ni.getName(), ni);
+            });
+            Map<String, SwarmNode> localMap = factNodes;
+            registeredNodes.forEach((name, ni) -> {
                 SwarmNode sn = localMap.get(name);
                 if(sn != null && sn.getStatus().getState() != SwarmNode.NodeState.DOWN) {
                     return;
                 }
+                // notify system that node is not connected to cluster
+                updateNodeRegistration(name, null, null);
                 // down node may mean that it simply leave from cluster but not removed, we must try to join it
                 //
                 Manager manager = managers.get(name);
@@ -342,12 +357,12 @@ public class DockerCluster extends AbstractNodesGroup<DockerClusterConfig> {
 
             });
             // add nodes which is not in cluster
-            map.forEach((name, sn) -> {
+            factNodes.forEach((name, sn) -> {
                 SwarmNode.State status = sn.getStatus();
                 String address = getNodeAddress(sn);
                 if(StringUtils.isEmpty(address) ||
                    status.getState() != SwarmNode.NodeState.READY ||
-                   nodes.containsKey(name)) {
+                   registeredNodes.containsKey(name)) {
                     return;
                 }
                 registerNode(name, address);
@@ -355,14 +370,14 @@ public class DockerCluster extends AbstractNodesGroup<DockerClusterConfig> {
             });
             if(modified[0]) {
                 // we touch some 'down' nodes and must reload list for new status
-                map = loadNodesMap();
+                factNodes = loadNodesMap();
             }
-            if(map == null) {
+            if(factNodes == null) {
                 log.error("Can not load map of cluster nodes.");
                 return;
             }
-            map.forEach((name, sn) -> {
-                NodeInfo ni = rereadNode(sn);
+            factNodes.forEach((name, sn) -> {
+                rereadNode(sn);
             });
         } catch (Exception e) {
             log.error("Can not update list of nodes due to error.", e);
@@ -412,6 +427,7 @@ public class DockerCluster extends AbstractNodesGroup<DockerClusterConfig> {
         cmd.setListen(getSwarmAddress(ds));
         try {
             ServiceCallResult res = ds.joinSwarm(cmd);
+            //TODO detect when node join to another cluster and leave
             log.info("Result of joining node '{}': {} {}", name, res.getCode(), res.getMessage());
         } catch (RuntimeException e) {
             log.error("Can not join node '{}' due to error: ", name, e);
@@ -478,19 +494,33 @@ public class DockerCluster extends AbstractNodesGroup<DockerClusterConfig> {
         return sn.getDescription().getHostname();
     }
 
-    private NodeInfo rereadNode(SwarmNode sn) {
+    private void rereadNode(SwarmNode sn) {
         String nodeName = getNodeName(sn);
         String address = getNodeAddress(sn);
         if(StringUtils.isEmpty(address)) {
             log.warn("Node {} does not contain address, it is usual for docker prior to 1.13 version.", nodeName);
-            return null;
+            return;
         }
+        NodeRegistration nr = updateNodeRegistration(nodeName, address, sn);
+        if(!Objects.equals(getName(), nr.getCluster())) {
+            log.info("Node {} is from another cluster: '{}', we remove it from our cluster: '{}'.", nodeName, nr.getCluster(), getName());
+            leave(nodeName, sn);
+        }
+    }
 
+    /**
+     * Update node registration. Note that method must work when address and SwarmNode is null
+     * @param nodeName name
+     * @param address address or null
+     * @param sn swarm node object or null
+     * @return non null registration
+     */
+    private NodeRegistration updateNodeRegistration(String nodeName, String address, SwarmNode sn) {
         NodeStorage ns = getNodeStorage();
-        NodeRegistration nr = ns.updateNode(nodeName, Integer.MAX_VALUE, b -> {
+        return ns.updateNode(nodeName, Integer.MAX_VALUE, b -> {
             String nodeCluster = b.getCluster();
             final String cluster = getName();
-            final String id = sn.getId();
+            final String id = sn == null? null : sn.getId();
             if(!cluster.equals(nodeCluster)) {
                 //node was removed
                 if(Objects.equals(b.getIdInCluster(), id)) {
@@ -501,28 +531,31 @@ public class DockerCluster extends AbstractNodesGroup<DockerClusterConfig> {
                 return;
             }
             b.idInCluster(id);
-            if(b.getAddress() == null) {
+            if(b.getAddress() == null && address != null) {
                 // we must not update address, because cluster node may report wrong value
                 b.address(address);
             }
-            b.version(sn.getVersion().getIndex());
             NodeMetrics.Builder nmb = NodeMetrics.builder();
-            NodeMetrics.State state = getState(sn);
-            nmb.state(state);
-            nmb.manager(isManager(sn));
-            nmb.healthy(state == NodeMetrics.State.HEALTHY);
-            b.mergeHealth(nmb.build());
-            Map<String, String> labels = sn.getDescription().getEngine().getLabels();
-            if(labels != null) {
-                b.labels(labels);
+            NodeMetrics.State state;
+            if(sn != null) {
+                state = getState(sn);
+                b.version(sn.getVersion().getIndex());
+                nmb.manager(isManager(sn));
+                Map<String, String> labels = sn.getDescription().getEngine().getLabels();
+                if(labels != null) {
+                    b.labels(labels);
+                }
+            } else {
+                state = NodeMetrics.State.DISCONNECTED;
             }
+            setNodeState(nmb, state);
+            b.mergeHealth(nmb.build());
         });
-        if(!Objects.equals(getName(), nr.getCluster())) {
-            log.info("Node {} is from another cluster: '{}', we remove it from our cluster: '{}'.", nodeName, nr.getCluster(), getName());
-            leave(nodeName, sn);
-            return null;
-        }
-        return nr.getNodeInfo();
+    }
+
+    private void setNodeState(NodeMetrics.Builder nmb, NodeMetrics.State state) {
+        nmb.state(state);
+        nmb.healthy(state == NodeMetrics.State.HEALTHY);
     }
 
     private void registerNode(String node, String address) {
@@ -552,8 +585,12 @@ public class DockerCluster extends AbstractNodesGroup<DockerClusterConfig> {
         if (nr == null) {
             return false;
         }
-        return this.managers.containsKey(nr.getNodeInfo().getName()) ||
-            getName().equals(nr.getCluster());
+        return isFromSameCluster(nr.getNodeInfo());
+    }
+
+    private boolean isFromSameCluster(NodeInfo ni) {
+        return ni != null && (this.managers.containsKey(ni.getName()) ||
+            getName().equals(ni.getCluster()));
     }
 
     @Override

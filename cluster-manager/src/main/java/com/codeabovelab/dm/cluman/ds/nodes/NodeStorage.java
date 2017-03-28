@@ -247,14 +247,10 @@ public class NodeStorage implements NodeInfoProvider, NodeRegistry {
             NodeMetrics.Builder nmb = NodeMetrics.builder().from(b.getHealth());
             if(dsi != null) {
                 b.setLabels(dsi.getLabels());
-                nmb.setHealthy(true);
                 nmb.setTime(dsi.getSystemTime());
                 nmb.setSysMemTotal(dsi.getMemory());
-                nmb.setState(NodeMetrics.State.HEALTHY);
-            } else {
-                nmb.setHealthy(false);
-                nmb.setState(b.isOn()? NodeMetrics.State.UNHEALTHY : NodeMetrics.State.DISCONNECTED);
             }
+            //TODO we can not change node health here, because cluster must override it
             b.setHealth(nmb.build());
         });
         // this check offline status internal and cause status change event
@@ -408,6 +404,23 @@ public class NodeStorage implements NodeInfoProvider, NodeRegistry {
         }
         nodeList.sort(null);
         return nodeList;
+    }
+
+    /**
+     * Variant of {@link #getNodes(Predicate)} without creation of temp collections & etc.
+     * @param consumer
+     */
+    public void forEach(Consumer<NodeRegistration> consumer) {
+        Set<String> keys = listNodeNames();
+        AccessContext ac = AccessContextFactory.getLocalContext();
+        for (String key : keys) {
+            NodeRegistrationImpl nr = getNodeRegistrationInternal(key);
+            // when node invalid we may receive null
+            if (nr == null || !ac.isGranted(nr.getOid(), Action.READ)) {
+                continue;
+            }
+            consumer.accept(nr);
+        }
     }
 
     public Collection<String> getNodeNames() {
