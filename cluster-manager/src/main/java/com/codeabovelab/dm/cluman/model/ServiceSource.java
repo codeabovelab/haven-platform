@@ -19,6 +19,8 @@ package com.codeabovelab.dm.cluman.model;
 import com.codeabovelab.dm.common.utils.Cloneables;
 import com.codeabovelab.dm.common.utils.Comparables;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
+import com.fasterxml.jackson.annotation.JsonSubTypes;
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import lombok.AccessLevel;
 import lombok.Data;
 import lombok.Setter;
@@ -56,6 +58,7 @@ public class ServiceSource implements Cloneable, Comparable<ServiceSource> {
     private List<String> constraints = new ArrayList<>();
     @Setter(AccessLevel.NONE)
     private ContainerSource container = new ContainerSource();
+    private Mode mode;
 
     /**
      * Set clone of argument as container.
@@ -83,5 +86,22 @@ public class ServiceSource implements Cloneable, Comparable<ServiceSource> {
     @Override
     public int compareTo(ServiceSource o) {
         return Comparables.compare(this.name, o.name);
+    }
+
+    @JsonSubTypes({
+      @JsonSubTypes.Type(value = GlobalMode.class, name = "global"),
+      @JsonSubTypes.Type(value = ReplicatedMode.class, name = "replicated")
+    })
+    @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.PROPERTY, visible = true, property = "type")
+    public static interface Mode {
+    }
+
+    public static class GlobalMode implements Mode {
+
+    }
+
+    @Data
+    public static class ReplicatedMode implements Mode {
+        private long replicas;
     }
 }

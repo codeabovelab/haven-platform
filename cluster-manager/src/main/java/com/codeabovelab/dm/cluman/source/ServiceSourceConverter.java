@@ -93,6 +93,25 @@ public class ServiceSourceConverter {
                 resolveNetName(map, netsSpecs.get(i), cs.getNetworks()::add);
             }
         }
+
+        srv.setMode(convertMode(serviceSpec.getMode()));
+    }
+
+    private ServiceSource.Mode convertMode(Service.ServiceMode mode) {
+        if(mode == null) {
+            return null;
+        }
+        Service.GlobalService gs = mode.getGlobal();
+        Service.ReplicatedService rs = mode.getReplicated();
+        if(gs == null && rs == null) {
+            return null;
+        }
+        if(rs != null) {
+            ServiceSource.ReplicatedMode rm = new ServiceSource.ReplicatedMode();
+            rm.setReplicas(rs.getReplicas());
+            return rm;
+        }
+        return new ServiceSource.GlobalMode();
     }
 
     private void resolveNetName(Map<String, Network> map, SwarmNetwork.NetworkAttachmentConfig spec, Consumer<String> to) {

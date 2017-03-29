@@ -71,6 +71,23 @@ public class SourceUtil {
         networksFromSource(tsb, cont);
 
         ssb.taskTemplate(tsb.build());
+
+        ssb.mode(convertMode(srv.getMode()));
+    }
+
+    private static Service.ServiceMode convertMode(ServiceSource.Mode mode) {
+        if(mode == null) {
+            return null;
+        }
+        Service.GlobalService gs = null;
+        Service.ReplicatedService rs = null;
+        if(mode instanceof ServiceSource.ReplicatedMode) {
+            ServiceSource.ReplicatedMode rm = (ServiceSource.ReplicatedMode) mode;
+            rs = new Service.ReplicatedService(rm.getReplicas());
+        } else if(mode instanceof ServiceSource.GlobalMode) {
+            gs = new Service.GlobalService();
+        }
+        return new Service.ServiceMode(rs, gs);
     }
 
     private static void networksFromSource(Task.TaskSpec.Builder tsb, ContainerSource cont) {
