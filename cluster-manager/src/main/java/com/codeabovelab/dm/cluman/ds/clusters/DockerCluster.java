@@ -344,8 +344,11 @@ public class DockerCluster extends AbstractNodesGroup<DockerClusterConfig> {
                 if(sn != null && sn.getStatus().getState() != SwarmNode.NodeState.DOWN) {
                     return;
                 }
+                if(sn == null && ownedByAnotherCluster(ni)) {
+                    return;
+                }
                 // notify system that node is not connected to cluster
-                updateNodeRegistration(name, null, null);
+                updateNodeRegistration(name, getNodeAddress(sn), sn);
                 // down node may mean that it simply leave from cluster but not removed, we must try to join it
                 //
                 Manager manager = managers.get(name);
@@ -391,6 +394,9 @@ public class DockerCluster extends AbstractNodesGroup<DockerClusterConfig> {
      * @return string with host and port
      */
     private String getNodeAddress(SwarmNode sn) {
+        if(sn == null) {
+            return null;
+        }
         String address = sn.getStatus().getAddress();
         if(StringUtils.isEmpty(address)) {
             return address;
@@ -662,6 +668,18 @@ public class DockerCluster extends AbstractNodesGroup<DockerClusterConfig> {
         return containers;
     }
 
+    private boolean ownedByAnotherCluster(NodeInfo nodeInfo) {
+        String nodeClusterName = nodeInfo.getCluster();
+        NodesGroup nodeCluster = getDiscoveryStorage().getCluster(nodeClusterName);
+        if(nodeCluster == null || nodeCluster == this) {
+            return false;
+        }
+        //we can not use node from another cluster, for prevent broke it
+        log.warn("Can not use node '{}' of '{}' cluster, node already used in existed '{}' cluster.",
+          nodeInfo.getName(), DockerCluster.this.getName(), nodeClusterName);
+        return true;
+    }
+
     @Data
     @lombok.Builder(builderClassName = "Builder")
     private static class ClusterData {
@@ -684,15 +702,25 @@ public class DockerCluster extends AbstractNodesGroup<DockerClusterConfig> {
         }
 
         private synchronized void loadService() {
-            if(service == null) {
-                NodeStorage nodeStorage = getNodeStorage();
-                service = nodeStorage.getNodeService(name);
-                if(service != null) {
-                    // in some cases node may has different cluster, it cause undefined behaviour
-                    // therefore we must force node to new cluster
-                    nodeStorage.setNodeCluster(name, DockerCluster.this.getName());
-                }
+            if (service != null) {
+                return;
             }
+            NodeStorage nodeStorage = getNodeStorage();
+            NodeRegistration nr = nodeStorage.getNodeRegistration(name);
+            if (nr == null) {
+                return;
+            }
+            String thisCluster = DockerCluster.this.getName();
+            if (!thisCluster.equals(nr.getCluster())) {
+                if (ownedByAnotherCluster(nr.getNodeInfo())) {
+                    // we can not use this service, because it not our cluster
+                    return;
+                }
+                // in some cases node may has different cluster, it cause undefined behaviour
+                // therefore we must force node to new cluster
+                nodeStorage.setNodeCluster(name, thisCluster);
+            }
+            service = nr.getDocker();
         }
     }
 }
