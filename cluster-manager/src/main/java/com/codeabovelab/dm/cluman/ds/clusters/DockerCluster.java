@@ -41,6 +41,7 @@ import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpStatus;
 import org.springframework.util.Assert;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
@@ -433,7 +434,30 @@ public class DockerCluster extends AbstractNodesGroup<DockerClusterConfig> {
         cmd.setListen(getSwarmAddress(ds));
         try {
             ServiceCallResult res = ds.joinSwarm(cmd);
-            //TODO detect when node join to another cluster and leave
+            if(res.getStatus() == HttpStatus.SERVICE_UNAVAILABLE) {
+                DockerServiceInfo dsi = ds.getInfo();
+                SwarmInfo swarm = dsi.getSwarm();
+                if(swarm != null) {
+                    if(swarm.isManager() && dsi.getNodeCount() > 1) {
+                        // we must not leave manager, when it has at least one additional node
+                        log.error("Error: node '{}' is manager of another cluster, wa can not join it.", name);
+                    } else {
+                        //node already join to another cluster and need leave
+                        // in cases when node join to existed cluster we must not leave it, therefore we not to using 'force' flag
+                        SwarmLeaveArg sla = new SwarmLeaveArg();
+                        if(swarm.isManager()) {
+                            // be careful with this option, it may broke cluster (and we must not use it on
+                            // managers with worker nodes)
+                            sla.setForce(true);
+                        }
+                        ServiceCallResult lr = ds.leaveSwarm(sla);
+                        if(lr.getCode() == ResultCode.OK) {
+                            // try again
+                            res = ds.joinSwarm(cmd);
+                        }
+                    }
+                }
+            }
             log.info("Result of joining node '{}': {} {}", name, res.getCode(), res.getMessage());
         } catch (RuntimeException e) {
             log.error("Can not join node '{}' due to error: ", name, e);

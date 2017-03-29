@@ -557,6 +557,7 @@ public class DockerServiceImpl implements DockerService {
                 resp = factory.get();
             }
             resp.setCode(ResultCode.OK);
+            resp.setStatus(entity.getStatusCode());
             return resp;
         } catch (HttpStatusCodeException e) {
             resp = factory.get();

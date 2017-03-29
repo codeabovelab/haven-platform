@@ -91,6 +91,7 @@ public final class DockerUtils {
                 //due doc 500 - is error, but any other than above codes is undefined we interpret this cases as error also.
                 code = ResultCode.ERROR;
         }
+        result.setStatus(httpCode);
         result.setCode(code);
 
     }
