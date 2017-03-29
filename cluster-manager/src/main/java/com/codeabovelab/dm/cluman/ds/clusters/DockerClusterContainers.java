@@ -21,6 +21,7 @@ import com.codeabovelab.dm.cluman.cluster.docker.management.argument.*;
 import com.codeabovelab.dm.cluman.cluster.docker.management.result.ResultCode;
 import com.codeabovelab.dm.cluman.cluster.docker.model.ContainerDetails;
 import com.codeabovelab.dm.cluman.cluster.docker.model.UpdateContainerCmd;
+import com.codeabovelab.dm.cluman.cluster.docker.model.swarm.Task;
 import com.codeabovelab.dm.cluman.ds.SwarmUtils;
 import com.codeabovelab.dm.cluman.ds.container.ContainerCreator;
 import com.codeabovelab.dm.cluman.model.CreateContainerArg;
@@ -48,6 +49,7 @@ class DockerClusterContainers implements ContainersManager {
     protected final DockerCluster dc;
     protected final ContainerStorage containerStorage;
     protected final SingleValueCache<Map<String, ContainerService>> svcmap;
+    protected final SingleValueCache<Map<String, List<Task>>> tasksmap;
     private final ContainerCreator containerCreator;
 
     DockerClusterContainers(DockerCluster dc, ContainerStorage containerStorage, ContainerCreator containerCreator) {
@@ -57,20 +59,32 @@ class DockerClusterContainers implements ContainersManager {
         this.svcmap = SingleValueCache.builder(this::loadServices)
           .timeAfterWrite(TimeUnit.SECONDS, dc.getConfig().getConfig().getCacheTimeAfterWrite())
           .build();
+        this.tasksmap = SingleValueCache.builder(this::loadTasks)
+          .timeAfterWrite(TimeUnit.SECONDS, dc.getConfig().getConfig().getCacheTimeAfterWrite())
+          .build();
+    }
+
+    private Map<String, List<Task>> loadTasks() {
+        List<Task> tasks = getDocker().getTasks(new GetTasksArg());
+        Map<String, List<Task>> tps = new HashMap<>();
+        tasks.forEach(t -> tps.computeIfAbsent(t.getServiceId(), id -> new ArrayList<>()).add(t));
+        return tps;
     }
 
     private Map<String, ContainerService> loadServices() {
         List<Service> services = getDocker().getServices(new GetServicesArg());
         ImmutableMap.Builder<String, ContainerService> ilb = ImmutableMap.builder();
-        services.forEach((s) -> ilb.put(s.getId(), convertService(s)));
+        Map<String, List<Task>> tpsmap = tasksmap.get();
+        services.forEach((s) -> ilb.put(s.getId(), convertService(s, tpsmap.get(s.getId()))));
         Map<String, ContainerService> map = ilb.build();
         return map;
     }
 
-    private ContainerService convertService(Service s) {
+    private ContainerService convertService(Service s, List<Task> tasks) {
         ContainerService.Builder csb = ContainerService.builder();
         csb.setCluster(dc.getName());
         csb.setService(s);
+        csb.setTasks(tasks);
         return csb.build();
     }
 
@@ -108,7 +122,9 @@ class DockerClusterContainers implements ContainersManager {
         if(service == null) {
             return null;
         }
-        return convertService(service);
+        Map<String, List<Task>> tpsmap = tasksmap.get();
+        // do not use id from method parameters here, because it may be name of service
+        return convertService(service, tpsmap.get(service.getId()));
     }
 
     @Override
