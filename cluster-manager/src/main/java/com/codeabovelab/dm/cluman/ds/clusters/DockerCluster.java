@@ -36,6 +36,7 @@ import com.codeabovelab.dm.common.utils.Closeables;
 import com.codeabovelab.dm.common.utils.SingleValueCache;
 import com.google.common.base.MoreObjects;
 import com.google.common.collect.ImmutableList;
+import com.google.common.net.InetAddresses;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
@@ -358,7 +359,7 @@ public class DockerCluster extends AbstractNodesGroup<DockerClusterConfig> {
                 } else {
                     joinWorker(name);
                 }
-
+                modified[0] = true;
             });
             // add nodes which is not in cluster
             factNodes.forEach((name, sn) -> {
@@ -374,7 +375,8 @@ public class DockerCluster extends AbstractNodesGroup<DockerClusterConfig> {
             });
             if(modified[0]) {
                 // we touch some 'down' nodes and must reload list for new status
-                factNodes = loadNodesMap();
+                nodesMap.invalidate();
+                factNodes = nodesMap.get();
             }
             if(factNodes == null) {
                 log.error("Can not load map of cluster nodes.");
@@ -530,6 +532,15 @@ public class DockerCluster extends AbstractNodesGroup<DockerClusterConfig> {
         if(StringUtils.isEmpty(address)) {
             log.warn("Node {} does not contain address, it is usual for docker prior to 1.13 version.", nodeName);
             return;
+        }
+        try {
+            if(InetAddresses.forString(sn.getStatus().getAddress()).isLoopbackAddress()) {
+                //local node address it a wrong config, or user simply use single-node cluster - we can not detect
+                // this, and just report it
+                log.warn("Node {} report local address '{}', it may be wrong configuration.", nodeName, address);
+            }
+        } catch(Exception e) {
+            log.warn("Node {} report wrong address '{}', it parsed with error:", nodeName, address, e);
         }
         NodeRegistration nr = updateNodeRegistration(nodeName, address, sn);
         if(!Objects.equals(getName(), nr.getCluster())) {
