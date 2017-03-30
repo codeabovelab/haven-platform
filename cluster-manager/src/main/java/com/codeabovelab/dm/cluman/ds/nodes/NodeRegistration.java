@@ -29,6 +29,7 @@ public interface NodeRegistration {
 
     /**
      * Name of cluster, can be null.
+     * @see com.codeabovelab.dm.cluman.model.DiscoveryStorage#getClusterForNode(String)
      * @return name or null
      */
     String getCluster();

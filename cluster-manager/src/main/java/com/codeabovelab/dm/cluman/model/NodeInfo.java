@@ -43,6 +43,7 @@ public interface NodeInfo extends Node, Labels, WithCluster {
      * Real cluster which own this node. <p/>
      * Note that it may be null, also, over time it may not reflect actual state. So this value
      * is actual only when this object was created.
+     * @see DiscoveryStorage#getClusterForNode(String)
      * @return name of real cluster or null.
      */
     @Override

@@ -254,7 +254,7 @@ public class DockerCluster extends AbstractNodesGroup<DockerClusterConfig> {
 
     @Override
     public List<NodeInfo> getNodes() {
-        Map<String, SwarmNode> map = nodesMap.get();
+        Map<String, SwarmNode> map = getState().isOk()?  nodesMap.get() : Collections.emptyMap();
         ImmutableList.Builder<NodeInfo> b = ImmutableList.builder();
         getNodeStorage().forEach(nr -> {
             NodeInfo ni = nr.getNodeInfo();
@@ -345,7 +345,7 @@ public class DockerCluster extends AbstractNodesGroup<DockerClusterConfig> {
                 if(sn != null && sn.getStatus().getState() != SwarmNode.NodeState.DOWN) {
                     return;
                 }
-                if(sn == null && ownedByAnotherCluster(ni)) {
+                if(sn == null && ownedByAnotherCluster(name)) {
                     return;
                 }
                 // notify system that node is not connected to cluster
@@ -692,15 +692,14 @@ public class DockerCluster extends AbstractNodesGroup<DockerClusterConfig> {
         return containers;
     }
 
-    private boolean ownedByAnotherCluster(NodeInfo nodeInfo) {
-        String nodeClusterName = nodeInfo.getCluster();
-        NodesGroup nodeCluster = getDiscoveryStorage().getCluster(nodeClusterName);
+    private boolean ownedByAnotherCluster(String nodeName) {
+        NodesGroup nodeCluster = getDiscoveryStorage().getClusterForNode(nodeName);
         if(nodeCluster == null || nodeCluster == this) {
             return false;
         }
         //we can not use node from another cluster, for prevent broke it
         log.warn("Can not use node '{}' of '{}' cluster, node already used in existed '{}' cluster.",
-          nodeInfo.getName(), DockerCluster.this.getName(), nodeClusterName);
+          nodeName, DockerCluster.this.getName(), nodeCluster.getName());
         return true;
     }
 
@@ -736,7 +735,7 @@ public class DockerCluster extends AbstractNodesGroup<DockerClusterConfig> {
             }
             String thisCluster = DockerCluster.this.getName();
             if (!thisCluster.equals(nr.getCluster())) {
-                if (ownedByAnotherCluster(nr.getNodeInfo())) {
+                if (ownedByAnotherCluster(name)) {
                     // we can not use this service, because it not our cluster
                     return;
                 }

@@ -32,6 +32,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
@@ -59,15 +60,13 @@ public class NodesApi {
         if(ni == null) {
             return ni;
         }
-        String cluster = ni.getCluster();
-        if(cluster != null) {
-            NodesGroup ng = discoveryStorage.getCluster(cluster);
-            if(ng == null) {
-                // currently we have issue: when cluster was deleted we can not add node to another cluster
-                // but also we can not remove cluster name fom node, because absent of cluster
-                // not mean that it will not appeared in future (due to lazy initialisation)
-                ni = NodeInfoImpl.builder(ni).cluster(null).build();
-            }
+        NodesGroup ng = discoveryStorage.getClusterForNode(ni.getName());
+        String clusterName = ng == null? null : ng.getName();
+        if(!Objects.equals(clusterName, ni.getCluster())) {
+            // currently we have issue: when cluster was deleted we can not add node to another cluster
+            // but also we can not remove cluster name from node, because absent of cluster
+            // not mean that it will not appeared in future (due to lazy initialisation)
+            ni = NodeInfoImpl.builder(ni).cluster(clusterName).build();
         }
         return ni;
     }

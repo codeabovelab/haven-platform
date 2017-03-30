@@ -223,20 +223,6 @@ public class DiscoveryStorageImpl implements DiscoveryStorage {
         return executor;
     }
 
-    @Override
-    public NodesGroup getClusterForNode(String nodeId, String clusterId) {
-        NodesGroup cluster = findNodeCluster(nodeId);
-        if (cluster == null && clusterId != null) {
-            cluster = getOrCreateCluster(clusterId, null);
-        }
-        if(cluster == null) {
-            // no clusters for node, so it orphan
-            cluster = clusters.get(GROUP_ID_ORPHANS);
-        }
-        checkThatCanRead(cluster);
-        return cluster;
-    }
-
     /**
      * get or create cluster. Consumer will be invoked before cluster process start and allow modification of swarm parameters
      * @param clusterId

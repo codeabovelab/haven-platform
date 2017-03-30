@@ -129,8 +129,6 @@ public class DiscoveryNodeControllerTest {
             DiscoveryStorage storage = mock(DiscoveryStorage.class);
 
             when(storage.getCluster(CLUSTER_ID)).thenReturn(cluster);
-            when(storage.getClusterForNode(anyString(), eq(CLUSTER_ID))).thenReturn(cluster);
-            when(storage.getClusterForNode(eq(CLUSTER_ID), anyString())).thenReturn(cluster);
             return storage;
         }
     }

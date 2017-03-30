@@ -36,19 +36,11 @@ public interface DiscoveryStorage {
     Collection<String> SYSTEM_GROUPS = Arrays.asList(GROUP_ID_ALL, GROUP_ID_ORPHANS);
 
     /**
-     * Return exists cluster or create new for concrete node.
-     * @param nodeId id of node
-     * @param clusterId default cluster id
-     * @return exists cluster or create new.
-     */
-    NodesGroup getClusterForNode(String nodeId, String clusterId);
-
-    /**
      * Return exists cluster of concrete node.
-     * @param nodeId
-     * @return cluter or null
+     * @param node
+     * @return cluster or null
      */
-    NodesGroup getClusterForNode(String nodeId);
+    NodesGroup getClusterForNode(String node);
 
     /**
      * Return exists cluster or null
