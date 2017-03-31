@@ -66,20 +66,12 @@ public class DockerCluster extends AbstractNodesGroup<DockerClusterConfig> {
         if(docker == null) {
             return null;
         }
-        SwarmInspectResponse swarm = docker.getSwarm();
-        DockerServiceInfo info = docker.getInfo();
-        JoinTokens tokens = swarm.getJoinTokens();
-        // at first cluster creation it may be null, due to creation may consume time
-        SwarmInfo swarmInfo = info.getSwarm();
-        return ClusterData.builder()
-          .managerToken(tokens.getManager())
-          .workerToken(tokens.getWorker())
-          .managers(swarmInfo.getManagers())
-          .build();
+        return loadClusterData(docker);
     })
       .nullStrategy(SingleValueCache.NullStrategy.DIRTY)
       .timeAfterWrite(Long.MAX_VALUE)// we cache for always, but must invalidate it at cluster reinitialization
       .build();
+
     private final SingleValueCache<Map<String, SwarmNode>> nodesMap;
     private ContainerStorage containerStorage;
     private ContainerCreator containerCreator;
@@ -221,13 +213,19 @@ public class DockerCluster extends AbstractNodesGroup<DockerClusterConfig> {
         } else if(selectedManager == null) {
             throw new IllegalStateException("We has cluster: " + clusters + " but no one managers.");
         }
+        // this.data.get() does not work while cluster is not inited
+        ClusterData clusterData = loadClusterData(selectedManager.getService());
+        if(clusterData == null) {
+            // add managers later, because select manager is not ready yet
+            return;
+        }
         //and then we must join all managers to created cluster
         for(Manager node: managers.values()) {
             if(node == selectedManager) {
                 continue;
             }
             try {
-                joinManager(node);
+                joinManager(node, clusterData);
             } catch (Exception e) {
                 log.error("Can not join additional manager '{}' to cluster {}, error:", node.name, getName(), e);
             }
@@ -285,6 +283,22 @@ public class DockerCluster extends AbstractNodesGroup<DockerClusterConfig> {
         SwarmLeaveArg arg = new SwarmLeaveArg();
         arg.setForce(true);
         lastManager.leaveSwarm(arg);
+    }
+
+    private ClusterData loadClusterData(DockerService manager) {
+        SwarmInspectResponse swarm = manager.getSwarm();
+        DockerServiceInfo info = manager.getInfo();
+        JoinTokens tokens = swarm.getJoinTokens();
+        // at first cluster creation it may be null, due to creation may consume time
+        SwarmInfo swarmInfo = info.getSwarm();
+        if(swarmInfo == null) {
+            return null;
+        }
+        return ClusterData.builder()
+          .managerToken(tokens.getManager())
+          .workerToken(tokens.getWorker())
+          .managers(swarmInfo.getManagers())
+          .build();
     }
 
     /**
@@ -511,6 +525,11 @@ public class DockerCluster extends AbstractNodesGroup<DockerClusterConfig> {
     }
 
     private void joinManager(Manager manager) {
+        ClusterData clusterData = data.get();
+        joinManager(manager, clusterData);
+    }
+
+    private void joinManager(Manager manager, ClusterData clusterData) {
         log.info("Begin join manager node '{}' to '{}'", manager.name, getName());
         DockerService ds = manager.getService();
         if(ds == null) {
@@ -521,13 +540,10 @@ public class DockerCluster extends AbstractNodesGroup<DockerClusterConfig> {
             log.warn("Can not join node '{}', it offline", manager.name);
             return;
         }
-        ClusterData clusterData = data.get();
         String masterToken = clusterData.getManagerToken();
         SwarmJoinCmd cmd = new SwarmJoinCmd();
         cmd.setToken(masterToken);
-        this.managers.forEach((k, v) -> {
-            cmd.getManagers().addAll(clusterData.getManagers());
-        });
+        cmd.getManagers().addAll(clusterData.getManagers());
         cmd.setListen(getSwarmAddress(ds));
         try {
             ServiceCallResult res = ds.joinSwarm(cmd);
