@@ -119,7 +119,10 @@ public class DiscoveryStorageImpl implements DiscoveryStorage {
                       checkThatCanCreate();
                       break;
                   case DELETE:
-                      handleRemoved(e.getOldValue());
+                      // delete usually caused by kv event, and not has context
+                      try(TempAuth ta = TempAuth.asSystem()) {
+                          handleRemoved(e.getOldValue());
+                      }
                       break;
               }
           })
@@ -333,6 +336,7 @@ public class DiscoveryStorageImpl implements DiscoveryStorage {
         if(ng == null) {
             return;
         }
+        ng.clean();
         Closeables.closeIfCloseable(ng);
     }
 

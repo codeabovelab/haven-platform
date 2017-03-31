@@ -49,6 +49,8 @@ public abstract class AbstractNodesGroup<C extends AbstractNodesGroupConfig<C>> 
     protected static final int S_BEGIN = 0;
     protected static final int S_INITING = 1;
     protected static final int S_INITED = 2;
+    protected static final int S_CLEANING = 3;
+    protected static final int S_CLEANED = 4;
     protected static final int S_FAILED = 99;
     // not use static or @Slf4j annotation in this case
     private final Logger log = LoggerFactory.getLogger(getClass());
@@ -115,6 +117,21 @@ public abstract class AbstractNodesGroup<C extends AbstractNodesGroupConfig<C>> 
 
     protected void closeImpl() {
         //none
+    }
+
+    @Override
+    public final void clean() {
+        if(state.compareAndSet(S_INITED, S_CLEANING)) {
+            try {
+                cleanImpl();
+            } finally {
+                state.compareAndSet(S_CLEANING, S_CLEANED);
+            }
+        }
+    }
+
+    protected void cleanImpl() {
+        // nothing, override it for clean cluster
     }
 
     @Override

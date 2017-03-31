@@ -69,10 +69,12 @@ public class DockerCluster extends AbstractNodesGroup<DockerClusterConfig> {
         SwarmInspectResponse swarm = docker.getSwarm();
         DockerServiceInfo info = docker.getInfo();
         JoinTokens tokens = swarm.getJoinTokens();
+        // at first cluster creation it may be null, due to creation may consume time
+        SwarmInfo swarmInfo = info.getSwarm();
         return ClusterData.builder()
           .managerToken(tokens.getManager())
           .workerToken(tokens.getWorker())
-          .managers(info.getSwarm().getManagers())
+          .managers(swarmInfo.getManagers())
           .build();
     })
       .nullStrategy(SingleValueCache.NullStrategy.DIRTY)
@@ -128,7 +130,8 @@ public class DockerCluster extends AbstractNodesGroup<DockerClusterConfig> {
             }
             if(action == NodeEvent.Action.PRE_DELETE ||
                action == NodeEvent.Action.PRE_UPDATE && wasOur && !nowOur) {
-               e.cancel();
+                e.cancel();
+                log.warn("Cancel node '{}' deletion due to it is a manager.", nodeName);
             }
             return;
         }
@@ -223,7 +226,11 @@ public class DockerCluster extends AbstractNodesGroup<DockerClusterConfig> {
             if(node == selectedManager) {
                 continue;
             }
-            joinManager(node);
+            try {
+                joinManager(node);
+            } catch (Exception e) {
+                log.error("Can not join additional manager '{}' to cluster {}, error:", node.name, getName(), e);
+            }
         }
     }
 
@@ -241,6 +248,43 @@ public class DockerCluster extends AbstractNodesGroup<DockerClusterConfig> {
         }
         log.info("Initialized swarm-mode cluster on '{}' at address {}", manager.name, address);
         return manager;
+    }
+
+    protected void cleanImpl() {
+        Map<String, SwarmNode> nodes = nodesMap.getOldValue();
+        if(nodes == null) {
+            nodes = nodesMap.get();
+        }
+        List<String> managers = new ArrayList<>();
+        {
+            DockerService manager = getDocker();
+            nodes.forEach((s, swarmNode) -> {
+                // first we remove all non manager nodes
+                if(isManager(swarmNode)) {
+                    managers.add(s);
+                    return;
+                }
+                leave(manager, s, swarmNode);
+            });
+        }
+        if(managers.isEmpty()) {
+            // it mean wrong cluster state
+            return;
+        }
+        // then remove all
+        // here we must use only last manager
+        int last = managers.size() - 1;
+        String lastManagerName = managers.get(last);
+        DockerService lastManager = getNodeStorage().getNodeService(lastManagerName);
+        for(int i = 0; i < last; ++i) {
+            String managerName = managers.get(i);
+            SwarmNode swarmNode = nodes.get(managerName);
+            leave(lastManager, managerName, swarmNode);
+        }
+        // the last manager, which is can not be removed safely
+        SwarmLeaveArg arg = new SwarmLeaveArg();
+        arg.setForce(true);
+        lastManager.leaveSwarm(arg);
     }
 
     /**
@@ -493,9 +537,24 @@ public class DockerCluster extends AbstractNodesGroup<DockerClusterConfig> {
         }
     }
 
+    /**
+     * Leave node from current cluster. It do multiple calls to different docker services.
+     * @param node name of node
+     * @param sn swarm node object
+     */
     private void leave(String node, SwarmNode sn) {
-        log.info("Begin leave node '{}' from '{}'", node, getName());
         DockerService clusterDocker = getDocker();
+        leave(clusterDocker, node, sn);
+    }
+
+    /**
+     * Lave node from current cluster. It do multiple calls to different docker services.
+     * @param manager manager service
+     * @param node name of node
+     * @param sn swarm node object
+     */
+    private void leave(DockerService manager, String node, SwarmNode sn) {
+        log.info("Begin leave node '{}' from '{}'", node, getName());
         final String id = sn.getId();
         if(isManager(sn)) {
             UpdateNodeCmd un = new UpdateNodeCmd();
@@ -503,7 +562,7 @@ public class DockerCluster extends AbstractNodesGroup<DockerClusterConfig> {
             un.setNodeId(id);
             un.setRole(UpdateNodeCmd.Role.WORKER);
             un.setAvailability(UpdateNodeCmd.Availability.DRAIN);
-            ServiceCallResult scr = clusterDocker.updateNode(un);
+            ServiceCallResult scr = manager.updateNode(un);
             log.info("Demote manager node '{}' with result: '{}'", node, scr);
         }
         DockerService nodeDocker = getNodeStorage().getNodeService(node);
@@ -514,7 +573,7 @@ public class DockerCluster extends AbstractNodesGroup<DockerClusterConfig> {
             ServiceCallResult res = nodeDocker.leaveSwarm(new SwarmLeaveArg());
             log.info("Result of leave node '{}' : {} {}", node, res.getCode(), res.getMessage());
         }
-        ServiceCallResult rmres = clusterDocker.removeNode(new RemoveNodeArg(id).force(true));
+        ServiceCallResult rmres = manager.removeNode(new RemoveNodeArg(id).force(true));
         log.info("Result of remove node '{}' from cluster: {} {}", node, rmres.getCode(), rmres.getMessage());
     }
 

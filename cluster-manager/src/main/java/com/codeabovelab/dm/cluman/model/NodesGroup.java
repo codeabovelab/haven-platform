@@ -53,6 +53,11 @@ public interface NodesGroup extends Named, WithAcl {
      */
     NodeGroupState getState();
 
+    /**
+     * Clean resources of node group (for example destroy cluster)
+     */
+    void clean();
+
     enum Feature {
         /**
          * Feature mean than nodes in group is united by single 'swarm' service.
