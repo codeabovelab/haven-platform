@@ -92,6 +92,13 @@ public class RescheduledTask implements AutoCloseable {
         return new Builder();
     }
 
+    /**
+     * Variant of {@link #schedule(long, TimeUnit)} with {@link Builder#getMaxDelay()} as argument.
+     */
+    public void schedule() {
+        schedule(maxDelay, TimeUnit.MILLISECONDS);
+    }
+
     public void schedule(long timeout, TimeUnit timeUnit) {
         synchronized (lock) {
             if(closed) {

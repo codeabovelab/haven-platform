@@ -33,6 +33,7 @@ import com.codeabovelab.dm.cluman.model.*;
 import com.codeabovelab.dm.cluman.security.TempAuth;
 import com.codeabovelab.dm.cluman.utils.AddressUtils;
 import com.codeabovelab.dm.common.utils.Closeables;
+import com.codeabovelab.dm.common.utils.RescheduledTask;
 import com.codeabovelab.dm.common.utils.SingleValueCache;
 import com.google.common.base.MoreObjects;
 import com.google.common.collect.ImmutableList;
@@ -73,6 +74,7 @@ public class DockerCluster extends AbstractNodesGroup<DockerClusterConfig> {
       .build();
 
     private final SingleValueCache<Map<String, SwarmNode>> nodesMap;
+    private final RescheduledTask rereadNodesTask;
     private ContainerStorage containerStorage;
     private ContainerCreator containerCreator;
     private ContainersManager containers;
@@ -90,6 +92,11 @@ public class DockerCluster extends AbstractNodesGroup<DockerClusterConfig> {
           .setDaemon(true)
           .setNameFormat(getClass().getSimpleName() + "-" + getName() + "-%d")
           .build());
+        this.rereadNodesTask = RescheduledTask.builder()
+          .runnable(this::rereadNodes)
+          .service(this.scheduledExecutor)
+          .maxDelay(10L, TimeUnit.SECONDS)
+          .build();
     }
 
     @Autowired
@@ -114,8 +121,8 @@ public class DockerCluster extends AbstractNodesGroup<DockerClusterConfig> {
         final String thisCluster = getName();
         boolean nowOur = curr != null && thisCluster.equals(curr.getCluster());
         boolean wasOur = old != null && thisCluster.equals(old.getCluster());
+        final String nodeName = e.getNode().getName();
         if(action.isPre()) {
-            final String nodeName = e.getNode().getName();
             // we cancel some events only for for master nodes
             if(!managers.containsKey(nodeName)) {
                 return;
@@ -127,16 +134,23 @@ public class DockerCluster extends AbstractNodesGroup<DockerClusterConfig> {
             }
             return;
         }
-        if (wasOur != nowOur) {
+        if(!wasOur && !nowOur || state.get() != S_INITED) {
+            //if node not our we skip event, not that 'pre' event processed only when it affect 'manager' nodes
+            return;
+        }
+        Map<String, SwarmNode> map = this.nodesMap.getOrNull();
+        if(map == null) {
+            map = this.nodesMap.getOldValue();
+        }
+        //note that map always will be null when cluster is invalid
+        if (wasOur != nowOur || map == null || !map.containsKey(nodeName)) {
             scheduleRereadNodes();
         }
         this.createDefaultNetwork();
     }
 
     private void scheduleRereadNodes() {
-        nodesMap.invalidate();
-        // force update nodes
-        scheduledExecutor.execute(this::rereadNodes);
+        rereadNodesTask.schedule();
     }
 
     protected void closeImpl() {
@@ -162,9 +176,11 @@ public class DockerCluster extends AbstractNodesGroup<DockerClusterConfig> {
             this.containers = new DockerClusterContainers(this, this.containerStorage, this.containerCreator);
 
             // so docker does not send any events about new coming nodes, and we must refresh list of them
-            ScheduledFuture<?> sf = this.scheduledExecutor.scheduleWithFixedDelay(this::rereadNodes, rereadNodesTimeout, rereadNodesTimeout, TimeUnit.SECONDS);
+            ScheduledFuture<?> sf = this.scheduledExecutor.scheduleWithFixedDelay(() -> rereadNodesTask.schedule(),
+              rereadNodesTimeout, rereadNodesTimeout, TimeUnit.SECONDS);
             closeables.add(() -> sf.cancel(true));
             closeables.add(getNodeStorage().getNodeEventSubscriptions().openSubscription(this::onNodeEvent));
+            closeables.add(this.rereadNodesTask);
         }
     }
 
@@ -384,7 +400,12 @@ public class DockerCluster extends AbstractNodesGroup<DockerClusterConfig> {
         try (TempAuth ta = TempAuth.asSystem()) {
             Map<String, SwarmNode> factNodes = nodesMap.get();
             if(factNodes == null) {
-                log.error("Can not load map of cluster nodes.");
+                log.error("Cluster {}: can not load map of cluster nodes.", getName());
+                return;
+            }
+            ClusterData clusterData = data.get();
+            if(clusterData == null) {
+                log.warn("Cluster {}: can not reread node, because cluster data is null.", getName());
                 return;
             }
             // flag which mean that e change internal cluster node list, and must reread them
@@ -413,9 +434,9 @@ public class DockerCluster extends AbstractNodesGroup<DockerClusterConfig> {
                 //
                 Manager manager = managers.get(name);
                 if(manager != null) {
-                    joinManager(manager);
+                    joinManager(manager, clusterData);
                 } else {
-                    joinWorker(name);
+                    joinWorker(name, clusterData);
                 }
                 modified[0] = true;
             });
@@ -472,10 +493,9 @@ public class DockerCluster extends AbstractNodesGroup<DockerClusterConfig> {
      * Join node as worker to this docker cluster
      * @param name name of node
      */
-    private void joinWorker(String name) {
+    private void joinWorker(String name, ClusterData clusterData) {
         //join to swarm
         log.info("Begin join node '{}' to '{}'", name, getName());
-        ClusterData clusterData = data.get();
         String workerToken = clusterData.getWorkerToken();
         DockerService ds = getNodeStorage().getNodeService(name);
         if(ds == null) {
@@ -522,11 +542,6 @@ public class DockerCluster extends AbstractNodesGroup<DockerClusterConfig> {
         } catch (RuntimeException e) {
             log.error("Can not join node '{}' due to error: ", name, e);
         }
-    }
-
-    private void joinManager(Manager manager) {
-        ClusterData clusterData = data.get();
-        joinManager(manager, clusterData);
     }
 
     private void joinManager(Manager manager, ClusterData clusterData) {

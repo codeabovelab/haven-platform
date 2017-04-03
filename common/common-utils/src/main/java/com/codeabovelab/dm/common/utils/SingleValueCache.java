@@ -104,6 +104,22 @@ public class SingleValueCache<T> implements Supplier<T> {
     }
 
     /**
+     * Get actual value if it present, otherwise return null.
+     * @return actual value or null
+     */
+    public T getOrNull() {
+        lock.lock();
+        try {
+            if(hasActualValue(System.currentTimeMillis())) {
+                return convert(value);
+            }
+            return null;
+        } finally {
+            lock.unlock();
+        }
+    }
+
+    /**
      * Get previous value
      * @return previous value or null
      */
@@ -126,7 +142,7 @@ public class SingleValueCache<T> implements Supplier<T> {
 
     private T loadIfNeed() {
         long time = System.currentTimeMillis();
-        if(value != null && writeTime + taw >= time) {
+        if(hasActualValue(time)) {
             return convert(value);
         }
         writeTime = time;
@@ -144,6 +160,10 @@ public class SingleValueCache<T> implements Supplier<T> {
             }
         }
         return convert(value);
+    }
+
+    private boolean hasActualValue(long time) {
+        return value != null && writeTime + taw >= time;
     }
 
     /**
