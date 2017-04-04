@@ -113,11 +113,10 @@ public class ContainerSourceFactory {
             });
         }
         if(srcPoints != null) {
-            srcPoints.forEach(p -> {
-                if(converted.containsKey(p.getDestination())) {
-                    // we prevent appearing same mount from multiple source
-                    return;
-                }
+            srcPoints.stream()
+                    .filter(p -> !converted.containsKey(p.getDestination())) // we prevent appearing same mount from multiple source
+                    .filter(p -> p.getType() != null)
+                    .forEach(p -> {
                 MountSource ms = SourceUtil.toMountSource(p);
                 if (ms != null) {
                     dest.add(ms);
