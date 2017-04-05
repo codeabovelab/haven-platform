@@ -245,12 +245,17 @@ public class NodeStorage implements NodeInfoProvider, NodeRegistry {
         final DockerServiceInfo dsi = tmp;
         nr.updateNodeInfo(b -> {
             NodeMetrics.Builder nmb = NodeMetrics.builder().from(b.getHealth());
-            if(dsi != null) {
+            boolean online = dsi != null;
+            if(online) {
                 b.setLabels(dsi.getLabels());
                 nmb.setTime(dsi.getSystemTime());
                 nmb.setSysMemTotal(dsi.getMemory());
             }
-            //TODO we can not change node health here, because cluster must override it
+            if(b.getCluster() == null) {
+                // we may handle healthy only when node out of cluster
+                nmb.setState(online? NodeMetrics.State.ALONE : NodeMetrics.State.DISCONNECTED);
+                nmb.setHealthy(online);
+            }
             b.setHealth(nmb.build());
         });
         // this check offline status internal and cause status change event

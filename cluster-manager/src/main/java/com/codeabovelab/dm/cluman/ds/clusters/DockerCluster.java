@@ -337,7 +337,7 @@ public class DockerCluster extends AbstractNodesGroup<DockerClusterConfig> {
             if(!isFromSameCluster(ni) && sn == null) {
                 return;
             }
-            NodeMetrics.State state =(sn != null)? getState(sn) : NodeMetrics.State.DISCONNECTED;
+            NodeMetrics.State state =(sn != null)? getState(sn) : NodeMetrics.State.ALONE;
             NodeMetrics metrics = ni.getHealth();
             if(metrics.getState() != state) {
                 NodeMetrics.Builder nmb = NodeMetrics.builder().from(metrics);
@@ -677,7 +677,7 @@ public class DockerCluster extends AbstractNodesGroup<DockerClusterConfig> {
                     b.labels(labels);
                 }
             } else {
-                state = NodeMetrics.State.DISCONNECTED;
+                state = NodeMetrics.State.ALONE;
             }
             setNodeState(nmb, state);
             b.mergeHealth(nmb.build());
@@ -709,7 +709,10 @@ public class DockerCluster extends AbstractNodesGroup<DockerClusterConfig> {
           availability == SwarmNode.NodeAvailability.PAUSE) {
             return NodeMetrics.State.MAINTENANCE;
         }
-        return NodeMetrics.State.DISCONNECTED;
+        if (state == SwarmNode.NodeState.DISCONNECTED) {
+            return NodeMetrics.State.DISCONNECTED;
+        }
+        return NodeMetrics.State.UNHEALTHY;
     }
 
     private boolean isFromSameCluster(NodeRegistration nr) {

@@ -36,7 +36,18 @@ import java.util.Map;
 public class NodeMetrics {
 
     public enum State {
-        PENDING, UNHEALTHY, HEALTHY, DISCONNECTED, MAINTENANCE
+        PENDING,
+        UNHEALTHY,
+        HEALTHY,
+        /**
+         * Node is not connected to our system
+         */
+        DISCONNECTED,
+        MAINTENANCE,
+        /**
+         * Node not in cluster
+         */
+        ALONE
     }
 
     @Data
