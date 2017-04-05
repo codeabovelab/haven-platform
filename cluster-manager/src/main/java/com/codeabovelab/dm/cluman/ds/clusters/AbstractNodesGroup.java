@@ -61,7 +61,8 @@ public abstract class AbstractNodesGroup<C extends AbstractNodesGroupConfig<C>> 
     protected volatile C config;
     protected final Object lock = new Object();
     private final ObjectIdentityData oid;
-    protected final AtomicInteger state = new AtomicInteger(S_BEGIN);
+    private final AtomicInteger state = new AtomicInteger(S_BEGIN);
+    private volatile String stateMessage;
     protected final NetworkManager networkManager;
     private final CreateNetworkTask createNetworkTask = new CreateNetworkTask();
 
@@ -86,17 +87,17 @@ public abstract class AbstractNodesGroup<C extends AbstractNodesGroupConfig<C>> 
      * @see #getState()
      */
     public final void init() {
-        if(!state.compareAndSet(S_BEGIN, S_INITING)) {
+        if(!changeState(S_BEGIN, S_INITING)) {
             return;
         }
         try {
             log.info("Begin init of cluster '{}'", getName());
             initImpl();
-            if(state.compareAndSet(S_INITING, S_INITED)) {
+            if(changeState(S_INITING, S_INITED)) {
                 log.info("Success init of cluster '{}'", getName());
             }
         } finally {
-            if(state.compareAndSet(S_INITING, S_FAILED)) {
+            if(changeState(S_INITING, S_FAILED)) {
                 // NOTE: if cluster may be reinited then initImpl() MUST:
                 // - properly handle any errors
                 // - set status to S_BEGIN after errors which prevent correct initialisation (like node is offline)
@@ -110,6 +111,11 @@ public abstract class AbstractNodesGroup<C extends AbstractNodesGroupConfig<C>> 
         //none
     }
 
+    protected final void cancelInit(String msg) {
+        log.warn("Init of {} cluster cancelled due to: {}", getName(), msg);
+        changeState(S_INITING, S_BEGIN, msg);
+    }
+
     @Override
     public final void close() {
         closeImpl();
@@ -121,13 +127,29 @@ public abstract class AbstractNodesGroup<C extends AbstractNodesGroupConfig<C>> 
 
     @Override
     public final void clean() {
-        if(state.compareAndSet(S_INITED, S_CLEANING)) {
+        if(changeState(S_INITED, S_CLEANING)) {
             try {
                 cleanImpl();
             } finally {
-                state.compareAndSet(S_CLEANING, S_CLEANED);
+                changeState(S_CLEANING, S_CLEANED);
             }
         }
+    }
+
+    private boolean changeState(int oldState, int newState) {
+        return changeState(oldState, newState, null);
+    }
+
+    private boolean changeState(int oldState, int newState, String msg) {
+        boolean res = state.compareAndSet(oldState, newState);
+        if(res) {
+            this.stateMessage = msg;
+        }
+        return res;
+    }
+
+    protected int getStateCode() {
+        return state.get();
     }
 
     protected void cleanImpl() {
@@ -137,6 +159,7 @@ public abstract class AbstractNodesGroup<C extends AbstractNodesGroupConfig<C>> 
     @Override
     public NodeGroupState getState() {
         NodeGroupState.Builder b = NodeGroupState.builder();
+        String msg = this.stateMessage;
         b.inited(true);
         switch (state.get()) {
             case S_BEGIN:
@@ -155,6 +178,9 @@ public abstract class AbstractNodesGroup<C extends AbstractNodesGroupConfig<C>> 
             default:
                 b.ok(false);
                 b.message("Unknown state.");
+        }
+        if(msg != null) {
+            b.message(msg);
         }
         return b.build();
     }

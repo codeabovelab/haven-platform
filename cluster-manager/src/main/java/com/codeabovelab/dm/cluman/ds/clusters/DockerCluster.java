@@ -134,7 +134,7 @@ public class DockerCluster extends AbstractNodesGroup<DockerClusterConfig> {
             }
             return;
         }
-        if(!wasOur && !nowOur || state.get() != S_INITED) {
+        if(!wasOur && !nowOur || getStateCode() != S_INITED) {
             //if node not our we skip event, not that 'pre' event processed only when it affect 'manager' nodes
             return;
         }
@@ -161,15 +161,13 @@ public class DockerCluster extends AbstractNodesGroup<DockerClusterConfig> {
     protected void initImpl() {
         List<String> hosts = this.config.getManagers();
         if(CollectionUtils.isEmpty(hosts)) {
-            log.warn("Cluster config '{}' must contains at least one manager host.", getName());
-            // waiting when cluster will be properly reconfigured
-            state.compareAndSet(S_INITING, S_BEGIN);
+            cancelInit("config must contains at least one manager host.");
             return;
         }
         hosts.forEach(host -> managers.putIfAbsent(host, new Manager(host)));
         initCluster(hosts.get(0));
 
-        if(state.get() == S_INITING) {
+        if(getStateCode() == S_INITING) {
             ArrayList<AutoCloseable> closeables = new ArrayList<>();
             this.closeables = closeables;
             // we do this only if initialization process is success
@@ -216,8 +214,7 @@ public class DockerCluster extends AbstractNodesGroup<DockerClusterConfig> {
             }
         }
         if(onlineManagers == 0) {
-            log.warn("cluster '{}' is not inited because no online masters", getName());
-            state.compareAndSet(S_INITING, S_BEGIN);
+            cancelInit("because no online masters");
             return;
         }
         if(clusters.size() > 1) {
