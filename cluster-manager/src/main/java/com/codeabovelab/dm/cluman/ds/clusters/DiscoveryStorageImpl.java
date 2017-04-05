@@ -170,6 +170,9 @@ public class DiscoveryStorageImpl implements DiscoveryStorage {
     }
 
     private void onNodeEvent(NodeEvent nodeEvent) {
+        if(nodeEvent.getAction().isPre()) {
+            return;
+        }
         NodeInfo node = nodeEvent.getCurrent();
         if (node == null) {
             return;

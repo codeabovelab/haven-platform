@@ -19,9 +19,7 @@ package com.codeabovelab.dm.cluman.ds.nodes;
 import com.codeabovelab.dm.cluman.cluster.docker.ClusterConfig;
 import com.codeabovelab.dm.cluman.cluster.docker.ClusterConfigImpl;
 import com.codeabovelab.dm.cluman.cluster.docker.management.DockerService;
-import com.codeabovelab.dm.cluman.cluster.docker.management.DockerServiceEvent;
 import com.codeabovelab.dm.cluman.ds.DockerServiceFactory;
-import com.codeabovelab.dm.cluman.ds.SwarmUtils;
 import com.codeabovelab.dm.cluman.ds.swarm.DockerEventsConfig;
 import com.codeabovelab.dm.cluman.model.*;
 import com.codeabovelab.dm.cluman.persistent.PersistentBusFactory;
@@ -47,7 +45,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.HttpStatus;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import org.springframework.util.Assert;
 
@@ -80,7 +77,6 @@ public class NodeStorage implements NodeInfoProvider, NodeRegistry {
     public NodeStorage(NodeStorageConfig config,
                        KvMapperFactory kvmf,
                        @Qualifier(NodeEvent.BUS) MessageBus<NodeEvent> nodeEventBus,
-                       @Qualifier(DockerServiceEvent.BUS) MessageBus<DockerServiceEvent> dockerBus,
                        @Qualifier(DockerLogEvent.BUS) MessageBus<DockerLogEvent> dockerLogBus,
                        DockerEventsConfig dockerEventConfig,
                        PersistentBusFactory persistentBusFactory) {
@@ -121,7 +117,6 @@ public class NodeStorage implements NodeInfoProvider, NodeRegistry {
               throw new RejectedExecutionException("Task " + runnable + " rejected from " + executor + hint);
           })
           .build();
-        dockerBus.subscribe(this::onDockerServiceEvent);
     }
 
     @Autowired
@@ -200,66 +195,6 @@ public class NodeStorage implements NodeInfoProvider, NodeRegistry {
           .build();
         fireNodeEventSync(ne);
         return cancel.get();
-    }
-
-    private void onDockerServiceEvent(DockerServiceEvent e) {
-        try {
-            if(e instanceof DockerServiceEvent.DockerServiceInfoEvent) {
-                // we update health of all presented nodes
-                // also it work only in standalone swarm cluster, and must be moved out here
-                DockerServiceInfo info = ((DockerServiceEvent.DockerServiceInfoEvent) e).getInfo();
-                for(NodeInfo node: info.getNodeList()) {
-                    // we must not create nodes here,
-                    // therefore they may be deleted before, and creation will restore its, that is not wanted
-                    NodeRegistrationImpl reg = getNodeRegistrationInternal(node.getName());
-                    if(reg != null) {
-                        reg.updateHealth(node.getHealth());
-                    }
-                }
-            }
-        } catch (Exception ex) {
-            log.error("Can not update nodes.", ex);
-        }
-    }
-
-    @Scheduled(fixedDelayString = SwarmUtils.EXPR_NODES_UPDATE_MS)
-    private void checkNodes() {
-        // periodically check online status of nodes
-        try(TempAuth ta = TempAuth.asSystem()) {
-            log.info("Begin update list of nodes");
-            for(NodeRegistrationImpl nr: nodes.values()) {
-                checkNode(nr);
-            }
-            log.info("End update list of nodes");
-        }
-    }
-
-    private void checkNode(NodeRegistrationImpl nr) {
-        log.info("Update node '{}' of '{}' cluster", nr.getName(), nr.getCluster());
-        DockerServiceInfo tmp = null;
-        try {
-            tmp = nr.getDocker().getInfo();
-        } catch (Exception e) {
-            log.error("Fail to load node '{}' info due to error: {}", nr.getName(), e.toString());
-        }
-        final DockerServiceInfo dsi = tmp;
-        nr.updateNodeInfo(b -> {
-            NodeMetrics.Builder nmb = NodeMetrics.builder().from(b.getHealth());
-            boolean online = dsi != null;
-            if(online) {
-                b.setLabels(dsi.getLabels());
-                nmb.setTime(dsi.getSystemTime());
-                nmb.setSysMemTotal(dsi.getMemory());
-            }
-            if(b.getCluster() == null) {
-                // we may handle healthy only when node out of cluster
-                nmb.setState(online? NodeMetrics.State.ALONE : NodeMetrics.State.DISCONNECTED);
-                nmb.setHealthy(online);
-            }
-            b.setHealth(nmb.build());
-        });
-        // this check offline status internal and cause status change event
-        nr.getNodeInfo();
     }
 
     NodeRegistrationImpl newRegistration(NodeInfo nodeInfo) {
@@ -416,6 +351,10 @@ public class NodeStorage implements NodeInfoProvider, NodeRegistry {
      * @param consumer
      */
     public void forEach(Consumer<NodeRegistration> consumer) {
+        forEachInternal(consumer::accept);
+    }
+
+    void forEachInternal(Consumer<NodeRegistrationImpl> consumer) {
         Set<String> keys = listNodeNames();
         AccessContext ac = AccessContextFactory.getLocalContext();
         for (String key : keys) {
@@ -489,13 +428,8 @@ public class NodeStorage implements NodeInfoProvider, NodeRegistry {
               "', because already has node '" + existsName + "' with same address: " + address);
         }
         nr = getOrCreateNodeRegistration(nodeName);
-        String oldAddr = nr.getAddress();
         DockerService ds = nr.setAddress(address);
         save(nr);
-        if(!Objects.equals(oldAddr, address)) {
-            // address changed, force to update node status
-            checkNode(nr);
-        }
         return ds;
     }
 

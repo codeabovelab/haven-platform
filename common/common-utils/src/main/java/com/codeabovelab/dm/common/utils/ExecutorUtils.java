@@ -16,6 +16,7 @@
 
 package com.codeabovelab.dm.common.utils;
 
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import lombok.Data;
 
 import java.util.List;
@@ -172,5 +173,17 @@ public final class ExecutorUtils {
 
     public static ExecutorBuilder executorBuilder() {
         return new ExecutorBuilder();
+    }
+
+    /**
+     * Make single daemon thread scheduled executor service.
+     * @param clazz class, it user for calculation name of thread
+     * @return executor service
+     */
+    public static ScheduledExecutorService singleThreadScheduledExecutor(Class<?> clazz) {
+        return Executors.newSingleThreadScheduledExecutor(new ThreadFactoryBuilder()
+          .setDaemon(true)
+          .setNameFormat(clazz.getSimpleName() + "-%d")
+          .build());
     }
 }
