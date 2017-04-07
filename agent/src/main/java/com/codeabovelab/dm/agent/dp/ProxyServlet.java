@@ -18,11 +18,9 @@ package com.codeabovelab.dm.agent.dp;
 
 
 import com.codeabovelab.dm.common.utils.Closeables;
-import com.google.common.collect.Iterables;
+import com.codeabovelab.dm.common.utils.Uuids;
 import com.google.common.collect.Iterators;
-import com.google.common.collect.UnmodifiableIterator;
 import io.netty.bootstrap.Bootstrap;
-import io.netty.buffer.ByteBuf;
 import io.netty.channel.*;
 import io.netty.channel.epoll.EpollDomainSocketChannel;
 import io.netty.channel.epoll.EpollEventLoopGroup;
@@ -67,22 +65,36 @@ public class ProxyServlet extends GenericServlet {
     public void service(ServletRequest req, ServletResponse res) throws ServletException, IOException {
         final HttpServletRequest request = (HttpServletRequest) req;
         final HttpServletResponse response = (HttpServletResponse) res;
+        String id = Uuids.longUid();
+        NettyHandler handler = null;
         try {
-            System.out.println("BEFORE CONNECT");
+            String uri = reconstructUri(request);
+            log.debug("{}: start {} {}", id, request.getMethod(), uri);
             ChannelFuture cf = bootstrap.connect(new DomainSocketAddress("/var/run/docker.sock")).sync();
             Channel channel = cf.channel();
-            channel.pipeline().addLast(new Handler(response));
-            DefaultFullHttpRequest backendReq = buildRequest(request);
-            System.out.println("BEFORE SEND " + backendReq);
+            handler = new NettyHandler(id, request, response);
+            channel.pipeline().addLast(handler);
+            DefaultFullHttpRequest backendReq = buildRequest(id, request, uri);
             channel.writeAndFlush(backendReq).sync();
             channel.closeFuture().sync();
+            log.debug("{}: end", id);
         } catch (Exception e) {
-            log.error("Error", e);
+            log.error("{}: error in service(): ", id, e);
+        } finally {
+            Closeables.close(handler);
         }
     }
 
-    private DefaultFullHttpRequest buildRequest(HttpServletRequest request) {
-        String uri = request.getRequestURI();
+    private String reconstructUri(HttpServletRequest request) {
+        String q = request.getQueryString();
+        String req = request.getRequestURI();
+        if(q == null) {
+            return req;
+        }
+        return req + "?" + q;
+    }
+
+    private DefaultFullHttpRequest buildRequest(String id, HttpServletRequest request, String uri) throws IOException {
         HttpMethod method = HttpMethod.valueOf(request.getMethod());
         DefaultFullHttpRequest br = new DefaultFullHttpRequest(HttpVersion.HTTP_1_1, method, uri);
         Enumeration<String> headers = request.getHeaderNames();
@@ -92,6 +104,14 @@ public class ProxyServlet extends GenericServlet {
             Iterable<String> iter = () -> Iterators.forEnumeration(request.getHeaders(header));
             bh.add(header, iter);
         }
+        int len = request.getContentLength();
+        if(len > 0) {
+            try(ServletInputStream is = request.getInputStream()) {
+                br.content().writeBytes(is, len);
+            }
+        } else if(len == -1) {
+            log.warn("{}: content length: -1", id);
+        }
         return br;
     }
 
@@ -100,69 +120,4 @@ public class ProxyServlet extends GenericServlet {
         group.shutdownGracefully();
     }
 
-    // TODO add identifier for each request (for logging purposes)
-    // implement web socket & chunked streaming
-    private static class Handler extends ChannelInboundHandlerAdapter {
-        private final HttpServletResponse frontResp;
-        private volatile ServletOutputStream stream;
-        private volatile boolean hasError;
-
-        Handler(HttpServletResponse frontResp) {
-            this.frontResp = frontResp;
-        }
-
-        @Override
-        public void channelRead(final ChannelHandlerContext ctx, final Object msg) throws Exception {
-            System.out.println("READ " + msg);
-            if(msg instanceof HttpResponse) {
-                HttpResponse backendResp = (HttpResponse) msg;
-                HttpResponseStatus status = backendResp.status();
-                frontResp.setStatus(status.code());
-            } else if(msg instanceof HttpContent) {
-                HttpContent backendResp = (HttpContent) msg;
-                if(backendResp == LastHttpContent.EMPTY_LAST_CONTENT) {
-                    ctx.close();
-                    return;
-                }
-                ServletOutputStream sos = getStream();
-                if(sos == null) {
-                    log.warn("Stream null on non closed handler.");
-                    return;
-                }
-                ByteBuf buf = backendResp.content();
-                try {
-                    byte arr[] = new byte[1024];
-                    int end;
-                    while((end = buf.readableBytes()) > 0) {
-                        int len = Math.min(end, arr.length);
-                        buf.readBytes(arr, 0, len);
-                        sos.write(arr, 0, len);
-                    }
-                } finally {
-                    buf.release();
-                }
-            }
-        }
-
-        private synchronized ServletOutputStream getStream() throws IOException {
-            if(stream == null && !hasError) {
-                stream = frontResp.getOutputStream();
-            }
-            return stream;
-        }
-
-        @Override
-        public void channelReadComplete(ChannelHandlerContext ctx) throws Exception {
-            System.out.println("COMPLETE");
-            Closeables.close(this.stream);
-        }
-
-        @Override
-        public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
-            this.hasError = true;
-            log.error("Error in pipeline: ", cause);
-            ctx.close();
-            frontResp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, cause.toString());
-        }
-    }
 }

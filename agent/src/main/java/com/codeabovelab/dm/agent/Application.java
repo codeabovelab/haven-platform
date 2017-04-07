@@ -17,8 +17,10 @@
 package com.codeabovelab.dm.agent;
 
 import com.codeabovelab.dm.agent.dp.ProxyServlet;
+import org.springframework.boot.autoconfigure.web.EmbeddedServletContainerAutoConfiguration;
+import org.springframework.boot.autoconfigure.web.ServerProperties;
 import org.springframework.boot.builder.SpringApplicationBuilder;
-import org.springframework.boot.context.embedded.undertow.UndertowEmbeddedServletContainerFactory;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.boot.web.support.SpringBootServletInitializer;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -30,9 +32,11 @@ import javax.servlet.Servlet;
 /**
  */
 @Import({
-  UndertowEmbeddedServletContainerFactory.class,
+  EmbeddedServletContainerAutoConfiguration.class,
   PropertySourcesPlaceholderConfigurer.class
 })
+@EnableConfigurationProperties(ServerProperties.class)
+// do not use @EnableAutoConfiguration
 @Configuration
 public class Application extends SpringBootServletInitializer {
 
