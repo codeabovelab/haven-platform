@@ -16,24 +16,24 @@
 
 package com.codeabovelab.dm.agent;
 
-import com.codeabovelab.dm.agent.dp.ProxyServlet;
+import com.codeabovelab.dm.agent.dp.DpConfiguration;
 import org.springframework.boot.autoconfigure.web.EmbeddedServletContainerAutoConfiguration;
 import org.springframework.boot.autoconfigure.web.ServerProperties;
+import org.springframework.boot.autoconfigure.websocket.WebSocketAutoConfiguration;
 import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.boot.web.support.SpringBootServletInitializer;
-import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
 import org.springframework.context.support.PropertySourcesPlaceholderConfigurer;
-
-import javax.servlet.Servlet;
 
 /**
  */
 @Import({
   EmbeddedServletContainerAutoConfiguration.class,
-  PropertySourcesPlaceholderConfigurer.class
+  WebSocketAutoConfiguration.class,
+  PropertySourcesPlaceholderConfigurer.class,
+  DpConfiguration.class
 })
 @EnableConfigurationProperties(ServerProperties.class)
 // do not use @EnableAutoConfiguration
@@ -43,10 +43,4 @@ public class Application extends SpringBootServletInitializer {
     public static void main(String[] args) {
         new SpringApplicationBuilder(Application.class).run(args);
     }
-
-    @Bean
-    public Servlet dispatcherServlet() {
-        return new ProxyServlet();
-    }
-
 }

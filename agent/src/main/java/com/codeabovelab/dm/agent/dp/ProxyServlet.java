@@ -20,12 +20,7 @@ package com.codeabovelab.dm.agent.dp;
 import com.codeabovelab.dm.common.utils.Closeables;
 import com.codeabovelab.dm.common.utils.Uuids;
 import com.google.common.collect.Iterators;
-import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.*;
-import io.netty.channel.epoll.EpollDomainSocketChannel;
-import io.netty.channel.epoll.EpollEventLoopGroup;
-import io.netty.channel.unix.DomainSocketAddress;
-import io.netty.channel.unix.DomainSocketChannel;
 import io.netty.handler.codec.http.*;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -42,24 +37,8 @@ import java.util.Enumeration;
 @Slf4j
 public class ProxyServlet extends GenericServlet {
 
-
-    private final Bootstrap bootstrap;
-    private final EpollEventLoopGroup group;
-
     @Autowired
-    public ProxyServlet() {
-        this.bootstrap = new Bootstrap();
-        this.group = new EpollEventLoopGroup();
-        bootstrap.group(group)
-          .channel(EpollDomainSocketChannel.class)
-          .handler(new ChannelInitializer<DomainSocketChannel>() {
-                @Override
-                protected void initChannel(DomainSocketChannel channel) throws Exception {
-                    channel.pipeline().addLast(new HttpClientCodec());
-                }
-            }
-          );
-    }
+    private Backend backend;
 
     @Override
     public void service(ServletRequest req, ServletResponse res) throws ServletException, IOException {
@@ -68,13 +47,13 @@ public class ProxyServlet extends GenericServlet {
         String id = Uuids.longUid();
         NettyHandler handler = null;
         try {
-            String uri = reconstructUri(request);
+            String uri = Utils.reconstructUri(request);
             log.debug("{}: start {} {}", id, request.getMethod(), uri);
-            ChannelFuture cf = bootstrap.connect(new DomainSocketAddress("/var/run/docker.sock")).sync();
+            ChannelFuture cf = backend.connect().sync();
             Channel channel = cf.channel();
+            DefaultFullHttpRequest backendReq = buildRequest(id, request, uri);
             handler = new NettyHandler(id, request, response);
             channel.pipeline().addLast(handler);
-            DefaultFullHttpRequest backendReq = buildRequest(id, request, uri);
             channel.writeAndFlush(backendReq).sync();
             channel.closeFuture().sync();
             log.debug("{}: end", id);
@@ -83,15 +62,6 @@ public class ProxyServlet extends GenericServlet {
         } finally {
             Closeables.close(handler);
         }
-    }
-
-    private String reconstructUri(HttpServletRequest request) {
-        String q = request.getQueryString();
-        String req = request.getRequestURI();
-        if(q == null) {
-            return req;
-        }
-        return req + "?" + q;
     }
 
     private DefaultFullHttpRequest buildRequest(String id, HttpServletRequest request, String uri) throws IOException {
@@ -114,10 +84,4 @@ public class ProxyServlet extends GenericServlet {
         }
         return br;
     }
-
-    @Override
-    public void destroy() {
-        group.shutdownGracefully();
-    }
-
 }

@@ -40,7 +40,7 @@ class NettyHandler extends ChannelInboundHandlerAdapter implements AutoCloseable
     private volatile boolean hasError;
     private final String id;
 
-    NettyHandler(String id, HttpServletRequest frontReq, HttpServletResponse frontResp) {
+    NettyHandler(String id, HttpServletRequest frontReq, HttpServletResponse frontResp) throws IOException {
         this.frontReq = frontReq;
         this.frontResp = frontResp;
         this.id = id;
@@ -144,5 +144,9 @@ class NettyHandler extends ChannelInboundHandlerAdapter implements AutoCloseable
         } catch (Exception e) {
             log.error("{}: Error at exception caught: ", e);
         }
+    }
+
+    public String getId() {
+        return id;
     }
 }
