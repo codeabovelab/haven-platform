@@ -17,26 +17,22 @@
 package com.codeabovelab.dm.agent.dp;
 
 import com.codeabovelab.dm.common.utils.Closeables;
-import com.codeabovelab.dm.common.utils.Uuids;
+import io.netty.buffer.ByteBuf;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
-import io.netty.handler.codec.http.DefaultHttpHeaders;
-import io.netty.handler.codec.http.websocketx.WebSocketClientHandshaker;
-import io.netty.handler.codec.http.websocketx.WebSocketClientHandshakerFactory;
-import io.netty.handler.codec.http.websocketx.WebSocketClientProtocolHandler;
-import io.netty.handler.codec.http.websocketx.WebSocketVersion;
+import io.netty.handler.codec.http.*;
+import io.netty.handler.codec.http.websocketx.*;
+import io.netty.handler.codec.http.websocketx.extensions.compression.WebSocketClientCompressionHandler;
+import io.netty.util.ReferenceCountUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-import javax.websocket.Endpoint;
-import javax.websocket.EndpointConfig;
-import javax.websocket.MessageHandler;
-import javax.websocket.Session;
-import java.net.URI;
+import javax.websocket.*;
 import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
 
 /**
  */
@@ -46,7 +42,7 @@ public class WsProxy extends Endpoint {
 
     @Autowired
     private Backend backend;
-    private final String id = Uuids.longUid();
+
 
     @Override
     public void onOpen(Session session, EndpointConfig config) {
@@ -55,32 +51,97 @@ public class WsProxy extends Endpoint {
         try {
             ChannelFuture cf = backend.connect().sync();
             Channel channel = cf.channel();
-            WebSocketVersion version = Utils.getWsVersion(session.getProtocolVersion());
-            WebSocketClientHandshaker wshs = WebSocketClientHandshakerFactory.newHandshaker(new URI(session.getQueryString()),
-              version, null, true, new DefaultHttpHeaders());
-            channel.pipeline().addLast(new WebSocketClientProtocolHandler(wshs), new WsHandler(session));
+            WebSocketClientProtocolHandler wscph = makeWsProtocolHandler(session);
+            WebSocketClientHandshaker handshaker = wscph.handshaker();
+            WsHandler handler = new WsHandler(handshaker, channel, session);
+            channel.pipeline().addLast(new HttpObjectAggregator(1024 * 4),
+              WebSocketClientCompressionHandler.INSTANCE,
+              wscph,
+              handler);
+            handshaker.handshake(channel);
             log.debug("{}: wait messages", id);
-            session.addMessageHandler(new WsHandler(session));
+            session.addMessageHandler(String.class, handler::onFrontString);
+            session.addMessageHandler(ByteBuffer.class, handler::onFrontBytes);
         } catch (Exception e) {
             log.error("{}: can not establish ws connect with backed", id, e);
         }
 
     }
 
-    static class WsHandler extends ChannelInboundHandlerAdapter implements MessageHandler.Whole<ByteBuffer> {
+    private WebSocketClientProtocolHandler makeWsProtocolHandler(Session session) {
+        WebSocketVersion version = Utils.getWsVersion(session.getProtocolVersion());
+        WebSocketClientHandshaker wshs = WebSocketClientHandshakerFactory.newHandshaker(session.getRequestURI(),
+          version, null, true, new DefaultHttpHeaders());
+        return new WebSocketClientProtocolHandler(wshs);
+    }
+
+    static class WsHandler extends ChannelInboundHandlerAdapter {
 
         private final String id;
         private final Session session;
-        private Channel channel;
+        private final WebSocketClientHandshaker handshaker;
+        private final Channel channel;
 
-        public WsHandler(Session session) {
+        public WsHandler(WebSocketClientHandshaker handshaker,
+                         Channel channel,
+                         Session session) {
             this.id = session.getId();
+            this.handshaker = handshaker;
+            this.channel = channel;
             this.session = session;
         }
 
+        private void handleSend(SendResult res) {
+            Throwable th = res.getException();
+            if (th != null) {
+                log.error("{}: error on send msg to front, close ", id, th);
+                internalClose();
+            }
+        }
+
         @Override
-        public void channelActive(ChannelHandlerContext ctx) throws Exception {
-            this.channel = ctx.channel();
+        public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
+            try {
+                Channel ch = ctx.channel();
+                if (!handshaker.isHandshakeComplete()) {
+                    handshaker.finishHandshake(ch, (FullHttpResponse) msg);
+                    System.out.println("WebSocket Client connected!");
+                    return;
+                }
+
+                if (msg instanceof FullHttpResponse) {
+                    FullHttpResponse response = (FullHttpResponse) msg;
+                    throw new IllegalStateException(
+                      "Unexpected FullHttpResponse (getStatus=" + response.status() +
+                        ", content=" + response.content().toString(StandardCharsets.UTF_8) + ')');
+                }
+
+                if(!(msg instanceof WebSocketFrame)) {
+                    return;
+                }
+                if(!session.isOpen()) {
+                    log.debug("{}: front session is closed", id);
+                    internalClose();
+                    return;
+                }
+                RemoteEndpoint.Async ar = session.getAsyncRemote();
+                if(msg instanceof TextWebSocketFrame) {
+                    ar.sendText(((TextWebSocketFrame)msg).text(), this::handleSend);
+                } else if(msg instanceof BinaryWebSocketFrame) {
+                    ByteBuf content = ((BinaryWebSocketFrame) msg).content();
+                    //we need to make copy because async send may use buffer out of its lifecycle
+                    ar.sendBinary(copy(content), this::handleSend);
+                }
+            } finally {
+                ReferenceCountUtil.release(msg);
+            }
+        }
+
+        private ByteBuffer copy(ByteBuf content) {
+            ByteBuffer tmp = ByteBuffer.allocate(content.readableBytes());
+            content.readBytes(tmp);
+            tmp.flip();
+            return tmp;
         }
 
         @Override
@@ -90,12 +151,28 @@ public class WsProxy extends Endpoint {
         }
 
         @Override
-        public void onMessage(ByteBuffer message) {
-            channel.writeAndFlush(message);
+        public void channelUnregistered(ChannelHandlerContext ctx) throws Exception {
+            log.debug("{}: ws handler unregistered, close.", id);
+            internalClose();
+        }
+
+        public void onFrontString(String str) {
+            TextWebSocketFrame msg = new TextWebSocketFrame(str);
+            channel.writeAndFlush(msg);
+        }
+
+        public void onFrontBytes(ByteBuffer bb) {
+            BinaryWebSocketFrame bf = new BinaryWebSocketFrame();
+            bf.content().writeBytes(bb);
+            channel.writeAndFlush(bf);
         }
 
         private void internalClose() {
-            Closeables.close(channel::close);
+            log.debug("{}: closing ws proxy", id);
+            Channel tmp = this.channel;
+            if(tmp != null) {
+                Closeables.close(tmp::close);
+            }
             Closeables.close(session);
         }
     }

@@ -19,7 +19,6 @@ package com.codeabovelab.dm.agent.dp;
 
 import com.codeabovelab.dm.common.utils.Closeables;
 import com.codeabovelab.dm.common.utils.Uuids;
-import com.google.common.collect.Iterators;
 import io.netty.channel.*;
 import io.netty.handler.codec.http.*;
 import lombok.extern.slf4j.Slf4j;
@@ -29,7 +28,6 @@ import javax.servlet.*;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
-import java.util.Enumeration;
 
 /**
  * Rest controller which serves proxy requests
@@ -67,13 +65,8 @@ public class ProxyServlet extends GenericServlet {
     private DefaultFullHttpRequest buildRequest(String id, HttpServletRequest request, String uri) throws IOException {
         HttpMethod method = HttpMethod.valueOf(request.getMethod());
         DefaultFullHttpRequest br = new DefaultFullHttpRequest(HttpVersion.HTTP_1_1, method, uri);
-        Enumeration<String> headers = request.getHeaderNames();
         HttpHeaders bh = br.headers();
-        while(headers.hasMoreElements()) {
-            String header = headers.nextElement();
-            Iterable<String> iter = () -> Iterators.forEnumeration(request.getHeaders(header));
-            bh.add(header, iter);
-        }
+        Utils.copyHeaders(request, bh);
         int len = request.getContentLength();
         if(len > 0) {
             try(ServletInputStream is = request.getInputStream()) {
