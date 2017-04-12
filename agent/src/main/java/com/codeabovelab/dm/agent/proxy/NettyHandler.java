@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.codeabovelab.dm.agent.dp;
+package com.codeabovelab.dm.agent.proxy;
 
 import com.codeabovelab.dm.common.utils.Closeables;
 import io.netty.buffer.ByteBuf;
@@ -40,7 +40,7 @@ class NettyHandler extends ChannelInboundHandlerAdapter implements AutoCloseable
     private volatile boolean hasError;
     private final String id;
 
-    NettyHandler(String id, HttpServletRequest frontReq, HttpServletResponse frontResp) throws IOException {
+    NettyHandler(String id, HttpServletRequest frontReq, HttpServletResponse frontResp) {
         this.frontReq = frontReq;
         this.frontResp = frontResp;
         this.id = id;

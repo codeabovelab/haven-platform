@@ -120,7 +120,7 @@ public class ApplicationServiceImpl implements ApplicationService {
                 .name(composeArg.getAppName())
                 .cluster(composeArg.getClusterName())
                 .containers(Collections.unmodifiableList(containerDetails.stream()
-                        .map(a -> a.getId()).collect(Collectors.toList()))).build();
+                        .map(ContainerDetails::getId).collect(Collectors.toList()))).build();
 
         addApplication(application);
         CreateApplicationResult createApplicationResult = new CreateApplicationResult();
@@ -143,9 +143,7 @@ public class ApplicationServiceImpl implements ApplicationService {
         } else {
             // starting manually
             ContainersManager containers = service.getContainers();
-            application.getContainers().forEach(c -> {
-                containers.startContainer(c);
-            });
+            application.getContainers().forEach(containers::startContainer);
         }
     }
 
@@ -167,7 +165,7 @@ public class ApplicationServiceImpl implements ApplicationService {
         ae.setFileName(composeArg.getFile().getName());
         ae.setClusterName(composeArg.getClusterName());
         if (!CollectionUtils.isEmpty(composeResult.getContainerDetails())) {
-            ae.setContainers(composeResult.getContainerDetails().stream().map(c -> c.getId()).collect(Collectors.toList()));
+            ae.setContainers(composeResult.getContainerDetails().stream().map(ContainerDetails::getId).collect(Collectors.toList()));
         }
         applicationBus.accept(ae.build());
     }

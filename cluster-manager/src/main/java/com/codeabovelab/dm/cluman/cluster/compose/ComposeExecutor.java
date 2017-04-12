@@ -90,7 +90,7 @@ public class ComposeExecutor {
         monitor.stopMonitoring();
         if (exitCode == 0) {
             List<String> containerIds = monitor.getContainerIds();
-            List<ContainerDetails> res = containerIds.stream().map(s -> dockerService.getContainer(s)).collect(toList());
+            List<ContainerDetails> res = containerIds.stream().map(dockerService::getContainer).collect(toList());
             log.info("compose file: {} successfully executed, result: {}", path, res);
             ComposeResult.ComposeResultBuilder result = ComposeResult.builder().appName(appName).containerDetails(res);
             if (CollectionUtils.isEmpty(res)) {

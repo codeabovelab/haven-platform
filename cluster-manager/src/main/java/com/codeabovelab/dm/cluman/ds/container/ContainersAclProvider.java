@@ -21,6 +21,7 @@ import com.codeabovelab.dm.cluman.security.SecuredType;
 import com.codeabovelab.dm.cluman.security.VirtualAclProvider;
 import com.codeabovelab.dm.cluman.utils.ContainerUtils;
 import com.codeabovelab.dm.common.security.dto.ObjectIdentityData;
+import lombok.AllArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.acls.model.NotFoundException;
 import org.springframework.stereotype.Component;
@@ -30,12 +31,11 @@ import java.io.Serializable;
 /**
  */
 @Component("CONTAINER" /*see secured type*/)
+@AllArgsConstructor
 public class ContainersAclProvider extends VirtualAclProvider {
 
-    @Autowired
-    private ContainerStorage containers;
-    @Autowired
-    private NodeStorage nodes;
+    private final ContainerStorage containers;
+    private final NodeStorage nodes;
 
     @Override
     protected String getCluster(Serializable id) {

@@ -42,21 +42,21 @@ import java.util.concurrent.TimeUnit;
 class NodeInfoUpdater extends AbstractAutostartup {
 
     private final ScheduledExecutorService scheduledExecutor;
-    @Autowired
-    private NodeStorage storage;
-    @Autowired
-    @Qualifier(DockerServiceEvent.BUS)
-    private Subscriptions<DockerServiceEvent> dockerServiceSubs;
-    @Autowired
-    @Qualifier(NodesGroupEvent.BUS)
-    private Subscriptions<NodesGroupEvent> nodesGroupSubs;
-    @Autowired
-    private DiscoveryStorage discoveryStorage;
+    private final NodeStorage storage;
+    private final Subscriptions<DockerServiceEvent> dockerServiceSubs;
+    private final Subscriptions<NodesGroupEvent> nodesGroupSubs;
+    private final DiscoveryStorage discoveryStorage;
     @Value(SwarmUtils.EXPR_NODES_UPDATE_MS)
     private long updateTimeout;
 
-    public NodeInfoUpdater() {
+    @Autowired
+    public NodeInfoUpdater(DiscoveryStorage discoveryStorage, @Qualifier(NodesGroupEvent.BUS) Subscriptions<NodesGroupEvent> nodesGroupSubs,
+                           @Qualifier(DockerServiceEvent.BUS) Subscriptions<DockerServiceEvent> dockerServiceSubs, NodeStorage storage) {
         this.scheduledExecutor = ExecutorUtils.singleThreadScheduledExecutor(this.getClass());
+        this.discoveryStorage = discoveryStorage;
+        this.nodesGroupSubs = nodesGroupSubs;
+        this.dockerServiceSubs = dockerServiceSubs;
+        this.storage = storage;
     }
 
     @Override

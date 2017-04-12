@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.codeabovelab.dm.agent.dp;
+package com.codeabovelab.dm.agent.proxy;
 
 import com.google.common.collect.Iterators;
 import io.netty.handler.codec.http.HttpHeaders;

@@ -17,6 +17,7 @@
 package com.codeabovelab.dm.common.cloud.service;
 
 import com.codeabovelab.dm.common.utils.StringUtils;
+import lombok.AllArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -40,6 +41,7 @@ import java.util.List;
  */
 @Cloud
 @Configuration
+@AllArgsConstructor
 public class DataSourceConfig {
 
     private final static Logger LOGGER = LoggerFactory.getLogger(DataSourceConfig.class);
@@ -49,13 +51,10 @@ public class DataSourceConfig {
     private static final String JDBC_URL_TYPE = "mysql:loadbalance";
     private static final Logger LOG = LoggerFactory.getLogger(DataSourceConfig.class);
 
-    @Autowired
-    private DiscoveryClient discoveryClient;
+    private final DiscoveryClient discoveryClient;
 
-    @Autowired
-    private LoadBalancerClient loadBalancerClient;
-    @Autowired
-    private Environment environment;
+    private final LoadBalancerClient loadBalancerClient;
+    private final Environment environment;
 
     @Bean
     @Primary

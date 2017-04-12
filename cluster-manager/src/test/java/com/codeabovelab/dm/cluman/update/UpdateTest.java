@@ -133,8 +133,14 @@ public class UpdateTest {
         }
 
         @Bean
-        ContainerCreator containerManager() {
-            return new ContainerCreator();
+        ContainerCreator containerManager(DiscoveryStorage discoveryStorage,
+                NodeRegistry nodeRegistry,
+                ConfigProvider configProvider,
+                ContainersNameService containersNameService,
+                ContainerStorage containerStorage,
+                ContainerSourceFactory containerSourceFactory) {
+            return new ContainerCreator(discoveryStorage, nodeRegistry, configProvider,
+                    containersNameService, containerStorage, containerSourceFactory);
         }
 
         @Bean

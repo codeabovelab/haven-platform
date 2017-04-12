@@ -14,22 +14,7 @@
  * limitations under the License.
  */
 
-package com.codeabovelab.dm.agent.dp;
-
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.ComponentScan;
-import org.springframework.context.annotation.Configuration;
-
-import javax.servlet.Servlet;
-
 /**
+ * Docker proxy
  */
-@ComponentScan(basePackageClasses = DpConfiguration.class)
-@Configuration
-public class DpConfiguration {
-
-    @Bean
-    public Servlet dispatcherServlet() {
-        return new ProxyServlet();
-    }
-}
+package com.codeabovelab.dm.agent.proxy;

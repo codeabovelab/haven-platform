@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.codeabovelab.dm.agent.dp;
+package com.codeabovelab.dm.agent.proxy;
 
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.ChannelFuture;

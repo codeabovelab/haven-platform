@@ -51,7 +51,7 @@ public class FilterApi {
 
                 Comparable v1 = value1 instanceof Comparable ? (Comparable) value1 : null;
                 Comparable v2 = value2 instanceof Comparable ? (Comparable) value2 : null;
-                int result = Comparables.compare(v1, v2);
+                @SuppressWarnings("unchecked") int result = Comparables.compare(v1, v2);
                 return order.getOrder() == ASC ? result : -result;
             });
         }

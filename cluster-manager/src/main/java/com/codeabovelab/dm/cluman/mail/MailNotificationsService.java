@@ -41,6 +41,7 @@ import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
 
 import javax.annotation.PostConstruct;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -246,7 +247,7 @@ public class MailNotificationsService {
     @ReConfigObject
     public MailNotificationsConfigObject getConfigObject() {
         MailNotificationsConfigObject co = new MailNotificationsConfigObject();
-        co.setSubscriptions(this.subs.values().stream().collect(Collectors.toList()));
+        co.setSubscriptions(new ArrayList<>(this.subs.values()));
         return co;
     }
 

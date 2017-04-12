@@ -35,6 +35,7 @@ import com.codeabovelab.dm.cluman.utils.ContainerUtils;
 import com.codeabovelab.dm.cluman.validate.ExtendedAssert;
 import com.codeabovelab.dm.common.utils.Consumers;
 import com.google.common.base.MoreObjects;
+import lombok.AllArgsConstructor;
 import lombok.Data;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -58,21 +59,16 @@ import static com.google.common.base.MoreObjects.firstNonNull;
  */
 @Component
 @Data
+@AllArgsConstructor
 public class ContainerCreator {
     private static final Logger LOG = LoggerFactory.getLogger(DockerServiceImpl.class);
     private static final int CREATE_CONTAINER_TRIES = 3;
-    @Autowired
-    private DiscoveryStorage discoveryStorage;
-    @Autowired
-    private NodeRegistry nodeRegistry;
-    @Autowired
-    private ConfigProvider configProvider;
-    @Autowired
-    private ContainersNameService containersNameService;
-    @Autowired
-    private ContainerStorage containerStorage;
-    @Autowired
-    private ContainerSourceFactory containerSourceFactory;
+    private final DiscoveryStorage discoveryStorage;
+    private final NodeRegistry nodeRegistry;
+    private final ConfigProvider configProvider;
+    private final ContainersNameService containersNameService;
+    private final ContainerStorage containerStorage;
+    private final ContainerSourceFactory containerSourceFactory;
 
     /**
      * Create container by image information (image name, tag) also can be specified optional params <p/>

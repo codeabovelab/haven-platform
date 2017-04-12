@@ -184,7 +184,7 @@ public class PipelineServiceImpl implements PipelineService {
         Map<String, PipelineInstance> instancesMapByPipeline = getInstancesMapByPipeline(pipelineSchema.getName());
 
         if (!instancesMapByPipeline.isEmpty()) {
-            instancesMapByPipeline.values().stream().forEach(pipelineInstance -> checkCreateJobs(pipelineSchema, stage, pipelineInstance));
+            instancesMapByPipeline.values().forEach(pipelineInstance -> checkCreateJobs(pipelineSchema, stage, pipelineInstance));
         } else {
             String name = pipelineSchema.getName() + ":" + pipelineSchema.getFilter();
             createPipelineInstance(name, name, pipelineSchema, stage);
@@ -346,7 +346,7 @@ public class PipelineServiceImpl implements PipelineService {
     @Override
     public void deletePipeline(String pipelineName) {
         Map<String, PipelineInstance> instancesMapByPipeline = getInstancesMapByPipeline(pipelineName);
-        instancesMapByPipeline.values().stream().filter(a -> a != null).forEach(this::deleteInstance);
+        instancesMapByPipeline.values().stream().filter(Objects::nonNull).forEach(this::deleteInstance);
 
         PipelineSchema pipelineSchema = getPipelineSchema(pipelineName);
         Assert.notNull(pipelineSchema, "Can't find pipeline by name " + pipelineSchema);

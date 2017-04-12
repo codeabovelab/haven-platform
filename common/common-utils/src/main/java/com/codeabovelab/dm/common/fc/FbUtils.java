@@ -114,7 +114,7 @@ final class FbUtils {
 
     static void writeString(byte[] bytes, ByteBuffer to) {
         int len = bytes.length;
-        Assert.isTrue(len < FbUtils.MAX_STR_LEN, "Too large byte string: " + bytes);
+        Assert.isTrue(len < FbUtils.MAX_STR_LEN, "Too large byte string: " + Arrays.toString(bytes));
         to.put((byte) len);
         to.put(bytes, 0, len);
     }

@@ -17,6 +17,7 @@
 package com.codeabovelab.dm.gateway.auth;
 
 import com.codeabovelab.dm.common.security.*;
+import lombok.AllArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -33,18 +34,14 @@ import org.springframework.stereotype.Component;
  * Authentication provider which can authenticate by {@link com.codeabovelab.dm.common.security.UserCompositeAuthenticationToken }
  */
 @Component
+@AllArgsConstructor
 public class UserCompositeAuthProvider implements AuthenticationProvider {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(UserCompositeAuthProvider.class);
 
-    @Autowired
-    private UserIdentifiersDetailsService service;
-
-    @Autowired
-    private PasswordEncoder passwordEncoder;
-
-    @Autowired
-    private SuccessAuthProcessor authProcessor;
+    private final UserIdentifiersDetailsService service;
+    private final PasswordEncoder passwordEncoder;
+    private final SuccessAuthProcessor authProcessor;
 
     @Override
     public Authentication authenticate(Authentication authentication) throws AuthenticationException {

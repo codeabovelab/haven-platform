@@ -50,30 +50,27 @@ import java.util.function.Consumer;
 @Component
 public class DockerServiceFactory {
 
-    @Autowired
-    private RegistryRepository registryRepository;
-
-    @Autowired
-    @Qualifier(DockerServiceEvent.BUS)
-    private MessageBus<DockerServiceEvent> dockerServiceEventMessageBus;
-
-    @Autowired
-    private NodeStorage nodeStorage;
-
+    private final RegistryRepository registryRepository;
+    private final MessageBus<DockerServiceEvent> dockerServiceEventMessageBus;
+    private final NodeStorage nodeStorage;
     private final ExecutorService executor;
+    private final AccessContextFactory aclContextFactory;
+    private final ObjectMapper objectMapper;
 
     @Autowired
-    private AccessContextFactory aclContextFactory;
-
-    @Autowired
-    private ObjectMapper objectMapper;
-
-    public DockerServiceFactory() {
+    public DockerServiceFactory(ObjectMapper objectMapper, AccessContextFactory aclContextFactory, NodeStorage nodeStorage,
+                                @Qualifier(DockerServiceEvent.BUS) MessageBus<DockerServiceEvent> dockerServiceEventMessageBus,
+                                RegistryRepository registryRepository) {
         this.executor = Executors.newSingleThreadExecutor(new ThreadFactoryBuilder()
           .setDaemon(true)
           .setNameFormat(getClass().getSimpleName() + "-executor-%d")
           .setUncaughtExceptionHandler(Throwables.uncaughtHandler(log))
           .build());
+        this.objectMapper = objectMapper;
+        this.aclContextFactory = aclContextFactory;
+        this.nodeStorage = nodeStorage;
+        this.dockerServiceEventMessageBus = dockerServiceEventMessageBus;
+        this.registryRepository = registryRepository;
     }
 
     public DockerService createDockerService(ClusterConfig clusterConfig, Consumer<DockerServiceImpl.Builder> dockerConsumer) {

@@ -409,7 +409,7 @@ public class DiscoveryStorageImpl implements DiscoveryStorage {
     private NodesGroupsConfig getConfig() {
         List<AbstractNodesGroupConfig<?>> groups = clusters.values()
           .stream()
-          .map((c) -> c.getConfig())
+          .map(NodesGroup::getConfig)
           .collect(Collectors.toList());
         NodesGroupsConfig ngc = new NodesGroupsConfig();
         ngc.setGroups(groups);

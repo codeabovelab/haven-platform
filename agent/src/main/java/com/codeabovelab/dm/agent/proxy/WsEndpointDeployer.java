@@ -14,10 +14,10 @@
  * limitations under the License.
  */
 
-package com.codeabovelab.dm.agent.dp;
+package com.codeabovelab.dm.agent.proxy;
 
+import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.BeanFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.config.AutowireCapableBeanFactory;
 import org.springframework.boot.web.servlet.ServletContextInitializer;
@@ -32,10 +32,10 @@ import javax.websocket.server.ServerEndpointConfig;
  */
 @Slf4j
 @Component
+@AllArgsConstructor
 public class WsEndpointDeployer implements ServletContextInitializer {
 
-    @Autowired
-    private AutowireCapableBeanFactory beanFactory;
+    private final AutowireCapableBeanFactory beanFactory;
 
     @Override
     public void onStartup(ServletContext servletContext) throws ServletException {

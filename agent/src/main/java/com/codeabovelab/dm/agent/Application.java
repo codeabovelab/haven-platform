@@ -16,7 +16,7 @@
 
 package com.codeabovelab.dm.agent;
 
-import com.codeabovelab.dm.agent.dp.DpConfiguration;
+import com.codeabovelab.dm.agent.proxy.DockerProxyConfiguration;
 import org.springframework.boot.autoconfigure.web.EmbeddedServletContainerAutoConfiguration;
 import org.springframework.boot.autoconfigure.web.ServerProperties;
 import org.springframework.boot.autoconfigure.websocket.WebSocketAutoConfiguration;
@@ -33,7 +33,7 @@ import org.springframework.context.support.PropertySourcesPlaceholderConfigurer;
   EmbeddedServletContainerAutoConfiguration.class,
   WebSocketAutoConfiguration.class,
   PropertySourcesPlaceholderConfigurer.class,
-  DpConfiguration.class
+  DockerProxyConfiguration.class
 })
 @EnableConfigurationProperties(ServerProperties.class)
 // do not use @EnableAutoConfiguration

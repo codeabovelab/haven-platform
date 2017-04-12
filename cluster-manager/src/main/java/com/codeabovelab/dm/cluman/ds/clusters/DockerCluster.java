@@ -174,7 +174,7 @@ public class DockerCluster extends AbstractNodesGroup<DockerClusterConfig> {
             this.containers = new DockerClusterContainers(this, this.containerStorage, this.containerCreator);
 
             // so docker does not send any events about new coming nodes, and we must refresh list of them
-            ScheduledFuture<?> sf = this.scheduledExecutor.scheduleWithFixedDelay(() -> rereadNodesTask.schedule(),
+            ScheduledFuture<?> sf = this.scheduledExecutor.scheduleWithFixedDelay(rereadNodesTask::schedule,
               rereadNodesTimeout, rereadNodesTimeout, TimeUnit.SECONDS);
             closeables.add(() -> sf.cancel(true));
             closeables.add(getNodeStorage().getNodeEventSubscriptions().openSubscription(this::onNodeEvent));

@@ -51,7 +51,7 @@ public class RegistryApi {
     @ApiOperation("list of available registries")
     public Collection<RegistryConfig> availableRegistries() {
         Collection<String> availableRegistries = registryRepository.getAvailableRegistries();
-        return availableRegistries.stream().map(r -> registryRepository.getByName(r)).map(this::map).collect(Collectors.toList());
+        return availableRegistries.stream().map(registryRepository::getByName).map(this::map).collect(Collectors.toList());
     }
 
     private RegistryConfig map(RegistryService registry) {

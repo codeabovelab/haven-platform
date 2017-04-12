@@ -151,7 +151,7 @@ class SearchIndex implements SupportSearch, AutoCloseable {
     public void init() {
         if(ses != null) {
             //TODO we must return old cache when update in progress
-            this.future = ses.scheduleWithFixedDelay(() -> cache.get(), 1000L, getTimeout(), TimeUnit.MILLISECONDS);
+            this.future = ses.scheduleWithFixedDelay(cache::get, 1000L, getTimeout(), TimeUnit.MILLISECONDS);
         }
     }
 

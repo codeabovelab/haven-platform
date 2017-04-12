@@ -62,9 +62,7 @@ public class ClusterCreationContext {
             default:
                 throw new IllegalArgumentException("Unsupported type of cluster: " + type);
         }
-        if (config instanceof DockerBasedClusterConfig) {
-            factory.initDefaultConfig((DockerBasedClusterConfig) config);
-        }
+        factory.initDefaultConfig((DockerBasedClusterConfig) config);
         config.setName(getCluster());
         return config;
     }

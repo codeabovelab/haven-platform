@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.codeabovelab.dm.agent.dp;
+package com.codeabovelab.dm.agent.proxy;
 
 import com.codeabovelab.dm.common.utils.Closeables;
 import io.netty.buffer.ByteBuf;
@@ -26,6 +26,7 @@ import io.netty.handler.codec.http.*;
 import io.netty.handler.codec.http.websocketx.*;
 import io.netty.handler.codec.http.websocketx.extensions.compression.WebSocketClientCompressionHandler;
 import io.netty.util.ReferenceCountUtil;
+import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -38,11 +39,10 @@ import java.nio.charset.StandardCharsets;
  */
 @Slf4j
 @Component
+@AllArgsConstructor
 public class WsProxy extends Endpoint {
 
-    @Autowired
-    private Backend backend;
-
+    private final Backend backend;
 
     @Override
     public void onOpen(Session session, EndpointConfig config) {
