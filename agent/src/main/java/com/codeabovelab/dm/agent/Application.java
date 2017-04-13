@@ -16,6 +16,7 @@
 
 package com.codeabovelab.dm.agent;
 
+import com.codeabovelab.dm.agent.boot.CertificateGenerator;
 import com.codeabovelab.dm.agent.dp.DpConfiguration;
 import org.springframework.boot.autoconfigure.web.EmbeddedServletContainerAutoConfiguration;
 import org.springframework.boot.autoconfigure.web.ServerProperties;
@@ -30,6 +31,7 @@ import org.springframework.context.support.PropertySourcesPlaceholderConfigurer;
 /**
  */
 @Import({
+  CertificateGenerator.class,
   EmbeddedServletContainerAutoConfiguration.class,
   WebSocketAutoConfiguration.class,
   PropertySourcesPlaceholderConfigurer.class,
