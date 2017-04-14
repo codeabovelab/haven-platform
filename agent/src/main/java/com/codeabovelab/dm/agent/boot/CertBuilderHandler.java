@@ -16,17 +16,10 @@
 
 package com.codeabovelab.dm.agent.boot;
 
-import lombok.Builder;
-import lombok.Data;
-
-import java.io.File;
+import org.bouncycastle.cert.X509v3CertificateBuilder;
 
 /**
  */
-@Data
-@Builder(builderClassName = "Builder")
-class Cert {
-    private final File keystore;
-    private final String keystorePassword;
-    private final String keyPassword;
+public interface CertBuilderHandler {
+    void handle(X509v3CertificateBuilder cb) throws Exception;
 }

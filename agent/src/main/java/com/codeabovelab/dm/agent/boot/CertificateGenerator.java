@@ -18,69 +18,44 @@ package com.codeabovelab.dm.agent.boot;
 
 import com.codeabovelab.dm.common.utils.OSUtils;
 import lombok.extern.slf4j.Slf4j;
+import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
+import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
 import org.bouncycastle.asn1.x500.X500Name;
+import org.bouncycastle.asn1.x500.X500NameBuilder;
+import org.bouncycastle.asn1.x500.style.RFC4519Style;
 import org.bouncycastle.asn1.x509.*;
 import org.bouncycastle.cert.X509CertificateHolder;
-import org.bouncycastle.cert.X509v1CertificateBuilder;
-import org.bouncycastle.cert.bc.BcX509v1CertificateBuilder;
+import org.bouncycastle.cert.X509v3CertificateBuilder;
+import org.bouncycastle.cert.bc.BcX509v3CertificateBuilder;
+import org.bouncycastle.cert.jcajce.JcaX509v3CertificateBuilder;
 import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
-import org.bouncycastle.crypto.generators.RSAKeyPairGenerator;
-import org.bouncycastle.crypto.params.RSAKeyGenerationParameters;
+import org.bouncycastle.jcajce.provider.asymmetric.rsa.BCRSAPrivateCrtKey;
+import org.bouncycastle.jcajce.provider.asymmetric.rsa.BCRSAPublicKey;
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.jce.provider.X509CertificateObject;
 import org.bouncycastle.operator.ContentSigner;
 import org.bouncycastle.operator.DefaultDigestAlgorithmIdentifierFinder;
 import org.bouncycastle.operator.DefaultSignatureAlgorithmIdentifierFinder;
 import org.bouncycastle.operator.bc.BcRSAContentSignerBuilder;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
-import org.springframework.boot.context.event.ApplicationPreparedEvent;
-import org.springframework.context.ApplicationListener;
-import org.springframework.stereotype.Component;
-import org.springframework.util.StringUtils;
+import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
 
-import javax.annotation.PostConstruct;
+
 import java.io.File;
 import java.io.FileOutputStream;
 import java.math.BigInteger;
 import java.net.InetAddress;
 import java.net.NetworkInterface;
-import java.security.KeyStore;
-import java.security.SecureRandom;
+import java.security.*;
 import java.security.cert.Certificate;
 import java.util.*;
 
 /**
  * Make self signed ssl cert for current ip and names
  */
-@Component
 @Slf4j
-public class CertificateGenerator implements ApplicationListener<ApplicationPreparedEvent> {
+public class CertificateGenerator {
 
-    @Value("${dm.agent.server.names:}")
-    private List<String> preconfiguredNames;
-    @Value("${dm.agent.server.resolve}")
-    private boolean resolve;
-    private Cert cert;
-
-    @PostConstruct
-    public void init() {
-        Set<String> names = new HashSet<>();
-        gatherNames(names);
-        try {
-            this.cert = constructCert(names);
-        } catch (Exception e) {
-            log.error("Can not generate cert.", e);
-        }
-    }
-
-    private void gatherNames(Set<String> set) {
-        if(this.preconfiguredNames != null) {
-            for(String name: this.preconfiguredNames) {
-                if(StringUtils.hasText(name)) {
-                    set.add(name);
-                }
-            }
-        }
+    static void gatherNames(Set<String> set, boolean resolve) {
         set.add(OSUtils.getHostName());
         if(resolve) {
             try {
@@ -91,7 +66,14 @@ public class CertificateGenerator implements ApplicationListener<ApplicationPrep
         }
     }
 
-    private void resolveNames(Set<String> set) throws Exception {
+    private static void resolveNames(Set<String> set) throws Exception {
+        /*TODO here we add many strange names like
+        DNS Name: fe80:0:0:0:4897:56ff:fe28:dc7%veth2eb423a
+        DNS Name: fe80:0:0:0:42:eeff:fee6:248b%docker_gwbridge
+        DNS Name: fe80:0:0:0:7d86:95fa:f099:95c6%eth0
+        DNS Name: 0:0:0:0:0:0:0:1%lo
+        we must resolve it correct names or not
+        */
         InetAddress localHost = InetAddress.getLocalHost();
         set.add(localHost.getCanonicalHostName());
         set.add(localHost.getHostAddress());
@@ -106,56 +88,83 @@ public class CertificateGenerator implements ApplicationListener<ApplicationPrep
         }
     }
 
-    static Cert constructCert(Set<String> names) throws Exception {
+    static Cert constructCert(File keystoreFile, Set<String> names) throws Exception {
+        log.debug("Use {} file as keystore.", keystoreFile.getAbsolutePath());
         Cert.Builder cb = Cert.builder();
         // verify: keytool -list -keystore dm-agent.jks
-        File keystore = new File("dm-agent.jks");
         KeyStore ks = KeyStore.Builder.newInstance("JKS", null, new KeyStore.PasswordProtection(null)).getKeyStore();
-        ks.setCertificateEntry("cert", createCert());
-        try(FileOutputStream fos = new FileOutputStream(keystore)) {
-            ks.store(fos, new char[0]);
+        X509CertificateHolder rootCert = createRootCert();
+        Certificate jceRootCert = toJava(rootCert);
+        String keypass = "1";
+        KeyPair keyPair = createKeypair();
+        X509CertificateHolder serverCert = createServerCert(keyPair, rootCert, names);
+        Certificate jceServerCert = toJava(serverCert);
+        ks.setKeyEntry("key", keyPair.getPrivate(), keypass.toCharArray(), new Certificate[]{jceServerCert, jceRootCert});
+        String kspass = "1";
+        cb.keystorePassword(kspass);
+        cb.keyPassword(keypass);
+        try(FileOutputStream fos = new FileOutputStream(keystoreFile)) {
+            ks.store(fos, kspass.toCharArray());
         }
-        cb.keysore(keystore);
+        cb.keystore(keystoreFile);
         return cb.build();
     }
 
-    private static Certificate createCert() throws Exception {
-        AsymmetricCipherKeyPair keyPair = createKeypair();
+    private static Certificate toJava(X509CertificateHolder certHolder) throws Exception {
+        return new X509CertificateObject(certHolder.toASN1Structure());
+    }
+
+    private static X509CertificateHolder createRootCert() throws Exception {
+        X500NameBuilder ib = new X500NameBuilder(RFC4519Style.INSTANCE);
+        ib.addRDN(RFC4519Style.c, "US");
+        ib.addRDN(RFC4519Style.o, "Code Above Lab LLC");
+        ib.addRDN(RFC4519Style.l, "<city>");
+        ib.addRDN(RFC4519Style.st, "<state>");
+        ib.addRDN(PKCSObjectIdentifiers.pkcs_9_at_emailAddress, "hello@codeabovelab.com");
+        X500Name issuer = ib.build();
+        return createCert(createKeypair(), issuer, issuer, null);
+    }
+
+    private static X509CertificateHolder createServerCert(KeyPair keyPair,
+                                                          X509CertificateHolder root,
+                                                          Collection<String> names) throws Exception {
+        X500NameBuilder sb = new X500NameBuilder(RFC4519Style.INSTANCE);
+        sb.addRDN(RFC4519Style.name, "localhost");
+        return createCert(keyPair, root.getIssuer(), sb.build(), cb -> {
+            GeneralNamesBuilder gnb = new GeneralNamesBuilder();
+            for(String name: names) {
+                gnb.addName(new GeneralName(GeneralName.dNSName, name));
+            }
+            cb.addExtension(Extension.subjectAlternativeName, true, gnb.build());
+        });
+    }
+
+    private static X509CertificateHolder createCert(KeyPair keyPair,
+                                                    X500Name issuer,
+                                                    X500Name subject,
+                                                    CertBuilderHandler buildHandler) throws Exception {
         Calendar calendar = Calendar.getInstance();
         Date fromTime = calendar.getTime();
         calendar.add(Calendar.YEAR, 5);
-        X509v1CertificateBuilder cb = new BcX509v1CertificateBuilder(
-            new X500Name("CN=Test Root Certificate"),
-            BigInteger.valueOf(1),
+        JcaX509v3CertificateBuilder cb = new JcaX509v3CertificateBuilder(
+            issuer,
+            BigInteger.valueOf(System.currentTimeMillis()),
             fromTime,
             calendar.getTime(),
-            new X500Name("CN=Test Root Certificate"),
+            subject,
             keyPair.getPublic()
         );
-        AlgorithmIdentifier sigAlg = new DefaultSignatureAlgorithmIdentifierFinder().find("SHA1withRSA");
-        AlgorithmIdentifier digAlg = new DefaultDigestAlgorithmIdentifierFinder().find(sigAlg);
-        ContentSigner signer = new BcRSAContentSignerBuilder(sigAlg, digAlg).build(keyPair.getPrivate());
-        X509CertificateHolder ch = cb.build(signer);
-        return new X509CertificateObject(ch.toASN1Structure());
-    }
-
-    static AsymmetricCipherKeyPair createKeypair() throws Exception {
-        RSAKeyPairGenerator kg = new RSAKeyPairGenerator();
-        //below values need verification
-        RSAKeyGenerationParameters genParam = new RSAKeyGenerationParameters(
-          BigInteger.valueOf(3), new SecureRandom(), 1024, 25);
-        kg.init(genParam);
-        return kg.generateKeyPair();
-    }
-
-    @Override
-    public void onApplicationEvent(ApplicationPreparedEvent event) {
-        if(cert == null) {
-            return;
+        if(buildHandler != null) {
+            buildHandler.handle(cb);
         }
-        ConfigurableListableBeanFactory bf = event.getApplicationContext().getBeanFactory();
-        SslServletContainerCustomizer bean = new SslServletContainerCustomizer(cert);
-        bf.autowireBean(bean);
-        bf.registerSingleton("dmAgentSslConfigurer", bean);
+        ContentSigner signer = new JcaContentSignerBuilder("SHA256withRSA").build(keyPair.getPrivate());
+        X509CertificateHolder ch = cb.build(signer);
+        return ch;
+    }
+
+    static KeyPair createKeypair() throws Exception {
+        KeyPairGenerator kpg = KeyPairGenerator.getInstance("RSA", "BC");
+        kpg.initialize(1024);
+        return kpg.generateKeyPair();
     }
 }

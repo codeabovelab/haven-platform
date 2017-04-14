@@ -16,8 +16,17 @@
 
 package com.codeabovelab.dm.agent.boot;
 
+import ch.qos.logback.classic.Level;
+import ch.qos.logback.classic.Logger;
 import com.google.common.collect.ImmutableSet;
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.junit.Test;
+import org.slf4j.LoggerFactory;
+
+import java.io.File;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.security.Security;
 
 import static org.junit.Assert.*;
 
@@ -26,7 +35,10 @@ import static org.junit.Assert.*;
 public class CertificateGeneratorTest {
     @Test
     public void constructCert() throws Exception {
-        Cert cert = CertificateGenerator.constructCert(ImmutableSet.of("test1", "test2"));
+        Security.addProvider(new BouncyCastleProvider());
+        ((Logger)LoggerFactory.getLogger(CertificateGenerator.class)).setLevel(Level.DEBUG);
+        File file = new File("/tmp/dm-agent.jks");//Files.createTempFile("dm-agent", ".jks");
+        Cert cert = CertificateGenerator.constructCert(file, ImmutableSet.of("test1", "test2"));
         assertNotNull(cert);
     }
 
