@@ -10,7 +10,7 @@
         <appender-ref ref="STDOUT"/>
     </root>
     <logger name="org.springframework" level="WARN"/>
-    <logger name="io.undertow" level="WARN"/>
+    <!--logger name="io.undertow" level="WARN"/-->
     <logger name="io.netty" level="WARN"/>
     <logger name="com.codeabovelab" level="INFO" />
     <logger name="org.springframework.cloud.bootstrap.config" level="INFO"/>

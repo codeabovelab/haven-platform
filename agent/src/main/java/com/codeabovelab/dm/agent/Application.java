@@ -16,7 +16,9 @@
 
 package com.codeabovelab.dm.agent;
 
-import com.codeabovelab.dm.agent.proxy.DockerProxyConfiguration;
+import com.codeabovelab.dm.agent.boot.SslServletContainerCustomizer;
+import com.codeabovelab.dm.agent.dp.DpConfiguration;
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.springframework.boot.autoconfigure.web.EmbeddedServletContainerAutoConfiguration;
 import org.springframework.boot.autoconfigure.web.ServerProperties;
 import org.springframework.boot.autoconfigure.websocket.WebSocketAutoConfiguration;
@@ -27,13 +29,16 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
 import org.springframework.context.support.PropertySourcesPlaceholderConfigurer;
 
+import java.security.Security;
+
 /**
  */
 @Import({
+  SslServletContainerCustomizer.class,
   EmbeddedServletContainerAutoConfiguration.class,
   WebSocketAutoConfiguration.class,
   PropertySourcesPlaceholderConfigurer.class,
-  DockerProxyConfiguration.class
+  DpConfiguration.class
 })
 @EnableConfigurationProperties(ServerProperties.class)
 // do not use @EnableAutoConfiguration
@@ -41,6 +46,7 @@ import org.springframework.context.support.PropertySourcesPlaceholderConfigurer;
 public class Application extends SpringBootServletInitializer {
 
     public static void main(String[] args) {
+        Security.addProvider(new BouncyCastleProvider());
         new SpringApplicationBuilder(Application.class).run(args);
     }
 }
