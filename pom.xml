@@ -101,6 +101,34 @@
                 <artifactId>maven-release-plugin</artifactId>
                 <version>${maven-release-plugin.version}</version>
             </plugin>
+            <plugin>
+                <!--
+                Create self-signed root certificate. It used in 'agent' for signing runtime generated
+                certificate and in 'cluman' part as trusted for communicating with nodes agents over TLS.
+                -->
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>keytool-maven-plugin</artifactId>
+                <version>1.5</version>
+                <inherited>false</inherited>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>generateKeyPair</goal>
+                        </goals>
+                        <phase>generate-resources</phase>
+                    </execution>
+                </executions>
+                <configuration>
+                    <keystore>${project.build.directory}/cert/root.jks</keystore>
+                    <storepass>storepass</storepass>
+                    <keypass>keypass</keypass>
+                    <alias>root-cert</alias>
+                    <dname>cn=codeabovelab.com, o=Code Above Lab LLC, c=US</dname>
+                    <keyalg>RSA</keyalg>
+                    <validity>3560</validity>
+                    <verbose>true</verbose>
+                </configuration>
+            </plugin>
         </plugins>
         <pluginManagement>
             <plugins>
