@@ -19,15 +19,20 @@ package com.codeabovelab.dm.agent.boot;
 import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.Logger;
 import com.google.common.collect.ImmutableSet;
+import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
+import org.bouncycastle.asn1.x500.X500Name;
+import org.bouncycastle.asn1.x500.X500NameBuilder;
+import org.bouncycastle.asn1.x500.style.RFC4519Style;
+import org.bouncycastle.cert.X509CertificateHolder;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.junit.Test;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.security.Security;
 
+import static com.codeabovelab.dm.agent.boot.CertificateGenerator.createCert;
+import static com.codeabovelab.dm.agent.boot.CertificateGenerator.createKeypair;
 import static org.junit.Assert.*;
 
 /**
@@ -38,8 +43,21 @@ public class CertificateGeneratorTest {
         Security.addProvider(new BouncyCastleProvider());
         ((Logger)LoggerFactory.getLogger(CertificateGenerator.class)).setLevel(Level.DEBUG);
         File file = new File("/tmp/dm-agent.jks");//Files.createTempFile("dm-agent", ".jks");
-        Cert cert = CertificateGenerator.constructCert(file, ImmutableSet.of("test1", "test2"));
+
+        X509CertificateHolder rootCert = createRootCert();
+        KeystoreConfig cert = CertificateGenerator.constructCert(rootCert, file, ImmutableSet.of("test1", "test2"));
         assertNotNull(cert);
+    }
+
+
+    private static X509CertificateHolder createRootCert() throws Exception {
+        X500NameBuilder ib = new X500NameBuilder(RFC4519Style.INSTANCE);
+        ib.addRDN(RFC4519Style.c, "AQ");
+        ib.addRDN(RFC4519Style.o, "Test");
+        ib.addRDN(RFC4519Style.l, "Vostok Station");
+        ib.addRDN(PKCSObjectIdentifiers.pkcs_9_at_emailAddress, "test@vostok.aq");
+        X500Name issuer = ib.build();
+        return createCert(createKeypair(), issuer, issuer, null);
     }
 
 }

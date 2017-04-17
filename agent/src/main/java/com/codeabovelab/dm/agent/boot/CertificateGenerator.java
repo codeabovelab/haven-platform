@@ -17,26 +17,16 @@
 package com.codeabovelab.dm.agent.boot;
 
 import com.codeabovelab.dm.common.utils.OSUtils;
+import com.codeabovelab.dm.common.utils.StringUtils;
 import lombok.extern.slf4j.Slf4j;
-import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
-import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
 import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.asn1.x500.X500NameBuilder;
 import org.bouncycastle.asn1.x500.style.RFC4519Style;
 import org.bouncycastle.asn1.x509.*;
 import org.bouncycastle.cert.X509CertificateHolder;
-import org.bouncycastle.cert.X509v3CertificateBuilder;
-import org.bouncycastle.cert.bc.BcX509v3CertificateBuilder;
 import org.bouncycastle.cert.jcajce.JcaX509v3CertificateBuilder;
-import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
-import org.bouncycastle.jcajce.provider.asymmetric.rsa.BCRSAPrivateCrtKey;
-import org.bouncycastle.jcajce.provider.asymmetric.rsa.BCRSAPublicKey;
-import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.jce.provider.X509CertificateObject;
 import org.bouncycastle.operator.ContentSigner;
-import org.bouncycastle.operator.DefaultDigestAlgorithmIdentifierFinder;
-import org.bouncycastle.operator.DefaultSignatureAlgorithmIdentifierFinder;
-import org.bouncycastle.operator.bc.BcRSAContentSignerBuilder;
 import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
 
 
@@ -67,13 +57,6 @@ public class CertificateGenerator {
     }
 
     private static void resolveNames(Set<String> set) throws Exception {
-        /*TODO here we add many strange names like
-        DNS Name: fe80:0:0:0:4897:56ff:fe28:dc7%veth2eb423a
-        DNS Name: fe80:0:0:0:42:eeff:fee6:248b%docker_gwbridge
-        DNS Name: fe80:0:0:0:7d86:95fa:f099:95c6%eth0
-        DNS Name: 0:0:0:0:0:0:0:1%lo
-        we must resolve it correct names or not
-        */
         InetAddress localHost = InetAddress.getLocalHost();
         set.add(localHost.getCanonicalHostName());
         set.add(localHost.getHostAddress());
@@ -81,19 +64,22 @@ public class CertificateGenerator {
             NetworkInterface ni = nis.nextElement();
             for(Enumeration<InetAddress> ias = ni.getInetAddresses(); ias.hasMoreElements();) {
                 InetAddress ia = ias.nextElement();
-                set.add(ia.getCanonicalHostName());
-                set.add(ia.getHostAddress());
-                set.add(ia.getHostName());
+                set.add(strip(ia.getCanonicalHostName()));
+                set.add(strip(ia.getHostAddress()));
+                set.add(strip(ia.getHostName()));
             }
         }
     }
 
-    static Cert constructCert(File keystoreFile, Set<String> names) throws Exception {
-        log.debug("Use {} file as keystore.", keystoreFile.getAbsolutePath());
-        Cert.Builder cb = Cert.builder();
+    private static String strip(String address) {
+        return StringUtils.beforeOr(address, '%', address::toString);
+    }
+
+    static KeystoreConfig constructCert(X509CertificateHolder rootCert, File keystoreFile, Set<String> names) throws Exception {
+        log.debug("Create certificate in {} keystore for names: {}", keystoreFile.getAbsolutePath(), names);
+        KeystoreConfig.Builder cb = KeystoreConfig.builder();
         // verify: keytool -list -keystore dm-agent.jks
         KeyStore ks = KeyStore.Builder.newInstance("JKS", null, new KeyStore.PasswordProtection(null)).getKeyStore();
-        X509CertificateHolder rootCert = createRootCert();
         Certificate jceRootCert = toJava(rootCert);
         String keypass = "1";
         KeyPair keyPair = createKeypair();
@@ -114,17 +100,6 @@ public class CertificateGenerator {
         return new X509CertificateObject(certHolder.toASN1Structure());
     }
 
-    private static X509CertificateHolder createRootCert() throws Exception {
-        X500NameBuilder ib = new X500NameBuilder(RFC4519Style.INSTANCE);
-        ib.addRDN(RFC4519Style.c, "US");
-        ib.addRDN(RFC4519Style.o, "Code Above Lab LLC");
-        ib.addRDN(RFC4519Style.l, "<city>");
-        ib.addRDN(RFC4519Style.st, "<state>");
-        ib.addRDN(PKCSObjectIdentifiers.pkcs_9_at_emailAddress, "hello@codeabovelab.com");
-        X500Name issuer = ib.build();
-        return createCert(createKeypair(), issuer, issuer, null);
-    }
-
     private static X509CertificateHolder createServerCert(KeyPair keyPair,
                                                           X509CertificateHolder root,
                                                           Collection<String> names) throws Exception {
@@ -139,7 +114,7 @@ public class CertificateGenerator {
         });
     }
 
-    private static X509CertificateHolder createCert(KeyPair keyPair,
+    static X509CertificateHolder createCert(KeyPair keyPair,
                                                     X500Name issuer,
                                                     X500Name subject,
                                                     CertBuilderHandler buildHandler) throws Exception {

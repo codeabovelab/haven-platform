@@ -19,6 +19,7 @@ package com.codeabovelab.dm.common.utils;
 import java.io.Serializable;
 import java.util.function.Function;
 import java.util.function.IntPredicate;
+import java.util.function.Supplier;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -29,9 +30,23 @@ public class StringUtils {
     }
 
     public static String before(String s, char c) {
+        return beforeOr(s, c, () -> {
+            // we throw exception for preserve old behavior
+            throw new IllegalArgumentException("String '" + s + "' must contains '" + c + "'.");
+        });
+    }
+
+    /**
+     * Return part of 's' before 'c'
+     * @param s string which may contain char 'c'
+     * @param c char
+     * @param ifNone supplier of value which is used when 'c' is not present in 's' (null not allowed)
+     * @return part of 's' before 'c' or 'ifNone.get()'
+     */
+    public static String beforeOr(String s, char c, Supplier<String> ifNone) {
         int pos = s.indexOf(c);
         if(pos < 0) {
-            throw new IllegalArgumentException("String '" + s + "' must contains '" + c + "'.");
+            return ifNone.get();
         }
         return s.substring(0, pos);
     }

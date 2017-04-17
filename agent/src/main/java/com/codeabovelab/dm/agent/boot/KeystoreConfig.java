@@ -25,7 +25,7 @@ import java.io.File;
  */
 @Data
 @Builder(builderClassName = "Builder")
-class Cert {
+class KeystoreConfig {
     private final File keystore;
     private final String keystorePassword;
     private final String keyPassword;
