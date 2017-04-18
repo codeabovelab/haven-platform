@@ -139,7 +139,7 @@ public class CertificateGenerator {
 
     static KeyPair createKeypair() throws Exception {
         KeyPairGenerator kpg = KeyPairGenerator.getInstance("RSA", "BC");
-        kpg.initialize(1024);
+        kpg.initialize(2048);
         return kpg.generateKeyPair();
     }
 }
