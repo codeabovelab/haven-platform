@@ -28,6 +28,7 @@ import com.codeabovelab.dm.cluman.security.DockerServiceSecurityWrapper;
 import com.codeabovelab.dm.cluman.security.TempAuth;
 import com.codeabovelab.dm.cluman.utils.AddressUtils;
 import com.codeabovelab.dm.common.mb.MessageBus;
+import com.codeabovelab.dm.common.utils.SSLUtil;
 import com.codeabovelab.dm.common.utils.Throwables;
 import com.codeabovelab.dm.platform.http.async.NettyRequestFactory;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -37,13 +38,15 @@ import io.netty.handler.ssl.JdkSslContext;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.http.client.AsyncClientHttpRequestFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.AsyncRestTemplate;
 
 import javax.annotation.PreDestroy;
 import javax.net.ssl.SSLContext;
-import java.security.NoSuchAlgorithmException;
+import javax.net.ssl.TrustManager;
+import java.security.GeneralSecurityException;
+import java.security.SecureRandom;
 import java.util.Collections;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -61,6 +64,9 @@ public class DockerServiceFactory {
     private final ExecutorService executor;
     private final AccessContextFactory aclContextFactory;
     private final ObjectMapper objectMapper;
+
+    @Value("${dm.ssl.check:true}")
+    private boolean checkSsl;
 
     @Autowired
     public DockerServiceFactory(ObjectMapper objectMapper, AccessContextFactory aclContextFactory, NodeStorage nodeStorage,
@@ -110,8 +116,12 @@ public class DockerServiceFactory {
         NettyRequestFactory factory = new NettyRequestFactory();
         if(ssl) {
             try {
-                factory.setSslContext(new JdkSslContext(SSLContext.getDefault(), true, ClientAuth.OPTIONAL));
-            } catch (NoSuchAlgorithmException e) {
+                SSLContext sslc = SSLContext.getInstance("TLS");
+                if(!checkSsl) {
+                    sslc.init(null, new TrustManager[]{new SSLUtil.NullX509TrustManager()}, null);
+                }
+                factory.setSslContext(new JdkSslContext(sslc, true, ClientAuth.OPTIONAL));
+            } catch (GeneralSecurityException e) {
                 log.error("", e);
             }
         }

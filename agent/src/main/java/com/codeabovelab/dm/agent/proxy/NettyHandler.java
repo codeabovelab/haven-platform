@@ -125,7 +125,12 @@ class NettyHandler extends ChannelInboundHandlerAdapter implements AutoCloseable
                 } catch (Exception e) {
                     log.error("{}: can not flush front stream: ", id, e);
                 }
-                Closeables.close(stream);
+                try {
+                    stream.close();
+                } catch (IOException e) {
+                    // stream.close() often throw exception when client close connection
+                    // we do not logging this for reduce noise
+                }
             }
         }
     }
