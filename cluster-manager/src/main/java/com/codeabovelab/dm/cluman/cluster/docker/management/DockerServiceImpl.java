@@ -52,6 +52,7 @@ import java.io.InputStreamReader;
 import java.io.Reader;
 import java.net.SocketException;
 import java.net.URI;
+import java.net.URISyntaxException;
 import java.nio.CharBuffer;
 import java.nio.charset.StandardCharsets;
 import java.text.MessageFormat;
@@ -153,6 +154,7 @@ public class DockerServiceImpl implements DockerService {
     private final String cluster;
     private final String id;
     private final long maxTimeout;
+    private final URI uri;
 
     @SuppressWarnings("unchecked")
     public DockerServiceImpl(Builder b) {
@@ -173,10 +175,33 @@ public class DockerServiceImpl implements DockerService {
         this.objectMapper = b.objectMapper;
         Assert.notNull(this.objectMapper, "objectMapper is null");
 
+        this.uri = createUri();
+
         this.maxTimeout = Math.max(TimeUnit.SECONDS.toMillis(clusterConfig.getDockerTimeout()), FAST_TIMEOUT * 10);
         this.infoCache = SingleValueCache.builder(this::getInfoForCache)
                 .timeAfterWrite(TimeUnit.SECONDS, this.clusterConfig.getCacheTimeAfterWrite())
                 .build();
+    }
+
+    private URI createUri() {
+        String address = getAddress();
+        if(address.startsWith("http://") || address.startsWith("https://")) {
+            return URI.create(address);
+        }
+        String arr[] = StringUtils.splitLast(address, ':');
+        String host;
+        int port = 80;
+        if(arr == null) {
+            host = address;
+        } else {
+            host = arr[0];
+            port = Integer.parseInt(arr[1]);
+        }
+        try {
+            return new URI("http", null, host, port, null, null, null);
+        } catch (URISyntaxException e) {
+            throw new IllegalArgumentException(e);
+        }
     }
 
     public static Builder builder() {
@@ -976,14 +1001,9 @@ public class DockerServiceImpl implements DockerService {
 
     private UriComponentsBuilder makeBaseUrl() {
         try {
-            String address = getAddress();
-            UriComponentsBuilder ucb = newInstance().scheme("http");
-            String arr[] = StringUtils.splitLast(address, ':');
-            if(arr == null) {
-                return ucb.host(address);
-            }
-            int port = Integer.parseInt(arr[1]);
-            return ucb.host(arr[0]).port(port);
+            UriComponentsBuilder ucb = newInstance();
+            ucb.uri(this.uri);
+            return ucb;
         } catch (Exception e) {
             log.error("error during creating rest request to docker " + clusterConfig.toString(), e);
             throw Throwables.asRuntime(e);

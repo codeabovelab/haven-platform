@@ -42,7 +42,30 @@ public class AddressUtils {
     public static String setPort(String address, int port) {
         Assert.notNull(address, "Address is null or empty");
         Assert.isTrue(port > 0 && port < Short.MAX_VALUE, "Invalid port number: " + port);
-        return getHost(address) + ":" + port;
+        int from = 0;
+        if(isIpv6(address)) {
+            from = address.indexOf(']');
+        }
+        int portStart = address.lastIndexOf(':', from);
+        String hostAndProto = address;
+        if(portStart > 0) {
+            hostAndProto = address.substring(0, portStart);
+        }
+        return hostAndProto + ":" + port;
+    }
+
+    /**
+     * Test that url has ipv6 address
+     * @return true if url has an ipv6 address
+     */
+    public static boolean isIpv6(String url) {
+        if(url == null) {
+            return false;
+        }
+        // ipv6 url looks like 'https://['<addr>']'(':'<port>)?
+        int sqBegin = url.indexOf('[');
+        int sqEnd = url.indexOf('[', sqBegin);
+        return sqBegin > 0 && sqEnd > 0;
     }
 
     public static String getHost(String addr) {
@@ -54,5 +77,9 @@ public class AddressUtils {
             return addr;
         }
         return addr.substring(0, portStart);
+    }
+
+    public static boolean isHttps(String url) {
+        return url != null && url.startsWith("https://");
     }
 }

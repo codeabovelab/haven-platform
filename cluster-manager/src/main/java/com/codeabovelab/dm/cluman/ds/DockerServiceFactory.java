@@ -26,11 +26,14 @@ import com.codeabovelab.dm.cluman.ds.nodes.NodeStorage;
 import com.codeabovelab.dm.cluman.security.AccessContextFactory;
 import com.codeabovelab.dm.cluman.security.DockerServiceSecurityWrapper;
 import com.codeabovelab.dm.cluman.security.TempAuth;
+import com.codeabovelab.dm.cluman.utils.AddressUtils;
 import com.codeabovelab.dm.common.mb.MessageBus;
 import com.codeabovelab.dm.common.utils.Throwables;
 import com.codeabovelab.dm.platform.http.async.NettyRequestFactory;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
+import io.netty.handler.ssl.ClientAuth;
+import io.netty.handler.ssl.JdkSslContext;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -39,6 +42,8 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.client.AsyncRestTemplate;
 
 import javax.annotation.PreDestroy;
+import javax.net.ssl.SSLContext;
+import java.security.NoSuchAlgorithmException;
 import java.util.Collections;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -80,7 +85,7 @@ public class DockerServiceFactory {
         if(cluster != null) {
             b.setCluster(cluster);
         }
-        b.setRestTemplate(createNewRestTemplate());
+        b.setRestTemplate(createNewRestTemplate(AddressUtils.isHttps(clusterConfig.getHost())));
         b.setEventConsumer(this::dockerEventConsumer);
         b.setNodeInfoProvider(nodeStorage);
         if (dockerConsumer != null) {
@@ -100,9 +105,16 @@ public class DockerServiceFactory {
         });
     }
 
-    private AsyncRestTemplate createNewRestTemplate() {
+    private AsyncRestTemplate createNewRestTemplate(boolean ssl) {
         // we use async client because usual client does not allow to interruption in some cases
-        AsyncClientHttpRequestFactory factory = new NettyRequestFactory();
+        NettyRequestFactory factory = new NettyRequestFactory();
+        if(ssl) {
+            try {
+                factory.setSslContext(new JdkSslContext(SSLContext.getDefault(), true, ClientAuth.OPTIONAL));
+            } catch (NoSuchAlgorithmException e) {
+                log.error("", e);
+            }
+        }
         final AsyncRestTemplate restTemplate = new AsyncRestTemplate(factory);
         restTemplate.setInterceptors(Collections.singletonList(new HttpAuthInterceptor(registryRepository)));
         return restTemplate;

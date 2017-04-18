@@ -59,7 +59,7 @@ public class ClusterConfigImpl implements ClusterConfig {
 
 
         /**
-         * docker/swarm 'host:port'
+         * docker/swarm 'http[s]://host:port'
          */
         private String host;
         private int maxCountOfInstances = 1;
