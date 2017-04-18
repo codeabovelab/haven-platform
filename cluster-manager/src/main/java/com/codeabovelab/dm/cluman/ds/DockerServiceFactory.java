@@ -39,14 +39,16 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.io.Resource;
+import org.springframework.core.io.ResourceLoader;
 import org.springframework.stereotype.Component;
+import org.springframework.util.StringUtils;
 import org.springframework.web.client.AsyncRestTemplate;
 
 import javax.annotation.PreDestroy;
-import javax.net.ssl.SSLContext;
-import javax.net.ssl.TrustManager;
-import java.security.GeneralSecurityException;
-import java.security.SecureRandom;
+import javax.net.ssl.*;
+import java.io.InputStream;
+import java.security.KeyStore;
 import java.util.Collections;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -64,14 +66,23 @@ public class DockerServiceFactory {
     private final ExecutorService executor;
     private final AccessContextFactory aclContextFactory;
     private final ObjectMapper objectMapper;
+    private final ResourceLoader resourceLoader;
 
     @Value("${dm.ssl.check:true}")
     private boolean checkSsl;
 
+    @Value("${dm.agent.client.rootCert.keystore:classpath:/root.jks}")
+    private String keystore;
+    @Value("${dm.agent.client.rootCert.storepass:storepass}")
+    private String storepass;
+
     @Autowired
-    public DockerServiceFactory(ObjectMapper objectMapper, AccessContextFactory aclContextFactory, NodeStorage nodeStorage,
+    public DockerServiceFactory(ObjectMapper objectMapper,
+                                AccessContextFactory aclContextFactory,
+                                NodeStorage nodeStorage,
                                 @Qualifier(DockerServiceEvent.BUS) MessageBus<DockerServiceEvent> dockerServiceEventMessageBus,
-                                RegistryRepository registryRepository) {
+                                RegistryRepository registryRepository,
+                                ResourceLoader resourceLoader) {
         this.executor = Executors.newSingleThreadExecutor(new ThreadFactoryBuilder()
           .setDaemon(true)
           .setNameFormat(getClass().getSimpleName() + "-executor-%d")
@@ -82,6 +93,7 @@ public class DockerServiceFactory {
         this.nodeStorage = nodeStorage;
         this.dockerServiceEventMessageBus = dockerServiceEventMessageBus;
         this.registryRepository = registryRepository;
+        this.resourceLoader = resourceLoader;
     }
 
     public DockerService createDockerService(ClusterConfig clusterConfig, Consumer<DockerServiceImpl.Builder> dockerConsumer) {
@@ -91,7 +103,8 @@ public class DockerServiceFactory {
         if(cluster != null) {
             b.setCluster(cluster);
         }
-        b.setRestTemplate(createNewRestTemplate(AddressUtils.isHttps(clusterConfig.getHost())));
+        String address = clusterConfig.getHost();
+        b.setRestTemplate(createNewRestTemplate(address));
         b.setEventConsumer(this::dockerEventConsumer);
         b.setNodeInfoProvider(nodeStorage);
         if (dockerConsumer != null) {
@@ -111,23 +124,42 @@ public class DockerServiceFactory {
         });
     }
 
-    private AsyncRestTemplate createNewRestTemplate(boolean ssl) {
+    private AsyncRestTemplate createNewRestTemplate(String addr) {
         // we use async client because usual client does not allow to interruption in some cases
         NettyRequestFactory factory = new NettyRequestFactory();
-        if(ssl) {
+        if(AddressUtils.isHttps(addr)) {
             try {
-                SSLContext sslc = SSLContext.getInstance("TLS");
-                if(!checkSsl) {
-                    sslc.init(null, new TrustManager[]{new SSLUtil.NullX509TrustManager()}, null);
-                }
-                factory.setSslContext(new JdkSslContext(sslc, true, ClientAuth.OPTIONAL));
-            } catch (GeneralSecurityException e) {
+                initSsl(addr, factory);
+            } catch (Exception e) {
                 log.error("", e);
             }
         }
         final AsyncRestTemplate restTemplate = new AsyncRestTemplate(factory);
         restTemplate.setInterceptors(Collections.singletonList(new HttpAuthInterceptor(registryRepository)));
         return restTemplate;
+    }
+
+    private void initSsl(String addr, NettyRequestFactory factory) throws Exception {
+        SSLContext sslc = SSLContext.getInstance("TLS");
+        if(!checkSsl) {
+            log.debug("disable any SSL check on {} address", addr);
+            sslc.init(null, new TrustManager[]{new SSLUtil.NullX509TrustManager()}, null);
+        }else if(StringUtils.hasText(keystore)) {
+            log.debug("use SSL trusted store {} on {} address", keystore, addr);
+            final String alg = TrustManagerFactory.getDefaultAlgorithm();
+            TrustManagerFactory def = TrustManagerFactory.getInstance(alg);
+            def.init((KeyStore)null);// initialize default list of trust managers
+            KeyStore ks = KeyStore.getInstance("JKS");
+            Resource resource = resourceLoader.getResource(keystore);
+            try(InputStream is = resource.getInputStream()) {
+                ks.load(is, storepass == null? new char[0] : storepass.toCharArray());
+            }
+            TrustManagerFactory local = TrustManagerFactory.getInstance(alg);
+            local.init(ks);
+            TrustManager tm = SSLUtil.combineX509TrustManagers(local.getTrustManagers(), def.getTrustManagers());
+            sslc.init(null, new TrustManager[]{tm}, null);
+        }
+        factory.setSslContext(new JdkSslContext(sslc, true, ClientAuth.OPTIONAL));
     }
 
     public DockerService securityWrapper(DockerService dockerService) {

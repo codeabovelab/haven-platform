@@ -124,6 +124,7 @@
                     <keypass>keypass</keypass>
                     <alias>root-cert</alias>
                     <dname>cn=codeabovelab.com, o=Code Above Lab LLC, c=US</dname>
+                    <ext>BC=ca:true</ext>
                     <keyalg>RSA</keyalg>
                     <validity>3560</validity>
                     <verbose>true</verbose>
