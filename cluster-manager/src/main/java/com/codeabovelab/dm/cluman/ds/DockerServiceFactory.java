@@ -27,6 +27,7 @@ import com.codeabovelab.dm.cluman.security.AccessContextFactory;
 import com.codeabovelab.dm.cluman.security.DockerServiceSecurityWrapper;
 import com.codeabovelab.dm.cluman.security.TempAuth;
 import com.codeabovelab.dm.cluman.utils.AddressUtils;
+import com.codeabovelab.dm.cluman.utils.BasicAuthAsyncInterceptor;
 import com.codeabovelab.dm.common.mb.MessageBus;
 import com.codeabovelab.dm.common.utils.SSLUtil;
 import com.codeabovelab.dm.common.utils.Throwables;
@@ -41,6 +42,8 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.ResourceLoader;
+import org.springframework.http.client.AsyncClientHttpRequestInterceptor;
+import org.springframework.http.client.support.BasicAuthorizationInterceptor;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 import org.springframework.web.client.AsyncRestTemplate;
@@ -49,7 +52,10 @@ import javax.annotation.PreDestroy;
 import javax.net.ssl.*;
 import java.io.InputStream;
 import java.security.KeyStore;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
+import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.function.Consumer;
@@ -75,6 +81,9 @@ public class DockerServiceFactory {
     private String keystore;
     @Value("${dm.agent.client.rootCert.storepass:storepass}")
     private String storepass;
+    @Value("${dm.agent.client.password:password}")
+    private String agentPassword;
+
 
     @Autowired
     public DockerServiceFactory(ObjectMapper objectMapper,
@@ -135,7 +144,12 @@ public class DockerServiceFactory {
             }
         }
         final AsyncRestTemplate restTemplate = new AsyncRestTemplate(factory);
-        restTemplate.setInterceptors(Collections.singletonList(new HttpAuthInterceptor(registryRepository)));
+        List<AsyncClientHttpRequestInterceptor> interceptors = new ArrayList<>();
+        interceptors.add(new HttpAuthInterceptor(registryRepository));
+        if(!StringUtils.isEmpty(agentPassword)) {
+            interceptors.add(new BasicAuthAsyncInterceptor("admin", agentPassword));
+        }
+        restTemplate.setInterceptors(interceptors);
         return restTemplate;
     }
 
