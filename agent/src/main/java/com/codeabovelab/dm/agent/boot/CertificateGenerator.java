@@ -75,18 +75,19 @@ public class CertificateGenerator {
         return StringUtils.beforeOr(address, '%', address::toString);
     }
 
-    static KeystoreConfig constructCert(X509CertificateHolder rootCert, File keystoreFile, Set<String> names) throws Exception {
+    static KeystoreConfig constructCert(X509CertificateHolder rootCert, PrivateKey rootKey, File keystoreFile, Set<String> names) throws Exception {
         log.debug("Create certificate in {} keystore for names: {}", keystoreFile.getAbsolutePath(), names);
         KeystoreConfig.Builder cb = KeystoreConfig.builder();
         // verify: keytool -list -keystore dm-agent.jks
         KeyStore ks = KeyStore.Builder.newInstance("JKS", null, new KeyStore.PasswordProtection(null)).getKeyStore();
         Certificate jceRootCert = toJava(rootCert);
-        String keypass = "1";
+        // we use simple password, because no way to safe store password, and so complexity of password does nothing
+        String keypass = "123456";
+        String kspass = "123456";
         KeyPair keyPair = createKeypair();
-        X509CertificateHolder serverCert = createServerCert(keyPair, rootCert, names);
+        X509CertificateHolder serverCert = createServerCert(rootKey, rootCert, keyPair, names);
         Certificate jceServerCert = toJava(serverCert);
         ks.setKeyEntry("key", keyPair.getPrivate(), keypass.toCharArray(), new Certificate[]{jceServerCert, jceRootCert});
-        String kspass = "1";
         cb.keystorePassword(kspass);
         cb.keyPassword(keypass);
         try(FileOutputStream fos = new FileOutputStream(keystoreFile)) {
@@ -100,24 +101,25 @@ public class CertificateGenerator {
         return new X509CertificateObject(certHolder.toASN1Structure());
     }
 
-    private static X509CertificateHolder createServerCert(KeyPair keyPair,
+    private static X509CertificateHolder createServerCert(PrivateKey rootKey,
                                                           X509CertificateHolder root,
+                                                          KeyPair keyPair,
                                                           Collection<String> names) throws Exception {
         X500NameBuilder sb = new X500NameBuilder(RFC4519Style.INSTANCE);
         sb.addRDN(RFC4519Style.name, "localhost");
-        return createCert(keyPair, root.getIssuer(), sb.build(), cb -> {
-            GeneralNamesBuilder gnb = new GeneralNamesBuilder();
-            for(String name: names) {
-                gnb.addName(new GeneralName(GeneralName.dNSName, name));
-            }
-            cb.addExtension(Extension.subjectAlternativeName, true, gnb.build());
-        });
+        JcaX509v3CertificateBuilder cb = createCert(keyPair, root.getIssuer(), sb.build());
+        GeneralNamesBuilder gnb = new GeneralNamesBuilder();
+        for (String name : names) {
+            gnb.addName(new GeneralName(GeneralName.dNSName, name));
+        }
+        cb.addExtension(Extension.subjectAlternativeName, true, gnb.build());
+        ContentSigner signer = new JcaContentSignerBuilder("SHA256withRSA").build(rootKey);
+        return cb.build(signer);
     }
 
-    static X509CertificateHolder createCert(KeyPair keyPair,
+    static JcaX509v3CertificateBuilder createCert(KeyPair keyPair,
                                                     X500Name issuer,
-                                                    X500Name subject,
-                                                    CertBuilderHandler buildHandler) throws Exception {
+                                                    X500Name subject) throws Exception {
         Calendar calendar = Calendar.getInstance();
         Date fromTime = calendar.getTime();
         calendar.add(Calendar.YEAR, 5);
@@ -129,12 +131,7 @@ public class CertificateGenerator {
             subject,
             keyPair.getPublic()
         );
-        if(buildHandler != null) {
-            buildHandler.handle(cb);
-        }
-        ContentSigner signer = new JcaContentSignerBuilder("SHA256withRSA").build(keyPair.getPrivate());
-        X509CertificateHolder ch = cb.build(signer);
-        return ch;
+        return cb;
     }
 
     static KeyPair createKeypair() throws Exception {

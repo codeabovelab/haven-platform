@@ -31,8 +31,8 @@ import org.springframework.util.StringUtils;
 
 import java.io.File;
 import java.io.InputStream;
-import java.security.Key;
 import java.security.KeyStore;
+import java.security.PrivateKey;
 import java.security.cert.Certificate;
 import java.util.HashSet;
 import java.util.List;
@@ -89,6 +89,7 @@ public class SslServletContainerCustomizer implements EmbeddedServletContainerCu
         }
         CertificateGenerator.gatherNames(names, this.resolve);
         X509CertificateHolder rootCert;
+        PrivateKey rootKey;
         try {
             Assert.notNull(rootCertKeystore, "Keystore is null");
             Assert.notNull(rootCertKeystorePass, "Keystore password is null");
@@ -98,8 +99,8 @@ public class SslServletContainerCustomizer implements EmbeddedServletContainerCu
             try(InputStream is = resource.getInputStream()) {
                 ks.load(is, rootCertKeystorePass.toCharArray());
             }
-            Key key = ks.getKey(rootCertKeysoreAlias, rootCertKeystoreKeyPass.toCharArray());
-            Assert.notNull(key, "Can not find " + rootCertKeysoreAlias + " in " + rootCertKeystore);
+            rootKey = (PrivateKey) ks.getKey(rootCertKeysoreAlias, rootCertKeystoreKeyPass.toCharArray());
+            Assert.notNull(rootKey, "Can not find " + rootCertKeysoreAlias + " in " + rootCertKeystore);
             Certificate[] certs = ks.getCertificateChain(rootCertKeysoreAlias);
             Assert.isTrue(certs != null && certs.length == 1, "Certificate chain of " + rootCertKeysoreAlias +
               " alias is null or has invalid count of certificates, wanted one.");
@@ -111,7 +112,7 @@ public class SslServletContainerCustomizer implements EmbeddedServletContainerCu
         try {
             File ksf = new File(keystore);
             ksf.getParentFile().mkdirs();
-            return CertificateGenerator.constructCert(rootCert, ksf, names);
+            return CertificateGenerator.constructCert(rootCert, rootKey, ksf, names);
         } catch (Exception e) {
             log.error("Can not generate cert.", e);
             return null;
