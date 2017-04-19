@@ -14,19 +14,12 @@
  * limitations under the License.
  */
 
-package com.codeabovelab.dm.agent.boot;
+package com.codeabovelab.dm.agent.security;
 
-import lombok.Builder;
-import lombok.Data;
-
-import java.io.File;
+import org.bouncycastle.cert.X509v3CertificateBuilder;
 
 /**
  */
-@Data
-@Builder(builderClassName = "Builder")
-class KeystoreConfig {
-    private final File keystore;
-    private final String keystorePassword;
-    private final String keyPassword;
+public interface CertBuilderHandler {
+    void handle(X509v3CertificateBuilder cb) throws Exception;
 }

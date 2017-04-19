@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.codeabovelab.dm.agent.boot;
+package com.codeabovelab.dm.agent.security;
 
 import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.Logger;
@@ -35,8 +35,8 @@ import java.io.File;
 import java.security.KeyPair;
 import java.security.Security;
 
-import static com.codeabovelab.dm.agent.boot.CertificateGenerator.createCert;
-import static com.codeabovelab.dm.agent.boot.CertificateGenerator.createKeypair;
+import static com.codeabovelab.dm.agent.security.CertificateGenerator.createCert;
+import static com.codeabovelab.dm.agent.security.CertificateGenerator.createKeypair;
 import static org.junit.Assert.*;
 
 /**

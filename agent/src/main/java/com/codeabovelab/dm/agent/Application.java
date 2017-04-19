@@ -16,7 +16,8 @@
 
 package com.codeabovelab.dm.agent;
 
-import com.codeabovelab.dm.agent.boot.SslServletContainerCustomizer;
+import com.codeabovelab.dm.agent.security.AuthConfiguration;
+import com.codeabovelab.dm.agent.security.SslServletContainerCustomizer;
 import com.codeabovelab.dm.agent.proxy.DockerProxyConfiguration;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.springframework.boot.autoconfigure.web.EmbeddedServletContainerAutoConfiguration;
@@ -35,6 +36,7 @@ import java.security.Security;
  */
 @Import({
   SslServletContainerCustomizer.class,
+  AuthConfiguration.class,
   EmbeddedServletContainerAutoConfiguration.class,
   WebSocketAutoConfiguration.class,
   PropertySourcesPlaceholderConfigurer.class,

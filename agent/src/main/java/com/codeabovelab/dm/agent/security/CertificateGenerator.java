@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.codeabovelab.dm.agent.boot;
+package com.codeabovelab.dm.agent.security;
 
 import com.codeabovelab.dm.common.utils.OSUtils;
 import com.codeabovelab.dm.common.utils.StringUtils;
