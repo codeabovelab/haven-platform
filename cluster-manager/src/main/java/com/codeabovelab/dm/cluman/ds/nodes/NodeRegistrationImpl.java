@@ -281,24 +281,31 @@ class NodeRegistrationImpl implements NodeRegistration, AutoCloseable {
     }
 
     private void subscribe() {
-        log.info("Begin register node for fetching logs {}", name);
         DockerEventsConfig cfg = nodeStorage.getDockerEventConfig();
+        final int periodInSeconds = cfg.getPeriodInSeconds();
+        log.info("Register log fetcher from {} node, repeat every {} seconds", name, periodInSeconds);
         Assert.isNull(this.logFuture, "Future of docker logging is not null");
         this.logFuture = logFetcher.scheduleAtFixedRate(() -> {
-              Long time = System.currentTimeMillis();
-              Long afterTime = time + cfg.getPeriodInSeconds() * 1000L;
-              GetEventsArg getEventsArg = GetEventsArg.builder()
-                .since(time)
-                .until(afterTime)
-                .watcher(this::proxyDockerEvent)
-                .build();
-              log.debug("getting events args {}", getEventsArg);
-              try (TempAuth ta = TempAuth.asSystem()) {
-                  docker.subscribeToEvents(getEventsArg);
+            // we must handle errors here, because its may stop of task scheduling
+            // for example - temporary disconnect of node will breaks logs fetching due to system restart
+              try {
+                  Long time = System.currentTimeMillis();
+                  Long afterTime = time + periodInSeconds * 1000L;
+                  GetEventsArg getEventsArg = GetEventsArg.builder()
+                    .since(time)
+                    .until(afterTime)
+                    .watcher(this::proxyDockerEvent)
+                    .build();
+                  log.debug("getting events args {}", getEventsArg);
+                  try (TempAuth ta = TempAuth.asSystem()) {
+                      docker.subscribeToEvents(getEventsArg);
+                  }
+              } catch (Exception e) {
+                  log.error("Can not fetch logs from {}, try again after {} seconds, error: {}", name, periodInSeconds, e.toString());
               }
           },
           cfg.getInitialDelayInSeconds(),
-          cfg.getPeriodInSeconds(), TimeUnit.SECONDS);
+          periodInSeconds, TimeUnit.SECONDS);
     }
 
     private void proxyDockerEvent(DockerEvent e) {
