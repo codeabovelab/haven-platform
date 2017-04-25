@@ -33,7 +33,7 @@ public class AwsRegistryFactoryAdapter implements RegistryFactoryAdapter<AwsRegi
     public RegistryService create(RegistryFactory factory, AwsRegistryConfig config) {
         return RegistryServiceImpl.builder()
           .adapter(new AwsRegistryAdapter(awsService, config, factory::restTemplate))
-          .scheduledExecutorService(factory.getScheduledExecutorService())
+          .searchConfig(factory.getSearchIndexDefaultConfig())
           .build();
     }
 
