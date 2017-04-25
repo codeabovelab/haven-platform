@@ -93,8 +93,19 @@
             <artifactId>bcprov-jdk15on</artifactId>
             <version>1.55</version>
         </dependency>
-
-
-
     </dependencies>
+
+    <profiles>
+        <profile>
+            <id>staging</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.codehaus.mojo</groupId>
+                        <artifactId>exec-maven-plugin</artifactId>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
 </project>
