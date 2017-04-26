@@ -24,10 +24,7 @@ import com.codeabovelab.dm.cluman.cluster.docker.model.ContainerDetails;
 import com.codeabovelab.dm.cluman.cluster.docker.model.ImageItem;
 import com.codeabovelab.dm.cluman.cluster.filter.Filter;
 import com.codeabovelab.dm.cluman.cluster.filter.FilterFactory;
-import com.codeabovelab.dm.cluman.cluster.registry.ImageFilterContext;
-import com.codeabovelab.dm.cluman.cluster.registry.RegistryRepository;
-import com.codeabovelab.dm.cluman.cluster.registry.RegistrySearchHelper;
-import com.codeabovelab.dm.cluman.cluster.registry.RegistryService;
+import com.codeabovelab.dm.cluman.cluster.registry.*;
 import com.codeabovelab.dm.cluman.cluster.registry.data.ImageCatalog;
 import com.codeabovelab.dm.cluman.cluster.registry.data.SearchResult;
 import com.codeabovelab.dm.cluman.cluster.registry.data.Tags;
@@ -63,7 +60,7 @@ import static org.springframework.web.bind.annotation.RequestMethod.GET;
 @RequiredArgsConstructor(onConstructor = @__(@Autowired))
 public class ImagesApi {
 
-    private static final Splitter SPLITTER = Splitter.on(",").omitEmptyStrings().trimResults();
+    private static final Splitter SPLITTER = Splitter.on(",").trimResults();
     private final DiscoveryStorage discoveryStorage;
     private final RegistryRepository registryRepository;
     private final FilterFactory filterFactory;
@@ -128,27 +125,12 @@ public class ImagesApi {
                                  @RequestParam(value = "page") int page,
                                  @RequestParam(value = "size") int size) {
 
-        List<String> registries = new ArrayList<>();
+        Set<String> registries = new HashSet<>();
         DockerBasedClusterConfig dcngConfig = getDockerBasedGroupsConfig(cluster);
         if (dcngConfig != null) {
             registries.addAll(dcngConfig.getConfig().getRegistries());
         }
-
-        try {
-            // we may get registry name from query
-            if (!StringUtils.hasText(registryParam)) {
-                registryParam = ContainerUtils.getRegistryPrefix(query);
-            }
-            // registry may be a mask
-            if (registryParam != null && registryParam.contains("*")) {
-                registryParam = "";
-            }
-            if (StringUtils.hasText(registryParam)) {
-                registries.retainAll(SPLITTER.splitToList(registryParam));
-            }
-        } catch (Exception e) {
-            //nothing
-        }
+        filterRegistries(registryParam, query, registries);
 
         SearchResult result;
         if (!CollectionUtils.isEmpty(registries)) {
@@ -167,6 +149,35 @@ public class ImagesApi {
             return UiSearchResult.builder().build();
         }
         return UiSearchResult.from(result);
+    }
+
+    /**
+     * when registryParam is
+     * <ul>
+     *   <li/>'*' - use all registries (consider that we already add al registries - we must do nothing)
+     *   <li/>'' (emptystring) - use docker hub
+     * </ul>
+     *
+     * @param registryParam null or string
+     * @param query null or string
+     * @param registries set of all registries
+     */
+    static void filterRegistries(String registryParam, String query, Collection<String> registries) {
+        if("*".equals(registryParam)) {
+            return;
+        }
+        try {
+            // we may get registry name from query if param not specified
+            if (registryParam == null && query != null) {
+                registryParam = ContainerUtils.getRegistryPrefix(query);
+            }
+            // and at end we remove all registries which is not specified in param
+            if (registryParam != null) {
+                registries.retainAll(SPLITTER.splitToList(registryParam));
+            }
+        } catch (Exception e) {
+            //nothing
+        }
     }
 
     @RequestMapping(value = "/image", method = RequestMethod.GET)
