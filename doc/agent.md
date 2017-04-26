@@ -1,5 +1,33 @@
 # Haven Agent #
 
+Currently system may act without agent, use old python based agent or use new agent from docker image.
+
+Comparison:
+
+| name        | secure usage docker API | gather node metrics | do not have extra dependencies | 
+|-------------|---|---|---|
+| python agent| - | + | - |
+| no agent    | - | - | + |
+| agent image | + | - | + |
+
+Below problems which caused development of agent:
+ - By default docker listen on unix socket, inaccessible from network. When you enable listening on 
+ TCP, docker will stay insecure or require some complex configuration with certificates
+ <sup>[1](https://docs.docker.com/edge/engine/reference/commandline/dockerd/#daemon-socket-option)</sup>.
+ - Health of node depend from load usage of CPU & RAM and some other parameters like disk space. Docker can monitor 
+ only small part of above characteristics.
+
+## Agent image ##
+
+New version (1.2) of system, can work without agent, but we implement new agent with proxy of docker connection. It 
+agent connect with docker through unix socket and expose it on 8771 port with ssl encryption and authorization 
+(credentials admin:password, see 'dm.auth.adminPassword' option of agent)
+
+Command for run agent on node:
+```docker run --name agent -d --restart=unless-stopped -p 8771:8771 -v /run/docker.sock:/run/docker.sock codeabovelab/agent:1.2.0-SNAPSHOT```
+
+## Python agent ##
+
 The agent is [a Python script](/cluster-manager/src/main/resources/static/res/agent/node-agent.py). 
 It is written in Python 3 and only has one dependency: python3-psutil >= 4.2.
 
