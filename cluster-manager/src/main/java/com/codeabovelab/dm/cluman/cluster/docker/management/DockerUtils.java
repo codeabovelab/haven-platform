@@ -19,8 +19,6 @@ package com.codeabovelab.dm.cluman.cluster.docker.management;
 import com.codeabovelab.dm.cluman.cluster.docker.management.result.ResultCode;
 import com.codeabovelab.dm.cluman.cluster.docker.management.result.ServiceCallResult;
 import com.codeabovelab.dm.cluman.cluster.docker.model.ContainerConfig;
-import com.codeabovelab.dm.cluman.cluster.docker.model.UpdateContainerResponse;
-import com.codeabovelab.dm.cluman.model.DockerServiceInfo;
 import com.codeabovelab.dm.cluman.model.NodeInfo;
 import com.google.common.base.Strings;
 import org.springframework.http.HttpStatus;
@@ -28,8 +26,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.util.Assert;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
-import java.util.stream.Collectors;
 
 /**
  * Some utils
@@ -93,6 +91,7 @@ public final class DockerUtils {
                 //due doc 500 - is error, but any other than above codes is undefined we interpret this cases as error also.
                 code = ResultCode.ERROR;
         }
+        result.setStatus(httpCode);
         result.setCode(code);
 
     }
@@ -115,11 +114,9 @@ public final class DockerUtils {
         return hostname + "." + domainname;
     }
 
-    public static List<String> listNodes(DockerServiceInfo info) {
-
+    public static List<String> listNodes(Collection<NodeInfo> nodes) {
         List<String> list = new ArrayList<>();
-        List<NodeInfo> nodeList = info.getNodeList();
-        list.addAll(nodeList.stream().map(NodeInfo::getName).collect(Collectors.toList()));
+        nodes.forEach(ni -> list.add(ni.getName()));
         return list;
     }
 

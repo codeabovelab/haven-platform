@@ -3,14 +3,15 @@ package com.codeabovelab.dm.cluman.cluster.docker.management;
 import com.codeabovelab.dm.cluman.cluster.docker.ClusterConfig;
 import com.codeabovelab.dm.cluman.cluster.docker.ClusterConfigImpl;
 import com.codeabovelab.dm.cluman.cluster.docker.HttpAuthInterceptor;
-import com.codeabovelab.dm.cluman.cluster.docker.management.argument.GetContainersArg;
-import com.codeabovelab.dm.cluman.cluster.docker.management.argument.TagImageArg;
+import com.codeabovelab.dm.cluman.cluster.docker.management.argument.*;
 import com.codeabovelab.dm.cluman.cluster.docker.management.result.ServiceCallResult;
 import com.codeabovelab.dm.cluman.cluster.docker.model.ContainerDetails;
 import com.codeabovelab.dm.cluman.cluster.docker.model.CreateNetworkCmd;
-import com.codeabovelab.dm.cluman.cluster.docker.model.Image;
+import com.codeabovelab.dm.cluman.cluster.docker.model.Volume;
+import com.codeabovelab.dm.cluman.cluster.docker.model.swarm.Service;
+import com.codeabovelab.dm.cluman.cluster.docker.model.swarm.SwarmInspectResponse;
+import com.codeabovelab.dm.cluman.cluster.docker.model.swarm.Task;
 import com.codeabovelab.dm.cluman.cluster.registry.RegistryRepository;
-import com.codeabovelab.dm.cluman.cluster.registry.model.PrivateRegistryConfig;
 import com.codeabovelab.dm.cluman.configs.container.ConfigsFetcherImage;
 import com.codeabovelab.dm.cluman.configs.container.ContainerCreationContext;
 import com.codeabovelab.dm.cluman.configs.container.DefaultParser;
@@ -18,7 +19,7 @@ import com.codeabovelab.dm.cluman.model.DockerContainer;
 import com.codeabovelab.dm.cluman.model.ImageDescriptor;
 import com.codeabovelab.dm.cluman.model.NodeInfoProvider;
 import com.codeabovelab.dm.common.mb.MessageBus;
-import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Ignore;
@@ -28,9 +29,7 @@ import org.springframework.web.client.AsyncRestTemplate;
 import java.util.Collections;
 import java.util.List;
 
-import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 public class DockerServiceImplTest {
 
@@ -44,7 +43,7 @@ public class DockerServiceImplTest {
     @SuppressWarnings("unchecked")
     DockerServiceImpl dockerService() {
         ClusterConfig config = ClusterConfigImpl.builder()
-                .addHost("localhost:2375").build();
+                .host("172.31.0.12:2375").build();
         AsyncRestTemplate restTemplate = new AsyncRestTemplate();
         RegistryRepository registryRepository = mock(RegistryRepository.class);
         restTemplate.setInterceptors(
@@ -56,6 +55,7 @@ public class DockerServiceImplTest {
           .restTemplate(restTemplate)
           .nodeInfoProvider(mock(NodeInfoProvider.class))
           .eventConsumer(mock(MessageBus.class))
+          .objectMapper(new ObjectMapper())
           .build();
     }
 
@@ -89,7 +89,7 @@ public class DockerServiceImplTest {
 
     @Test
     @Ignore
-    public void testNetwork() throws JsonProcessingException {
+    public void testNetwork() {
         CreateNetworkCmd createNetworkCmd = new CreateNetworkCmd();
         createNetworkCmd.setDriver("overlay");
         createNetworkCmd.setName("test-test");
@@ -98,30 +98,9 @@ public class DockerServiceImplTest {
 
     }
 
-/*
     @Test
     @Ignore
-    public void testCreateContainer() throws JsonProcessingException {
-        com.codeabovelab.dm.cluman.cluster.docker.management.argument.CreateContainerArg createContainerArg = new com.codeabovelab.dm.cluman.cluster.docker.management.argument.CreateContainerArg();
-        createContainerArg.setImage("<replace_me>");
-        createContainerArg.setContainerName("");
-        createContainerArg.setCpuShares(512);
-        createContainerArg.setEnvironment(Collections.<String, String>singletonMap("JAVA_OPTS", "-Xmx128m"));
-        createContainerArg.setRestart("no");
-        createContainerArg.setPublish("8080:8080");
-        CreateContainerArg createContainerCmd = service.buildCreateContainer(createContainerArg, null);
-        ObjectMapper objectMapper = JacksonUtils.objectMapperBuilder();
-        String s = objectMapper.writeValueAsString(createContainerCmd);
-        Assert.assertNotNull(createContainerCmd);
-        System.out.println(s);
-
-        ServiceCallResult containerRest = service.createContainer(createContainerArg);
-        System.out.println(containerRest);
-    }
-*/
-    @Test
-    @Ignore
-    public void testPullImage() throws JsonProcessingException {
+    public void testPullImage() {
 
         String imageName = "ni1.codeabovelab.com/cluster-manager:latest";
         ImageDescriptor image = service.pullImage(imageName, null);
@@ -133,5 +112,38 @@ public class DockerServiceImplTest {
         fetcherImage.resolveProperties(context);
         Assert.assertFalse(context.getArgList().isEmpty());
     }
+
+    @Test
+    @Ignore
+    public void testGetSwarm() {
+        SwarmInspectResponse swarm = service.getSwarm();
+        Assert.assertNotNull(swarm);
+    }
+
+    @Test
+    @Ignore
+    public void testGetServices() {
+        List<Service> services = service.getServices(new GetServicesArg());
+        System.out.println(services);
+        Assert.assertNotNull(services);
+    }
+
+    @Test
+    @Ignore
+    public void testGetTasks() {
+        List<Task> tasks = service.getTasks(new GetTasksArg());
+        System.out.println(tasks);
+        Assert.assertNotNull(tasks);
+    }
+
+    @Test
+    @Ignore
+    public void testGetVolumes() {
+        List<Volume> volumes = service.getVolumes(new GetVolumesArg());
+        System.out.println(volumes);
+        Assert.assertNotNull(volumes);
+    }
+
+
 
 }

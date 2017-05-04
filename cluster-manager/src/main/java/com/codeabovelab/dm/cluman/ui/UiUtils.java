@@ -16,6 +16,7 @@
 
 package com.codeabovelab.dm.cluman.ui;
 
+import com.codeabovelab.dm.cluman.ds.clusters.ClusterUtils;
 import com.codeabovelab.dm.cluman.utils.ContainerUtils;
 import com.codeabovelab.dm.cluman.cluster.application.ApplicationService;
 import com.codeabovelab.dm.cluman.cluster.docker.management.result.ResultCode;
@@ -64,34 +65,24 @@ public final class UiUtils {
 
         String message = code + " " + (result.getMessage() == null ? "" : result.getMessage());
         if (code == ResultCode.OK) {
-            UIResult res = new UIResult();
-            res.setMessage(message);
-            res.setCode(OK.value());
-            return new ResponseEntity<>(res, OK);
+            return okResponse(message);
         } else {
-            UiError err = new UiError();
-            err.setMessage(message);
-            err.setCode(toStatus(code).value());
-            return new ResponseEntity<>(err, toStatus(code));
+            return errResponse(code, message);
         }
     }
 
-    public static String portsToString(List<Port> ports) {
-        StringBuilder sb = new StringBuilder();
-        for (Port port : ports) {
-            if (sb.length() > 0) {
-                sb.append(",  ");
-            }
-            sb.append(port.getType()).append('\u00A0');
-            sb.append(port.getIp()).append(':');
-            sb.append(port.getPrivatePort());
-            int publicPort = port.getPublicPort();
-            if (publicPort != 0) {
-                sb.append("\u00A0\u21D2\u00A0");
-                sb.append(publicPort);
-            }
-        }
-        return sb.toString();
+    static ResponseEntity<UIResult> errResponse(ResultCode code, String message) {
+        UiError err = new UiError();
+        err.setMessage(message);
+        err.setCode(toStatus(code).value());
+        return new ResponseEntity<>(err, toStatus(code));
+    }
+
+    static ResponseEntity<UIResult> okResponse(String message) {
+        UIResult res = new UIResult();
+        res.setMessage(message);
+        res.setCode(OK.value());
+        return new ResponseEntity<>(res, OK);
     }
 
     public static double convertToGB(long memory) {
@@ -108,14 +99,6 @@ public final class UiUtils {
 
     public static double convertToMb(int memory) {
         return convertToMb((long)memory);
-    }
-
-    public static List<String> bindsToString(List<Bind> binds) {
-        List<String> list = new ArrayList<>();
-        for (Bind bind : binds) {
-            list.add(bind.toString());
-        }
-        return list;
     }
 
     public static String convertToStringFromJiffies(Long jiffies) {
@@ -176,7 +159,7 @@ public final class UiUtils {
     static Map<String, String> mapAppContainer(ApplicationService applicationService, NodesGroup cluster) {
         try {
             Map<String, String> containerApp = new HashMap<>();
-            if(cluster.getFeatures().contains(NodesGroup.Feature.SWARM)) {
+            if(ClusterUtils.isDockerBased(cluster)) {
                 addContainerMapping(applicationService, cluster.getName(), containerApp);
             } else {
                 for(String child: cluster.getGroups()) {

@@ -22,6 +22,8 @@ import org.springframework.security.acls.domain.PrincipalSid;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 
+import java.util.Objects;
+
 /**
  * Some constants methods and constants for multi tenancy support
  */
@@ -84,6 +86,6 @@ public class MultiTenancySupport {
      * @return true if tenant is null
      */
     public static boolean isNoTenant(Object o) {
-        return getTenant(o) == NO_TENANT;
+        return Objects.equals(NO_TENANT, getTenant(o));
     }
 }

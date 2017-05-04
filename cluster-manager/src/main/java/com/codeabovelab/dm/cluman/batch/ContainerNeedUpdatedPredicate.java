@@ -24,6 +24,8 @@ import com.codeabovelab.dm.cluman.model.ImageDescriptor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 
+import java.util.Set;
+
 import static com.codeabovelab.dm.cluman.batch.LoadContainersOfImageTasklet.JP_IMAGE;
 
 /**
@@ -41,6 +43,10 @@ public class ContainerNeedUpdatedPredicate implements ContainerPredicate {
 
     @Override
     public boolean test(ProcessedContainer processedContainer) {
+        if(exclude(processedContainer)) {
+            return false;
+        }
+
         String image = processedContainer.getImage();
         ImagesForUpdate.Image img = images.findImage(image, processedContainer.getImageId());
         if (img == null) {
@@ -66,5 +72,13 @@ public class ContainerNeedUpdatedPredicate implements ContainerPredicate {
         }
         log.debug("ImageDescriptor for {}: {}, container imageId: {}", image, descriptor, imageId);
         return !imageId.equals(descriptor.getId());
+    }
+
+    private boolean exclude(ProcessedContainer pc) {
+        ImagesForUpdate.Exclude exclude = images.getExclude();
+        Set<String> containers = exclude.getContainers();
+        return containers.contains(pc.getId()) ||
+          containers.contains(pc.getName()) ||
+          exclude.getNodes().contains(pc.getNode());
     }
 }

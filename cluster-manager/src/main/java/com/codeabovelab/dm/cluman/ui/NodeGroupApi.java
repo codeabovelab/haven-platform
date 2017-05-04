@@ -16,6 +16,7 @@
 
 package com.codeabovelab.dm.cluman.ui;
 
+import com.codeabovelab.dm.cluman.ds.clusters.ClusterUtils;
 import com.codeabovelab.dm.cluman.ds.clusters.DefaultNodesGroupConfig;
 import com.codeabovelab.dm.cluman.ds.nodes.NodeStorage;
 import com.codeabovelab.dm.cluman.model.DiscoveryStorage;
@@ -53,7 +54,7 @@ public class NodeGroupApi {
     public List<UiNodeGroup> list() {
         List<NodesGroup> clusters = this.discoveryStorage.getClusters();
         List<UiNodeGroup> envs = clusters.stream()
-          .filter((c) -> !c.getFeatures().contains(NodesGroup.Feature.SWARM))
+          .filter((c) -> !ClusterUtils.isDockerBased(c))
           .map((e) -> fromCluster(e))
           .collect(Collectors.toList());
         return envs;

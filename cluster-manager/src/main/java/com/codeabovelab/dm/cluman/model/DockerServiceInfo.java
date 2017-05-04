@@ -17,14 +17,14 @@
 package com.codeabovelab.dm.cluman.model;
 
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import lombok.Data;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
+import java.time.LocalDateTime;
+import java.util.*;
 
 /**
- * Information about Doker service and its nodes. <p/>
+ * Information about Docker service and its nodes. <p/>
  * Be careful with fields, because they can be used in js ui.
  *
  */
@@ -33,27 +33,32 @@ public class DockerServiceInfo {
 
     private final String id;
     private final String name;
-    private final Integer containers;
-    private final Integer offContainers;
+    private final LocalDateTime systemTime;
     private final Integer images;
     private final Integer ncpu;
-    private final Double memory;
+    private final long memory;
     private final Integer nodeCount;
     private final Integer offNodeCount;
-
+    //TODO deprecate this, due to new docker mode require different query for list nodes
     private final List<NodeInfo> nodeList;
+    private final Map<String, String> labels;
+    /**
+     * Info about swarm mode, can be null.
+     */
+    private final SwarmInfo swarm;
 
     private DockerServiceInfo(Builder builder) {
         this.id = builder.id;
         this.name = builder.name;
-        this.containers = builder.containers;
-        this.offContainers = builder.offContainers;
+        this.systemTime = builder.systemTime;
         this.images = builder.images;
         this.ncpu = builder.ncpu;
         this.memory = builder.memory;
         this.nodeCount = builder.nodeCount;
         this.offNodeCount = builder.offNodeCount;
         this.nodeList = ImmutableList.copyOf(builder.nodeList);
+        this.labels = ImmutableMap.copyOf(builder.labels);
+        this.swarm = builder.swarm;
     }
 
     public static Builder builder() {
@@ -64,14 +69,15 @@ public class DockerServiceInfo {
     public static final class Builder {
         private String id;
         private String name;
-        private Integer containers;
-        private Integer offContainers;
+        private LocalDateTime systemTime;
         private Integer images;
         private Integer ncpu;
-        private Double memory;
+        private long memory;
         private Integer nodeCount;
         private Integer offNodeCount;
         private final List<NodeInfo> nodeList = new ArrayList<>();
+        private final Map<String, String> labels = new HashMap<>();
+        private SwarmInfo swarm;
 
         private Builder() {
         }
@@ -83,14 +89,15 @@ public class DockerServiceInfo {
         public Builder from(DockerServiceInfo o) {
             setId(o.getId());
             setName(o.getName());
-            setContainers(o.getContainers());
-            setOffContainers(o.getOffContainers());
+            setSystemTime(o.getSystemTime());
             setImages(o.getImages());
             setNcpu(o.getNcpu());
             setMemory(o.getMemory());
             setNodeList(o.getNodeList());
             setNodeCount(o.getNodeCount());
             setOffNodeCount(o.getOffNodeCount());
+            setSwarm(o.getSwarm());
+            setLabels(o.getLabels());
             return this;
         }
 
@@ -104,13 +111,8 @@ public class DockerServiceInfo {
             return this;
         }
 
-        public Builder containers(Integer containers) {
-            this.containers = containers;
-            return this;
-        }
-
-        public Builder offContainers(Integer offContainers) {
-            setOffContainers(offContainers);
+        public Builder systemTime(LocalDateTime systemTime) {
+            setSystemTime(systemTime);
             return this;
         }
 
@@ -124,7 +126,7 @@ public class DockerServiceInfo {
             return this;
         }
 
-        public Builder memory(Double memory) {
+        public Builder memory(long memory) {
             this.memory = memory;
             return this;
         }
@@ -149,6 +151,18 @@ public class DockerServiceInfo {
             if(nodeList != null) {
                 this.nodeList.addAll(nodeList);
             }
+        }
+
+        public void setLabels(Map<String, String> labels) {
+            this.labels.clear();
+            if(labels != null) {
+                this.labels.putAll(labels);
+            }
+        }
+
+        public Builder swarm(SwarmInfo swarm) {
+            setSwarm(swarm);
+            return this;
         }
     }
 }

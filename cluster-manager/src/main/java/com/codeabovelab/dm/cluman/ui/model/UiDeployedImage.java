@@ -18,6 +18,7 @@ package com.codeabovelab.dm.cluman.ui.model;
 
 import com.codeabovelab.dm.cluman.model.DockerContainer;
 import com.codeabovelab.dm.cluman.model.ImageName;
+import io.swagger.annotations.ApiParam;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
@@ -35,12 +36,15 @@ public class UiDeployedImage extends UiImageData {
         private String name;
         private String id;
         private String node;
+        @ApiParam("Id of service which is own container")
+        private String service;
 
         public static UiContainerShort toUi(DockerContainer dc) {
             UiContainerShort uc = new UiContainerShort();
             uc.setId(dc.getId());
             uc.setName(dc.getName());
-            uc.setNode(dc.getNode().getName());
+            uc.setNode(dc.getNode());
+            uc.setService(dc.getService());
             return uc;
         }
     }

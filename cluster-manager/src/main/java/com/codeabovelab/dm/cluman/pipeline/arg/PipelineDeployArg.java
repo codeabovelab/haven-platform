@@ -16,7 +16,7 @@
 
 package com.codeabovelab.dm.cluman.pipeline.arg;
 
-import com.codeabovelab.dm.cluman.cluster.docker.management.argument.CreateContainerArg;
+import com.codeabovelab.dm.cluman.model.CreateContainerArg;
 import lombok.Builder;
 import lombok.Data;
 

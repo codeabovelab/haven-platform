@@ -22,7 +22,7 @@ import lombok.Builder;
 import lombok.Data;
 
 /**
- * Argument for {@link DockerService#killContainer(String)}
+ * Argument for {@link DockerService#killContainer(KillContainerArg)}
  */
 @Builder
 @Data

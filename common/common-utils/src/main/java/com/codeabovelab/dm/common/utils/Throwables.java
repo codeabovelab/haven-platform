@@ -16,16 +16,18 @@
 
 package com.codeabovelab.dm.common.utils;
 
+import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
 import org.springframework.util.Assert;
 
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
-import java.net.ConnectException;
 
 /**
  * tools for throwables
  */
+@Slf4j
 public class Throwables {
     /**
      * Print specified throwable to string. If throwable is null, then return null.
@@ -66,8 +68,8 @@ public class Throwables {
      * @return instance of specified type or null.
      */
     public static <T extends Throwable> T find(Throwable e, Class<T> type) {
-        Assert.notNull(e);
-        Assert.notNull(type);
+        Assert.notNull(e, "throwable can't be null");
+        Assert.notNull(type, "type can't be null");
         while(e != null) {
             if(type.isInstance(e)) {
                 return type.cast(e);
@@ -84,8 +86,8 @@ public class Throwables {
      * @return true if throwable has specified type in chain of causes.
      */
     public static boolean has(Throwable e, Class<? extends Throwable> type) {
-        Assert.notNull(e);
-        Assert.notNull(type);
+        Assert.notNull(e, "throwable can't be null");
+        Assert.notNull(type, "type can't be null");
         while(e != null) {
             if(type.isInstance(e)) {
                 return true;
@@ -93,5 +95,19 @@ public class Throwables {
             e = e.getCause();
         }
         return false;
+    }
+
+    public static Thread.UncaughtExceptionHandler uncaughtHandler() {
+        return uncaughtHandler(log);
+    }
+
+    public static Thread.UncaughtExceptionHandler uncaughtHandler(Logger log) {
+        return uncaughtHandler(log, "Uncaught exception.");
+    }
+
+    public static Thread.UncaughtExceptionHandler uncaughtHandler(Logger log, String msg) {
+        return (thread, ex) -> {
+            log.error(msg, ex);
+        };
     }
 }

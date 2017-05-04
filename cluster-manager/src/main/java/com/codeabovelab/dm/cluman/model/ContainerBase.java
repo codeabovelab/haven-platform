@@ -24,17 +24,19 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * Base for any docker container
+ * Base for docker container
  */
 @Data
-public class ContainerBase implements ContainerBaseIface {
+public final class ContainerBase implements ContainerBaseIface, WithNode {
 
     @Data
-    public static class Builder implements ContainerBaseIface {
+    public static class Builder implements ContainerBaseIface, WithNode {
         protected String id;
         protected String name;
         protected String image;
         protected String imageId;
+        protected String node;
+        protected DockerContainer.State state;
         protected final Map<String, String> labels = new HashMap<>();
 
         public void setLabels(Map<String, String> labels) {
@@ -54,6 +56,12 @@ public class ContainerBase implements ContainerBaseIface {
             setName(c.getName());
             setImage(c.getImage());
             setImageId(c.getImageId());
+            if(c instanceof WithNode) {
+                setNode(((WithNode)c).getNode());
+            }
+            if(c instanceof ContainerBase) {
+                setState(((ContainerBase)c).getState());
+            }
             setLabels(c.getLabels());
             return this;
         }
@@ -81,6 +89,8 @@ public class ContainerBase implements ContainerBaseIface {
     private final String name;
     private final String image;
     private final String imageId;
+    private final String node;
+    private final DockerContainer.State state;
     private final Map<String, String> labels;
 
     @JsonCreator
@@ -89,6 +99,8 @@ public class ContainerBase implements ContainerBaseIface {
         this.name = b.name;
         this.image = b.image;
         this.imageId = b.imageId;
+        this.node = b.node;
+        this.state = b.state;
         this.labels = ImmutableMap.copyOf(b.labels);
     }
 

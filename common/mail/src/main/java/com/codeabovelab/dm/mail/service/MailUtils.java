@@ -25,7 +25,7 @@ import java.io.Reader;
 import java.util.Arrays;
 import java.util.List;
 
-import static org.springframework.util.MimeTypeUtils.*;
+import static org.springframework.http.MediaType.*;
 
 public class MailUtils {
 

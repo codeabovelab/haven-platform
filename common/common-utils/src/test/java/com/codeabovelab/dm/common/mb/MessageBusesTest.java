@@ -8,30 +8,11 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.fail;
 
 /**
  */
 public class MessageBusesTest {
-
-    private class ValueHolder<T> implements Consumer<T> {
-        private int invocations = 0;
-        private T value;
-
-        @Override
-        public void accept(T o) {
-            invocations++;
-            this.value = o;
-        }
-
-        public int getInvocations() {
-            return invocations;
-        }
-
-        public T getValue() {
-            return value;
-        }
-    }
 
     @Test
     public void test() {
@@ -71,6 +52,25 @@ public class MessageBusesTest {
 
         if(!errors.isEmpty()) {
             fail(errors.toString());
+        }
+    }
+
+    private static class ValueHolder<T> implements Consumer<T> {
+        private int invocations = 0;
+        private T value;
+
+        @Override
+        public void accept(T o) {
+            invocations++;
+            this.value = o;
+        }
+
+        public int getInvocations() {
+            return invocations;
+        }
+
+        public T getValue() {
+            return value;
         }
     }
 }

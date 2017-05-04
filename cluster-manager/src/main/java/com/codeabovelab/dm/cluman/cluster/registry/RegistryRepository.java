@@ -66,6 +66,7 @@ public class RegistryRepository implements SupportSearch {
         String prefix = mapperFactory.getStorage().getPrefix() + "/docker-registry/";
         this.map = KvMap.builder(RegistryService.class, RegistryConfig.class)
           .mapper(mapperFactory)
+          .passDirty(true)
           .adapter(new KvMapAdapterImpl())
           .listener(this::onStorageEvent)
           .localListener(this::onLocalEvent)

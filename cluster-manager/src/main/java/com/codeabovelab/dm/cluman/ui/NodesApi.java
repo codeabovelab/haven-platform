@@ -21,21 +21,18 @@ import com.codeabovelab.dm.cluman.cluster.docker.management.DockerService;
 import com.codeabovelab.dm.cluman.cluster.docker.management.argument.GetContainersArg;
 import com.codeabovelab.dm.cluman.ds.container.ContainerStorage;
 import com.codeabovelab.dm.cluman.ds.nodes.NodeStorage;
-import com.codeabovelab.dm.cluman.ds.swarm.DockerServices;
-import com.codeabovelab.dm.cluman.model.DiscoveryStorage;
-import com.codeabovelab.dm.cluman.model.DockerContainer;
-import com.codeabovelab.dm.cluman.model.DockerServiceInfo;
-import com.codeabovelab.dm.cluman.model.NodeInfo;
+import com.codeabovelab.dm.cluman.model.*;
 import com.codeabovelab.dm.cluman.ui.model.UISearchQuery;
 import com.codeabovelab.dm.cluman.ui.model.UiContainer;
 import com.codeabovelab.dm.cluman.validate.ExtendedAssert;
-import io.swagger.annotations.ApiOperation;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
@@ -48,15 +45,30 @@ import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 public class NodesApi {
 
     private final NodeStorage nodeStorage;
-    private final DockerServices dockerServices;
     private final DiscoveryStorage discoveryStorage;
     private final FilterApi filterApi;
     private final ContainerStorage containerStorage;
 
     @RequestMapping(value = "/", method = RequestMethod.GET)
     public Collection<NodeInfo> listNodes() {
-        Collection<NodeInfo> nodes = nodeStorage.getNodes((ni) -> true);
+        List<NodeInfo> nodes = new ArrayList<>(nodeStorage.getNodes((ni) -> true));
+        nodes.replaceAll(this::prepareForUi);
         return nodes;
+    }
+
+    private NodeInfo prepareForUi(NodeInfo ni) {
+        if(ni == null) {
+            return ni;
+        }
+        NodesGroup ng = discoveryStorage.getClusterForNode(ni.getName());
+        String clusterName = ng == null? null : ng.getName();
+        if(!Objects.equals(clusterName, ni.getCluster())) {
+            // currently we have issue: when cluster was deleted we can not add node to another cluster
+            // but also we can not remove cluster name from node, because absent of cluster
+            // not mean that it will not appeared in future (due to lazy initialisation)
+            ni = NodeInfoImpl.builder(ni).cluster(clusterName).build();
+        }
+        return ni;
     }
 
     @RequestMapping(value = "/{name}", method = RequestMethod.DELETE)
@@ -64,14 +76,19 @@ public class NodesApi {
         nodeStorage.removeNode(name);
     }
 
+    @RequestMapping(value = "/{name}", method = RequestMethod.PUT)
+    public void addNode(@PathVariable("name") String name, @RequestParam("address") String address) {
+        nodeStorage.registerNode(name, address);
+    }
+
     @RequestMapping(value = "/{name}", method = RequestMethod.GET)
     public NodeInfo getNode(@PathVariable("name") String name) {
-        return nodeStorage.getNodeInfo(name);
+        return prepareForUi(nodeStorage.getNodeInfo(name));
     }
 
     @RequestMapping(value = "/{name}/containers", method = RequestMethod.GET)
     public List<UiContainer> getContainers(@PathVariable("name") String name) {
-        DockerService ds = dockerServices.getNodeService(name);
+        DockerService ds = nodeStorage.getNodeService(name);
         ExtendedAssert.notFound(ds, "Can not find docker service for node: " + name);
         List<DockerContainer> containers = ds.getContainers(new GetContainersArg(true));
         List<UiContainer> uics = containers.stream().map(UiContainer::from).collect(Collectors.toList());

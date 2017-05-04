@@ -98,6 +98,6 @@ public class ComposeMonitor {
     }
 
     public static Map<String, String> env(DockerService dockerService) {
-        return Collections.singletonMap("DOCKER_HOST", "tcp://" + dockerService.getClusterConfig().getHosts().get(0));
+        return Collections.singletonMap("DOCKER_HOST", "tcp://" + dockerService.getClusterConfig().getHost());
     }
 }

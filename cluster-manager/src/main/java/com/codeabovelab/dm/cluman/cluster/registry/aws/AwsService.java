@@ -59,7 +59,7 @@ public class AwsService {
                     amazonECR.setRegion(RegionUtils.getRegion(awsCredentials.getRegion()));
                     GetAuthorizationTokenResult authorizationToken = amazonECR.getAuthorizationToken(new GetAuthorizationTokenRequest());
                     List<AuthorizationData> authorizationData = authorizationToken.getAuthorizationData();
-                    Assert.isTrue(!CollectionUtils.isEmpty(authorizationData));
+                    Assert.isTrue(!CollectionUtils.isEmpty(authorizationData), "authorizationData is null or empty for token " + authorizationToken);
                     AuthorizationData data = authorizationData.get(0);
                     byte[] decode = Base64.getDecoder().decode(data.getAuthorizationToken());
                     String token = new String(decode);

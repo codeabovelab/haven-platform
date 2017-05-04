@@ -21,5 +21,5 @@ import com.codeabovelab.dm.cluman.model.NodeInfoImpl;
 /**
  */
 interface NodeUpdateHandler {
-    void fireNodeModification(NodeRegistrationImpl nr, String action, NodeInfoImpl ni);
+    void fireNodeModification(NodeRegistration nr, String action, NodeInfoImpl old, NodeInfoImpl curr);
 }

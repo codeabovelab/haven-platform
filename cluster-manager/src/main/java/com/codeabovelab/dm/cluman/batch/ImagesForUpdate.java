@@ -21,16 +21,14 @@ import com.codeabovelab.dm.cluman.utils.ContainerUtils;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
 import io.swagger.annotations.ApiModelProperty;
 import lombok.AccessLevel;
 import lombok.Data;
 import lombok.Getter;
 import org.springframework.util.PatternMatchUtils;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  */
@@ -40,6 +38,7 @@ public class ImagesForUpdate {
     @Data
     public static class Builder {
         private final List<Image> images = new ArrayList<>();
+        private final ExcludeBuilder exclude = new ExcludeBuilder(this);
 
         public Builder addImage(String name, String from, String to) {
             addImage(new Image(name, from, to));
@@ -127,6 +126,7 @@ public class ImagesForUpdate {
     }
 
     private final List<Image> images;
+    private final Exclude exclude;
     @Getter(AccessLevel.NONE)
     private final Map<String, Image> imagesByName = new HashMap<>();
     @Getter(AccessLevel.NONE)
@@ -135,6 +135,7 @@ public class ImagesForUpdate {
     @JsonCreator
     public ImagesForUpdate(Builder builder) {
         this.images = ImmutableList.copyOf(builder.images);
+        this.exclude = builder.exclude.build();
         this.images.forEach((img) -> {
             String name = img.getName();
             if(name.indexOf('*') < 0) {
@@ -179,5 +180,36 @@ public class ImagesForUpdate {
             }
         }
         return res;
+    }
+
+    @Data
+    public static final class Exclude {
+        private final Set<String> nodes;
+        private final Set<String> containers;
+    }
+
+    @Data
+    public static final class ExcludeBuilder {
+        private final Set<String> nodes = new HashSet<>();
+        private final Set<String> containers = new HashSet<>();
+        private final Builder builder;
+
+        public ExcludeBuilder addContainer(String container) {
+            this.containers.add(container);
+            return this;
+        }
+
+        public ExcludeBuilder addNode(String node) {
+            this.nodes.add(node);
+            return this;
+        }
+
+        public Builder end() {
+            return builder;
+        }
+
+        public Exclude build() {
+            return new Exclude(ImmutableSet.copyOf(nodes), ImmutableSet.copyOf(containers));
+        }
     }
 }

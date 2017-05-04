@@ -35,18 +35,27 @@ import com.codeabovelab.dm.common.security.Action;
 import com.codeabovelab.dm.common.security.Authorities;
 import com.codeabovelab.dm.common.security.TenantGrantedAuthoritySid;
 import com.codeabovelab.dm.common.security.acl.AceSource;
+import com.codeabovelab.dm.common.security.acl.AclSource;
+import com.codeabovelab.dm.common.utils.Closeables;
+import com.codeabovelab.dm.common.utils.ExecutorUtils;
+import com.codeabovelab.dm.common.utils.Throwables;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.beans.factory.config.AutowireCapableBeanFactory;
 import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Component;
 import org.springframework.util.Assert;
 
+import javax.annotation.PostConstruct;
+import javax.validation.Validator;
+import java.util.Collection;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.ExecutorService;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
@@ -62,10 +71,11 @@ public class DiscoveryStorageImpl implements DiscoveryStorage {
     private final DockerServices services;
     private final NodeStorage nodeStorage;
     private final KvMap<NodesGroup> clusters;
-    private final String prefix;
-    private final FilterFactory filterFactory;
     private final AccessContextFactory aclContextFactory;
     private final MessageBus<NodesGroupEvent> messageBus;
+    private final AutowireCapableBeanFactory beanFactory;
+    private final ExecutorService executor;
+    private final Validator validator;
 
     @Autowired
     public DiscoveryStorageImpl(KvMapperFactory kvmf,
@@ -73,17 +83,21 @@ public class DiscoveryStorageImpl implements DiscoveryStorage {
                                 DockerServices dockerServices,
                                 NodeStorage nodeStorage,
                                 AccessContextFactory aclContextFactory,
+                                AutowireCapableBeanFactory beanFactory,
+                                Validator validator,
                                 @Qualifier(NodesGroupEvent.BUS) MessageBus<NodesGroupEvent> messageBus) {
+        this.beanFactory = beanFactory;
         this.services = dockerServices;
         this.nodeStorage = nodeStorage;
+        this.validator = validator;
         this.messageBus = messageBus;
         this.aclContextFactory = aclContextFactory;
         KeyValueStorage storage = kvmf.getStorage();
-        this.filterFactory = filterFactory;
-        this.prefix = storage.getPrefix() + "/clusters/";
+        String prefix = storage.getPrefix() + "/clusters/";
         this.clusters = KvMap.builder(NodesGroup.class, AbstractNodesGroupConfig.class)
           .path(prefix)
           .mapper(kvmf)
+          .passDirty(true)
           .adapter(new KvMapAdapterImpl())
           .listener(e -> {
               String key = e.getKey();
@@ -99,33 +113,101 @@ public class DiscoveryStorageImpl implements DiscoveryStorage {
               }
           })
           .localListener(e -> {
-              if(e.getAction() == KvMapLocalEvent.Action.CREATE) {
-                  checkThatCanCreate();
+              KvMapLocalEvent.Action action = e.getAction();
+              switch (action) {
+                  case CREATE:
+                      checkThatCanCreate();
+                      break;
+                  case DELETE:
+                      // delete usually caused by kv event, and not has context
+                      try(TempAuth ta = TempAuth.asSystem()) {
+                          handleRemoved(e.getOldValue());
+                      }
+                      break;
               }
           })
           .build();
 
         filterFactory.registerFilter(new OrphansNodeFilterFactory(this));
+        this.executor = ExecutorUtils.executorBuilder()
+          .coreSize(1).maxSize(10 /*possible max count of clusters*/)
+          .exceptionHandler(Throwables.uncaughtHandler(log))
+          .daemon(true)
+          .name(getClass().getSimpleName())
+          .build();
+    }
+
+    @PostConstruct
+    public void init() {
         try(TempAuth ta = TempAuth.asSystem()) {
-            AclModifier aclModifier = (asb) -> {
-                //here we add default rights to read this groups by all users
-                asb.addEntry(AceSource.builder()
-                  .permission(Action.READ)
-                  .granting(true)
-                  .sid(TenantGrantedAuthoritySid.from(Authorities.USER))
-                  .build());
-                return true;
-            };
+            AclModifier aclModifier = this::addDefaultAce;
             // virtual cluster for any nodes
-            getOrCreateGroup(new DefaultNodesGroupConfig(GROUP_ID_ALL, FilterFactory.ANY)).updateAcl(aclModifier);
+            NodesGroup allGroup = getOrCreateGroup(new DefaultNodesGroupConfig(GROUP_ID_ALL, FilterFactory.ANY));
+            allGroup.updateAcl(aclModifier);
+            ((NodesGroupImpl)allGroup).setContainersProvider(new NodesGroupImpl.AllContainersProvider());
             // virtual cluster for nodes without cluster
             getOrCreateGroup(new DefaultNodesGroupConfig(GROUP_ID_ORPHANS, OrphansNodeFilterFactory.FILTER)).updateAcl(aclModifier);
         }
+
+        getNodeStorage().getNodeEventSubscriptions().subscribe(this::onNodeEvent);
+    }
+
+    private boolean addDefaultAce(AclSource.Builder asb) {
+        //here we add default rights to read this groups by all users
+        TenantGrantedAuthoritySid tgas = TenantGrantedAuthoritySid.from(Authorities.USER);
+        Action read = Action.READ;
+        for(AceSource aces: asb.getEntries().values()) {
+            if(aces.isGranting() && tgas.equals(aces.getSid()) && aces.getPermission().getMask() == read.getMask()) {
+                return false;
+            }
+        }
+        asb.addEntry(AceSource.builder()
+          .permission(read)
+          .granting(true)
+          .sid(tgas)
+          .build());
+        return true;
+    }
+
+    private void onNodeEvent(NodeEvent nodeEvent) {
+        if(nodeEvent.getAction().isPre()) {
+            return;
+        }
+        NodeInfo node = nodeEvent.getCurrent();
+        if (node == null) {
+            return;
+        }
+        String clusterName = node.getCluster();
+        if(clusterName == null) {
+            return;
+        }
+        NodesGroup cluster = getCluster(clusterName);
+        if (cluster == null) {
+            log.warn("Node without cluster {}", node);
+            return;
+        }
+        executor.execute(() -> {
+            // setup cluster (it need only cases when cluster have no one node, for both types of clusters)
+            try(TempAuth ta = TempAuth.asSystem()) {
+                cluster.init();
+            }
+        });
     }
 
     public void load() {
         try(TempAuth ta = TempAuth.asSystem()) {
+            log.info("Begin clusters from storage");
+            // load keys, and then init values
             clusters.load();
+            Collection<NodesGroup> values = clusters.values();
+            StringBuilder sb = new StringBuilder();
+            values.forEach((ng) -> {
+                sb.append("\n");
+                sb.append(ng.getName()).append(":\n\t title:");
+                sb.append(ng.getTitle()).append("\n\tconfig:");
+                sb.append(ng.getConfig());
+            });
+            log.warn("Loaded clusters from storage: {}", sb);
         } catch (Exception  e) {
             log.error("Can not load clusters from storage", e);
         }
@@ -143,32 +225,22 @@ public class DiscoveryStorageImpl implements DiscoveryStorage {
         return nodeStorage;
     }
 
-    @Override
-    public NodesGroup getClusterForNode(String nodeId, String clusterId) {
-        NodesGroup cluster = findNodeCluster(nodeId);
-        if (cluster == null && clusterId != null) {
-            cluster = getOrCreateCluster(clusterId, null);
-        }
-        if(cluster == null) {
-            // no clusters for node, so it orphan
-            cluster = clusters.get(GROUP_ID_ORPHANS);
-        }
-        checkThatCanRead(cluster);
-        return cluster;
+    ExecutorService getExecutor() {
+        return executor;
     }
 
     /**
      * get or create cluster. Consumer will be invoked before cluster process start and allow modification of swarm parameters
      * @param clusterId
-     * @param consumer consumer or null
+     * @param factory consumer or null
      * @return
      */
     @Override
-    public NodesGroup getOrCreateCluster(String clusterId, Consumer<ClusterCreationContext> consumer) {
+    public NodesGroup getOrCreateCluster(String clusterId, ClusterConfigFactory factory) {
         ExtendedAssert.matchAz09Hyp(clusterId, "clusterId");
         NodesGroup ng = clusters.computeIfAbsent(clusterId, (cid) -> {
             checkThatCanCreate();
-            return RealCluster.factory(this, null, consumer).apply(cid);
+            return clusterFactory().configFactory(factory).build(cid);
         });
         // we place it after creation, because check it for not created cluster is not good
         checkThatCanRead(ng);
@@ -200,21 +272,12 @@ public class DiscoveryStorageImpl implements DiscoveryStorage {
     }
 
     private NodesGroup makeClusterFromConfig(AbstractNodesGroupConfig<?> config, String cid) {
-        NodesGroup cluster;
-        if (config instanceof DefaultNodesGroupConfig) {
-            cluster = NodesGroupImpl.builder()
-              .config((DefaultNodesGroupConfig) config)
-              .filterFactory(filterFactory)
-              .storage(this)
-              .dockerServices(services)
-              .feature(NodesGroup.Feature.FORBID_NODE_ADDITION)
-              .build();
-        } else if (config instanceof SwarmNodesGroupConfig) {
-            cluster = RealCluster.factory(this, (SwarmNodesGroupConfig) config, null).apply(cid);
-        } else {
-            throw new IllegalArgumentException("Unsupported config: " + config);
-        }
+        NodesGroup cluster = clusterFactory().config(config).build(cid);
         return cluster;
+    }
+
+    private ClusterFactory clusterFactory() {
+        return  new ClusterFactory(this, beanFactory, validator);
     }
 
     @Override
@@ -256,22 +319,35 @@ public class DiscoveryStorageImpl implements DiscoveryStorage {
     public void deleteCluster(String clusterId) {
         NodesGroup cluster = clusters.get(clusterId);
         ExtendedAssert.notFound(cluster, "Cluster: " + clusterId + " is not found.");
-        Assert.isTrue(cluster instanceof RealCluster, "Can not delete non real cluster: " + clusterId);
+        Assert.isTrue(!isPredefined(cluster), "Can not delete predefined cluster: " + clusterId);
         deleteGroup(clusterId);
+    }
+
+    private boolean isPredefined(NodesGroup nodesGroup) {
+        String name = nodesGroup.getName();
+        return SYSTEM_GROUPS.contains(name);
     }
 
     private void deleteGroup(String clusterId) {
         aclContextFactory.getContext().assertGranted(SecuredType.CLUSTER.id(clusterId), Action.DELETE);
-        clusters.remove(clusterId);
+        NodesGroup ng = clusters.remove(clusterId);
+        handleRemoved(ng);
         log.error("Delete '{}' cluster.", clusterId);
+    }
+
+    private void handleRemoved(NodesGroup ng) {
+        if(ng == null) {
+            return;
+        }
+        ng.clean();
+        Closeables.closeIfCloseable(ng);
     }
 
     public void deleteNodeGroup(String clusterId) {
 
         NodesGroup cluster = clusters.get(clusterId);
         Assert.notNull(cluster, "GroupId: " + clusterId + " is not found.");
-        Assert.isTrue(!(cluster instanceof RealCluster), "Can not delete a real cluster: " + clusterId);
-        Assert.isTrue(!SYSTEM_GROUPS.contains(clusterId), "Can't delete system group");
+        Assert.isTrue(!isPredefined(cluster), "Can't delete predefined cluster");
         deleteGroup(clusterId);
     }
 
@@ -333,7 +409,7 @@ public class DiscoveryStorageImpl implements DiscoveryStorage {
     private NodesGroupsConfig getConfig() {
         List<AbstractNodesGroupConfig<?>> groups = clusters.values()
           .stream()
-          .map((c) -> c.getConfig())
+          .map(NodesGroup::getConfig)
           .collect(Collectors.toList());
         NodesGroupsConfig ngc = new NodesGroupsConfig();
         ngc.setGroups(groups);

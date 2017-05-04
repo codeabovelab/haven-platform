@@ -20,12 +20,13 @@ import com.codeabovelab.dm.cluman.cluster.docker.ClusterConfig;
 import com.codeabovelab.dm.cluman.cluster.docker.ClusterConfigImpl;
 import com.codeabovelab.dm.cluman.cluster.docker.management.DockerService;
 import com.codeabovelab.dm.cluman.cluster.docker.management.argument.*;
-import com.codeabovelab.dm.cluman.cluster.docker.management.result.ProcessEvent;
-import com.codeabovelab.dm.cluman.cluster.docker.management.result.RemoveImageResult;
+import com.codeabovelab.dm.cluman.cluster.docker.management.result.*;
 import com.codeabovelab.dm.cluman.cluster.docker.management.result.ResultCode;
 import com.codeabovelab.dm.cluman.cluster.docker.management.result.ServiceCallResult;
 import com.codeabovelab.dm.cluman.cluster.docker.model.*;
-import com.codeabovelab.dm.cluman.ds.swarm.DockerServices;
+import com.codeabovelab.dm.cluman.cluster.docker.model.swarm.*;
+import com.codeabovelab.dm.cluman.ds.nodes.NodeStorage;
+import com.codeabovelab.dm.cluman.ds.nodes.NodeUtils;
 import com.codeabovelab.dm.cluman.model.*;
 import com.codeabovelab.dm.cluman.model.Node;
 import lombok.extern.slf4j.Slf4j;
@@ -46,17 +47,53 @@ class VirtualDockerService implements DockerService {
     // we need empty config for prevent NPE
     private final ClusterConfig config = ClusterConfigImpl.builder()
       //workaround, possibly we must to create config runtime
-      .addHost("<virtual host>")
+      .host("<virtual host>")
       .build();
 
     VirtualDockerService(NodesGroupImpl cluster) {
         this.cluster = cluster;
     }
 
+    private ServiceCallResult notSupported() {
+        ServiceCallResult res = new ServiceCallResult();
+        return notSupported(res);
+    }
+
+    private <T extends ServiceCallResult> T notSupported(T res) {
+        res.code(ResultCode.ERROR).message("Virtual cluster '" + getCluster() + "' does not support this.");
+        return res;
+    }
+
     @Override
-    public ServiceCallResult createNetwork(CreateNetworkCmd createNetworkCmd) {
+    public CreateNetworkResponse createNetwork(CreateNetworkCmd createNetworkCmd) {
         //TODO
-        return new ServiceCallResult().code(ResultCode.ERROR).message("Virtual cluster '" + getCluster() + "' does not support this.");
+        return notSupported(new CreateNetworkResponse());
+    }
+
+    @Override
+    public Network getNetwork(String id) {
+        return null;
+    }
+
+    @Override
+    public ServiceCallResult deleteNetwork(String id) {
+        return notSupported();
+    }
+
+    @Override
+    public PruneNetworksResponse pruneNetworks(PruneNetworksArg arg) {
+        PruneNetworksResponse res = new PruneNetworksResponse();
+        return notSupported(res);
+    }
+
+    @Override
+    public ServiceCallResult connectNetwork(ConnectNetworkCmd cmd) {
+        return notSupported();
+    }
+
+    @Override
+    public ServiceCallResult disconnectNetwork(DisconnectNetworkCmd cmd) {
+        return notSupported();
     }
 
     @Override
@@ -75,27 +112,19 @@ class VirtualDockerService implements DockerService {
     }
 
     @Override
+    public String getAddress() {
+        // virtual service not has address
+        return null;
+    }
+
+    @Override
     public boolean isOnline() {
         return true;
     }
 
     @Override
     public List<DockerContainer> getContainers(GetContainersArg arg) {
-        List<DockerContainer> virtConts = new ArrayList<>();
-        for(Node node: cluster.getNodes()) {
-            DockerService service = getServiceByNode(node);
-            if(isOffline(service)) {
-                // due to different causes service can be null
-                continue;
-            }
-            try {
-                List<DockerContainer> nodeContainer = service.getContainers(arg);
-                virtConts.addAll(nodeContainer);
-            } catch (AccessDeniedException e) {
-                //nothing
-            }
-        }
-        return virtConts;
+        return this.cluster.getContainersImpl(arg);
     }
 
     @Override
@@ -119,8 +148,11 @@ class VirtualDockerService implements DockerService {
 
     private DockerService getServiceByNode(Node node) {
         Assert.notNull(node, "Node is null");
-        DockerServices dockerServices = this.cluster.getDockerServices();
-        return  dockerServices.getNodeService(node.getName());
+        return  getNodeStorage().getNodeService(node.getName());
+    }
+
+    private NodeStorage getNodeStorage() {
+        return this.cluster.getNodeStorage();
     }
 
     @Override
@@ -134,7 +166,7 @@ class VirtualDockerService implements DockerService {
     }
 
     private DockerService getServiceByContainer(String id) {
-        return this.cluster.getDockerServices().getServiceByContainer(id);
+        return NodeUtils.getDockerByContainer(cluster.getContainerStorage(), getNodeStorage(), id);
     }
 
     @Override
@@ -150,8 +182,6 @@ class VirtualDockerService implements DockerService {
     @Override
     public DockerServiceInfo getInfo() {
         List<NodeInfo> nodeList = new ArrayList<>();
-        int containers = 0;
-        int offContainers = 0;
         int offNodes = 0;
         for(NodeInfo nodeInfo: cluster.getNodes()) {
             if(nodeInfo != null) {
@@ -166,28 +196,16 @@ class VirtualDockerService implements DockerService {
             if(nodeInfo == null || !nodeInfo.isOn()) {
                 offNodes++;
             }
-            try {
-                List<DockerContainer> nodeContainer = service.getContainers(new GetContainersArg(true));
-                int running = (int) nodeContainer.stream().filter(DockerContainer::isRun).count();
-                containers += running;
-                offContainers += nodeContainer.size() - running;
-            } catch (AccessDeniedException e) {
-                //nothing
-            } catch (Exception e) {
-                log.warn("Can not list containers on {}, due to error {}", nodeInfo.getName(), e.toString());
-            }
         }
         return DockerServiceInfo.builder()
           .name(getCluster())
           .nodeList(nodeList)
           .nodeCount(nodeList.size() - offNodes)
           .offNodeCount(offNodes)
-          .containers(containers)
-          .offContainers(offContainers)
           .build();
     }
 
-    private boolean isOffline(DockerService service) {
+    static boolean isOffline(DockerService service) {
         return service == null || !service.isOnline();
     }
 
@@ -198,6 +216,24 @@ class VirtualDockerService implements DockerService {
             return whenNotFoundService(id);
         }
         return service.startContainer(id);
+    }
+
+    @Override
+    public ServiceCallResult pauseContainer(String id) {
+        DockerService service = getServiceByContainer(id);
+        if(isOffline(service)) {
+            return whenNotFoundService(id);
+        }
+        return service.pauseContainer(id);
+    }
+
+    @Override
+    public ServiceCallResult unpauseContainer(String id) {
+        DockerService service = getServiceByContainer(id);
+        if(isOffline(service)) {
+            return whenNotFoundService(id);
+        }
+        return service.unpauseContainer(id);
     }
 
     @Override
@@ -318,8 +354,103 @@ class VirtualDockerService implements DockerService {
         return image;
     }
 
+    @Override
     public ClusterConfig getClusterConfig() {
         return config;
     }
 
+    @Override
+    public SwarmInspectResponse getSwarm() {
+        return null;
+    }
+
+    @Override
+    public SwarmInitResult initSwarm(SwarmInitCmd cmd) {
+        return null;
+    }
+
+    @Override
+    public ServiceCallResult joinSwarm(SwarmJoinCmd cmd) {
+        return null;
+    }
+
+    @Override
+    public ServiceCallResult leaveSwarm(SwarmLeaveArg arg) {
+        return null;
+    }
+
+    @Override
+    public List<SwarmNode> getNodes(GetNodesArg cmd) {
+        return Collections.emptyList();
+    }
+
+    @Override
+    public ServiceCallResult removeNode(RemoveNodeArg arg) {
+        return notSupported();
+    }
+
+    @Override
+    public ServiceCallResult updateNode(UpdateNodeCmd cmd) {
+        return notSupported();
+    }
+
+    @Override
+    public List<Service> getServices(GetServicesArg arg) {
+        return Collections.emptyList();
+    }
+
+    @Override
+    public ServiceCreateResult createService(CreateServiceArg arg) {
+        return null;
+    }
+
+    @Override
+    public ServiceUpdateResult updateService(UpdateServiceArg arg) {
+        return null;
+    }
+
+    @Override
+    public ServiceCallResult deleteService(String service) {
+        return notSupported();
+    }
+
+    @Override
+    public Service getService(String service) {
+        return null;
+    }
+
+    @Override
+    public List<Task> getTasks(GetTasksArg arg) {
+        return Collections.emptyList();
+    }
+
+    @Override
+    public Task getTask(String taskId) {
+        return null;
+    }
+
+    @Override
+    public List<Volume> getVolumes(GetVolumesArg arg) {
+        return Collections.emptyList();
+    }
+
+    @Override
+    public Volume createVolume(CreateVolumeCmd cmd) {
+        return null;
+    }
+
+    @Override
+    public ServiceCallResult removeVolume(RemoveVolumeArg arg) {
+        return notSupported();
+    }
+
+    @Override
+    public ServiceCallResult deleteUnusedVolumes(DeleteUnusedVolumesArg arg) {
+        return notSupported();
+    }
+
+    @Override
+    public Volume getVolume(String name) {
+        return null;
+    }
 }

@@ -106,7 +106,7 @@ public class ClusterConfigFetcherTest {
 
         @SuppressWarnings("unchecked")
         DockerServiceImpl dockerService() {
-            ClusterConfig config = ClusterConfigImpl.builder().addHost("localhost:2375").build();
+            ClusterConfig config = ClusterConfigImpl.builder().host("localhost:2375").build();
             AsyncRestTemplate restTemplate = new AsyncRestTemplate();
             restTemplate.setInterceptors(
                     Collections.singletonList(
@@ -117,6 +117,7 @@ public class ClusterConfigFetcherTest {
               .restTemplate(restTemplate)
               .nodeInfoProvider(mock(NodeInfoProvider.class))
               .eventConsumer(mock(MessageBus.class))
+              .objectMapper(new ObjectMapper())
               .build();
         }
 
@@ -135,7 +136,7 @@ public class ClusterConfigFetcherTest {
 
     @Before
     public void before() {
-        discoveryStorage.getOrCreateCluster(MOCK, (c) -> {});
+        discoveryStorage.getOrCreateCluster(MOCK, null);
     }
 
     @Test

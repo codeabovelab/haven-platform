@@ -19,6 +19,7 @@ package com.codeabovelab.dm.cluman.cluster.docker.model;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Data;
 
+import java.util.HashMap;
 import java.util.Map;
 
 /**
@@ -71,8 +72,16 @@ public class CreateContainerCmd {
     @JsonProperty("Image")
     private String image;
 
+    /**
+     * An object mapping mount point paths inside the container to empty objects.<p/>
+     * <pre>
+     *     "Volumes":{
+             "/volumes/data": { }
+           },
+     * </pre>
+     */
     @JsonProperty("Volumes")
-    private Volumes volumes = new Volumes();
+    private Map<String, Object> volumes;
 
     @JsonProperty("WorkingDir")
     private String workingDir;

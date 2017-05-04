@@ -17,7 +17,6 @@
 package com.codeabovelab.dm.cluman.ui;
 
 import com.codeabovelab.dm.cluman.cluster.docker.management.DockerService;
-import com.codeabovelab.dm.cluman.cluster.docker.management.argument.GetContainersArg;
 import com.codeabovelab.dm.cluman.cluster.docker.management.argument.GetImagesArg;
 import com.codeabovelab.dm.cluman.cluster.docker.management.argument.TagImageArg;
 import com.codeabovelab.dm.cluman.cluster.docker.management.result.ServiceCallResult;
@@ -25,15 +24,12 @@ import com.codeabovelab.dm.cluman.cluster.docker.model.ContainerDetails;
 import com.codeabovelab.dm.cluman.cluster.docker.model.ImageItem;
 import com.codeabovelab.dm.cluman.cluster.filter.Filter;
 import com.codeabovelab.dm.cluman.cluster.filter.FilterFactory;
-import com.codeabovelab.dm.cluman.cluster.registry.ImageFilterContext;
-import com.codeabovelab.dm.cluman.cluster.registry.RegistryRepository;
-import com.codeabovelab.dm.cluman.cluster.registry.RegistrySearchHelper;
-import com.codeabovelab.dm.cluman.cluster.registry.RegistryService;
+import com.codeabovelab.dm.cluman.cluster.registry.*;
 import com.codeabovelab.dm.cluman.cluster.registry.data.ImageCatalog;
 import com.codeabovelab.dm.cluman.cluster.registry.data.SearchResult;
 import com.codeabovelab.dm.cluman.cluster.registry.data.Tags;
-import com.codeabovelab.dm.cluman.ds.DockerServiceRegistry;
-import com.codeabovelab.dm.cluman.ds.clusters.SwarmNodesGroupConfig;
+import com.codeabovelab.dm.cluman.ds.clusters.ClusterUtils;
+import com.codeabovelab.dm.cluman.ds.clusters.DockerBasedClusterConfig;
 import com.codeabovelab.dm.cluman.model.*;
 import com.codeabovelab.dm.cluman.source.ContainerSourceFactory;
 import com.codeabovelab.dm.cluman.ui.model.*;
@@ -64,8 +60,7 @@ import static org.springframework.web.bind.annotation.RequestMethod.GET;
 @RequiredArgsConstructor(onConstructor = @__(@Autowired))
 public class ImagesApi {
 
-    private static final Splitter SPLITTER = Splitter.on(",").omitEmptyStrings().trimResults();
-    private final DockerServiceRegistry dockerServices;
+    private static final Splitter SPLITTER = Splitter.on(",").trimResults();
     private final DiscoveryStorage discoveryStorage;
     private final RegistryRepository registryRepository;
     private final FilterFactory filterFactory;
@@ -73,7 +68,7 @@ public class ImagesApi {
     @RequestMapping(value = "/clusters/{cluster}/list", method = RequestMethod.GET)
     public List<ImageItem> getImages(@PathVariable("cluster") String cluster) {
         //TODO check usage of this method in CLI and if it not used - remove
-        List<ImageItem> images = dockerServices.getService(cluster).getImages(GetImagesArg.ALL);
+        List<ImageItem> images = discoveryStorage.getService(cluster).getImages(GetImagesArg.ALL);
         return images;
     }
 
@@ -81,28 +76,26 @@ public class ImagesApi {
     public Collection<UiDeployedImage> getDeployedImages(@PathVariable("cluster") String cluster) {
         NodesGroup nodesGroup = discoveryStorage.getCluster(cluster);
         ExtendedAssert.notFound(nodesGroup, "Cluster was not found by " + cluster);
-        DockerService service = nodesGroup.getDocker();
-        ExtendedAssert.notFound(service, "Service for " + cluster + " is null.");
-        GetContainersArg arg = new GetContainersArg(true);
-        List<DockerContainer> containers = service.getContainers(arg);
+        ClusterUtils.checkClusterState(nodesGroup);
+        Collection<DockerContainer> containers = nodesGroup.getContainers().getContainers();
         Map<String, UiDeployedImage> images = new HashMap<>();
         for (DockerContainer container : containers) {
             String imageId = container.getImageId();
             UiDeployedImage img = images.computeIfAbsent(imageId, UiDeployedImage::new);
             img.addContainer(container);
-            loadImageTagsIfNeed(service, container, img);
+            loadImageTagsIfNeed(nodesGroup, container, img);
         }
         return images.values();
     }
 
-    private void loadImageTagsIfNeed(DockerService service, DockerContainer container, UiDeployedImage img) {
+    private void loadImageTagsIfNeed(NodesGroup service, DockerContainer container, UiDeployedImage img) {
         String imageWithTag = container.getImage();
         if (!CollectionUtils.isEmpty(img.getTags())) {
             return;
         }
         if (ImageName.isId(imageWithTag)) {
             try {
-                ContainerDetails cd = service.getContainer(container.getId());
+                ContainerDetails cd = service.getContainers().getContainer(container.getId());
                 imageWithTag = ContainerSourceFactory.resolveImageName(cd);
                 if (imageWithTag == null || ImageName.isId(imageWithTag)) {
                     return;
@@ -113,7 +106,7 @@ public class ImagesApi {
                 return;
             }
         }
-        String image = ContainerUtils.getRegistryAndImageName(imageWithTag);
+        String image = ImageName.withoutTag(imageWithTag);
         RegistryService registryService = registryRepository.getRegistryByImageName(image);
         if (registryService != null) {
             img.setRegistry(registryService.getConfig().getName());
@@ -132,27 +125,12 @@ public class ImagesApi {
                                  @RequestParam(value = "page") int page,
                                  @RequestParam(value = "size") int size) {
 
-        List<String> registries = new ArrayList<>();
-        SwarmNodesGroupConfig swarmNodesGroupConfig = getSwarmNodesGroupConfig(cluster);
-        if (swarmNodesGroupConfig != null) {
-            registries.addAll(swarmNodesGroupConfig.getConfig().getRegistries());
+        Set<String> registries = new HashSet<>();
+        DockerBasedClusterConfig dcngConfig = getDockerBasedGroupsConfig(cluster);
+        if (dcngConfig != null) {
+            registries.addAll(dcngConfig.getConfig().getRegistries());
         }
-
-        try {
-            // we may get registry name from query
-            if (!StringUtils.hasText(registryParam)) {
-                registryParam = ContainerUtils.getRegistryPrefix(query);
-            }
-            // registry may be a mask
-            if (registryParam != null && registryParam.contains("*")) {
-                registryParam = "";
-            }
-            if (StringUtils.hasText(registryParam)) {
-                registries.retainAll(SPLITTER.splitToList(registryParam));
-            }
-        } catch (Exception e) {
-            //nothing
-        }
+        filterRegistries(registryParam, query, registries);
 
         SearchResult result;
         if (!CollectionUtils.isEmpty(registries)) {
@@ -171,6 +149,35 @@ public class ImagesApi {
             return UiSearchResult.builder().build();
         }
         return UiSearchResult.from(result);
+    }
+
+    /**
+     * when registryParam is
+     * <ul>
+     *   <li/>'*' - use all registries (consider that we already add al registries - we must do nothing)
+     *   <li/>'' (emptystring) - use docker hub
+     * </ul>
+     *
+     * @param registryParam null or string
+     * @param query null or string
+     * @param registries set of all registries
+     */
+    static void filterRegistries(String registryParam, String query, Collection<String> registries) {
+        if("*".equals(registryParam)) {
+            return;
+        }
+        try {
+            // we may get registry name from query if param not specified
+            if (registryParam == null && query != null) {
+                registryParam = ContainerUtils.getRegistryPrefix(query);
+            }
+            // and at end we remove all registries which is not specified in param
+            if (registryParam != null) {
+                registries.retainAll(SPLITTER.splitToList(registryParam));
+            }
+        } catch (Exception e) {
+            //nothing
+        }
     }
 
     @RequestMapping(value = "/image", method = RequestMethod.GET)
@@ -209,7 +216,7 @@ public class ImagesApi {
                 .cluster(cluster)
                 .imageName(imageName)
                 .repository(repository).build();
-        ServiceCallResult res = dockerServices.getService(cluster).createTag(tagImageArg);
+        ServiceCallResult res = discoveryStorage.getService(cluster).createTag(tagImageArg);
 
         return UiUtils.createResponse(res);
     }
@@ -301,7 +308,7 @@ public class ImagesApi {
         for (NodesGroup nodesGroup : nodesGroups) {
             // we gather images from real clusters and orphans nodes
             String groupName = nodesGroup.getName();
-            if (!nodesGroup.getFeatures().contains(NodesGroup.Feature.SWARM) &&
+            if (!ClusterUtils.isDockerBased(nodesGroup) &&
                     !DiscoveryStorage.GROUP_ID_ORPHANS.equals(groupName)) {
                 continue;
             }
@@ -356,21 +363,21 @@ public class ImagesApi {
         }
     }
 
-    private SwarmNodesGroupConfig getSwarmNodesGroupConfig(String cluster) {
+    private DockerBasedClusterConfig getDockerBasedGroupsConfig(String cluster) {
         if (StringUtils.hasText(cluster)) {
             NodesGroup nodesGroup = discoveryStorage.getCluster(cluster);
             ExtendedAssert.notFound(nodesGroup, "Cluster not found " + cluster);
-            if (nodesGroup.getConfig() instanceof SwarmNodesGroupConfig) {
-                return (SwarmNodesGroupConfig) nodesGroup.getConfig();
+            if (nodesGroup.getConfig() instanceof DockerBasedClusterConfig) {
+                return (DockerBasedClusterConfig) nodesGroup.getConfig();
             }
         }
         return null;
     }
 
     private Filter calculateImageFilter(String filter, String cluster) {
-        SwarmNodesGroupConfig swarmNodesGroupConfig = getSwarmNodesGroupConfig(cluster);
-        if (!StringUtils.hasText(filter) && swarmNodesGroupConfig != null) {
-            filter = swarmNodesGroupConfig.getImageFilter();
+        DockerBasedClusterConfig dbngConfig = getDockerBasedGroupsConfig(cluster);
+        if (!StringUtils.hasText(filter) && dbngConfig != null) {
+            filter = dbngConfig.getImageFilter();
         }
         if (!StringUtils.hasText(filter)) {
             return Filter.any();

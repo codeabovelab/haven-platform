@@ -30,8 +30,9 @@ import lombok.Data;
   property = "groupType"
 )
 @JsonSubTypes({
-  @JsonSubTypes.Type(value = DefaultNodesGroupConfig.class, name = "DEFAULT"),
-  @JsonSubTypes.Type(value = SwarmNodesGroupConfig.class, name = "SWARM")
+  @JsonSubTypes.Type(value = DefaultNodesGroupConfig.class, name = NodesGroupConfig.TYPE_DEFAULT),
+  @JsonSubTypes.Type(value = SwarmNodesGroupConfig.class, name = NodesGroupConfig.TYPE_SWARM),
+  @JsonSubTypes.Type(value = DockerClusterConfig.class, name = NodesGroupConfig.TYPE_DOCKER)
 })
 @Data
 public abstract class AbstractNodesGroupConfig<T extends AbstractNodesGroupConfig<T>> implements Cloneable, NodesGroupConfig {
@@ -44,6 +45,8 @@ public abstract class AbstractNodesGroupConfig<T extends AbstractNodesGroupConfi
     private String title;
     @KvMapping
     private String description;
+    @KvMapping
+    private String defaultNetwork;
     @KvMapping
     private AclSource acl;
 

@@ -1,0 +1,62 @@
+<!doctype html>
+  <html>
+    <head>
+      <link rel="stylesheet" href="/res/xterm.js/xterm.css" />
+      <script src="/res/xterm.js/xterm.js"></script>
+      <script src="/res/xterm.js/attach.js"></script>
+      <script src="/res/xterm.js/fit.js"></script>
+      <script type="text/javascript">
+        var ws = null; //websocket
+        var term = null;
+        function openContainer() {
+            if(ws) {
+                console.debug("Found already opened websocket:", ws);
+                term.detach(ws)
+                ws.close();
+            }
+            var termNode = document.getElementById('terminal');
+            //clear from previous term instance
+            var tmp = Array.from(termNode.childNodes);
+            tmp.forEach(cn => {termNode.removeChild(cn)});
+
+            //new term instance
+            term = new Terminal();
+            term.open(termNode);
+            var container = document.getElementById("containerId").value;
+            ws = new WebSocket("ws://" + window.location.host +
+              "/ui/tty?container=" + container);
+            term.attach(ws, true, true);
+            term.fit();
+        }
+      </script>
+        <style>
+           /* fix https://github.com/sourcelair/xterm.js/issues/475 */
+            .xterm-rows span {
+                display: inline-block;
+            }
+            body, html, .main_container {
+                height: 100%;
+            }
+            .main_container {
+                margin: 1em auto;
+                width:fit-content;
+                width:-moz-fit-content;
+                width:-webkit-fit-content;
+                width:-ms-fit-content;
+            }
+            #terminal {
+                width: 85ch;
+                height: 30em;
+            }
+        </style>
+    </head>
+    <body>
+        <div class="main_container">
+          <input id="containerId" type="text" />
+          <button onclick="openContainer()">connect</button>
+          <button onclick='ws.send("\x0c")'>Ctrl+L (refresh)</button>
+          <div id="terminal" class="terminal" ></div>
+          <span>Terminal use https://xtermjs.org/ library.</span>
+        </div>
+    </body>
+</html>

@@ -25,7 +25,7 @@ import lombok.EqualsAndHashCode;
  */
 @EqualsAndHashCode(callSuper = true)
 @Data
-public class SwarmNodesGroupConfig extends AbstractNodesGroupConfig<SwarmNodesGroupConfig> {
+public class SwarmNodesGroupConfig extends AbstractNodesGroupConfig<SwarmNodesGroupConfig> implements DockerBasedClusterConfig {
     @KvMapping
     private ClusterConfigImpl config;
 }

@@ -16,8 +16,8 @@
 
 package com.codeabovelab.dm.cluman.ui;
 
-import com.codeabovelab.dm.cluman.cluster.docker.ClusterConfig;
 import com.codeabovelab.dm.cluman.cluster.application.ApplicationService;
+import com.codeabovelab.dm.cluman.cluster.docker.ClusterConfig;
 import com.codeabovelab.dm.cluman.cluster.docker.management.DockerService;
 import com.codeabovelab.dm.cluman.cluster.docker.management.argument.*;
 import com.codeabovelab.dm.cluman.cluster.docker.management.result.CreateAndStartContainerResult;
@@ -26,22 +26,16 @@ import com.codeabovelab.dm.cluman.cluster.docker.management.result.ResultCode;
 import com.codeabovelab.dm.cluman.cluster.docker.management.result.ServiceCallResult;
 import com.codeabovelab.dm.cluman.cluster.docker.model.ContainerDetails;
 import com.codeabovelab.dm.cluman.cluster.docker.model.Statistics;
-import com.codeabovelab.dm.cluman.cluster.docker.model.UpdateContainerCmd;
 import com.codeabovelab.dm.cluman.cluster.registry.RegistryRepository;
 import com.codeabovelab.dm.cluman.cluster.registry.RegistryService;
 import com.codeabovelab.dm.cluman.configs.container.ConfigProvider;
-import com.codeabovelab.dm.cluman.ds.DockerServiceRegistry;
-import com.codeabovelab.dm.cluman.ds.container.ContainerManager;
 import com.codeabovelab.dm.cluman.ds.container.ContainerRegistration;
 import com.codeabovelab.dm.cluman.ds.container.ContainerStorage;
 import com.codeabovelab.dm.cluman.ds.container.ContainersNameService;
 import com.codeabovelab.dm.cluman.ds.nodes.NodeRegistration;
 import com.codeabovelab.dm.cluman.ds.nodes.NodeStorage;
-import com.codeabovelab.dm.cluman.ds.swarm.DockerServices;
-import com.codeabovelab.dm.cluman.model.Application;
-import com.codeabovelab.dm.cluman.model.ContainerSource;
-import com.codeabovelab.dm.cluman.model.ImageDescriptor;
-import com.codeabovelab.dm.cluman.model.NodeInfo;
+import com.codeabovelab.dm.cluman.ds.nodes.NodeUtils;
+import com.codeabovelab.dm.cluman.model.*;
 import com.codeabovelab.dm.cluman.source.ContainerSourceFactory;
 import com.codeabovelab.dm.cluman.ui.model.UIContainerDetails;
 import com.codeabovelab.dm.cluman.ui.model.UIStatistics;
@@ -87,21 +81,33 @@ import static org.springframework.web.bind.annotation.RequestMethod.GET;
 public class ContainerApi {
 
     private final ObjectMapper objectMapper;
-    private final DockerServiceRegistry dockerServiceRegistry;
+    private final DiscoveryStorage discoveryStorage;
     private final RegistryRepository registryRepository;
     private final ContainersNameService containersNameService;
-    private final ContainerManager containerManager;
     private final ConfigProvider configProvider;
-    private final DockerServices dockerServices;
     private final ContainerStorage containerStorage;
     private final NodeStorage nodeStorage;
     private final ApplicationService applicationService;
     private final ContainerSourceFactory containerSourceFactory;
 
+    @RequestMapping(value = "/{id}/pause", method = RequestMethod.POST)
+    public ResponseEntity<?> pauseContainer(@PathVariable("id") String id) {
+        ContainersManager service = getContainersManager(id);
+        ServiceCallResult res = service.pauseContainer(id);
+        return UiUtils.createResponse(res);
+    }
+
+    @RequestMapping(value = "/{id}/unpause", method = RequestMethod.POST)
+    public ResponseEntity<?> unpauseContainer(@PathVariable("id") String id) {
+        ContainersManager service = getContainersManager(id);
+        ServiceCallResult res = service.unpauseContainer(id);
+        return UiUtils.createResponse(res);
+    }
+
     @RequestMapping(value = "/{id}/stop", method = RequestMethod.POST)
     public ResponseEntity<?> stopContainer(@PathVariable("id") String id) {
         StopContainerArg arg = StopContainerArg.builder().id(id).build();
-        DockerService service = getService(id);
+        ContainersManager service = getContainersManager(id);
         ServiceCallResult res = service.stopContainer(arg);
         return UiUtils.createResponse(res);
     }
@@ -110,7 +116,7 @@ public class ContainerApi {
     @RequestMapping(value = "/{id}/refresh", method = RequestMethod.POST)
     public ResponseEntity<?> refreshContainer(@PathVariable("id") String id) {
         StopContainerArg arg = StopContainerArg.builder().id(id).build();
-        DockerService service = getService(id);
+        ContainersManager service = getContainersManager(id);
         ServiceCallResult resStop = service.stopContainer(arg);
         log.info("resStop {}", resStop);
         ServiceCallResult resStart = service.startContainer(id);
@@ -119,7 +125,17 @@ public class ContainerApi {
 
     @RequestMapping(value = "/{id}/remove", method = RequestMethod.POST)
     public ResponseEntity<?> removeContainer(@PathVariable("id") String id) {
-        DockerService service = getService(id);
+        // NOT use `getContainersManager` here!
+        ContainerRegistration cr = containerStorage.getContainer(id);
+        ExtendedAssert.notFound(cr, "Can not find container: " + id);
+        String node = cr.getNode();
+        if(node == null) {
+            // container not found on any node, we must remove it from storage
+            containerStorage.deleteContainer(id);
+            return UiUtils.okResponse("Container '" + id + "' removed from storage. ");
+        }
+        NodesGroup nodesGroups = discoveryStorage.getClusterForNode(node);
+        ContainersManager service = nodesGroups.getContainers();
         service.stopContainer(StopContainerArg.builder().id(id).build());
         DeleteContainerArg arg = DeleteContainerArg.builder().id(id).build();
         ServiceCallResult res = service.deleteContainer(arg);
@@ -128,7 +144,7 @@ public class ContainerApi {
 
     @RequestMapping(value = "/{id}/start", method = RequestMethod.POST)
     public ResponseEntity<?> startContainer(@PathVariable("id") String id) {
-        DockerService service = getService(id);
+        ContainersManager service = getContainersManager(id);
         ServiceCallResult res = service.startContainer(id);
         return UiUtils.createResponse(res);
     }
@@ -138,11 +154,17 @@ public class ContainerApi {
         List<ContainerRegistration> crs = containerStorage.getContainers();
         Map<String, String> app2cont = UiUtils.mapAppContainer(applicationService, null);
         List<UiContainer> containers = crs.stream().map((cr) -> {
-            UiContainer uc = UiContainer.fromBase(new UiContainer(), cr.getContainer());
+            DockerContainer container = cr.getContainer();
+            UiContainer uc = new UiContainer();
+            if(container != null) {
+                UiContainer.from(uc, container);
+            } else {
+                uc.setName("<invalid>");
+            }
             uc.setNode(cr.getNode());
-            uc.getLabels().putAll(cr.getAdditionalLabels());
-            uc.setCluster(getClusterForNode(cr.getNode()));
+            uc.enrich(discoveryStorage, containerStorage);
             uc.setApplication(app2cont.get(uc.getId()));
+            UiContainer.resolveStatus(uc, nodeStorage);
             return uc;
         }).collect(Collectors.toList());
         containers.sort(null);
@@ -158,15 +180,33 @@ public class ContainerApi {
         ContainerRegistration cr = containerStorage.getContainer(id);
         ExtendedAssert.notFound(cr, "Not found container: " + id);
         String node = cr.getNode();
-        DockerService nodeService = dockerServices.getNodeService(node);
-        ContainerDetails container = nodeService.getContainer(id);
-        return toContainerDetails(cr, container);
+        DockerService nodeService = (node == null)? null : nodeStorage.getNodeService(node);
+        if(nodeService != null && nodeService.isOnline()) {
+            ContainerDetails container = nodeService.getContainer(id);
+            return toContainerDetails(cr, container);
+        }
+        // it happen on containers from offline nodes and orphans
+        return toContainerDetails(cr, null);
     }
 
     private UIContainerDetails toContainerDetails(ContainerRegistration cr, ContainerDetails container) {
         String node = cr.getNode();
         String id = cr.getId();
-        UIContainerDetails res = UIContainerDetails.from(containerSourceFactory, container);
+        UIContainerDetails res = new UIContainerDetails();
+        res.setId(cr.getId());
+        DockerContainer dc = cr.getContainer();
+        if(container != null) {
+            res.from(containerSourceFactory, container);
+            res.setState(dc.getState());
+        } else {
+            // fallback when something wrong
+            res.setName(dc.getName());
+            res.setImage(dc.getImage());
+            res.setImageId(dc.getImageId());
+            res.setCreated(new Date(dc.getCreated()));
+            res.setRun(false);
+            res.setStatus(UiContainer.NO_NODE);
+        }
         res.setNode(node);
         String cluster = getClusterForNode(node);
         res.setCluster(cluster);
@@ -203,14 +243,23 @@ public class ContainerApi {
     }
 
     private DockerService getService(String id) {
-        DockerService service = dockerServices.getServiceByContainer(id);
+        DockerService service = NodeUtils.getDockerByContainer(containerStorage, nodeStorage, id);
         ExtendedAssert.notFound(service, "Can not find container: " + id);
         return service;
     }
 
+    private ContainersManager getContainersManager(String id) {
+        ContainerRegistration cr = containerStorage.getContainer(id);
+        ExtendedAssert.notFound(cr, "Can not find container: " + id);
+        String node = cr.getNode();
+        ExtendedAssert.badRequest(node != null, "Container: " + id + " nas not find on any node.");
+        NodesGroup nodesGroups = discoveryStorage.getClusterForNode(node);
+        return nodesGroups.getContainers();
+    }
+
     @RequestMapping(value = "/{id}/restart", method = RequestMethod.POST)
     public ResponseEntity<?> restartContainer(@PathVariable("id") String id) {
-        ServiceCallResult res = getService(id)
+        ServiceCallResult res = getContainersManager(id)
                 .restartContainer(StopContainerArg.builder().id(id).build());
         return UiUtils.createResponse(res);
     }
@@ -226,7 +275,7 @@ public class ContainerApi {
         log.info("image info {}", img);
         ContainerSource res = configProvider.resolveProperties(cluster, img, getImageNameWithoutPrefix(image),
                 new ContainerSource());
-        DockerService dockerService = dockerServiceRegistry.getService(cluster);
+        DockerService dockerService = discoveryStorage.getService(cluster);
 
         res.setName(containersNameService.calculateName(CalcNameArg.builder()
                 .allocate(false)
@@ -285,6 +334,7 @@ public class ContainerApi {
         String cluster = container.getCluster();
         if(node != null) {
             NodeInfo nodeInfo = nodeStorage.getNodeInfo(node);
+            ExtendedAssert.notFound(nodeInfo, "Can not find node: " + node);
             String nodeCluster = nodeInfo.getCluster();
             if(!Objects.equals(nodeCluster, cluster)) {
                 if(cluster != null) {
@@ -294,6 +344,8 @@ public class ContainerApi {
                 cluster = nodeCluster;
             }
         }
+        NodesGroup nodeGroup = discoveryStorage.getCluster(cluster);
+        ExtendedAssert.notFound(nodeGroup, "Can not find cluster: " + cluster);
         log.info("got create request container request at cluster: {} : {}", cluster, container);
 
         try (final ServletOutputStream writer = response.getOutputStream()) {
@@ -309,7 +361,8 @@ public class ContainerApi {
             try {
                 CreateContainerArg arg = CreateContainerArg.builder().container(container).watcher(watcher).build();
                 ProcessEvent.watch(watcher, "Creating container with params: {0}", container);
-                CreateAndStartContainerResult res = containerManager.createContainer(arg);
+                ContainersManager containers = nodeGroup.getContainers();
+                CreateAndStartContainerResult res = containers.createContainer(arg);
                 ProcessEvent.watch(watcher, "Finished with {0}", res.getCode());
                 objectMapper.writeValue(writer, res);
             } catch (Exception e) {
@@ -333,15 +386,16 @@ public class ContainerApi {
     }
 
     @ApiOperation("this method allows to get container's id by name and cluster")
-    @RequestMapping(value = "/{cluster}/{name}", method = RequestMethod.GET)
+    @RequestMapping(value = "/{cluster}/{name:.*}", method = RequestMethod.GET)
     public UIContainerDetails getContainerDetailsByName(@PathVariable("cluster") String cluster, @PathVariable("name") String name) {
         ContainerRegistration cr = containerStorage.findContainer(name);
         ExtendedAssert.notFound(cr, "Can't find container by name " + name);
-        DockerService service = dockerServices.getService(cluster);
-        ExtendedAssert.notFound(service, "Can't find cluster by id " + cluster);
+        String node = cr.getNode();
+        DockerService service = nodeStorage.getNodeService(node);
+        ExtendedAssert.notFound(service, "Can't find container node by id " + node);
         String containerId = cr.getId();
         ContainerDetails container = service.getContainer(containerId);
-        ExtendedAssert.notFound(container, "Can't find container by id " + containerId + " in cluster " + cluster);
+        ExtendedAssert.notFound(container, "Can't find container by id " + containerId + " in node " + node);
         return toContainerDetails(cr, container);
     }
 
@@ -350,20 +404,12 @@ public class ContainerApi {
                                              @RequestBody UiUpdateContainer container) {
         String cluster = getClusterForContainer(containerId);
         log.info("Begin update container '{}' at cluster: '{}' request: '{}'", containerId, cluster, container);
-        UpdateContainerCmd cmd = new UpdateContainerCmd();
-        cmd.setId(containerId);
-        cmd.setBlkioWeight(container.getBlkioWeight());
-        cmd.setCpuPeriod(container.getCpuPeriod());
-        cmd.setCpuQuota(container.getCpuQuota());
-        cmd.setCpuShares(container.getCpuShares());
-        cmd.setCpusetCpus(container.getCpusetCpus());
-        cmd.setCpusetMems(container.getCpusetMems());
-        cmd.setKernelMemory(container.getKernelMemory());
-        cmd.setMemory(container.getMemoryLimit());
-        cmd.setMemoryReservation(container.getMemoryReservation());
-        cmd.setMemorySwap(container.getMemorySwap());
-        DockerService service = dockerServiceRegistry.getService(cluster);
-        ServiceCallResult res = service.updateContainer(cmd);
+        NodesGroup nodesGroup = discoveryStorage.getCluster(cluster);
+        ContainersManager manager = nodesGroup.getContainers();
+        EditContainerArg arg = new EditContainerArg();
+        arg.setContainerId(containerId);
+        arg.setSource(container);
+        ServiceCallResult res = manager.updateContainer(arg);
         log.info("Begin update container '{}' at cluster: '{}' result: '{}'", containerId, cluster, res);
         return UiUtils.createResponse(res);
     }
@@ -384,6 +430,9 @@ public class ContainerApi {
      * @return
      */
     private String getClusterForNode(String node) {
+        if(node == null) {
+            return null;
+        }
         NodeRegistration nodeReg = this.nodeStorage.getNodeRegistration(node);
         //below is not an 404, because above we found container with link to node, but cannot give existed node
         Assert.notNull(nodeReg, "Node \"" + node + "\" has invalid registration.");
@@ -404,8 +453,11 @@ public class ContainerApi {
     public ResponseEntity<?> scale(@PathVariable("id") String id,
                                    @RequestParam(value = "scaleFactor", required = false, defaultValue = "1") Integer scaleFactor) {
         log.info("got scale request id: {}, count {}", id, scaleFactor);
-        String cluster = getClusterForContainer(id);
-        ServiceCallResult res = containerManager.scale(cluster, scaleFactor, id);
+        ContainersManager containersManager = getContainersManager(id);
+        ScaleContainerArg arg = new ScaleContainerArg();
+        arg.setContainerId(id);
+        arg.setScale(scaleFactor);
+        ServiceCallResult res = containersManager.scaleContainer(arg);
         return UiUtils.createResponse(res);
     }
 

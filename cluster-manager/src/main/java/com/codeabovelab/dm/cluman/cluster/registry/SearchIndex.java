@@ -23,6 +23,7 @@ import com.codeabovelab.dm.cluman.cluster.registry.data.Tags;
 import com.codeabovelab.dm.cluman.model.ImageDescriptor;
 import com.codeabovelab.dm.cluman.model.StandardActions;
 import com.codeabovelab.dm.common.utils.SingleValueCache;
+import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.util.Assert;
@@ -37,18 +38,27 @@ import java.util.concurrent.TimeUnit;
  */
 @Slf4j
 class SearchIndex implements SupportSearch, AutoCloseable {
-    private static final long TIMEOUT = TimeUnit.MINUTES.toMillis(2L);
+
+
+    @Data
+    public static class Config {
+        private long cacheMinutes = 2L;
+        private ScheduledExecutorService scheduledExecutorService;
+    }
+
     public static final String LABEL_DESCRIPTION = "description";
+    private final long timeout;
     private final RegistryService service;
     private final SingleValueCache<Map<String, ImageInfo>> cache;
     private final String registryName;
     private final ScheduledExecutorService ses;
     private ScheduledFuture<?> future;
 
-    public SearchIndex(RegistryService service, ScheduledExecutorService scheduledExecutorService) {
+    public SearchIndex(RegistryService service, Config config) {
         this.service = service;
         this.registryName = this.service.getConfig().getName();
-        this.ses = scheduledExecutorService;
+        this.ses = config.getScheduledExecutorService();
+        this.timeout = TimeUnit.MINUTES.toMillis(config.cacheMinutes);
         this.cache = SingleValueCache.builder(this::load).timeAfterWrite(TimeUnit.MILLISECONDS, getTimeout()).build();
     }
 
@@ -116,7 +126,7 @@ class SearchIndex implements SupportSearch, AutoCloseable {
         result.setQuery(query);
         List<SearchResult.Result> results = new ArrayList<>();
         result.setResults(results);
-        Map<String, ImageInfo> images = cache.get();
+        Map<String, ImageInfo> images = getImages();
         for(String fullImageName: images.keySet()) {
             boolean match = fullImageName == null ? query == null : query != null && fullImageName.contains(query);
             if(match) {
@@ -135,6 +145,17 @@ class SearchIndex implements SupportSearch, AutoCloseable {
         return result;
     }
 
+    private Map<String, ImageInfo> getImages() {
+        Map<String, ImageInfo> images = cache.getOrNull();
+        if(images == null) {
+            images = cache.getOldValue();
+        }
+        if(images == null) {
+            images = cache.get();
+        }
+        return images;
+    }
+
     private String getDescription(ImageInfo ii) {
         String description = null;
         ImageDescriptor descriptor = ii.getDescriptor();
@@ -151,12 +172,12 @@ class SearchIndex implements SupportSearch, AutoCloseable {
     public void init() {
         if(ses != null) {
             //TODO we must return old cache when update in progress
-            this.future = ses.scheduleWithFixedDelay(() -> cache.get(), 1000L, getTimeout(), TimeUnit.MILLISECONDS);
+            this.future = ses.scheduleWithFixedDelay(cache::get, 1000L, getTimeout(), TimeUnit.MILLISECONDS);
         }
     }
 
     private long getTimeout() {
-        return TIMEOUT;
+        return timeout;
     }
 
     @Override

@@ -16,6 +16,7 @@
 
 package com.codeabovelab.dm.cluman.cluster.docker.model;
 
+import com.codeabovelab.dm.cluman.model.EditableContainerSource;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.base.MoreObjects;
@@ -76,5 +77,24 @@ public class UpdateContainerCmd {
                 .add("kernelMemory", kernelMemory)
                 .omitNullValues()
                 .toString();
+    }
+
+    /**
+     * Copy parameters from source to this
+     * @param src source
+     * @return this
+     */
+    public UpdateContainerCmd from(EditableContainerSource src) {
+        setBlkioWeight(src.getBlkioWeight());
+        setCpuPeriod(src.getCpuPeriod());
+        setCpuQuota(src.getCpuQuota());
+        setCpuShares(src.getCpuShares());
+        setCpusetCpus(src.getCpusetCpus());
+        setCpusetMems(src.getCpusetMems());
+        setKernelMemory(src.getKernelMemory());
+        setMemory(src.getMemoryLimit());
+        setMemoryReservation(src.getMemoryReservation());
+        setMemorySwap(src.getMemorySwap());
+        return this;
     }
 }

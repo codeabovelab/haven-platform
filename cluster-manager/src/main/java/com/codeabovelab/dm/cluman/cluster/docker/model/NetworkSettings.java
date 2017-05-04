@@ -81,41 +81,6 @@ public class NetworkSettings {
     private String macAddress;
 
     @JsonProperty("Networks")
-    private Map<String, Network> networks;
+    private Map<String, EndpointSettings> networks;
 
-    @JsonIgnoreProperties(ignoreUnknown = true)
-    @Data
-    public static class Network {
-
-        @JsonProperty("IPAMConfig")
-        private String ipamConfig;
-
-        @JsonProperty("NetworkID")
-        private String networkID;
-
-        @JsonProperty("EndpointID")
-        private String endpointId;
-
-        @JsonProperty("Gateway")
-        private String gateway;
-
-        @JsonProperty("IPAddress")
-        private String ipAddress;
-
-        @JsonProperty("IPPrefixLen")
-        private Integer ipPrefixLen;
-
-        @JsonProperty("IPv6Gateway")
-        private String ipV6Gateway;
-
-        @JsonProperty("GlobalIPv6Address")
-        private String globalIPv6Address;
-
-        @JsonProperty("GlobalIPv6PrefixLen")
-        private Integer globalIPv6PrefixLen;
-
-        @JsonProperty("MacAddress")
-        private String macAddress;
-
-    }
 }

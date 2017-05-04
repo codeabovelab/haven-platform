@@ -17,7 +17,9 @@
 package com.codeabovelab.dm.cluman.ui.configuration;
 
 import com.codeabovelab.dm.cluman.security.TempAuth;
+import com.codeabovelab.dm.cluman.ui.tty.WsTtyHandler;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageChannel;
@@ -28,9 +30,9 @@ import org.springframework.messaging.simp.config.MessageBrokerRegistry;
 import org.springframework.messaging.support.ExecutorChannelInterceptor;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Component;
-import org.springframework.web.socket.config.annotation.AbstractWebSocketMessageBrokerConfigurer;
-import org.springframework.web.socket.config.annotation.EnableWebSocketMessageBroker;
-import org.springframework.web.socket.config.annotation.StompEndpointRegistry;
+import org.springframework.web.socket.client.WebSocketClient;
+import org.springframework.web.socket.client.standard.StandardWebSocketClient;
+import org.springframework.web.socket.config.annotation.*;
 
 import java.security.Principal;
 
@@ -123,4 +125,24 @@ public class WebSocketConfiguration extends AbstractWebSocketMessageBrokerConfig
         }
     }
 
+    @Configuration
+    static class PreWsConfig {
+        @Bean
+        WebSocketClient webSocketClient() {
+            return new StandardWebSocketClient();
+        }
+    }
+
+    @EnableWebSocket
+    @Configuration
+    static class WsConfig implements WebSocketConfigurer {
+
+        @Autowired
+        private WsTtyHandler wsTtyHandler;
+
+        @Override
+        public void registerWebSocketHandlers(WebSocketHandlerRegistry registry) {
+            registry.addHandler(wsTtyHandler, "/ui/tty");
+        }
+    }
 }

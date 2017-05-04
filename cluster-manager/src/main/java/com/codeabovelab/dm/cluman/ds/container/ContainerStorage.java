@@ -41,4 +41,9 @@ public interface ContainerStorage {
      */
     ContainerRegistration updateAndGetContainer(ContainerBaseIface container, String node);
 
+    /**
+     * Note that it only delete container from storage, not from cluster.
+     * @param id id of container
+     */
+    void deleteContainer(String id);
 }

@@ -18,10 +18,9 @@ package com.codeabovelab.dm.cluman.cluster.docker.management;
 
 import com.codeabovelab.dm.cluman.cluster.docker.ClusterConfig;
 import com.codeabovelab.dm.cluman.cluster.docker.management.argument.*;
-import com.codeabovelab.dm.cluman.cluster.docker.management.result.ProcessEvent;
-import com.codeabovelab.dm.cluman.cluster.docker.management.result.RemoveImageResult;
-import com.codeabovelab.dm.cluman.cluster.docker.management.result.ServiceCallResult;
+import com.codeabovelab.dm.cluman.cluster.docker.management.result.*;
 import com.codeabovelab.dm.cluman.cluster.docker.model.*;
+import com.codeabovelab.dm.cluman.cluster.docker.model.swarm.*;
 import com.codeabovelab.dm.cluman.model.DockerContainer;
 import com.codeabovelab.dm.cluman.model.DockerServiceInfo;
 import com.codeabovelab.dm.cluman.model.ImageDescriptor;
@@ -69,6 +68,12 @@ public interface DockerService {
         return sb.toString();
     }
 
+    /**
+     * Address of docker service in 'ip:port' format, sometime it can be null.
+     * @return address or null
+     */
+    String getAddress();
+
     boolean isOnline();
 
     /**
@@ -101,10 +106,24 @@ public interface DockerService {
 
     /**
      * Start specified by id container
-     * @param id
+     * @param id id of container
      * @return result
      */
     ServiceCallResult startContainer(String id);
+
+    /**
+     * Pause specified by id container
+     * @param id id of container
+     * @return result
+     */
+    ServiceCallResult pauseContainer(String id);
+
+    /**
+     * Run previously paused container
+     * @param id id of container
+     * @return result
+     */
+    ServiceCallResult unpauseContainer(String id);
 
     /**
      * Stop specified by id container
@@ -133,7 +152,30 @@ public interface DockerService {
 
     ServiceCallResult renameContainer(String id, String newName);
 
-    ServiceCallResult createNetwork(CreateNetworkCmd cmd);
+    CreateNetworkResponse createNetwork(CreateNetworkCmd cmd);
+    Network getNetwork(String id);
+    ServiceCallResult deleteNetwork(String id);
+
+    /**
+     * Delete unused networks
+     * @param arg arg with filter for networks
+     * @return result with list of deleted networks
+     */
+    PruneNetworksResponse pruneNetworks(PruneNetworksArg arg);
+
+    /**
+     * Connect specified container to network
+     * @param cmd command
+     * @return result
+     */
+    ServiceCallResult connectNetwork(ConnectNetworkCmd cmd);
+
+    /**
+     * Disconnect specified container from network.
+     * @param cmd command
+     * @return result
+     */
+    ServiceCallResult disconnectNetwork(DisconnectNetworkCmd cmd);
 
     List<Network> getNetworks();
 
@@ -163,4 +205,79 @@ public interface DockerService {
     ClusterConfig getClusterConfig();
 
     RemoveImageResult removeImage(RemoveImageArg arg);
+
+    /**
+     * Inspect swarm.
+     * <code>GET /swarm</code>
+     * @return swarm config or null when not supported
+     */
+    SwarmInspectResponse getSwarm();
+
+    /**
+     * Initialize a new swarm. The body of the HTTP response includes the node ID.
+     * <code>POST /swarm/init</code>
+     * @param cmd command to init swarm
+     * @return result with node id or null when not supported
+     */
+    SwarmInitResult initSwarm(SwarmInitCmd cmd);
+
+    /**
+     * Join into existing swarm. <p/>
+     * <code>POST /swarm/join</code>
+     * @param cmd command args
+     * @return result code
+     */
+    ServiceCallResult joinSwarm(SwarmJoinCmd cmd);
+    ServiceCallResult leaveSwarm(SwarmLeaveArg arg);
+
+    /**
+     * Get list of nodes. Work only for docker in swarm-mode.
+     * @param cmd pass arg with filters or null
+     * @return list or null when not supported
+     */
+    List<SwarmNode> getNodes(GetNodesArg cmd);
+
+    ServiceCallResult removeNode(RemoveNodeArg arg);
+    ServiceCallResult updateNode(UpdateNodeCmd cmd);
+
+    List<Service> getServices(GetServicesArg arg);
+    ServiceCreateResult createService(CreateServiceArg arg);
+
+    /**
+     * Update a service
+     * POST /services/(id or name)/update
+     * @param arg argument
+     * @return result of scale ops
+     */
+    ServiceUpdateResult updateService(UpdateServiceArg arg);
+
+    /**
+     * DELETE /services/(id or name)
+     * @param service id or name
+     * @return result
+     */
+    ServiceCallResult deleteService(String service);
+
+    /**
+     * GET /services/(id or name)
+     * Return information on the service id.
+     * @param service id or name
+     * @return service or null
+     */
+    Service getService(String service);
+
+    List<Task> getTasks(GetTasksArg arg);
+    Task getTask(String taskId);
+
+    List<Volume> getVolumes(GetVolumesArg arg);
+    Volume createVolume(CreateVolumeCmd cmd);
+    ServiceCallResult removeVolume(RemoveVolumeArg arg);
+    ServiceCallResult deleteUnusedVolumes(DeleteUnusedVolumesArg arg);
+
+    /**
+     *
+     * @param name Volume name or ID
+     * @return volume or null
+     */
+    Volume getVolume(String name);
 }

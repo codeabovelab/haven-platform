@@ -17,11 +17,17 @@
 package com.codeabovelab.dm.cluman.model;
 
 import com.codeabovelab.dm.cluman.cluster.docker.management.DockerService;
+import com.codeabovelab.dm.cluman.cluster.docker.management.result.*;
+import com.codeabovelab.dm.cluman.cluster.docker.management.result.ServiceCallResult;
+import com.codeabovelab.dm.cluman.cluster.docker.model.UpdateNodeCmd;
 import com.codeabovelab.dm.cluman.ds.clusters.AbstractNodesGroupConfig;
+import com.codeabovelab.dm.cluman.ds.swarm.NetworkManager;
 import com.codeabovelab.dm.cluman.security.WithAcl;
 
 import java.util.Collection;
+import java.util.List;
 import java.util.Set;
+import java.util.function.Consumer;
 
 /**
  * Interface represents node group
@@ -32,12 +38,35 @@ public interface NodesGroup extends Named, WithAcl {
 
     AbstractNodesGroupConfig<?> getConfig();
     void setConfig(AbstractNodesGroupConfig<?> config);
+    void updateConfig(Consumer<AbstractNodesGroupConfig<?>> consumer);
+
+    /**
+     * Try to init cluster if it not inited already.
+     * @see #getState()
+     */
+    void init();
+
+    /**
+     * State of cluster.
+     * @see #init()
+     * @return state, can not be null.
+     */
+    NodeGroupState getState();
+
+    /**
+     * Clean resources of node group (for example destroy cluster)
+     */
+    void clean();
 
     enum Feature {
         /**
          * Feature mean than nodes in group is united by single 'swarm' service.
          */
         SWARM,
+        /**
+         * Mean that nodes in group which is united by docker in swarm mode.
+         */
+        SWARM_MODE,
         /**
          * Disallow node addition, usually applied on clusters which use filter for node list.
          */
@@ -67,10 +96,12 @@ public interface NodesGroup extends Named, WithAcl {
     void setDescription(String description);
 
     /**
-     * Return all current nodes
-     * @return
+     * Return copy of all current nodes collection
+     * @return copy of current nodes
      */
-    Collection<NodeInfo> getNodes();
+    List<NodeInfo> getNodes();
+
+    ServiceCallResult updateNode(NodeUpdateArg arg);
 
     /**
      * Collections with names of other intersected NodesGroups. Note that it
@@ -97,5 +128,13 @@ public interface NodesGroup extends Named, WithAcl {
 
     void setImageFilter(String imageFilter);
 
+    /**
+     * Tool for managing cluster containers, it replacer for direct access to docker service.
+     * @return non null value
+     */
+    ContainersManager getContainers();
 
+    NetworkManager getNetworks();
+
+    String getDefaultNetworkName();
 }

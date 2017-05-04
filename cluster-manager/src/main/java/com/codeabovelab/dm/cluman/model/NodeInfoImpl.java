@@ -35,12 +35,15 @@ public class NodeInfoImpl implements NodeInfo, Comparable<NodeInfoImpl> {
 
     @Data
     public static final class Builder implements NodeInfo {
+        private long version;
         private String name;
         @NotNull
         @KvMapping
         private String address;
         @KvMapping
         private String cluster;
+        @KvMapping
+        private String idInCluster;
         private boolean on;
         private NodeMetrics health = DEFAULT_METRICS;
         @KvMapping
@@ -60,6 +63,8 @@ public class NodeInfoImpl implements NodeInfo, Comparable<NodeInfoImpl> {
                 labels(ni.getLabels());
                 setOn(ni.isOn());
                 setCluster(ni.getCluster());
+                setVersion(ni.getVersion());
+                setIdInCluster(ni.getIdInCluster());
                 setHealth(ni.getHealth());
             }
             return this;
@@ -96,6 +101,11 @@ public class NodeInfoImpl implements NodeInfo, Comparable<NodeInfoImpl> {
             return this;
         }
 
+        public Builder version(long version) {
+            setVersion(version);
+            return this;
+        }
+
         public Builder address(String host) {
             setAddress(host);
             return this;
@@ -122,21 +132,30 @@ public class NodeInfoImpl implements NodeInfo, Comparable<NodeInfoImpl> {
             setCluster(cluster);
             return this;
         }
+
+        public Builder idInCluster(String idInCluster) {
+            setIdInCluster(idInCluster);
+            return this;
+        }
     }
 
     private final String name;
+    private final long version;
     private final boolean on;
     private final String address;
     private final String cluster;
+    private final String idInCluster;
     private final Map<String, String> labels;
     private final NodeMetrics health;
 
     @JsonCreator
     public NodeInfoImpl(Builder builder) {
         this.name = builder.name;
+        this.version = builder.version;
         this.on = builder.on;
         this.address = builder.address;
         this.cluster = builder.cluster;
+        this.idInCluster = builder.idInCluster;
         this.health = builder.health;
         this.labels = builder.labels;
     }

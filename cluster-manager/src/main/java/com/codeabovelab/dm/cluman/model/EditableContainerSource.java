@@ -27,6 +27,9 @@ public class EditableContainerSource implements Cloneable {
 
 
     private Integer cpuShares;
+    /**
+     * 'limit-cpu'
+     */
     private Integer cpuQuota;
     /**
      * By default, all containers get the same proportion of block IO bandwidth (blkioWeight). This proportion is 500.
@@ -35,6 +38,9 @@ public class EditableContainerSource implements Cloneable {
      */
     private Integer blkioWeight;
 
+    /**
+     * 'reserve-cpu'
+     */
     private Integer cpuPeriod;
     /**
      * Set cpu numbers in which to allow execution for containers. <p/>

@@ -44,5 +44,6 @@ public class ClusterSource extends ApplicationSource implements NodesGroupConfig
     private String title;
     private String description;
     private String imageFilter;
+    private String type;
     private ClusterConfigImpl config;
 }

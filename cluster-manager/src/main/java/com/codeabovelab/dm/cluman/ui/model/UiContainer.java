@@ -16,12 +16,12 @@
 
 package com.codeabovelab.dm.cluman.ui.model;
 
-import com.codeabovelab.dm.cluman.cluster.docker.model.Port;
+import com.codeabovelab.dm.cluman.cluster.docker.management.DockerService;
 import com.codeabovelab.dm.cluman.ds.container.ContainerRegistration;
 import com.codeabovelab.dm.cluman.ds.container.ContainerStorage;
+import com.codeabovelab.dm.cluman.ds.nodes.NodeStorage;
 import com.codeabovelab.dm.cluman.model.*;
 import com.codeabovelab.dm.cluman.ui.UiUtils;
-import com.codeabovelab.dm.cluman.utils.ContainerUtils;
 import com.codeabovelab.dm.common.utils.Comparables;
 import lombok.Data;
 
@@ -33,6 +33,10 @@ import java.util.*;
  */
 @Data
 public class UiContainer implements Comparable<UiContainer>, UiContainerIface, WithUiPermission {
+    /**
+     * It mean that node is offline.
+     */
+    public static final String NO_NODE = "Node is offline";
     @NotNull protected String id;
     @NotNull protected String name;
     @NotNull protected String node;
@@ -77,10 +81,9 @@ public class UiContainer implements Comparable<UiContainer>, UiContainerIface, W
         return from(uic, container);
     }
 
-    protected static  UiContainer from(UiContainer uic, DockerContainer container) {
+    public static  UiContainer from(UiContainer uic, DockerContainer container) {
         fromBase(uic, container);
-        com.codeabovelab.dm.cluman.model.Node node = container.getNode();
-        uic.setNode(node.getName());
+        uic.setNode(container.getNode());
         uic.setCreated(new Date(container.getCreated()));
         uic.getPorts().addAll(container.getPorts());
         String status = container.getStatus();
@@ -89,7 +92,10 @@ public class UiContainer implements Comparable<UiContainer>, UiContainerIface, W
         uic.setRun(container.isRun());
         // this is workaround, because docker use simply command representation in container,
         // for full you need use ContainerDetails
-        uic.getCommand().add(container.getCommand());
+        String command = container.getCommand();
+        if(command != null) {
+            uic.getCommand().add(command);
+        }
         return uic;
     }
 
@@ -110,14 +116,32 @@ public class UiContainer implements Comparable<UiContainer>, UiContainerIface, W
      */
     public void enrich(DiscoveryStorage discoveryStorage, ContainerStorage containerStorage) {
         //note that cluster can be virtual
-        NodesGroup nodeCluster = discoveryStorage.getClusterForNode(getNode());
-        if(nodeCluster != null) {
-            setCluster(nodeCluster.getName());
+        String node = getNode();
+        if(node != null) {
+            NodesGroup nodeCluster = discoveryStorage.getClusterForNode(node);
+            if(nodeCluster != null) {
+                setCluster(nodeCluster.getName());
+            }
         }
 
         ContainerRegistration registration = containerStorage.getContainer(getId());
         if (registration != null && registration.getAdditionalLabels() != null) {
             getLabels().putAll(registration.getAdditionalLabels());
+        }
+    }
+
+    /**
+     * Override status when node is offline. Require filled {@link #getNode()} value.
+     * @param uc container
+     * @param nodeStorage storage
+     */
+    public static void resolveStatus(UiContainer uc, NodeStorage nodeStorage) {
+        String node = uc.getNode();
+        DockerService ds = node == null? null : nodeStorage.getNodeService(node);
+        if(ds == null || !ds.isOnline()) {
+            uc.setRun(false);
+            uc.setState(null);// state is unknown
+            uc.setStatus(UiContainer.NO_NODE);
         }
     }
 }

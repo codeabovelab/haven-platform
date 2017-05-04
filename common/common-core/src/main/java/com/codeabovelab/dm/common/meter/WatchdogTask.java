@@ -46,8 +46,8 @@ public final class WatchdogTask {
 
     WatchdogTask(Watchdog watchdog, Metric metric, String name) {
         this.watchdog = watchdog;
-        Assert.hasText(name);
-        Assert.notNull(metric);
+        Assert.hasText(name, "name can't be null or empty");
+        Assert.notNull(metric, "metric can't be null");
         this.metric = metric;
         this.name = name;
         // stub state mean that all limits in normal state

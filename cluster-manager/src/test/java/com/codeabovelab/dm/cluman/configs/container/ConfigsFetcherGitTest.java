@@ -42,11 +42,10 @@ public class ConfigsFetcherGitTest {
         gitSettings.setUrl("https://github.com/codeabovelab/haven-example-container-configuration.git");
         DataLocationConfiguration dataLocationConfiguration = new DataLocationConfiguration();
         dataLocationConfiguration.setLocation(Files.createTempDir().getPath());
-
+        List<Parser> parsers = Collections.singletonList(new YamlParser());
         List<ConfigsFetcher> fetchers = new ArrayList<ConfigsFetcher>() {{
-            add(new ConfigsFetcherGit(gitSettings, dataLocationConfiguration,
-                    Collections.singletonList(new DefaultParser())));
-            add(new ConfigsFetcherImage(Collections.singletonList(new DefaultParser())));
+            add(new ConfigsFetcherGit(gitSettings, dataLocationConfiguration, parsers));
+            add(new ConfigsFetcherImage(parsers));
         }};
 
         return new ConfigProviderImpl(fetchers);

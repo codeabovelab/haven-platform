@@ -19,6 +19,7 @@ package com.codeabovelab.dm.mail.service;
 import com.codeabovelab.dm.common.utils.Throwables;
 import com.codeabovelab.dm.mail.dto.*;
 import com.codeabovelab.dm.mail.template.MailSourceProcessorService;
+import lombok.AllArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -29,14 +30,13 @@ import java.util.function.Consumer;
 /**
  */
 @Component
+@AllArgsConstructor
 public class SendMailWithTemplateService {
     private static final Logger LOG = LoggerFactory.getLogger(SendMailWithTemplateService.class);
 
-    @Autowired
-    private MailSenderService senderService;
+    private final MailSenderService senderService;
+    private final MailSourceProcessorService processorService;
 
-    @Autowired
-    private MailSourceProcessorService processorService;
 
     public void send(MailSource source, Consumer<MailSendResult> consumer) {
         MailMessage message = processorService.process(source);

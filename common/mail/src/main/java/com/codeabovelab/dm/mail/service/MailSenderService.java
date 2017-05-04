@@ -89,7 +89,7 @@ public class MailSenderService {
             }
         }
 
-        private void trySend() throws Exception {
+        private void trySend() {
             // there we must do choose of appropriate backend, retry on fails, and choose alternative backend if has server fault
             final int localGoodBackend = goodBackend.get();
             if(localGoodBackend >= 0) {

@@ -28,7 +28,7 @@ import java.io.IOException;
  */
 public class AccessContextFilter extends GenericFilterBean {
 
-    private AccessContextFactory aclContextFactory;
+    private final AccessContextFactory aclContextFactory;
 
     public AccessContextFilter(AccessContextFactory aclContextFactory) {
         this.aclContextFactory = aclContextFactory;

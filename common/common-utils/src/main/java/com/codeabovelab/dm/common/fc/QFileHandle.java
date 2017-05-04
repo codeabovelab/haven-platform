@@ -253,7 +253,7 @@ final class QFileHandle<E> implements AutoCloseable {
         }
 
         public void remove() {
-            Assert.isTrue(!isDeleted(index[i]));
+            Assert.isTrue(!isDeleted(index[i]), "value already deleted");
             index[i] |= DEL_MASK;
             dirty();
             try {

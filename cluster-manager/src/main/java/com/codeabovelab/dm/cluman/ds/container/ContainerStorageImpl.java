@@ -16,27 +16,33 @@
 
 package com.codeabovelab.dm.cluman.ds.container;
 
-import com.codeabovelab.dm.cluman.model.ContainerBase;
 import com.codeabovelab.dm.cluman.model.ContainerBaseIface;
+import com.codeabovelab.dm.cluman.model.DockerContainer;
 import com.codeabovelab.dm.common.kv.mapping.KvMap;
 import com.codeabovelab.dm.common.kv.mapping.KvMapperFactory;
+import com.codeabovelab.dm.common.utils.Throwables;
+import com.google.common.collect.ImmutableList;
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-import java.util.ArrayList;
+import javax.annotation.PostConstruct;
+import javax.annotation.PreDestroy;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 @Component
 @Slf4j
-public class ContainerStorageImpl implements ContainerStorage, InitializingBean {
+public class ContainerStorageImpl implements ContainerStorage {
 
     final KvMap<ContainerRegistration> map;
+    final ScheduledExecutorService executorService;
 
     @Autowired
     public ContainerStorageImpl(KvMapperFactory kvmf) {
@@ -46,25 +52,35 @@ public class ContainerStorageImpl implements ContainerStorage, InitializingBean 
           .path(prefix)
           .factory((key, type) -> new ContainerRegistration(this, key))
           .build();
+        this.executorService = Executors.newSingleThreadScheduledExecutor(new ThreadFactoryBuilder()
+          .setDaemon(true)
+          .setNameFormat(getClass().getSimpleName() + "-scheduled-%d")
+          .setUncaughtExceptionHandler(Throwables.uncaughtHandler(log))
+          .build());
+    }
+
+    @PostConstruct
+    public void postConstruct() {
+        this.map.load();
+    }
+
+    @PreDestroy
+    private void preDestroy() {
+        this.executorService.shutdown();
     }
 
     @Override
-    public void afterPropertiesSet() {
-
-    }
-
-
-    void deleteContainer(String id) {
+    public void deleteContainer(String id) {
         ContainerRegistration cr = map.remove(id);
         if(cr != null) {
-            ContainerBase cb = cr.getContainer();
-            log.info("Container remove: {} '{}', of '{}'", cr.getId(), cb.getName(), cb.getImage());
+            log.info("Container remove: {} ", cr.forLog());
+            cr.close();
         }
     }
 
     @Override
     public List<ContainerRegistration> getContainers() {
-        return new ArrayList<>(map.values());
+        return ImmutableList.copyOf(map.values());
     }
 
     @Override
@@ -76,8 +92,9 @@ public class ContainerStorageImpl implements ContainerStorage, InitializingBean 
     public ContainerRegistration findContainer(String name) {
         ContainerRegistration cr = map.get(name);
         if(cr == null) {
-            cr = map.values().stream().filter((c) -> {
-                return c.getId().startsWith(name) || c.getContainer().getName().equals(name);
+            cr = map.values().stream().filter((item) -> {
+                DockerContainer container = item.getContainer();
+                return container != null && (item.getId().startsWith(name) || Objects.equals(container.getName(), name));
             }).findAny().orElse(null);
         }
         return cr;
@@ -112,8 +129,7 @@ public class ContainerStorageImpl implements ContainerStorage, InitializingBean 
     public ContainerRegistration updateAndGetContainer(ContainerBaseIface container, String node) {
         ContainerRegistration cr = map.computeIfAbsent(container.getId(), s -> new ContainerRegistration(this, s));
         cr.from(container, node);
-        ContainerBase cb = cr.getContainer();
-        log.info("Update container: {} '{}', of '{}'", cr.getId(), cb.getName(), cb.getImage());
+        log.info("Update container: {}", cr.forLog());
         return cr;
     }
 

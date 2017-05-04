@@ -167,35 +167,8 @@ public final class ContainerUtils {
      * @return
      */
     public static String setImageVersion(String image, String version) {
-        assertImageName(image);
-        if (!StringUtils.hasText(version)) {
-            return image;
-        }
-        int i = image.lastIndexOf(':');
-        int slash = image.lastIndexOf('/');
-        if (i < 0 || i < slash) {
-            return image + ":" + version;
-        }
-        return image.substring(0, i + 1) + version;
+        return ImageName.setTag(image, version);
     }
-
-    public static int getPort(String addr) {
-        if (addr == null) {
-            return -1;
-        }
-        int portStart = addr.lastIndexOf(':');
-        String portStr = addr.substring(portStart + 1);
-        return Integer.parseInt(portStr);
-    }
-
-    public static String getHost(String addr) {
-        if (addr == null) {
-            return null;
-        }
-        int portStart = addr.lastIndexOf(':');
-        return addr.substring(0, portStart);
-    }
-
 
     public static boolean isOurContainer(ContainerBaseIface cont) {
         if (!ContainerDetector.isContainer()) {
@@ -206,7 +179,9 @@ public final class ContainerUtils {
         String hostName = OSUtils.getHostName();
         String id = ContainerDetector.getId();
         String pcid = cont.getId();
-        return cont.getName().equals(hostName) || (id == null ? pcid.startsWith(hostName) : pcid.equals(id));
+        boolean sameName = hostName.equals(cont.getName());
+        boolean sameId = id == null ? pcid.startsWith(hostName) : pcid.equals(id);
+        return sameName || sameId;
     }
 
     public static String fetchTagSuffix(String imageVersion) {

@@ -17,9 +17,8 @@
 package com.codeabovelab.dm.cluman.cluster.application;
 
 import com.codeabovelab.dm.cluman.cluster.compose.model.ComposeArg;
-import com.codeabovelab.dm.cluman.cluster.docker.management.result.CreateApplicationResult;
-import com.codeabovelab.dm.cluman.model.ApplicationSource;
 import com.codeabovelab.dm.cluman.model.Application;
+import com.codeabovelab.dm.cluman.model.ApplicationSource;
 
 import java.io.File;
 import java.util.List;
@@ -43,7 +42,7 @@ public interface ApplicationService {
 
     File getInitComposeFile(String cluster, String appId);
 
-    void addApplication(Application application) throws Exception;
+    void addApplication(Application application);
 
-    void removeApplication(String cluster, String id) throws Exception;
+    void removeApplication(String cluster, String id);
 }

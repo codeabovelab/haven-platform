@@ -7,6 +7,7 @@ import com.codeabovelab.dm.cluman.cluster.docker.management.DockerService;
 import com.codeabovelab.dm.cluman.cluster.docker.management.DockerServiceImpl;
 import com.codeabovelab.dm.cluman.model.NodeInfoProvider;
 import com.codeabovelab.dm.common.mb.MessageBus;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -33,12 +34,13 @@ public class ComposeExecutorTest {
     @SuppressWarnings("unchecked")
     @Ignore
     public void testLaunchTask() throws Exception {
-        ClusterConfig config = ClusterConfigImpl.builder().addHost("localhost:2375").build();
+        ClusterConfig config = ClusterConfigImpl.builder().host("localhost:2375").build();
         DockerService dockerService = DockerServiceImpl.builder()
           .config(config)
           .restTemplate(new AsyncRestTemplate())
           .nodeInfoProvider(mock(NodeInfoProvider.class))
           .eventConsumer(mock(MessageBus.class))
+          .objectMapper(new ObjectMapper())
           .cluster("test")
           .build();
         ClassLoader classLoader = getClass().getClassLoader();

@@ -28,6 +28,7 @@ public enum SecuredType {
     CLUSTER,
     NODE,
     CONTAINER,
+    SERVICE,
     /**
      * image loaded on concrete node or cluster
      */

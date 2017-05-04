@@ -44,11 +44,21 @@ public class ImageName {
     private final String registry;
     private final String name;
     private final String tag;
+    private final String fullName;
+    private final String id;
 
-    public static ImageName parse(String src) {
-        if(src == null) {
-            return null;
-        }
+    // do not publish this constructor
+    ImageName(String registry, String name, String tag, String id) {
+        this.registry = registry;
+        this.name = name;
+        this.tag = tag;
+        this.id = id;
+        this.fullName = toFullName(registry, name, tag);
+    }
+
+    private ImageName(String src, String id) {
+        this.fullName = src;
+        this.id = id;
         final int len = src.length();
         int registryEnd = src.indexOf('/');
         int tagBegin = src.indexOf(':', registryEnd);
@@ -60,9 +70,58 @@ public class ImageName {
             registry = "";
             registryEnd = -1;
         }
-        String name = src.substring(registryEnd + 1, tagBegin);
-        String tag = (tagBegin < len)?  src.substring(tagBegin + 1) : "";
-        return new ImageName(registry, name, tag);
+        this.registry = registry;
+        this.name = src.substring(registryEnd + 1, tagBegin);
+        this.tag = (tagBegin < len)?  src.substring(tagBegin + 1) : "";
+    }
+
+    public String getId() {
+        return id;
+    }
+
+    public String getFullName() {
+        return fullName;
+    }
+
+    public String getTag() {
+        return tag;
+    }
+
+    public String getRegistry() {
+        return registry;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    private static String toFullName(String registry, String name, String tag) {
+        if(registry == null && name == null && tag == null) {
+            return null;
+        }
+        StringBuilder sb = new StringBuilder();
+        if(StringUtils.hasText(registry)) {
+            sb.append(registry).append('/');
+        }
+        sb.append(name);
+        if(StringUtils.hasText(tag)) {
+            sb.append(':').append(tag);
+        }
+        return sb.toString();
+    }
+
+    public static ImageName parse(String src) {
+        if(src == null) {
+            return null;
+        }
+        int at = src.indexOf('@');
+        if(at < 0) {
+            if(isId(src)) {
+                return new ImageName("", src);
+            }
+            return new ImageName(src, null);
+        }
+        return new ImageName(src.substring(0, at), src.substring(at + 1));
     }
 
     /**
@@ -93,7 +152,29 @@ public class ImageName {
         return imageId.substring(start, start + ImageName.NAME_ID_LEN);
     }
 
+    /**
+     * Concatenate name and id. It support on new docker versions only.
+     * @return name + '@' + id, also correct handle null.
+     */
+    public static String nameWithId(String name, String id) {
+        String res = name;
+        if(id != null) {
+            if(!isId(id)) {
+                throw new IllegalArgumentException("Id of '" + name + "' is invalid: " + id);
+            }
+            if(!StringUtils.isEmpty(res)) {
+                res = res + "@" + id;
+            } else {
+                res = id;
+            }
+        }
+        return res;
+    }
+
     public static boolean isId(String image) {
+        if(StringUtils.isEmpty(image)) {
+            return false;
+        }
         // see https://docs.docker.com/registry/spec/api/#/content-digests
         int length = SHA256.length();
         if(image.regionMatches(true, 0, SHA256, 0, length)) {
@@ -119,7 +200,7 @@ public class ImageName {
     }
 
     /**
-     * Return 'registry/image' name without version
+     * Return 'registry/image' name without version (also remove image id)
      * example: example.com/com.example.core:172 -> example.com/com.example.core
      * @param name
      * @return name without tag or throw exception
@@ -130,13 +211,23 @@ public class ImageName {
     }
 
     private static String removeTagP(String name) {
+        int tagStart = getTagStart(name);
+        return name.substring(0, tagStart);
+    }
+
+    private static int getTagStart(String name) {
+        int catPos = name.indexOf('@');
         int tagStart = name.lastIndexOf(':');
         int regEnd = name.indexOf('/');
         // we check that ':' is not part or registry name
         if (tagStart < 0 || tagStart <= regEnd) {
             tagStart = name.length();
         }
-        return name.substring(0, tagStart);
+        if(catPos > 0 && catPos < tagStart) {
+            // in thi case image has image id instead of tag, and we must remove it
+            tagStart = catPos;
+        }
+        return tagStart;
     }
 
     /**
@@ -150,5 +241,14 @@ public class ImageName {
             return null;
         }
         return removeTagP(name);
+    }
+
+    public static String setTag(String image, String tag) {
+        assertName(image);
+        if (!StringUtils.hasText(tag)) {
+            return image;
+        }
+        int tagStart = getTagStart(image);
+        return image.substring(0, tagStart) + ":" + tag;
     }
 }

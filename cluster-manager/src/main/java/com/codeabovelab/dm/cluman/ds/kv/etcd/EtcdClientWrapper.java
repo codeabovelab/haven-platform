@@ -205,7 +205,7 @@ public class EtcdClientWrapper implements KeyValueStorage {
         }
         final long ttl = ops.getTtl();
         if(ttl > 0) {
-            if(ttl >= Integer.MAX_VALUE) {
+            if(ttl > Integer.MAX_VALUE) {
                 throw new IllegalArgumentException("TTL value too big: " + ttl);
             }
             req.ttl((int) ttl);

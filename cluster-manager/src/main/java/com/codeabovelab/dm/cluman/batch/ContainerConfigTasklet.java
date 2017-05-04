@@ -16,11 +16,12 @@
 
 package com.codeabovelab.dm.cluman.batch;
 
-import com.codeabovelab.dm.cluman.cluster.docker.management.DockerService;
 import com.codeabovelab.dm.cluman.cluster.docker.model.ContainerDetails;
 import com.codeabovelab.dm.cluman.job.JobComponent;
 import com.codeabovelab.dm.cluman.model.ContainerSource;
+import com.codeabovelab.dm.cluman.model.DiscoveryStorage;
 import com.codeabovelab.dm.cluman.model.ImageDescriptor;
+import com.codeabovelab.dm.cluman.model.NodesGroup;
 import com.codeabovelab.dm.cluman.source.ContainerSourceFactory;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -37,14 +38,14 @@ import java.util.Set;
 public class ContainerConfigTasklet {
 
     @Autowired
-    private DockerService service;
+    private NodesGroup nodesGroup;
 
     @Autowired
     private ContainerSourceFactory containerSourceFactory;
 
     ProcessedContainer process(ProcessedContainer pc) {
         String id = pc.getId();
-        ContainerDetails container = service.getContainer(id);
+        ContainerDetails container = nodesGroup.getContainers().getContainer(id);
         ContainerSource arg = new ContainerSource();
         containerSourceFactory.toSource(container, arg);
         cleanArg(arg, container.getImageId());
@@ -60,7 +61,8 @@ public class ContainerConfigTasklet {
      */
     private void cleanArg(ContainerSource arg, String imageId) {
         try {
-            ImageDescriptor image = service.getImage(imageId);
+
+            ImageDescriptor image = nodesGroup.getDocker().getImage(imageId);
             if (image != null) {
 
                 Set<String> labels = image.getContainerConfig().getLabels().keySet();

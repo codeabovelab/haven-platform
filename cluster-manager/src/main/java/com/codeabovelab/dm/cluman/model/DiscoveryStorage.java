@@ -16,19 +16,19 @@
 
 package com.codeabovelab.dm.cluman.model;
 
-import com.codeabovelab.dm.cluman.cluster.filter.Filter;
-import com.codeabovelab.dm.cluman.ds.DockerServiceRegistry;
+import com.codeabovelab.dm.cluman.cluster.docker.management.DockerService;
 import com.codeabovelab.dm.cluman.ds.clusters.AbstractNodesGroupConfig;
+import com.codeabovelab.dm.cluman.ds.clusters.ClusterConfigFactory;
 
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
-import java.util.function.Consumer;
+import java.util.Set;
 
 /**
- * Swarm discovery hub service interface @see https://github.com/docker/swarm/tree/master/discovery/token
+ * Hold clusters
  */
-public interface DiscoveryStorage extends DockerServiceRegistry {
+public interface DiscoveryStorage {
 
     String GROUP_ID_ALL = "all";
     String GROUP_ID_ORPHANS = "orphans";
@@ -36,19 +36,11 @@ public interface DiscoveryStorage extends DockerServiceRegistry {
     Collection<String> SYSTEM_GROUPS = Arrays.asList(GROUP_ID_ALL, GROUP_ID_ORPHANS);
 
     /**
-     * Return exists cluster or create new for concrete node.
-     * @param nodeId id of node
-     * @param clusterId default cluster id
-     * @return exists cluster or create new.
-     */
-    NodesGroup getClusterForNode(String nodeId, String clusterId);
-
-    /**
      * Return exists cluster of concrete node.
-     * @param nodeId
-     * @return cluter or null
+     * @param node
+     * @return cluster or null
      */
-    NodesGroup getClusterForNode(String nodeId);
+    NodesGroup getClusterForNode(String node);
 
     /**
      * Return exists cluster or null
@@ -56,10 +48,17 @@ public interface DiscoveryStorage extends DockerServiceRegistry {
      * @return exists cluster or null
      */
     NodesGroup getCluster(String clusterId);
-    NodesGroup getOrCreateCluster(String clusterId, Consumer<ClusterCreationContext> onNewCluster);
 
     /**
-     * Register new group, or return already registered. Like {@link #getOrCreateCluster(String, Consumer)} but allow to
+     *  Return existed cluster or create new.
+     * @param clusterId name of cluster
+     * @param factory factory or null
+     * @return NodesGroup, never null
+     */
+    NodesGroup getOrCreateCluster(String clusterId, ClusterConfigFactory factory);
+
+    /**
+     * Register new group, or return already registered. Like {@link #getOrCreateCluster(String, ClusterConfigFactory)} but allow to
      * create node group and real clusters too.
      * @param config
      * @return registered node group.
@@ -71,4 +70,8 @@ public interface DiscoveryStorage extends DockerServiceRegistry {
     void deleteNodeGroup(String clusterId);
 
     List<NodesGroup> getClusters();
+
+    DockerService getService(String name);
+
+    Set<String> getServices();
 }

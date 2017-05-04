@@ -19,10 +19,9 @@ package com.codeabovelab.dm.cluman.security;
 import com.codeabovelab.dm.cluman.cluster.docker.ClusterConfig;
 import com.codeabovelab.dm.cluman.cluster.docker.management.DockerService;
 import com.codeabovelab.dm.cluman.cluster.docker.management.argument.*;
-import com.codeabovelab.dm.cluman.cluster.docker.management.result.ProcessEvent;
-import com.codeabovelab.dm.cluman.cluster.docker.management.result.RemoveImageResult;
-import com.codeabovelab.dm.cluman.cluster.docker.management.result.ServiceCallResult;
+import com.codeabovelab.dm.cluman.cluster.docker.management.result.*;
 import com.codeabovelab.dm.cluman.cluster.docker.model.*;
+import com.codeabovelab.dm.cluman.cluster.docker.model.swarm.*;
 import com.codeabovelab.dm.cluman.model.DockerContainer;
 import com.codeabovelab.dm.cluman.model.DockerServiceInfo;
 import com.codeabovelab.dm.cluman.model.ImageDescriptor;
@@ -52,19 +51,28 @@ public class DockerServiceSecurityWrapper implements DockerService {
     }
 
     private void checkServiceAccessInternal(AccessContext context, Action action) {
+        checkClusterAccess(context, action);
+        String node = getNode();
+        if(node != null) {
+            boolean granted = context.isGranted(SecuredType.NODE.id(node), action);
+            if(!granted) {
+                throw new AccessDeniedException("Access to node docker service '" + node + "' with " + action + " is denied.");
+            }
+        }
+    }
+
+    public void checkClusterAccess(Action action) {
+        AccessContext context = aclContextFactory.getContext();
+        checkClusterAccess(context, action);
+    }
+
+    public void checkClusterAccess(AccessContext context, Action action) {
         Assert.notNull(action, "Action is null");
         String cluster = getCluster();
         if(cluster != null) {
             boolean granted = context.isGranted(SecuredType.CLUSTER.id(cluster), action);
             if(!granted) {
                 throw new AccessDeniedException("Access to cluster docker service '" + cluster + "' with " + action + " is denied.");
-            }
-        }
-        String node = getNode();
-        if(node != null) {
-            boolean granted = context.isGranted(SecuredType.NODE.id(node), action);
-            if(!granted) {
-                throw new AccessDeniedException("Access to node docker service '" + node + "' with " + action + " is denied.");
             }
         }
     }
@@ -109,6 +117,11 @@ public class DockerServiceSecurityWrapper implements DockerService {
     }
 
     @Override
+    public String getAddress() {
+        return service.getAddress();
+    }
+
+    @Override
     public boolean isOnline() {
         return service.isOnline();
     }
@@ -146,6 +159,17 @@ public class DockerServiceSecurityWrapper implements DockerService {
         return service.startContainer(id);
     }
 
+    @Override
+    public ServiceCallResult pauseContainer(String id) {
+        checkContainerAccess(id, Action.EXECUTE);
+        return service.pauseContainer(id);
+    }
+
+    @Override
+    public ServiceCallResult unpauseContainer(String id) {
+        checkContainerAccess(id, Action.EXECUTE);
+        return service.unpauseContainer(id);
+    }
 
     @Override
     public ServiceCallResult stopContainer(StopContainerArg arg) {
@@ -208,18 +232,49 @@ public class DockerServiceSecurityWrapper implements DockerService {
     }
 
     @Override
-    public ServiceCallResult createNetwork(CreateNetworkCmd cmd) {
+    public CreateNetworkResponse createNetwork(CreateNetworkCmd cmd) {
         checkNetworkAccess(cmd.getName(), Action.CREATE);
         return service.createNetwork(cmd);
+    }
+
+    @Override
+    public ServiceCallResult deleteNetwork(String id) {
+        checkNetworkAccess(id, Action.DELETE);
+        return service.deleteNetwork(id);
+    }
+
+    @Override
+    public Network getNetwork(String id) {
+        checkNetworkAccess(id, Action.READ);
+        return service.getNetwork(id);
+    }
+
+    @Override
+    public PruneNetworksResponse pruneNetworks(PruneNetworksArg arg) {
+        checkServiceAccess(Action.ALTER_INSIDE);
+        return service.pruneNetworks(arg);
+    }
+
+    @Override
+    public ServiceCallResult connectNetwork(ConnectNetworkCmd cmd) {
+        checkNetworkAccess(cmd.getNetwork(), Action.UPDATE);
+        checkContainerAccess(cmd.getContainer(), Action.UPDATE);
+        return service.connectNetwork(cmd);
+    }
+
+    @Override
+    public ServiceCallResult disconnectNetwork(DisconnectNetworkCmd cmd) {
+        checkNetworkAccess(cmd.getNetwork(), Action.UPDATE);
+        checkContainerAccess(cmd.getContainer(), Action.UPDATE);
+        return service.disconnectNetwork(cmd);
     }
 
     @Override
     public List<Network> getNetworks() {
         AccessContext context = aclContextFactory.getContext();
         checkServiceAccessInternal(context, Action.READ);
-        return service.getNetworks().stream().filter((net) -> {
-            return context.isGranted(SecuredType.NETWORK.id(net.getId()), Action.READ);
-        }).collect(Collectors.toList());
+        return service.getNetworks().stream().filter((net) -> context.isGranted(SecuredType.NETWORK.id(net.getId()), Action.READ))
+                .collect(Collectors.toList());
     }
 
     @Override
@@ -261,5 +316,119 @@ public class DockerServiceSecurityWrapper implements DockerService {
     public RemoveImageResult removeImage(RemoveImageArg arg) {
         checkImageAccess(aclContextFactory.getContext(), arg.getImageId(), Action.DELETE);
         return service.removeImage(arg);
+    }
+
+    @Override
+    public SwarmInspectResponse getSwarm() {
+        checkServiceAccess(Action.READ);
+        return service.getSwarm();
+    }
+
+    @Override
+    public SwarmInitResult initSwarm(SwarmInitCmd cmd) {
+        checkServiceAccess(Action.UPDATE);
+        return service.initSwarm(cmd);
+    }
+
+    @Override
+    public ServiceCallResult joinSwarm(SwarmJoinCmd cmd) {
+        checkServiceAccess(Action.UPDATE);
+        return service.joinSwarm(cmd);
+    }
+
+    @Override
+    public ServiceCallResult leaveSwarm(SwarmLeaveArg arg) {
+        checkServiceAccess(Action.UPDATE);
+        return service.leaveSwarm(arg);
+    }
+
+    @Override
+    public List<SwarmNode> getNodes(GetNodesArg cmd) {
+        checkServiceAccess(Action.READ);
+        return service.getNodes(cmd);
+    }
+
+    @Override
+    public ServiceCallResult removeNode(RemoveNodeArg arg) {
+        checkServiceAccess(Action.ALTER_INSIDE);
+        return service.removeNode(arg);
+    }
+
+    @Override
+    public ServiceCallResult updateNode(UpdateNodeCmd cmd) {
+        checkServiceAccess(Action.ALTER_INSIDE);
+        return service.updateNode(cmd);
+    }
+
+    @Override
+    public Service getService(String service) {
+        checkServiceAccess(Action.READ);
+        return this.service.getService(service);
+    }
+
+    @Override
+    public ServiceCallResult deleteService(String service) {
+        checkServiceAccess(Action.ALTER_INSIDE);
+        return this.service.deleteService(service);
+    }
+
+    @Override
+    public ServiceUpdateResult updateService(UpdateServiceArg arg) {
+        checkServiceAccess(Action.ALTER_INSIDE);
+        return service.updateService(arg);
+    }
+
+    @Override
+    public ServiceCreateResult createService(CreateServiceArg arg) {
+        checkServiceAccess(Action.ALTER_INSIDE);
+        return service.createService(arg);
+    }
+
+    @Override
+    public List<Service> getServices(GetServicesArg arg) {
+        checkServiceAccess(Action.READ);
+        return service.getServices(arg);
+    }
+
+    @Override
+    public List<Task> getTasks(GetTasksArg arg) {
+        checkServiceAccess(Action.READ);
+        return service.getTasks(arg);
+    }
+
+    @Override
+    public Task getTask(String taskId) {
+        checkServiceAccess(Action.READ);
+        return service.getTask(taskId);
+    }
+
+    @Override
+    public List<Volume> getVolumes(GetVolumesArg arg) {
+        checkServiceAccess(Action.READ);
+        return service.getVolumes(arg);
+    }
+
+    @Override
+    public Volume createVolume(CreateVolumeCmd cmd) {
+        checkServiceAccess(Action.ALTER_INSIDE);
+        return service.createVolume(cmd);
+    }
+
+    @Override
+    public ServiceCallResult removeVolume(RemoveVolumeArg arg) {
+        checkServiceAccess(Action.ALTER_INSIDE);
+        return service.removeVolume(arg);
+    }
+
+    @Override
+    public ServiceCallResult deleteUnusedVolumes(DeleteUnusedVolumesArg arg) {
+        checkServiceAccess(Action.ALTER_INSIDE);
+        return service.deleteUnusedVolumes(arg);
+    }
+
+    @Override
+    public Volume getVolume(String name) {
+        checkServiceAccess(Action.READ);
+        return service.getVolume(name);
     }
 }

@@ -56,6 +56,12 @@ public class KvMap<T> {
          */
         private Consumer<KvMapEvent<T>> listener;
         private KvObjectFactory<V> factory;
+        /**
+         * Pass dirty value into adapter. Otherwise adapter receive null value.
+         * <p/>
+         * Default - false;
+         */
+        private boolean passDirty;
 
         public Builder(Class<T> type, Class<V> valueType) {
             Assert.notNull(type, "type is null");
@@ -103,49 +109,71 @@ public class KvMap<T> {
             return this;
         }
 
+        /**
+         * Pass dirty value into adapter. Otherwise adapter receive null value.
+         * <p/>
+         * Default - false;
+         * @param passDirty flag
+         * @return this
+         */
+        public Builder<T, V> passDirty(boolean passDirty) {
+            setPassDirty(passDirty);
+            return this;
+        }
+
         public KvMap<T> build() {
-            Assert.notNull(type);
+            Assert.notNull(type, "type can't be null");
             return new KvMap<>(this);
         }
     }
-    private final  class ValueHolder {
+    private final class ValueHolder {
         private final String key;
         private volatile T value;
         private final Map<String, Long> index = new ConcurrentHashMap<>();
         private volatile boolean dirty = true;
+        private volatile boolean barrier = false;
 
         ValueHolder(String key) {
             Assert.notNull(key, "key is null");
             this.key = key;
         }
 
-        synchronized T save(T val) {
-            checkValue(val);
-            // we must not publish dirty value
-            T old = getIfPresent();
-            this.dirty = false;
-            if(val == value) {
-                return value;
+        T save(T val) {
+            T old;
+            KvMapLocalEvent.Action action;
+            synchronized (this) {
+                checkValue(val);
+                // we must not publish dirty value
+                old = getIfPresent();
+                this.dirty = false;
+                if(val == value) {
+                    return value;
+                }
+                action = this.value == null ? KvMapLocalEvent.Action.CREATE : KvMapLocalEvent.Action.UPDATE;
+                this.value = val;
             }
-            KvMapLocalEvent.Action action = this.value == null ? KvMapLocalEvent.Action.CREATE : KvMapLocalEvent.Action.UPDATE;
-            this.value = val;
             onLocal(action, this, old, val);
             flush();
             return old;
         }
 
-        synchronized void flush() {
-            if(this.value == null) {
-                // no value set, nothing to flush
-                return;
+        void flush() {
+            Object obj;
+            synchronized (this) {
+                if(this.value == null) {
+                    // no value set, nothing to flush
+                    return;
+                }
+                this.dirty = false;
+                obj = adapter.get(this.key, this.value);
             }
-            this.dirty = false;
-            Object obj = adapter.get(this.key, this.value);
             // Note that message will be concatenated with type of object by `Assert.isInstanceOf`
             Assert.isInstanceOf(mapper.getType(), obj, "Adapter " + adapter + " return object of inappropriate");
             Assert.notNull(obj, "Adapter " + adapter + " return null from " + this.value + " that is not allowed");
             mapper.save(key, obj, (name, res) -> {
-                index.put(toIndexKey(name), res.getIndex());
+                synchronized (this) {
+                    index.put(toIndexKey(name), res.getIndex());
+                }
             });
         }
 
@@ -176,20 +204,28 @@ public class KvMap<T> {
         }
 
         synchronized void load() {
-            T old = getIfPresent();
-            Object obj = mapper.load(key, adapter.getType(old));
-            T newVal = null;
-            if(obj != null || old != null) {
-                newVal = adapter.set(this.key, old, obj);
-                if(newVal == null) {
-                    throw new IllegalStateException("Adapter " + adapter + " broke contract: it return null value for non null object.");
-                }
+            if(barrier) {
+                throw new IllegalArgumentException("Recursion detected.");
             }
-            this.dirty = false;
-            //here we must raise local event, but need to use another action like LOAD or SET,
-            // UPDATE and CREATE - is not acceptable here
-            this.value = newVal;
-            onLocal(KvMapLocalEvent.Action.LOAD, this, old, newVal);
+            barrier = true;
+            try {
+                T old = (dirty && !passDirty)? null : value;
+                Object obj = mapper.load(key, adapter.getType(old));
+                T newVal = null;
+                if(obj != null || old != null) {
+                    newVal = adapter.set(this.key, old, obj);
+                    if(newVal == null) {
+                        throw new IllegalStateException("Adapter " + adapter + " broke contract: it return null value for non null object.");
+                    }
+                }
+                this.dirty = false;
+                //here we must raise local event, but need to use another action like LOAD or SET,
+                // UPDATE and CREATE - is not acceptable here
+                this.value = newVal;
+                onLocal(KvMapLocalEvent.Action.LOAD, this, old, newVal);
+            } finally {
+                barrier = false;
+            }
         }
 
         synchronized T getIfPresent() {
@@ -231,6 +267,7 @@ public class KvMap<T> {
     private final Consumer<KvMapLocalEvent<T>> localListener;
     private final Consumer<KvMapEvent<T>> listener;
     private final Map<String, ValueHolder> map = new LinkedHashMap<>();
+    private final boolean passDirty;
 
     @SuppressWarnings("unchecked")
     private KvMap(Builder builder) {
@@ -239,6 +276,8 @@ public class KvMap<T> {
         this.adapter = builder.adapter;
         this.localListener = builder.localListener;
         this.listener = builder.listener;
+        this.passDirty = builder.passDirty;
+        Assert.isTrue(!this.passDirty || this.adapter != KvMapAdapter.DIRECT, "Direct adapter does not support passDirty flag.");
         Class<Object> mapperType = MoreObjects.firstNonNull(builder.valueType, (Class<Object>)builder.type);
         this.mapper = builder.mapper.buildClassMapper(mapperType)
           .prefix(builder.path)
@@ -346,7 +385,7 @@ public class KvMap<T> {
             }
             return null;
         }
-        return holder.get();
+        return val;
     }
 
     /**
@@ -433,6 +472,7 @@ public class KvMap<T> {
     }
 
     private ValueHolder getOrCreateHolder(String key) {
+        Assert.hasText(key, "key is null or empty");
         synchronized (map) {
             return map.computeIfAbsent(key, ValueHolder::new);
         }

@@ -125,7 +125,7 @@ public class BalancerConfiguration {
      */
     @Bean
     HttpProxy httpProxy() {
-        ProxyClient proxyClient = null;
+        ProxyClient proxyClient;
         if (async) {
             if (metricsEbanled) {
                 //Building HTTP Async client wrapper for gathering metrics

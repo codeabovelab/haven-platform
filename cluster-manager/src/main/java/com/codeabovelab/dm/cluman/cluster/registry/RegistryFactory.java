@@ -59,6 +59,9 @@ public class RegistryFactory implements DisposableBean {
     @Value("${dm.registry.dockerhub.url:https://registry-1.docker.io}")
     private String dockerHubUrl = "https://registry-1.docker.io";
 
+    @Value("${dm.registry.search.cacheMinutes:10}")
+    private long searchCacheMinutes;
+
     @Autowired
     private AwsService awsService;
 
@@ -88,7 +91,7 @@ public class RegistryFactory implements DisposableBean {
               public RegistryService create(RegistryFactory factory, PrivateRegistryConfig config) {
                   return RegistryServiceImpl.builder()
                     .adapter(new PrivateRegistryAdapter(config, RegistryFactory.this::restTemplate))
-                    .scheduledExecutorService(scheduledExecutorService)
+                    .searchConfig(getSearchIndexDefaultConfig())
                     .build();
               }
 
@@ -173,8 +176,11 @@ public class RegistryFactory implements DisposableBean {
         return (RegistryFactoryAdapter<T>) adapter;
     }
 
-    public ScheduledExecutorService getScheduledExecutorService() {
-        return scheduledExecutorService;
+    public SearchIndex.Config getSearchIndexDefaultConfig() {
+        SearchIndex.Config config = new SearchIndex.Config();
+        config.setScheduledExecutorService(scheduledExecutorService);
+        config.setCacheMinutes(this.searchCacheMinutes);
+        return config;
     }
 
 }

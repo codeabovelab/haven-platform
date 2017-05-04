@@ -17,135 +17,65 @@
 package com.codeabovelab.dm.cluman.cluster.docker.model;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import org.apache.commons.lang.builder.EqualsBuilder;
-import org.apache.commons.lang.builder.HashCodeBuilder;
+import lombok.Data;
 
-import static com.google.common.base.Preconditions.checkNotNull;
-
-/**
- * Container restart policy
- *
- * <dl>
- * <dt>no</dt>
- * <dd>Do not restart the container if it dies. (default)</dd>
- *
- * <dt>on-failure</dt>
- * <dd>Restart the container if it exits with a non-zero exit code. Can also accept an optional maximum restart count
- * (e.g. on-failure:5).
- * <dd>
- *
- * <dt>always</dt>
- * <dd>Always restart the container no matter what exit code is returned.
- * <dd>
- * </dl>
- *
- * @author marcus
- *
- */
+@Data
 public class RestartPolicy {
 
-    @JsonProperty("MaximumRetryCount")
-    private Integer maximumRetryCount = 0;
+    public static final String NO = "no";
+    public static final String ALWAYS = "always";
+    public static final String ON_FAILURE = "on-failure";
+    public static final String UNLESS_STOPPED = "unless-stopped";
 
-    @JsonProperty("Name")
-    private String name = "";
+    private final int maximumRetryCount;
 
-    public RestartPolicy() {
-    }
+    private final String name;
 
-    private RestartPolicy(int maximumRetryCount, String name) {
-        checkNotNull(name, "name is null");
+    private RestartPolicy(@JsonProperty("Name") String name,
+                          @JsonProperty("MaximumRetryCount") int maximumRetryCount) {
         this.maximumRetryCount = maximumRetryCount;
         this.name = name;
     }
 
-    /**
-     * Do not restart the container if it dies. (default)
-     */
     public static RestartPolicy noRestart() {
-        return new RestartPolicy();
+        return new RestartPolicy(NO, 0);
     }
 
-    /**
-     * Always restart the container no matter what exit code is returned.
-     */
     public static RestartPolicy alwaysRestart() {
-        return new RestartPolicy(0, "always");
+        return new RestartPolicy(ALWAYS, 0);
     }
 
-    /**
-     * Restart the container if it exits with a non-zero exit code.
-     *
-     * @param maximumRetryCount
-     *            the maximum number of restarts. Set to <code>0</code> for unlimited retries.
-     */
+    public static RestartPolicy unlessStopped() {
+        return new RestartPolicy(UNLESS_STOPPED, 0);
+    }
+
     public static RestartPolicy onFailureRestart(int maximumRetryCount) {
-        return new RestartPolicy(maximumRetryCount, "on-failure");
+        return new RestartPolicy(ON_FAILURE, maximumRetryCount);
     }
 
-    public Integer getMaximumRetryCount() {
-        return maximumRetryCount;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    /**
-     * Parses a textual restart polixy specification (as used by the Docker CLI) to a {@link RestartPolicy}.
-     *
-     * @param serialized
-     *            the specification, e.g. <code>on-failure:2</code>
-     * @return a {@link RestartPolicy} matching the specification
-     * @throws IllegalArgumentException
-     *             if the specification cannot be parsed
-     */
     public static RestartPolicy parse(String serialized) throws IllegalArgumentException {
         try {
             String[] parts = serialized.split(":");
             String name = parts[0];
-            if ("no".equals(name))
-                return noRestart();
-            if ("always".equals(name))
-                return alwaysRestart();
-            if ("on-failure".equals(name)) {
-                int count = 0;
-                if (parts.length == 2) {
-                    count = Integer.parseInt(parts[1]);
-                }
-                return onFailureRestart(count);
+            switch (name) {
+                case NO:
+                    return noRestart();
+                case ALWAYS:
+                    return alwaysRestart();
+                case UNLESS_STOPPED:
+                    return unlessStopped();
+                case ON_FAILURE:
+                    int count = 0;
+                    if (parts.length == 2) {
+                        count = Integer.parseInt(parts[1]);
+                    }
+                    return onFailureRestart(count);
+                default:
+                    throw new IllegalArgumentException();
             }
-            throw new IllegalArgumentException();
         } catch (Exception e) {
             throw new IllegalArgumentException("Error parsing RestartPolicy '" + serialized + "'");
         }
-    }
-
-    /**
-     * Returns a string representation of this {@link RestartPolicy}. The format is <code>name[:count]</code>, like the
-     * argument in {@link #parse(String)}.
-     *
-     * @return a string representation of this {@link RestartPolicy}
-     */
-    @Override
-    public String toString() {
-        String result = name.isEmpty() ? "no" : name;
-        return maximumRetryCount > 0 ? result + ":" + maximumRetryCount : result;
-    }
-
-    @Override
-    public boolean equals(Object obj) {
-        if (obj instanceof RestartPolicy) {
-            RestartPolicy other = (RestartPolicy) obj;
-            return new EqualsBuilder().append(maximumRetryCount, other.getMaximumRetryCount())
-                    .append(name, other.getName()).isEquals();
-        } else
-            return super.equals(obj);
-    }
-
-    @Override
-    public int hashCode() {
-        return new HashCodeBuilder().append(maximumRetryCount).append(name).toHashCode();
     }
 
 }

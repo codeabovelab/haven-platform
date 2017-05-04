@@ -24,8 +24,8 @@ import com.codeabovelab.dm.cluman.cluster.application.ApplicationService;
 import com.codeabovelab.dm.cluman.cluster.docker.management.DockerService;
 import com.codeabovelab.dm.cluman.cluster.docker.model.ContainerConfig;
 import com.codeabovelab.dm.cluman.cluster.docker.model.ContainerDetails;
-import com.codeabovelab.dm.cluman.ds.DockerServiceRegistry;
 import com.codeabovelab.dm.cluman.model.ApplicationImpl;
+import com.codeabovelab.dm.cluman.model.DiscoveryStorage;
 import com.google.common.io.Files;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -54,18 +54,17 @@ import static org.springframework.web.bind.annotation.RequestMethod.POST;
 @RequiredArgsConstructor(onConstructor = @__(@Autowired))
 public class ClusterComposeApi {
 
-    private final DockerServiceRegistry dockerServiceRegistry;
+    private final DiscoveryStorage discoveryStorage;
     private final ComposeExecutor composeExecutor;
     private final ApplicationService applicationService;
 
     @RequestMapping(value = "clusters/{cluster}/compose", method = POST, consumes = {MULTIPART_FORM_DATA_VALUE})
     public ResponseEntity<ComposeResult> deployClusterFromCompose(@PathVariable("cluster") String cluster,
                                                                   @RequestPart(value = "data") MultipartFile multipartFile) throws Exception {
-        Assert.notNull(multipartFile);
         //String root, String cluster, String app, String fileName
         File file = ComposeUtils.clusterPath(composeExecutor.getBasedir(), cluster, multipartFile.getName());
         Files.write(multipartFile.getBytes(), file);
-        DockerService service = dockerServiceRegistry.getService(cluster);
+        DockerService service = discoveryStorage.getService(cluster);
         ComposeResult composeResult = composeExecutor.up(ComposeArg.builder().file(file).build(), service);
         log.info("result of executing compose: {}", composeResult);
 
@@ -73,7 +72,7 @@ public class ClusterComposeApi {
         return new ResponseEntity<>(composeResult, UiUtils.toStatus(composeResult.getResultCode()));
     }
 
-    private void createApplications(ComposeResult composeResult, String cluster) throws Exception {
+    private void createApplications(ComposeResult composeResult, String cluster) {
         List<ContainerDetails> containers = composeResult.getContainerDetails();
         if(containers == null) {
             log.warn("Null list of containers from compose for cluster: '{}'", cluster);

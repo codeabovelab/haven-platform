@@ -16,14 +16,12 @@
 
 package com.codeabovelab.dm.cluman.ds.container;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.slf4j.Slf4j;
 
 import java.util.*;
 
+@Slf4j
 public final class ContainerStarterHelper {
-
-    private static final Logger LOG = LoggerFactory.getLogger(ContainerStarterHelper.class);
 
     private static final String CONSTRAINT_NODE = "constraint:node";
 
@@ -36,7 +34,7 @@ public final class ContainerStarterHelper {
             values.add( new NodePriority(n, count));
         }
         Collections.sort(values);
-        LOG.info("Service count by nodes {}", values);
+        log.info("Service count by nodes {}", values);
         return values;
     }
 
@@ -101,7 +99,7 @@ public final class ContainerStarterHelper {
             throw new IllegalArgumentException("Can't schedule container, all nodes contains at least " + maxCount);
         }
         String cs = CONSTRAINT_NODE + "==~" + nodePriority.name;
-        LOG.info("Preffered node: {}", cs);
+        log.info("Preffered node: {}", cs);
         return cs;
     }
 
@@ -116,7 +114,7 @@ public final class ContainerStarterHelper {
             }
         }
         if (!result.isEmpty()) {
-            LOG.info("Full nodes: {}", result);
+            log.info("Full nodes: {}", result);
         }
         return result;
     }

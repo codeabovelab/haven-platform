@@ -19,6 +19,7 @@ package com.codeabovelab.dm.cluman.batch;
 import com.codeabovelab.dm.cluman.cluster.docker.management.DockerService;
 import com.codeabovelab.dm.cluman.job.*;
 import com.codeabovelab.dm.cluman.model.DiscoveryStorage;
+import com.codeabovelab.dm.cluman.model.NodesGroup;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -45,9 +46,10 @@ public class RollbackData {
             // note that it doing in another jobContext
             // and we must again transfer rollback data to new context
             rc.setBean(data);
-            DockerService ds = rc.getBean(DiscoveryStorage.class).getService(data.cluster);
-            Assert.notNull(ds, "Can not find cluster: " + data.cluster);
-            rc.setBean(ds, DockerService.class);
+            DiscoveryStorage discovery = rc.getBean(DiscoveryStorage.class);
+            NodesGroup nodesGroup = discovery.getCluster(data.cluster);
+            Assert.notNull(nodesGroup, "Can not find cluster: " + data.cluster);
+            rc.setBean(nodesGroup, NodesGroup.class);
             RollbackTasklet tasklet = rc.getBean(RollbackTasklet.class);
             tasklet.rollback();
         }

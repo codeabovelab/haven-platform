@@ -4,12 +4,12 @@
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
-        <version>1.4.5.RELEASE</version>
+        <version>1.5.3.RELEASE</version>
     </parent>
 
     <groupId>com.codeabovelab.dm</groupId>
     <artifactId>dm-parent</artifactId>
-    <version>1.1.4</version>
+    <version>1.2.0-SNAPSHOT</version>
     <packaging>pom</packaging>
     <name>Haven platform</name>
 
@@ -42,21 +42,18 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.java.version>8</project.java.version>
 
-        <mockito.version>1.10.19</mockito.version>
-        <junit.version>4.12</junit.version>
         <surefire.junit.version>2.17</surefire.junit.version>
-        <codehaus.woodstox.version>4.4.1</codehaus.woodstox.version>
 
-        <spring-cloud-starter.version>Camden.SR3</spring-cloud-starter.version>
+        <spring-cloud-starter.version>Camden.SR6</spring-cloud-starter.version>
         <javax.validation.version>1.1.0.Final</javax.validation.version>
 
-        <commons-validator.version>1.5.1</commons-validator.version>
-        <lombok.version>1.16.12</lombok.version>
+        <commons-validator.version>1.6</commons-validator.version>
+        <lombok.version>1.16.16</lombok.version>
 
         <maven-surefire.version>2.18.1</maven-surefire.version>
         <maven-jar.version>3.0.2</maven-jar.version>
 
-        <exec-maven-plugin.version>1.3.2</exec-maven-plugin.version>
+        <exec-maven-plugin.version>1.6.0</exec-maven-plugin.version>
         <maven-release-plugin.version>2.5.1</maven-release-plugin.version>
         <jayway.restassured.spring.mock.mvc>2.4.0</jayway.restassured.spring.mock.mvc>
         <metrics-spring.version>3.1.3</metrics-spring.version>
@@ -64,7 +61,7 @@
         <commons-codec.version>1.10</commons-codec.version>
         <javax-mail.version>1.5.2</javax-mail.version>
         <greenmail.version>1.4.0</greenmail.version>
-        <guava.version>19.0</guava.version>
+        <guava.version>21.0</guava.version>
         <commons-io.version>2.5</commons-io.version>
         <swagger.version>2.6.1</swagger.version>
 
@@ -77,6 +74,7 @@
     <modules>
         <module>common</module>
         <module>cluster-manager</module>
+        <module>agent</module>
         <!--<module>balancer-web</module>-->
     </modules>
 
@@ -99,6 +97,35 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-release-plugin</artifactId>
                 <version>${maven-release-plugin.version}</version>
+            </plugin>
+            <plugin>
+                <!--
+                Create self-signed root certificate. It used in 'agent' for signing runtime generated
+                certificate and in 'cluman' part as trusted for communicating with nodes agents over TLS.
+                -->
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>keytool-maven-plugin</artifactId>
+                <version>1.5</version>
+                <inherited>false</inherited>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>generateKeyPair</goal>
+                        </goals>
+                        <phase>generate-resources</phase>
+                    </execution>
+                </executions>
+                <configuration>
+                    <keystore>${project.build.directory}/cert/root.jks</keystore>
+                    <storepass>storepass</storepass>
+                    <keypass>keypass</keypass>
+                    <alias>root-cert</alias>
+                    <dname>cn=codeabovelab.com, o=Code Above Lab LLC, c=US</dname>
+                    <ext>BC=ca:true</ext>
+                    <keyalg>RSA</keyalg>
+                    <validity>3560</validity>
+                    <verbose>true</verbose>
+                </configuration>
             </plugin>
         </plugins>
         <pluginManagement>
@@ -214,32 +241,32 @@
             <dependency>
                 <groupId>com.codeabovelab.dm</groupId>
                 <artifactId>cluster-manager</artifactId>
-                <version>1.1.4</version>
+                <version>1.2.0-SNAPSHOT</version>
             </dependency>
             <dependency>
                 <groupId>com.codeabovelab.dm</groupId>
                 <artifactId>common-utils</artifactId>
-                <version>1.1.4</version>
+                <version>1.2.0-SNAPSHOT</version>
             </dependency>
             <dependency>
                 <groupId>com.codeabovelab.dm</groupId>
                 <artifactId>common-core</artifactId>
-                <version>1.1.4</version>
+                <version>1.2.0-SNAPSHOT</version>
             </dependency>
             <dependency>
                 <groupId>com.codeabovelab.dm</groupId>
                 <artifactId>gateway-common</artifactId>
-                <version>1.1.4</version>
+                <version>1.2.0-SNAPSHOT</version>
             </dependency>
             <dependency>
                 <groupId>com.codeabovelab.dm</groupId>
                 <artifactId>platform-common</artifactId>
-                <version>1.1.4</version>
+                <version>1.2.0-SNAPSHOT</version>
             </dependency>
             <dependency>
                 <groupId>com.codeabovelab.dm</groupId>
                 <artifactId>mail</artifactId>
-                <version>1.1.4</version>
+                <version>1.2.0-SNAPSHOT</version>
             </dependency>
 
             <!--     SPRING     -->
@@ -294,11 +321,6 @@
 
 
             <!--for RestTemplate-->
-            <dependency>
-                <groupId>org.codehaus.woodstox</groupId>
-                <artifactId>woodstox-core-asl</artifactId>
-                <version>${codehaus.woodstox.version}</version>
-            </dependency>
 
             <dependency>
                 <groupId>commons-validator</groupId>

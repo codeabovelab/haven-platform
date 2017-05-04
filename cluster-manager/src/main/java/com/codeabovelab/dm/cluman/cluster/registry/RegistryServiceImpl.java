@@ -32,9 +32,9 @@ public class RegistryServiceImpl extends AbstractV2RegistryService implements Au
 
     @Builder
     public RegistryServiceImpl(RegistryAdapter adapter,
-                               ScheduledExecutorService scheduledExecutorService) {
+                               SearchIndex.Config searchConfig) {
         super(adapter);
-        this.searchIndex = new SearchIndex(this, scheduledExecutorService);
+        this.searchIndex = new SearchIndex(this, searchConfig);
     }
 
     @Override

@@ -19,8 +19,7 @@ package com.codeabovelab.dm.cluman.configs.container;
 import com.codeabovelab.dm.cluman.model.ContainerSource;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
 import java.io.File;
@@ -29,13 +28,12 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Parser for compose yaml configs
+ * Parser for yaml configs
  */
-@Deprecated
 @Component
+@Slf4j
 public class YamlParser extends AbstractParser {
 
-    private static final Logger LOG = LoggerFactory.getLogger(ConfigsFetcherGit.class);
     private final ObjectMapper mapper = new ObjectMapper(new YAMLFactory());
 
     @Override
@@ -50,9 +48,8 @@ public class YamlParser extends AbstractParser {
             List<String> include = configuration.getInclude();
             include.forEach(a -> parse(new File(file.getParent(), a), context));
             context.addCreateContainerArg(configuration);
-            LOG.info("Result of parsing {}", configuration);
         } catch (IOException e) {
-            LOG.error("can't parse configuration", e);
+            log.error("can't parse configuration", e);
         }
     }
 

@@ -16,7 +16,7 @@
 
 package com.codeabovelab.dm.cluman.model;
 
-import com.codeabovelab.dm.cluman.cluster.docker.model.Port;
+import com.fasterxml.jackson.annotation.JsonCreator;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import lombok.Data;
@@ -34,6 +34,9 @@ import java.util.Map;
 @Data
 public class DockerContainer implements ContainerBaseIface, WithNode {
 
+    /**
+     * https://github.com/docker/docker/blob/b59ee9486fad5fa19f3d0af0eb6c5ce100eae0fc/container/state.go#L123
+     * */
     public enum State {
         PAUSED(true),
         RESTARTING(true),
@@ -77,7 +80,7 @@ public class DockerContainer implements ContainerBaseIface, WithNode {
         private final Map<String, String> labels = new HashMap<>();
         private String status;
         private State state;
-        private Node node;
+        private String node;
 
         public Builder id(String id) {
             setId(id);
@@ -138,7 +141,7 @@ public class DockerContainer implements ContainerBaseIface, WithNode {
             return this;
         }
 
-        public Builder node(Node node) {
+        public Builder node(String node) {
             setNode(node);
             return this;
         }
@@ -177,8 +180,12 @@ public class DockerContainer implements ContainerBaseIface, WithNode {
     private final Map<String, String> labels;
     private final String status;
     private final State state;
-    private final Node node;
+    /**
+     * node name
+     */
+    private final String node;
 
+    @JsonCreator
     public DockerContainer(Builder builder) {
         this.id = builder.id;
         this.name = builder.name;
@@ -191,8 +198,8 @@ public class DockerContainer implements ContainerBaseIface, WithNode {
         this.status = builder.status;
         this.state = builder.state;
         this.node = builder.node;
-        Assert.notNull(this.node, "node is null");
-        Assert.notNull(this.imageId, "imageId is null");
+        // we must allow to se invalid containers too, therefore check only 'id'
+        Assert.notNull(this.id, "id is null");
     }
 
     public static Builder builder() {
