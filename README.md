@@ -95,7 +95,9 @@ Users can be assigned administrative rights to specific clusters to avoid admin 
 5. Backups of system configuration
 6. Network management:
 ![api](https://raw.githubusercontent.com/codeabovelab/haven-platform/master/doc/img/network.png)
-7. API
+7. Events:
+![api](https://raw.githubusercontent.com/codeabovelab/haven-platform/master/doc/img/events.png)
+8. API
 ![api](https://raw.githubusercontent.com/codeabovelab/haven-platform/master/doc/img/api.png)
 
 
