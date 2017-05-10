@@ -18,19 +18,19 @@ package com.codeabovelab.dm.cluman.ui;
 
 import com.codeabovelab.dm.cluman.mail.MailNotificationsService;
 import com.codeabovelab.dm.cluman.mail.MailSubscription;
+import com.codeabovelab.dm.cluman.ui.model.UiEmailSubscription;
 import com.codeabovelab.dm.common.security.Authorities;
+import com.codeabovelab.dm.common.security.ExtendedUserDetails;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
-import org.springframework.security.access.annotation.Secured;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.web.bind.annotation.*;
 
 import javax.validation.Valid;
-import java.util.Collection;
+import java.util.ArrayList;
+import java.util.List;
 
 import static org.springframework.web.bind.annotation.RequestMethod.*;
 
@@ -43,18 +43,42 @@ public class EmailApi {
     private final MailNotificationsService mailNotificationsService;
 
     @RequestMapping(value = "/", method = GET)
-    public Collection<MailSubscription> list() {
-        return mailNotificationsService.list();
+    public List<UiEmailSubscription> list() {
+        List<UiEmailSubscription> list = new ArrayList<>();
+        mailNotificationsService.forEach(sub -> list.add(UiEmailSubscription.from(sub)));
+        return list;
     }
 
-    @RequestMapping(value = "/{eventSource}", method = GET)
-    public MailSubscription get(@PathVariable("eventSource") String eventSource) {
-        return mailNotificationsService.get(eventSource);
-    }
-
-    @Secured(Authorities.ADMIN_ROLE)
     @RequestMapping(value = "/", method = POST)
-    public void add(@RequestBody @Valid MailSubscription subscription) {
-        mailNotificationsService.put(subscription);
+    public void add(@RequestBody @Valid UiEmailSubscription subscription) {
+        String emails = subscription.getEmail();
+        checkAсcess(emails);
+        MailSubscription ms = MailSubscription.builder()
+          .severity(subscription.getSeverity())
+          .email(emails)
+          .eventSource(subscription.getEventSource())
+          .build();
+        mailNotificationsService.put(ms);
+    }
+
+    @RequestMapping(value = "/", method = DELETE)
+    public void removeSubscribers(@RequestBody @Valid UiEmailSubscription subscription) {
+        String email = subscription.getEmail();
+        checkAсcess(email);
+        mailNotificationsService.remove(subscription.getEventSource(), email);
+    }
+
+    private void checkAсcess(String emails) {
+        ExtendedUserDetails eud = (ExtendedUserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        if (Authorities.hasAnyOfAuthorities(eud, Authorities.ADMIN_ROLE)) {
+            // admin can do anything
+            return;
+        }
+        String userEmail = eud.getEmail();
+        if (userEmail != null && userEmail.equalsIgnoreCase(emails)) {
+            // user can modify own subscriptions
+            return;
+        }
+        throw new SecurityException("User " + eud.getUsername() + " do not has access to add subscription");
     }
 }

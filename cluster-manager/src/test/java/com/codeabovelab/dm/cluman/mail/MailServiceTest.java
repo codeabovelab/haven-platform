@@ -32,7 +32,10 @@ import javax.validation.Validator;
 
 import static org.hamcrest.Matchers.*;
 import static org.junit.Assert.*;
+
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 
 /**
  */
@@ -104,47 +107,52 @@ public class MailServiceTest {
 
     @Test
     public void testAdding() {
-        assertThat(mailService.list(), hasSize(0));
+        assertThat(list(), hasSize(0));
 
         MailSubscription.Builder msb = MailSubscription.builder();
         msb.setEventSource(EVENT_SOURCE);
-        msb.addEmailRecipient(RECIPIENT_FIRST);
+        msb.setEmail(RECIPIENT_FIRST);
         mailService.put(msb.build());
-        assertThat(mailService.list(), hasItem(allOf(
+        assertThat(list(), hasItem(allOf(
           hasProperty("eventSource", is(EVENT_SOURCE)),
-          hasProperty("emailRecipients", hasItem(RECIPIENT_FIRST))
+          hasProperty("email", is(RECIPIENT_FIRST))
         )));
 
-        try {
-            mailService.addSubscribers("nothing", Arrays.asList("wrong@ufo"));
-            fail("Adding to nonexistent subscription");
-        } catch (NotFoundException e) {
-            //as expected
-        }
+        mailService.put(MailSubscription.builder().eventSource(EVENT_SOURCE).email(RECIPIENT_SECOND).build());
+        assertThat(list(), contains(
+          allOf(
+            hasProperty("eventSource", is(EVENT_SOURCE)),
+            hasProperty("email", is(RECIPIENT_FIRST))
+          ),
+          allOf(
+            hasProperty("eventSource", is(EVENT_SOURCE)),
+            hasProperty("email", is(RECIPIENT_SECOND))
+          )
+        ));
 
-        mailService.addSubscribers(EVENT_SOURCE, Arrays.asList(RECIPIENT_SECOND));
-        assertThat(mailService.list(), hasItem(allOf(
+        mailService.remove(EVENT_SOURCE, RECIPIENT_SECOND);
+        assertThat(list(), hasItem(allOf(
           hasProperty("eventSource", is(EVENT_SOURCE)),
-          hasProperty("emailRecipients", hasItems(RECIPIENT_FIRST, RECIPIENT_SECOND))
-        )));
-
-        mailService.removeSubscribers(EVENT_SOURCE, Arrays.asList(RECIPIENT_SECOND));
-        assertThat(mailService.list(), hasItem(allOf(
-          hasProperty("eventSource", is(EVENT_SOURCE)),
-          hasProperty("emailRecipients", hasItem(RECIPIENT_FIRST))
+          hasProperty("email", is(RECIPIENT_FIRST))
         )));
 
     }
 
+    private List<MailSubscription> list() {
+        List<MailSubscription> list = new ArrayList<>();
+        mailService.forEach(list::add);
+        return list;
+    }
+
     @Test
     public void testSend() throws Exception {
-        assertThat(mailService.list(), hasSize(0));
+        assertThat(list(), hasSize(0));
 
         MailSubscription.Builder msb = MailSubscription.builder();
         msb.setEventSource(EVENT_SOURCE);
         msb.setSeverity(Severity.INFO);
         msb.setTemplate("res:eventAlert");
-        msb.addEmailRecipient(RECIPIENT_FIRST);
+        msb.setEmail(RECIPIENT_FIRST);
         mailService.put(msb.build());
 
         bus.accept(RegistryEvent.builder()

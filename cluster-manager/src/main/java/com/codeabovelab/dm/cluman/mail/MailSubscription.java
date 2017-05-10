@@ -16,37 +16,26 @@
 
 package com.codeabovelab.dm.cluman.mail;
 
-import com.codeabovelab.dm.common.kv.mapping.KvMapping;
 import com.codeabovelab.dm.cluman.model.Severity;
+import com.codeabovelab.dm.common.utils.Sugar;
 import com.fasterxml.jackson.annotation.JsonCreator;
-import com.google.common.collect.ImmutableList;
 import io.swagger.annotations.ApiParam;
 import lombok.Data;
 
 import javax.validation.constraints.NotNull;
-import java.util.Collection;
-import java.util.List;
-import java.util.Set;
-import java.util.TreeSet;
 
 /**
- * Topic and severity is a key
+ * Topic and email is a key
  */
 @Data
 public class MailSubscription {
 
     @Data
     public static class Builder {
-        @KvMapping
         private String eventSource;
-        @KvMapping
         private Severity severity;
-        @KvMapping
         private String title;
-        //we store emails in set for prevent duplicates
-        @KvMapping
-        private final Set<String> emailRecipients = new TreeSet<>(String.CASE_INSENSITIVE_ORDER);
-        @KvMapping
+        private String email;
         private String template;
 
         public Builder from(MailSubscription subs) {
@@ -54,24 +43,22 @@ public class MailSubscription {
             setSeverity(subs.getSeverity());
             setTitle(subs.getTitle());
             setTemplate(subs.getTemplate());
-            setEmailRecipients(subs.getEmailRecipients());
+            setEmail(subs.getEmail());
             return this;
         }
 
-        public Builder emailRecipients(Collection<String> emailRecipients) {
-            setEmailRecipients(emailRecipients);
+        public Builder email(String emailRecipient) {
+            setEmail(emailRecipient);
             return this;
         }
 
-        public void setEmailRecipients(Collection<String> emailRecipients) {
-            this.emailRecipients.clear();
-            if(emailRecipients != null) {
-                this.emailRecipients.addAll(emailRecipients);
-            }
+        public Builder severity(Severity severity) {
+            setSeverity(severity);
+            return this;
         }
 
-        public Builder addEmailRecipient(String email) {
-            this.emailRecipients.add(email);
+        public Builder eventSource(String eventSource) {
+            setEventSource(eventSource);
             return this;
         }
 
@@ -87,18 +74,19 @@ public class MailSubscription {
     @ApiParam("Pass null for using default")
     private final String title;
     @NotNull
-    //@Email.List TODO: validate emails
-    private final List<String> emailRecipients;
+    private final String email;
     @ApiParam("Pass null for using default")
     private final String template;
+    private final String id;
 
     @JsonCreator
     public MailSubscription(Builder b) {
         this.eventSource = b.eventSource;
         this.severity = b.severity;
         this.title = b.title;
-        this.emailRecipients = ImmutableList.copyOf(b.emailRecipients);
+        this.email = b.email;
         this.template = b.template;
+        this.id = this.email + ":" + b.getEventSource();
     }
 
     public static Builder builder() {
