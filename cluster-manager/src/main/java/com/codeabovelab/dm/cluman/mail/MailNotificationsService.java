@@ -29,12 +29,15 @@ import com.codeabovelab.dm.cluman.reconfig.ReConfigurable;
 import com.codeabovelab.dm.cluman.validate.ExtendedAssert;
 import com.codeabovelab.dm.common.mb.SmartConsumer;
 import com.codeabovelab.dm.common.mb.Subscriptions;
+import com.codeabovelab.dm.common.security.ExtendedUserDetails;
+import com.codeabovelab.dm.common.security.UserIdentifiersDetailsService;
 import com.codeabovelab.dm.mail.dto.*;
 import com.codeabovelab.dm.mail.service.SendMailWithTemplateService;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.stereotype.Component;
 import org.springframework.util.Assert;
 import org.springframework.util.StringUtils;
@@ -88,10 +91,12 @@ public class MailNotificationsService {
 
     private final ObjectPrinterFactory objectPrinterFactory;
     private final KvMapperFactory kvMapperFactory;
+    private final UserIdentifiersDetailsService userDetailsService;
     private KvClassMapper<MailSubscription.Builder> classMapper;
 
     @Autowired
     public MailNotificationsService(MailConfiguration.MailProperties props,
+                                    UserIdentifiersDetailsService userDetailsService,
                                     KvMapperFactory kvMapperFactory,
                                     ObjectPrinterFactory objectPrinterFactory,
                                     SendMailWithTemplateService sendMailService,
@@ -100,6 +105,7 @@ public class MailNotificationsService {
         this.kvMapperFactory = kvMapperFactory;
         this.from = props.getFrom();
         this.sendMailService = sendMailService;
+        this.userDetailsService = userDetailsService;
         ImmutableMap.Builder<String, Source<?>> b = ImmutableMap.builder();
         sources.forEach((k, v) -> b.put(k, new Source<>(k, v)));
         this.sources = b.build();
@@ -149,7 +155,17 @@ public class MailNotificationsService {
         if(!StringUtils.hasText(templateUri)) {
             templateUri = DEFAULT_TEMPLATE;
         }
-        String email = sub.getEmail();
+        String user = sub.getUser();
+        ExtendedUserDetails eud = userDetailsService.loadUserByUsername(user);
+        if(eud == null) {
+            log.error("Can not sent notification to {}, due it does not exists.", user);
+            return;
+        }
+        String email = eud.getEmail();
+        if(email == null) {
+            log.error("Can not sent notification to {}, due it does not have an email.", user);
+            return;
+        }
         Object var = objectPrinterFactory.printer(ev);
         MailSourceImpl.Builder msb = MailSourceImpl.builder();
         msb.templateUri(templateUri)
@@ -191,9 +207,9 @@ public class MailNotificationsService {
         persist(newSub);
     }
 
-    public void remove(String eventSource, String email) {
+    public void remove(String eventSource, String user) {
         List<MailSubscription> subs = this.map.get(eventSource);
-        subs.removeIf(ms -> ms.getEmail().equalsIgnoreCase(email));
+        subs.removeIf(ms -> ms.getUser().equalsIgnoreCase(user));
     }
 
 
@@ -209,7 +225,7 @@ public class MailNotificationsService {
     private void registerInternal(MailSubscription newSub) {
         String eventSource = newSub.getEventSource();
         ExtendedAssert.matchId(eventSource, "event source");
-        Assert.notNull(newSub.getEmail(), "email is null in mail subscription");
+        Assert.notNull(newSub.getUser(), "user is null in mail subscription");
         List<MailSubscription> subs = this.map.computeIfAbsent(eventSource, (es) -> new ArrayList<>());
         boolean replaced = false;
         for(int i = 0; i < subs.size(); ++i) {

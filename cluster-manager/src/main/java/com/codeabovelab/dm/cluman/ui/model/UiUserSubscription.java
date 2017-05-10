@@ -26,22 +26,22 @@ import javax.validation.constraints.NotNull;
 /**
  */
 @Data
-public class UiEmailSubscription {
+public class UiUserSubscription {
     @NotNull
     private String eventSource;
     @ApiModelProperty("Default ERROR. Not required on delete.")
     private Severity severity = Severity.ERROR;
-    @NotNull
-    private String email;
+    @ApiModelProperty("Default current user.")
+    private String user;
 
-    public static UiEmailSubscription from(MailSubscription sub) {
+    public static UiUserSubscription from(MailSubscription sub) {
         if(sub == null) {
             return null;
         }
-        UiEmailSubscription ues = new UiEmailSubscription();
+        UiUserSubscription ues = new UiUserSubscription();
         ues.setSeverity(sub.getSeverity());
         ues.setEventSource(sub.getEventSource());
-        ues.setEmail(sub.getEmail());
+        ues.setUser(sub.getUser());
         return ues;
     }
 }

@@ -18,7 +18,7 @@ package com.codeabovelab.dm.cluman.ui;
 
 import com.codeabovelab.dm.cluman.mail.MailNotificationsService;
 import com.codeabovelab.dm.cluman.mail.MailSubscription;
-import com.codeabovelab.dm.cluman.ui.model.UiEmailSubscription;
+import com.codeabovelab.dm.cluman.ui.model.UiUserSubscription;
 import com.codeabovelab.dm.common.security.Authorities;
 import com.codeabovelab.dm.common.security.ExtendedUserDetails;
 import lombok.RequiredArgsConstructor;
@@ -43,42 +43,54 @@ public class EmailApi {
     private final MailNotificationsService mailNotificationsService;
 
     @RequestMapping(value = "/", method = GET)
-    public List<UiEmailSubscription> list() {
-        List<UiEmailSubscription> list = new ArrayList<>();
-        mailNotificationsService.forEach(sub -> list.add(UiEmailSubscription.from(sub)));
+    public List<UiUserSubscription> list() {
+        List<UiUserSubscription> list = new ArrayList<>();
+        mailNotificationsService.forEach(sub -> list.add(UiUserSubscription.from(sub)));
         return list;
     }
 
     @RequestMapping(value = "/", method = POST)
-    public void add(@RequestBody @Valid UiEmailSubscription subscription) {
-        String emails = subscription.getEmail();
-        checkAсcess(emails);
+    public void add(@RequestBody @Valid UiUserSubscription subscription) {
+        String user = subscription.getUser();
+        if(user == null) {
+            user = getCurrentUser().getUsername();
+        } else {
+            checkAсcess(user);
+        }
         MailSubscription ms = MailSubscription.builder()
           .severity(subscription.getSeverity())
-          .email(emails)
+          .user(user)
           .eventSource(subscription.getEventSource())
           .build();
         mailNotificationsService.put(ms);
     }
 
     @RequestMapping(value = "/", method = DELETE)
-    public void removeSubscribers(@RequestBody @Valid UiEmailSubscription subscription) {
-        String email = subscription.getEmail();
-        checkAсcess(email);
-        mailNotificationsService.remove(subscription.getEventSource(), email);
+    public void remove(@RequestBody @Valid UiUserSubscription subscription) {
+        String user = subscription.getUser();
+        if(user == null) {
+            user = getCurrentUser().getUsername();
+        } else {
+            checkAсcess(user);
+        }
+        mailNotificationsService.remove(subscription.getEventSource(), user);
     }
 
-    private void checkAсcess(String emails) {
-        ExtendedUserDetails eud = (ExtendedUserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+    private void checkAсcess(String modifiedUser) {
+        ExtendedUserDetails eud = getCurrentUser();
         if (Authorities.hasAnyOfAuthorities(eud, Authorities.ADMIN_ROLE)) {
             // admin can do anything
             return;
         }
-        String userEmail = eud.getEmail();
-        if (userEmail != null && userEmail.equalsIgnoreCase(emails)) {
+        String user = eud.getUsername();
+        if (user != null && user.equals(modifiedUser)) {
             // user can modify own subscriptions
             return;
         }
-        throw new SecurityException("User " + eud.getUsername() + " do not has access to add subscription");
+        throw new SecurityException("User " + user + " do not has access to add subscription");
+    }
+
+    private ExtendedUserDetails getCurrentUser() {
+        return (ExtendedUserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
     }
 }

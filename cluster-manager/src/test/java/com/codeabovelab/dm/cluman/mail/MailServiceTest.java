@@ -34,7 +34,6 @@ import static org.hamcrest.Matchers.*;
 import static org.junit.Assert.*;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -111,14 +110,14 @@ public class MailServiceTest {
 
         MailSubscription.Builder msb = MailSubscription.builder();
         msb.setEventSource(EVENT_SOURCE);
-        msb.setEmail(RECIPIENT_FIRST);
+        msb.setUser(RECIPIENT_FIRST);
         mailService.put(msb.build());
         assertThat(list(), hasItem(allOf(
           hasProperty("eventSource", is(EVENT_SOURCE)),
           hasProperty("email", is(RECIPIENT_FIRST))
         )));
 
-        mailService.put(MailSubscription.builder().eventSource(EVENT_SOURCE).email(RECIPIENT_SECOND).build());
+        mailService.put(MailSubscription.builder().eventSource(EVENT_SOURCE).user(RECIPIENT_SECOND).build());
         assertThat(list(), contains(
           allOf(
             hasProperty("eventSource", is(EVENT_SOURCE)),
@@ -152,7 +151,7 @@ public class MailServiceTest {
         msb.setEventSource(EVENT_SOURCE);
         msb.setSeverity(Severity.INFO);
         msb.setTemplate("res:eventAlert");
-        msb.setEmail(RECIPIENT_FIRST);
+        msb.setUser(RECIPIENT_FIRST);
         mailService.put(msb.build());
 
         bus.accept(RegistryEvent.builder()

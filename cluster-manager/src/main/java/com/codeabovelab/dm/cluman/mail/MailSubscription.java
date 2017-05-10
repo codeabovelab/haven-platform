@@ -17,7 +17,6 @@
 package com.codeabovelab.dm.cluman.mail;
 
 import com.codeabovelab.dm.cluman.model.Severity;
-import com.codeabovelab.dm.common.utils.Sugar;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import io.swagger.annotations.ApiParam;
 import lombok.Data;
@@ -35,7 +34,7 @@ public class MailSubscription {
         private String eventSource;
         private Severity severity;
         private String title;
-        private String email;
+        private String user;
         private String template;
 
         public Builder from(MailSubscription subs) {
@@ -43,12 +42,12 @@ public class MailSubscription {
             setSeverity(subs.getSeverity());
             setTitle(subs.getTitle());
             setTemplate(subs.getTemplate());
-            setEmail(subs.getEmail());
+            setUser(subs.getUser());
             return this;
         }
 
-        public Builder email(String emailRecipient) {
-            setEmail(emailRecipient);
+        public Builder user(String emailRecipient) {
+            setUser(emailRecipient);
             return this;
         }
 
@@ -74,7 +73,7 @@ public class MailSubscription {
     @ApiParam("Pass null for using default")
     private final String title;
     @NotNull
-    private final String email;
+    private final String user;
     @ApiParam("Pass null for using default")
     private final String template;
     private final String id;
@@ -84,9 +83,9 @@ public class MailSubscription {
         this.eventSource = b.eventSource;
         this.severity = b.severity;
         this.title = b.title;
-        this.email = b.email;
+        this.user = b.user;
         this.template = b.template;
-        this.id = this.email + ":" + b.getEventSource();
+        this.id = this.user + ":" + b.getEventSource();
     }
 
     public static Builder builder() {
