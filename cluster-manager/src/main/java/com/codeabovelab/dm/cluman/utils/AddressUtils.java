@@ -46,9 +46,9 @@ public class AddressUtils {
         if(isIpv6(address)) {
             from = address.indexOf(']');
         }
-        int portStart = address.lastIndexOf(':', from);
+        int portStart = address.lastIndexOf(':');
         String hostAndProto = address;
-        if(portStart > 0) {
+        if(portStart > from) {
             hostAndProto = address.substring(0, portStart);
         }
         return hostAndProto + ":" + port;
@@ -64,8 +64,8 @@ public class AddressUtils {
         }
         // ipv6 url looks like 'https://['<addr>']'(':'<port>)?
         int sqBegin = url.indexOf('[');
-        int sqEnd = url.indexOf('[', sqBegin);
-        return sqBegin > 0 && sqEnd > 0;
+        int sqEnd = url.indexOf(']', sqBegin);
+        return sqBegin >= 0 && sqEnd > sqBegin;
     }
 
     public static String getHost(String addr) {
