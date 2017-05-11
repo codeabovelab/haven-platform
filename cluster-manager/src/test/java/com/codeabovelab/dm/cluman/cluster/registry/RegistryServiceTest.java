@@ -27,6 +27,7 @@ public class RegistryServiceTest {
         config.setUrl("https://registry.local");
         service = RegistryServiceImpl.builder()
                 .adapter(new PrivateRegistryAdapter(config, (a) -> new RestTemplate()))
+                .searchConfig(new SearchIndex.Config())
                 .build();
     }
 
