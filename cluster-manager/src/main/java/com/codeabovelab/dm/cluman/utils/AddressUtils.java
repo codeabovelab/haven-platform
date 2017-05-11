@@ -68,13 +68,24 @@ public class AddressUtils {
         return sqBegin >= 0 && sqEnd > sqBegin;
     }
 
-    public static String getHost(String addr) {
+    public static String getHostPort(String addr) {
         if (addr == null) {
             return null;
         }
-        int portStart = addr.lastIndexOf(':');
-        if(portStart < 0) {
+        final int prefixLen = 3  /* '://'.length() */;
+        int hostStart = addr.indexOf("://");
+        if(hostStart > 0) {
+            hostStart += prefixLen;
+        }
+        int portStart = addr.indexOf('/', hostStart);
+        if(portStart < 0 && hostStart < 0) {
             return addr;
+        }
+        if(hostStart > 0) {
+            if(portStart < hostStart) {
+                return addr.substring(hostStart);
+            }
+            return addr.substring(hostStart, portStart);
         }
         return addr.substring(0, portStart);
     }

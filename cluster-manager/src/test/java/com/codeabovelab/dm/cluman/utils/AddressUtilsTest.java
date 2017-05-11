@@ -18,6 +18,7 @@ package com.codeabovelab.dm.cluman.utils;
 
 import org.junit.Test;
 
+import static com.codeabovelab.dm.cluman.utils.AddressUtils.getHostPort;
 import static com.codeabovelab.dm.cluman.utils.AddressUtils.setPort;
 import static org.junit.Assert.*;
 
@@ -30,5 +31,15 @@ public class AddressUtilsTest {
         assertEquals("localhost:123", setPort("localhost:1586", 123));
         assertEquals("[2001:0db8:11a3:09d7:1f34:8a2e:07a0:765d]:123", setPort("[2001:0db8:11a3:09d7:1f34:8a2e:07a0:765d]", 123));
         assertEquals("[2001:0db8:11a3:09d7:1f34:8a2e:07a0:765d]:123", setPort("[2001:0db8:11a3:09d7:1f34:8a2e:07a0:765d]:154542", 123));
+    }
+
+    @Test
+    public void setGetHostTest() {
+        assertEquals("localhost", getHostPort("localhost"));
+        assertEquals("localhost", getHostPort("https://localhost"));
+        assertEquals("localhost:123", getHostPort("https://localhost:123/"));
+        assertEquals("[2001:0db8::765d]", getHostPort("[2001:0db8::765d]"));
+        assertEquals("[2001:0db8::765d]:123", getHostPort("[2001:0db8::765d]:123"));
+        assertEquals("[2001:0db8::765d]:123", getHostPort("https://[2001:0db8::765d]:123/"));
     }
 }
