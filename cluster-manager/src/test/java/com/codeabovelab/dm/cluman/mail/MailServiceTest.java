@@ -9,9 +9,12 @@ import com.codeabovelab.dm.cluman.objprinter.ObjectPrinterFactory;
 import com.codeabovelab.dm.common.json.JacksonUtils;
 import com.codeabovelab.dm.common.mb.MessageBus;
 import com.codeabovelab.dm.common.mb.MessageBuses;
+import com.codeabovelab.dm.common.security.ExtendedUserDetailsImpl;
+import com.codeabovelab.dm.common.security.UserIdentifiersDetailsService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -32,6 +35,8 @@ import javax.validation.Validator;
 
 import static org.hamcrest.Matchers.*;
 import static org.junit.Assert.*;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -92,6 +97,20 @@ public class MailServiceTest {
         Validator validator() {
             return Validation.buildDefaultValidatorFactory().getValidator();
         }
+
+        @Bean
+        UserIdentifiersDetailsService userIdentifiersDetailsService() {
+            UserIdentifiersDetailsService us = mock(UserIdentifiersDetailsService.class);
+            when(us.loadUserByUsername(Mockito.anyString())).thenAnswer(invocation -> {
+                String userName = invocation.getArgumentAt(0, String.class);
+                return ExtendedUserDetailsImpl.builder()
+                  .username(userName)
+                  //important to use username as email
+                  .email(userName)
+                  .build();
+            });
+            return us;
+        }
     }
 
     @Autowired
@@ -114,25 +133,25 @@ public class MailServiceTest {
         mailService.put(msb.build());
         assertThat(list(), hasItem(allOf(
           hasProperty("eventSource", is(EVENT_SOURCE)),
-          hasProperty("email", is(RECIPIENT_FIRST))
+          hasProperty("user", is(RECIPIENT_FIRST))
         )));
 
         mailService.put(MailSubscription.builder().eventSource(EVENT_SOURCE).user(RECIPIENT_SECOND).build());
         assertThat(list(), contains(
           allOf(
             hasProperty("eventSource", is(EVENT_SOURCE)),
-            hasProperty("email", is(RECIPIENT_FIRST))
+            hasProperty("user", is(RECIPIENT_FIRST))
           ),
           allOf(
             hasProperty("eventSource", is(EVENT_SOURCE)),
-            hasProperty("email", is(RECIPIENT_SECOND))
+            hasProperty("user", is(RECIPIENT_SECOND))
           )
         ));
 
         mailService.remove(EVENT_SOURCE, RECIPIENT_SECOND);
         assertThat(list(), hasItem(allOf(
           hasProperty("eventSource", is(EVENT_SOURCE)),
-          hasProperty("email", is(RECIPIENT_FIRST))
+          hasProperty("user", is(RECIPIENT_FIRST))
         )));
 
     }
