@@ -43,9 +43,13 @@ import com.codeabovelab.dm.cluman.ui.model.UiContainer;
 import com.codeabovelab.dm.cluman.ui.model.UiUpdateContainer;
 import com.codeabovelab.dm.cluman.validate.ExtendedAssert;
 import com.codeabovelab.dm.common.cache.DefineCache;
+import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.ObjectWriter;
+import com.fasterxml.jackson.databind.SerializationFeature;
 import com.google.common.util.concurrent.SettableFuture;
 import io.swagger.annotations.ApiOperation;
+import io.swagger.annotations.ApiParam;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -56,6 +60,7 @@ import org.springframework.util.Assert;
 import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.*;
 
+import javax.annotation.PostConstruct;
 import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
@@ -89,6 +94,12 @@ public class ContainerApi {
     private final NodeStorage nodeStorage;
     private final ApplicationService applicationService;
     private final ContainerSourceFactory containerSourceFactory;
+    private ObjectWriter objectWriter;
+
+    @PostConstruct
+    public void postConstruct() {
+        this.objectWriter = objectMapper.writer().without(JsonGenerator.Feature.AUTO_CLOSE_TARGET);
+    }
 
     @RequestMapping(value = "/{id}/pause", method = RequestMethod.POST)
     public ResponseEntity<?> pauseContainer(@PathVariable("id") String id) {
@@ -323,7 +334,7 @@ public class ContainerApi {
                         }
                     }).build();
             ServiceCallResult res = service.getContainerLog(arg);
-            objectMapper.writeValue(writer, res);
+            objectWriter.writeValue(writer, res);
         }
     }
 
@@ -346,32 +357,59 @@ public class ContainerApi {
         }
         NodesGroup nodeGroup = discoveryStorage.getCluster(cluster);
         ExtendedAssert.notFound(nodeGroup, "Can not find cluster: " + cluster);
-        log.info("got create request container request at cluster: {} : {}", cluster, container);
-
         try (final ServletOutputStream writer = response.getOutputStream()) {
-            Consumer<ProcessEvent> watcher = processEvent -> {
-                // we use '\n' as delimiter for log formatter in js
-                try {
-                    writer.println(processEvent.getMessage());
-                    writer.flush();
-                } catch (IOException e) {
-                    log.error("", e);
-                }
-            };
+            createContainerImpl(new CreateContainerArg().container(container), nodeGroup, writer);
+        }
+    }
+
+    private void createContainerImpl(CreateContainerArg arg,
+                                     NodesGroup nodeGroup, ServletOutputStream writer) throws IOException {
+        ContainerSource container = arg.getContainer();
+        log.info("got create container request at cluster: {} : {}", nodeGroup.getName(), container);
+        writer.println("Create container: " + container.getName() + " of " + container.getImage() + " in " + nodeGroup.getName());
+        Consumer<ProcessEvent> watcher = processEvent -> {
+            // we use '\n' as delimiter for log formatter in js
             try {
-                CreateContainerArg arg = CreateContainerArg.builder().container(container).watcher(watcher).build();
-                ProcessEvent.watch(watcher, "Creating container with params: {0}", container);
-                ContainersManager containers = nodeGroup.getContainers();
-                CreateAndStartContainerResult res = containers.createContainer(arg);
-                ProcessEvent.watch(watcher, "Finished with {0}", res.getCode());
-                objectMapper.writeValue(writer, res);
-            } catch (Exception e) {
-                log.error("Error during creating", e);
-                objectMapper.writeValue(writer, new ServiceCallResult()
-                        .code(ResultCode.ERROR)
-                        .message(e.getMessage()));
-                return;
+                writer.println(processEvent.getMessage());
+                writer.flush();
+            } catch (IOException e) {
+                log.error("", e);
             }
+        };
+        try {
+            arg.setWatcher(watcher);
+            ProcessEvent.watch(watcher, "Creating container with params: {0}", container);
+            ContainersManager containers = nodeGroup.getContainers();
+            CreateAndStartContainerResult res = containers.createContainer(arg);
+            ProcessEvent.watch(watcher, "Finished with {0}", res.getCode());
+            objectWriter.writeValue(writer, res);
+        } catch (Exception e) {
+            log.error("Error during creating", e);
+            objectWriter.writeValue(writer, new ServiceCallResult()
+                    .code(ResultCode.ERROR)
+                    .message(e.getMessage()));
+        }
+    }
+
+    @RequestMapping(value = "/recreate", method = RequestMethod.POST)
+    public void recreateContainer(@ApiParam("id of current container")
+                                @RequestParam("container") String containerId,
+                                final HttpServletResponse response) throws Exception {
+        ContainerRegistration cr = containerStorage.getContainer(containerId);
+        ExtendedAssert.notFound(cr, "Can not find container: " + containerId);
+        String node = cr.getNode();
+        NodesGroup nodesGroup = discoveryStorage.getClusterForNode(node);
+        ExtendedAssert.notFound(nodesGroup, "Can not find cluster fro node: " + node);
+        ContainersManager containers = nodesGroup.getContainers();
+        ContainerDetails cd = containers.getContainer(containerId);
+        ContainerSource origDetails = new ContainerSource();
+        containerSourceFactory.toSource(cd, origDetails);
+        try (ServletOutputStream writer = response.getOutputStream()) {
+            ServiceCallResult delres = containers.deleteContainer(DeleteContainerArg.builder().id(containerId).kill(true).build());
+            writer.println("Delete container: " + containerId);
+            objectWriter.writeValue(writer, delres);
+            writer.println();
+            createContainerImpl(new CreateContainerArg().container(origDetails).enrichConfigs(true), nodesGroup, writer);
         }
     }
 

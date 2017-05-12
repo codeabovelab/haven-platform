@@ -110,8 +110,8 @@ public class PipelineApi {
         ContainerSource container = uiPipelineDeploy.getUiContainer();
         log.info("got create request container request at cluster: {} : {}", container.getCluster(), container);
         ContainerSource copy = container.clone();
-        CreateContainerArg arg = CreateContainerArg.builder()
-                .enrichConfigs(true).container(copy).build();
+        CreateContainerArg arg = new CreateContainerArg()
+                .enrichConfigs(true).container(copy);
         PipelineDeployArg deployArg = PipelineDeployArg.builder()
                 .pipelineInstance(pipelineInstance)
                 .createContainerArg(arg)
