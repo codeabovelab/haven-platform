@@ -125,7 +125,7 @@ public class ImagesApi {
                                  @RequestParam(value = "page") int page,
                                  @RequestParam(value = "size") int size) {
 
-        Set<String> registries = new HashSet<>();
+        List<String> registries = new ArrayList<>();
         DockerBasedClusterConfig dcngConfig = getDockerBasedGroupsConfig(cluster);
         if (dcngConfig != null) {
             registries.addAll(dcngConfig.getConfig().getRegistries());
@@ -135,11 +135,21 @@ public class ImagesApi {
         SearchResult result;
         if (!CollectionUtils.isEmpty(registries)) {
             RegistrySearchHelper rsh = new RegistrySearchHelper(query, page, size);
+            RegistryService hub = null;
             for (String registry : registries) {
                 RegistryService service = registryRepository.getByName(registry);
-                if (service != null) {
-                    rsh.search(service);
+                if (service == null) {
+                    continue;
                 }
+                if (DockerHubRegistry.DEFAULT_NAME.equals(registry)) {
+                    // we must place search results from default   registry at end
+                    hub = service;
+                    continue;
+                }
+                rsh.search(service);
+            }
+            if (hub != null) {
+                rsh.search(hub);
             }
             result = rsh.collect();
         } else {
