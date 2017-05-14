@@ -23,6 +23,7 @@ import com.codeabovelab.dm.cluman.ds.nodes.NodeStorage;
 import com.codeabovelab.dm.cluman.model.DockerContainer;
 import com.codeabovelab.dm.cluman.model.NodeInfo;
 import com.codeabovelab.dm.cluman.security.TempAuth;
+import com.codeabovelab.dm.cluman.utils.AddressUtils;
 import com.codeabovelab.dm.cluman.validate.ExtendedAssert;
 import com.google.common.collect.ImmutableMap;
 import lombok.extern.slf4j.Slf4j;
@@ -98,7 +99,9 @@ public class WsTtyHandler implements WebSocketHandler {
 
     private String getContainerUri(String containerId, NodeRegistration nr) {
         String addr = nr.getNodeInfo().getAddress();
-        return "ws://" + addr + "/containers/" + containerId +
+        String host = AddressUtils.getHostPort(addr);
+        String proto = AddressUtils.isHttps(addr)? "wss" : "ws";
+        return proto + "://" + host + "/containers/" + containerId +
           "/attach/ws?stream=true&stdin=true&stdout=true&stderr=true";
     }
 

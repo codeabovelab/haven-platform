@@ -9,9 +9,12 @@ import com.codeabovelab.dm.cluman.objprinter.ObjectPrinterFactory;
 import com.codeabovelab.dm.common.json.JacksonUtils;
 import com.codeabovelab.dm.common.mb.MessageBus;
 import com.codeabovelab.dm.common.mb.MessageBuses;
+import com.codeabovelab.dm.common.security.ExtendedUserDetailsImpl;
+import com.codeabovelab.dm.common.security.UserIdentifiersDetailsService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -32,7 +35,11 @@ import javax.validation.Validator;
 
 import static org.hamcrest.Matchers.*;
 import static org.junit.Assert.*;
-import java.util.Arrays;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  */
@@ -90,6 +97,20 @@ public class MailServiceTest {
         Validator validator() {
             return Validation.buildDefaultValidatorFactory().getValidator();
         }
+
+        @Bean
+        UserIdentifiersDetailsService userIdentifiersDetailsService() {
+            UserIdentifiersDetailsService us = mock(UserIdentifiersDetailsService.class);
+            when(us.loadUserByUsername(Mockito.anyString())).thenAnswer(invocation -> {
+                String userName = invocation.getArgumentAt(0, String.class);
+                return ExtendedUserDetailsImpl.builder()
+                  .username(userName)
+                  //important to use username as email
+                  .email(userName)
+                  .build();
+            });
+            return us;
+        }
     }
 
     @Autowired
@@ -104,47 +125,52 @@ public class MailServiceTest {
 
     @Test
     public void testAdding() {
-        assertThat(mailService.list(), hasSize(0));
+        assertThat(list(), hasSize(0));
 
         MailSubscription.Builder msb = MailSubscription.builder();
         msb.setEventSource(EVENT_SOURCE);
-        msb.addEmailRecipient(RECIPIENT_FIRST);
+        msb.setUser(RECIPIENT_FIRST);
         mailService.put(msb.build());
-        assertThat(mailService.list(), hasItem(allOf(
+        assertThat(list(), hasItem(allOf(
           hasProperty("eventSource", is(EVENT_SOURCE)),
-          hasProperty("emailRecipients", hasItem(RECIPIENT_FIRST))
+          hasProperty("user", is(RECIPIENT_FIRST))
         )));
 
-        try {
-            mailService.addSubscribers("nothing", Arrays.asList("wrong@ufo"));
-            fail("Adding to nonexistent subscription");
-        } catch (NotFoundException e) {
-            //as expected
-        }
+        mailService.put(MailSubscription.builder().eventSource(EVENT_SOURCE).user(RECIPIENT_SECOND).build());
+        assertThat(list(), contains(
+          allOf(
+            hasProperty("eventSource", is(EVENT_SOURCE)),
+            hasProperty("user", is(RECIPIENT_FIRST))
+          ),
+          allOf(
+            hasProperty("eventSource", is(EVENT_SOURCE)),
+            hasProperty("user", is(RECIPIENT_SECOND))
+          )
+        ));
 
-        mailService.addSubscribers(EVENT_SOURCE, Arrays.asList(RECIPIENT_SECOND));
-        assertThat(mailService.list(), hasItem(allOf(
+        mailService.remove(EVENT_SOURCE, RECIPIENT_SECOND);
+        assertThat(list(), hasItem(allOf(
           hasProperty("eventSource", is(EVENT_SOURCE)),
-          hasProperty("emailRecipients", hasItems(RECIPIENT_FIRST, RECIPIENT_SECOND))
-        )));
-
-        mailService.removeSubscribers(EVENT_SOURCE, Arrays.asList(RECIPIENT_SECOND));
-        assertThat(mailService.list(), hasItem(allOf(
-          hasProperty("eventSource", is(EVENT_SOURCE)),
-          hasProperty("emailRecipients", hasItem(RECIPIENT_FIRST))
+          hasProperty("user", is(RECIPIENT_FIRST))
         )));
 
     }
 
+    private List<MailSubscription> list() {
+        List<MailSubscription> list = new ArrayList<>();
+        mailService.forEach(list::add);
+        return list;
+    }
+
     @Test
     public void testSend() throws Exception {
-        assertThat(mailService.list(), hasSize(0));
+        assertThat(list(), hasSize(0));
 
         MailSubscription.Builder msb = MailSubscription.builder();
         msb.setEventSource(EVENT_SOURCE);
         msb.setSeverity(Severity.INFO);
         msb.setTemplate("res:eventAlert");
-        msb.addEmailRecipient(RECIPIENT_FIRST);
+        msb.setUser(RECIPIENT_FIRST);
         mailService.put(msb.build());
 
         bus.accept(RegistryEvent.builder()

@@ -66,11 +66,10 @@ public class CreateContainerTasklet {
         cs.setImage(item.getImage());
         cs.setImageId(item.getImageId());
         context.fire("Create container \"{0}\" with \"{1}\" image on \"{2}\" node", cs.getName(), cs.getImage(), cs.getNode());
-        CreateContainerArg arg = CreateContainerArg.builder()
+        CreateContainerArg arg = new CreateContainerArg()
                 .enrichConfigs(true) // add to API
                 .container(cs)
-                .watcher(new MessageProxy())
-                .build();
+                .watcher(new MessageProxy());
         CreateAndStartContainerResult res = nodesGroup.getContainers().createContainer(arg);
         item = item.makeCopy().id(res.getContainerId()).name(res.getName()).build();
         rollback.record(item, RollbackData.Action.CREATE);

@@ -26,28 +26,26 @@ import com.codeabovelab.dm.cluman.model.WithSeverity;
 import com.codeabovelab.dm.cluman.objprinter.ObjectPrinterFactory;
 import com.codeabovelab.dm.cluman.reconfig.ReConfigObject;
 import com.codeabovelab.dm.cluman.reconfig.ReConfigurable;
-import com.codeabovelab.dm.cluman.ui.HttpException;
 import com.codeabovelab.dm.cluman.validate.ExtendedAssert;
 import com.codeabovelab.dm.common.mb.SmartConsumer;
 import com.codeabovelab.dm.common.mb.Subscriptions;
+import com.codeabovelab.dm.common.security.ExtendedUserDetails;
+import com.codeabovelab.dm.common.security.UserIdentifiersDetailsService;
 import com.codeabovelab.dm.mail.dto.*;
 import com.codeabovelab.dm.mail.service.SendMailWithTemplateService;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
+import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.stereotype.Component;
-import org.springframework.util.CollectionUtils;
+import org.springframework.util.Assert;
 import org.springframework.util.StringUtils;
 
 import javax.annotation.PostConstruct;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
-import java.util.stream.Collectors;
 
 @Slf4j
 @ReConfigurable
@@ -55,7 +53,7 @@ import java.util.stream.Collectors;
 public class MailNotificationsService {
 
     private static final String DEFAULT_TEMPLATE = "res:eventAlert";
-    private final Map<String, MailSubscription> subs = new ConcurrentHashMap<>();
+    private final Map<String, List<MailSubscription>> map = new ConcurrentHashMap<>();
     private final Map<String, Source<?>> sources;
     private final SendMailWithTemplateService sendMailService;
     private final String from;
@@ -93,10 +91,12 @@ public class MailNotificationsService {
 
     private final ObjectPrinterFactory objectPrinterFactory;
     private final KvMapperFactory kvMapperFactory;
+    private final UserIdentifiersDetailsService userDetailsService;
     private KvClassMapper<MailSubscription.Builder> classMapper;
 
     @Autowired
     public MailNotificationsService(MailConfiguration.MailProperties props,
+                                    UserIdentifiersDetailsService userDetailsService,
                                     KvMapperFactory kvMapperFactory,
                                     ObjectPrinterFactory objectPrinterFactory,
                                     SendMailWithTemplateService sendMailService,
@@ -105,6 +105,7 @@ public class MailNotificationsService {
         this.kvMapperFactory = kvMapperFactory;
         this.from = props.getFrom();
         this.sendMailService = sendMailService;
+        this.userDetailsService = userDetailsService;
         ImmutableMap.Builder<String, Source<?>> b = ImmutableMap.builder();
         sources.forEach((k, v) -> b.put(k, new Source<>(k, v)));
         this.sources = b.build();
@@ -135,109 +136,114 @@ public class MailNotificationsService {
         if(!(ev instanceof WithSeverity)) {
             return;
         }
-        Severity severity = ((WithSeverity) ev).getSeverity();
-        MailSubscription sub = this.subs.get(eventSource);
-        if(sub == null ||
-          //compare that subs severity is greater and we need skip this event
-          sub.getSeverity().compareTo(severity) > 0) {
+        List<MailSubscription> subs = this.map.get(eventSource);
+        if(subs == null) {
             return;
         }
-        //TODO cache, and also disable processing on errors, for prevent hangs
+        subs.forEach(sub -> {
+            processSubscription(eventSource, ev, sub);
+        });
+    }
+
+    private void processSubscription(String eventSource, Object ev, MailSubscription sub) {
+        Severity severity = ((WithSeverity) ev).getSeverity();
+        //compare that subs severity is greater and we need skip this event
+        if(sub.getSeverity().compareTo(severity) > 0) {
+            return;
+        }
         String templateUri = sub.getTemplate();
         if(!StringUtils.hasText(templateUri)) {
             templateUri = DEFAULT_TEMPLATE;
         }
-        List<String> emails = sub.getEmailRecipients();
-        Object var = objectPrinterFactory.printer(ev);
-        for(String email: emails) {
-            MailSourceImpl.Builder msb = MailSourceImpl.builder();
-            msb.templateUri(templateUri)
-              .addVariable("to", email)
-              .addVariable("event", ev)
-              .addVariable("eventText", var)
-              .addVariable("eventSource", eventSource)
-              .addVariable("severity", severity)
-              .addVariable("from", from);
-            sendMailService.send(msb.build(), msr -> {
-                if(msr.getStatus() == MailStatus.UNKNOWN_FAIL) {
-                    log.error("Sent notification to {} is failed with error {} ", email, msr.getError());
-                } else {
-                    log.info("Sent notification to {} with result {} ", email, msr);
-                }
-            });
+        String user = sub.getUser();
+        ExtendedUserDetails eud = userDetailsService.loadUserByUsername(user);
+        if(eud == null) {
+            log.error("Can not sent notification to {}, due it does not exists.", user);
+            return;
         }
+        String email = eud.getEmail();
+        if(email == null) {
+            log.error("Can not sent notification to {}, due it does not have an email.", user);
+            return;
+        }
+        Object var = objectPrinterFactory.printer(ev);
+        MailSourceImpl.Builder msb = MailSourceImpl.builder();
+        msb.templateUri(templateUri)
+          .addVariable("to", email)
+          .addVariable("event", ev)
+          .addVariable("eventText", var)
+          .addVariable("eventSource", eventSource)
+          .addVariable("severity", severity)
+          .addVariable("from", from);
+        sendMailService.send(msb.build(), msr -> {
+            if(msr.getStatus() == MailStatus.UNKNOWN_FAIL) {
+                log.error("Sent notification to {} is failed with error {} ", email, msr.getError());
+            } else {
+                log.info("Sent notification to {} with result {} ", email, msr);
+            }
+        });
     }
 
 
-    public Collection<MailSubscription> list() {
-        return subs.values();
+    public void forEach(Consumer<MailSubscription> consumer) {
+        map.forEach((k, subs) -> subs.forEach(consumer));
     }
 
-    public MailSubscription get(String eventSource) {
-        return subs.get(eventSource);
+    /**
+     * List of subscriptions on concrete source.
+     * @param eventSource source
+     * @return list or null
+     */
+    public List<MailSubscription> get(String eventSource) {
+        List<MailSubscription> list = map.get(eventSource);
+        if(list == null) {
+            return null;
+        }
+        return ImmutableList.copyOf(list);
     }
 
     public void put(MailSubscription newSub) {
-        MailSubscription registered = registerInternal(newSub);
-        if(registered != newSub) {
-            throw new HttpException(HttpStatus.CONFLICT, newSub.getEventSource() + " already has mail subscription.");
-        }
+        registerInternal(newSub);
         persist(newSub);
     }
 
-    private void persist(MailSubscription newSub) {
+    public void remove(String eventSource, String user) {
+        List<MailSubscription> subs = this.map.get(eventSource);
+        subs.removeIf(ms -> ms.getUser().equalsIgnoreCase(user));
+    }
+
+
+    private void persist(MailSubscription sub) {
         //persist
-        classMapper.save(newSub.getEventSource(), MailSubscription.builder().from(newSub));
+        classMapper.save(sub.getId(), MailSubscription.builder().from(sub));
     }
 
     /**
      * This method does not allow rewrite existed subscription, and return registered value.
-     * @param newSub
-     * @return
+     * @param newSub subscription
      */
-    private MailSubscription registerInternal(MailSubscription newSub) {
+    private void registerInternal(MailSubscription newSub) {
         String eventSource = newSub.getEventSource();
         ExtendedAssert.matchId(eventSource, "event source");
-        MailSubscription oldSub = subs.putIfAbsent(eventSource, newSub);
-        if(oldSub == null) {
-            onUpdate(newSub);
-            return newSub;
+        Assert.notNull(newSub.getUser(), "user is null in mail subscription");
+        List<MailSubscription> subs = this.map.computeIfAbsent(eventSource, (es) -> new ArrayList<>());
+        boolean replaced = false;
+        for(int i = 0; i < subs.size(); ++i) {
+            MailSubscription sub = subs.get(i);
+            if(!sub.getId().equals(newSub.getId())) {
+                continue;
+            }
+            replaced = true;
+            subs.set(i, newSub);
         }
-        return oldSub;
+        if(!replaced) {
+            subs.add(newSub);
+        }
+        onUpdate(newSub);
     }
 
     private void onUpdate(MailSubscription newSub) {
         log.info("register or update subscription: {}", newSub);
-    }
-
-    public void addSubscribers(String eventSource, Collection<String> emails) {
-        if(CollectionUtils.isEmpty(emails)) {
-            return;
-        }
-        MailSubscription sub = subs.computeIfPresent(eventSource, (k, old) -> {
-            MailSubscription.Builder b = MailSubscription.builder();
-            b.from(old);
-            b.getEmailRecipients().addAll(emails);
-            return b.build();
-        });
-        checkNotNull(eventSource, sub);
-        onUpdate(sub);
-        persist(sub);
-    }
-
-    public void removeSubscribers(String eventSource, Collection<String> emails) {
-        if(CollectionUtils.isEmpty(emails)) {
-            return;
-        }
-        MailSubscription sub = subs.computeIfPresent(eventSource, (k, old) -> {
-            MailSubscription.Builder b = MailSubscription.builder();
-            b.from(old);
-            b.getEmailRecipients().removeAll(emails);
-            return b.build();
-        });
-        checkNotNull(eventSource, sub);
-        onUpdate(sub);
-        persist(sub);
     }
 
     private void checkNotNull(String eventSource, MailSubscription sub) {
@@ -247,7 +253,9 @@ public class MailNotificationsService {
     @ReConfigObject
     public MailNotificationsConfigObject getConfigObject() {
         MailNotificationsConfigObject co = new MailNotificationsConfigObject();
-        co.setSubscriptions(new ArrayList<>(this.subs.values()));
+        ArrayList<MailSubscription> list = new ArrayList<>();
+        forEach(list::add);
+        co.setSubscriptions(list);
         return co;
     }
 
@@ -257,10 +265,6 @@ public class MailNotificationsService {
         if(subs == null) {
             return;
         }
-        subs.forEach((s) -> {
-            this.subs.put(s.getEventSource(), s);
-            onUpdate(s);
-            persist(s);
-        });
+        subs.forEach((s) -> put(s));
     }
 }

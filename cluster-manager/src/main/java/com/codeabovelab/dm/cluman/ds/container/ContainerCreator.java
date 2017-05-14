@@ -167,7 +167,7 @@ public class ContainerCreator {
                 nc.setHostname(null);
                 nc.setDomainname(null);
                 SwarmUtils.clearLabels(nc.getLabels());
-                CreateContainerArg arg = CreateContainerArg.builder().container(nc).build();
+                CreateContainerArg arg = new CreateContainerArg().container(nc);
                 CreateContainerContext cc = new CreateContainerContext(arg, docker);
                 CreateAndStartContainerResult containerInternal = createContainerInternal(cc);
                 if (containerInternal.getCode() == ResultCode.ERROR) {

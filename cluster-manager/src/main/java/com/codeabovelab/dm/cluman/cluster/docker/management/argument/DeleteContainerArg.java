@@ -23,7 +23,7 @@ import lombok.Data;
 /**
  */
 @Data
-@Builder
+@Builder(builderClassName = "Builder")
 public class DeleteContainerArg {
 
     /**
@@ -35,10 +35,10 @@ public class DeleteContainerArg {
     /**
      * Remove the volumes associated to the container. Default false.
      */
-    private boolean deleteVolumes;
+    private final boolean deleteVolumes;
     /**
      * Kill container if it run. Default false.
      */
-    private boolean kill;
+    private final boolean kill;
 
 }
