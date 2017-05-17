@@ -138,39 +138,6 @@ You should take a look at the example configuration repository to see all of the
 
 https://github.com/codeabovelab/haven-example-configuration
 
-
-**Step 5:** For installing Agent [dockmaster-agent](/doc/agent.md), after setting up Docker (Step 3), run the following command:
- 
-```sh
- wget --content-disposition "http://$MASTER_IP:8761/discovery/agent/haven-agent.py?node=$SELF_IP:2375"
- chmod +x haven-agent.py
-```
- 
- Create the config file for Agent in one of following locations or use command line options of agent: 
- 
- * ./haven-agent.ini
- * ~/.config/haven-agent.ini
- * /etc/haven-agent.ini
- 
-with the following content:
- 
-```ini
- [main]
- docker = $SELF_IP:2375
- master = $MASTER_IP:8761
- # timeout between node update requests
- timeout = 10 
- # 2 - Debug, 1 - Info, 0 - Warning
- log_level = 2 
-```
- 
-To start the Agent, execute the script command:
-```sh
- ./haven-agent.py
-```
-
-You should wrap the Agent script in the platform's appropriate autostart system (init.d , systemd, etc.) to make sure it starts 
-after each reboot.
   
 ## Troubleshooting ##
 If you are running on the latest Linux distros where systemd is used, you will need to manually modify the Docker daemon 
