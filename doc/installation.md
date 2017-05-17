@@ -62,11 +62,25 @@ In addition you can also mount a directory from your Docker engine’s host into
 ```sh
 -v /home/user/data/docker/etcd/:/data/
 ```
-**Step 3:** Configure Docker on each node. Use the following instruction to install Docker on the different Linux/Cloud, Windows, 
+**Step 3:** 
+
+ Use the following instruction to install Docker on the different Linux/Cloud, Windows, 
 and MacOS instruction:
  
  https://docs.docker.com/engine/installation/
- 
+
+After it you have two ways, simply: use agent which is proxy docker to local network, or more complex but agent-less configuration.
+
+_Simply way._ Run agent on each node:
+
+```
+docker run --name agent -d --restart=unless-stopped -p 8771:8771 -v /run/docker.sock:/run/docker.sock codeabovelab/agent:1.2.1
+```
+
+Then open in UI in 'Admin' -> 'Add node' and add node with address like 'http://$SELF_IP:8771'.
+
+_Agent-less way._ If you want to run node without any agent, then you need to expose docker on newtwork port.
+
  By default, Docker listens on Unix socket so TCP socket configuration is needed. See the config file in /etc/default/docker 
  and make sure the DOCKER_OPTS argument matches the one listed below (with the IP variables replaced with real value):
   
@@ -75,7 +89,8 @@ and MacOS instruction:
 a DOCKER_OPTS="--cluster-store=etcd://$MASTER_IP:2379/dn --cluster-advertise=$SELF_IP:2375 \
   -H tcp://0.0.0.0:2375"
 ```
- 
+Then open in UI in 'Admin' -> 'Add node' and add node with address like 'http://$SELF_IP:2375'.
+
 **Step 4:** Install the Haven container by executing the following command:
  
 ```sh

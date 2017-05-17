@@ -91,11 +91,16 @@ public class SslServletContainerCustomizer implements EmbeddedServletContainerCu
         X509CertificateHolder rootCert;
         PrivateKey rootKey;
         try {
-            Assert.notNull(rootCertKeystore, "Keystore is null");
-            Assert.notNull(rootCertKeystorePass, "Keystore password is null");
+            if(rootCertKeystore == null || rootCertKeystorePass == null) {
+                log.warn("Keystore {} or its password {} is null, skip.", rootCertKeystore, rootCertKeystorePass);
+                return null;
+            }
             KeyStore ks = KeyStore.getInstance("JKS");
             Resource resource = resourceLoader.getResource(rootCertKeystore);
-            Assert.isTrue(resource.exists(), "Keystore " + rootCertKeystore + " is not an exists.");
+            if(!resource.exists()) {
+                log.warn("Keystore {} is not an exists.", rootCertKeystore);
+                return null;
+            }
             try(InputStream is = resource.getInputStream()) {
                 ks.load(is, rootCertKeystorePass.toCharArray());
             }
