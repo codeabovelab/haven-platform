@@ -72,12 +72,15 @@ public class DiscoveryNodeController {
     public ResponseEntity<String> registerNodeFromAgent(@RequestBody NodeAgentData data,
                              @PathVariable("name") String name,
                              @RequestHeader(name = HEADER, required = false) String nodeSecret,
-                             @RequestParam("ttl") int ttl) {
+                             @RequestParam(value = "ttl" , required = false) Integer ttl) {
         if(this.nodeSecret != null && !this.nodeSecret.equals(nodeSecret)) {
             return new ResponseEntity<>("Server required node auth, need correct value of '" + HEADER + "' header.", HttpStatus.UNAUTHORIZED);
         }
         NodeMetrics health = createNodeHealth(data);
-
+        if(ttl == null) {
+            // it workaround, we must rewrite ttl system (it not used)
+            ttl = Integer.MAX_VALUE;
+        }
         try (TempAuth ta = TempAuth.asSystem()) {
             storage.updateNode(name, ttl, b -> {
                 b.address(data.getAddress());

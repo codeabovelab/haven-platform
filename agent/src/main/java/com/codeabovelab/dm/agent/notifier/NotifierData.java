@@ -22,6 +22,7 @@ import lombok.Data;
 import java.time.LocalDateTime;
 
 /**
+ * TODO refactoring with com.codeabovelab.dm.cluman.ds.nodes.NodeAgentData
  */
 @Data
 public class NotifierData {
