@@ -16,32 +16,24 @@
 
 package com.codeabovelab.dm.cluman.ds.nodes;
 
-import com.codeabovelab.dm.cluman.model.*;
+import com.codeabovelab.dm.cluman.model.DiskInfo;
+import com.codeabovelab.dm.cluman.model.NetIfaceCounter;
+import com.codeabovelab.dm.cluman.model.NodeMetrics;
 import com.codeabovelab.dm.cluman.security.TempAuth;
-import com.codeabovelab.dm.cluman.utils.FileUtils;
-import com.codeabovelab.dm.common.utils.StringUtils;
 import com.google.common.base.Strings;
-import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang.text.StrSubstitutor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.util.Assert;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
 
 import javax.servlet.http.HttpServletRequest;
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
-import java.net.URL;
-import java.nio.charset.StandardCharsets;
 import java.util.Map;
-import java.util.function.Function;
-import java.util.regex.Pattern;
 
+import static com.google.common.collect.ImmutableMap.of;
+import static org.springframework.http.HttpStatus.UNAUTHORIZED;
 import static org.springframework.util.MimeTypeUtils.APPLICATION_JSON_VALUE;
 import static org.springframework.util.MimeTypeUtils.TEXT_PLAIN_VALUE;
 import static org.springframework.web.bind.annotation.RequestMethod.GET;
@@ -57,27 +49,30 @@ import static org.springframework.web.bind.annotation.RequestMethod.POST;
 @Slf4j
 public class DiscoveryNodeController {
 
-    private static final Pattern PATTERN = Pattern.compile("\\$[\\w]+\\$");
     private static final String HEADER = "X-Auth-Node";
     private final NodeStorage storage;
     private final String nodeSecret;
+    private final String startString;
 
     @Autowired
-    public DiscoveryNodeController(NodeStorage storage, @Value("${dm.nodesDiscovery.secret:}") String nodeSecret) {
+    public DiscoveryNodeController(NodeStorage storage,
+                                   @Value("${dm.agent.notifier.secret:}") String nodeSecret,
+                                   @Value("${dm.agent.start}") String startString) {
         this.storage = storage;
+        this.startString = startString;
         this.nodeSecret = Strings.emptyToNull(nodeSecret);
     }
 
     @RequestMapping(value = "/nodes/{name}", method = POST, consumes = {TEXT_PLAIN_VALUE, APPLICATION_JSON_VALUE})
     public ResponseEntity<String> registerNodeFromAgent(@RequestBody NodeAgentData data,
-                             @PathVariable("name") String name,
-                             @RequestHeader(name = HEADER, required = false) String nodeSecret,
-                             @RequestParam(value = "ttl" , required = false) Integer ttl) {
-        if(this.nodeSecret != null && !this.nodeSecret.equals(nodeSecret)) {
-            return new ResponseEntity<>("Server required node auth, need correct value of '" + HEADER + "' header.", HttpStatus.UNAUTHORIZED);
+                                                        @PathVariable("name") String name,
+                                                        @RequestHeader(name = HEADER, required = false) String nodeSecret,
+                                                        @RequestParam(value = "ttl", required = false) Integer ttl) {
+        if (this.nodeSecret != null && !this.nodeSecret.equals(nodeSecret)) {
+            return new ResponseEntity<>("Server required node auth, need correct value of '" + HEADER + "' header.", UNAUTHORIZED);
         }
         NodeMetrics health = createNodeHealth(data);
-        if(ttl == null) {
+        if (ttl == null) {
             // it workaround, we must rewrite ttl system (it not used)
             ttl = Integer.MAX_VALUE;
         }
@@ -96,18 +91,18 @@ public class DiscoveryNodeController {
         NodeAgentData.SystemStatus system = nad.getSystem();
         NodeMetrics.Builder nhb = NodeMetrics.builder();
         nhb.setTime(nad.getTime());
-        if(system != null) {
+        if (system != null) {
             NodeAgentData.Tau mem = system.getMemory();
-            if(mem != null) {
+            if (mem != null) {
                 nhb.setSysMemAvail(mem.getAvailable());
                 nhb.setSysMemTotal(mem.getTotal());
                 nhb.setSysMemUsed(mem.getUsed());
             }
             Map<String, NodeAgentData.Tu> disks = system.getDisks();
-            if(disks != null) {
-                for(Map.Entry<String, NodeAgentData.Tu> disk: disks.entrySet()) {
+            if (disks != null) {
+                for (Map.Entry<String, NodeAgentData.Tu> disk : disks.entrySet()) {
                     NodeAgentData.Tu value = disk.getValue();
-                    if(value == null) {
+                    if (value == null) {
                         continue;
                     }
                     long used = value.getUsed();
@@ -115,9 +110,9 @@ public class DiscoveryNodeController {
                 }
             }
             Map<String, NodeAgentData.Nic> net = system.getNet();
-            if(net != null) {
-                for(Map.Entry<String, NodeAgentData.Nic> nic: net.entrySet()) {
-                    if(nic == null) {
+            if (net != null) {
+                for (Map.Entry<String, NodeAgentData.Nic> nic : net.entrySet()) {
+                    if (nic == null) {
                         continue;
                     }
                     NodeAgentData.Nic nicValue = nic.getValue();
@@ -133,66 +128,22 @@ public class DiscoveryNodeController {
         return nhb.build();
     }
 
-    @RequestMapping(value = "/agent/{agentName:.*}", method = GET)
-    public ResponseEntity<StreamingResponseBody> load(HttpServletRequest request,
-                                                      @PathVariable("agentName") String agentName,
-                                                      @RequestParam(value = "node", required = false) String node) {
-        URL url = Thread.currentThread().getContextClassLoader().getResource("static/res/agent/node-agent.py");
-        Assert.notNull(url, "can't load node-agent.py");//if it happen then it a bug
-        if(agentName == null) {
-            agentName = "node-agent.py";
-        }
-        HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.APPLICATION_OCTET_STREAM);
-        headers.set(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=" + FileUtils.encode(agentName));
-        Replacer replacer = new Replacer(request, node);
-        return new ResponseEntity<>((os) -> {
-            try(BufferedReader reader = new BufferedReader(new InputStreamReader(url.openStream(), StandardCharsets.UTF_8))) {
-                String string;
-                while((string = reader.readLine()) != null) {
-                    string = process(string, replacer);
-                    os.write(string.getBytes(StandardCharsets.UTF_8));
-                    // so we support only unix line break
-                    os.write('\n');
-                }
-            }
-        }, headers, HttpStatus.OK);
+    @RequestMapping(value = "/agent/", method = GET)
+    public String load(HttpServletRequest request) {
+        return StrSubstitutor.replace(startString,
+                of("secret", nodeSecret == null ? "" : "-e \"dm_agent_notifier_secret=" + nodeSecret + "\"",
+                        "server", getServerAddress(request)));
     }
 
-    @AllArgsConstructor
-    private class Replacer implements Function<String, String> {
-        private final HttpServletRequest request;
-        private final String node;
 
-        @Override
-        public String apply(String expr) {
-            String res = null;
-            switch (expr) {
-                case "$MASTER$":
-                    res = getServerAddress();
-                    break;
-                case "$SECRET$":
-                    res = nodeSecret;
-                    break;
-                case "$DOCKER$":
-                    res = node;
-                    break;
-            }
-            return res == null? expr : res;
+    private String getServerAddress(HttpServletRequest request) {
+        String name = request.getServerName() + ":" + request.getServerPort();
+        if ("localhost".equals(name)) {
+            // it mean that server covered by proxy
+            // also we may define server hostname in config
+            name = null;
         }
-
-        private String getServerAddress() {
-            String name = request.getServerName() + ":" + request.getServerPort();
-            if("localhost".equals(name)) {
-                // it mean that server covered by proxy
-                // also we may define server hostname in config
-                name = null;
-            }
-            return name;
-        }
+        return name;
     }
 
-    private static String process(String string, Function<String, String> handler) {
-        return StringUtils.replace(PATTERN, string, handler);
-    }
 }
