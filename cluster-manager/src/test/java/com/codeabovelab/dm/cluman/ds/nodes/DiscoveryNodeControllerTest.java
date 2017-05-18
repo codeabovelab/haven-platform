@@ -1,14 +1,14 @@
-package com.codeabovelab.dm.cluman.ds.swarm;
+package com.codeabovelab.dm.cluman.ds.nodes;
 
-import com.codeabovelab.dm.cluman.ds.nodes.DiscoveryNodeController;
-import com.codeabovelab.dm.cluman.ds.nodes.NodeAgentData;
-import com.codeabovelab.dm.cluman.ds.nodes.NodeStorage;
 import com.codeabovelab.dm.cluman.model.DiscoveryStorage;
 import com.codeabovelab.dm.cluman.model.NodeInfo;
 import com.codeabovelab.dm.cluman.model.NodeInfoImpl;
 import com.codeabovelab.dm.cluman.model.NodesGroup;
 import com.codeabovelab.dm.common.utils.StringUtils;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.apache.commons.lang.text.StrSubstitutor;
+import org.hamcrest.CoreMatchers;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -19,6 +19,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import org.springframework.util.MimeTypeUtils;
@@ -29,9 +30,12 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Consumer;
 
+import static com.google.common.collect.ImmutableMap.of;
 import static org.hamcrest.Matchers.*;
 import static org.junit.Assert.assertThat;
 import static org.mockito.Mockito.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.model;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static org.springframework.test.web.servlet.setup.MockMvcBuilders.standaloneSetup;
 
@@ -53,8 +57,21 @@ public class DiscoveryNodeControllerTest {
 
     @Before
     public void before() {
-        mvc = standaloneSetup(new DiscoveryNodeController(nodeStorage, SECRET))
-          .build();
+        mvc = standaloneSetup(new DiscoveryNodeController(nodeStorage, SECRET,
+                "docker run --name havenAgent -d -e \"dm_agent_notifier_server=${server}\" ${secret} " +
+                "--restart=unless-stopped -p 8771:8771 -v /run/docker.sock:/run/docker.sock codeabovelab/agent:latest"))
+                .build();
+    }
+
+    @Test
+    public void testAgent() throws Exception {
+        mvc.perform(MockMvcRequestBuilders.get("/discovery/agent/")
+                .contentType(MimeTypeUtils.APPLICATION_JSON_VALUE))
+                .andExpect(status().isOk())
+        .andExpect(content().string("docker run --name havenAgent -d" +
+                " -e \"dm_agent_notifier_server=localhost:80\"" +
+                " -e \"dm_agent_notifier_secret=secr3t\" " +
+                "--restart=unless-stopped -p 8771:8771 -v /run/docker.sock:/run/docker.sock codeabovelab/agent:latest"));
     }
 
     @SuppressWarnings("unchecked")
