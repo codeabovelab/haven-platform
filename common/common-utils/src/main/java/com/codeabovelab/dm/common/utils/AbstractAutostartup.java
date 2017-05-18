@@ -14,9 +14,8 @@
  * limitations under the License.
  */
 
-package com.codeabovelab.dm.cluman.utils;
+package com.codeabovelab.dm.common.utils;
 
-import com.codeabovelab.dm.common.utils.Closeables;
 import org.springframework.context.SmartLifecycle;
 
 import java.util.ArrayList;

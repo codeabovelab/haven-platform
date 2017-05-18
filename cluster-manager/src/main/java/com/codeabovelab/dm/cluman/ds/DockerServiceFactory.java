@@ -158,13 +158,17 @@ public class DockerServiceFactory {
         if(!checkSsl) {
             log.debug("disable any SSL check on {} address", addr);
             sslc.init(null, new TrustManager[]{new SSLUtil.NullX509TrustManager()}, null);
-        }else if(StringUtils.hasText(keystore)) {
+        } else if(StringUtils.hasText(keystore)) {
             log.debug("use SSL trusted store {} on {} address", keystore, addr);
             final String alg = TrustManagerFactory.getDefaultAlgorithm();
             TrustManagerFactory def = TrustManagerFactory.getInstance(alg);
             def.init((KeyStore)null);// initialize default list of trust managers
-            KeyStore ks = KeyStore.getInstance("JKS");
             Resource resource = resourceLoader.getResource(keystore);
+            if(!resource.exists()) {
+                log.warn("Specified JKS {} is not exists.", keystore);
+                return;
+            }
+            KeyStore ks = KeyStore.getInstance("JKS");
             try(InputStream is = resource.getInputStream()) {
                 ks.load(is, storepass == null? new char[0] : storepass.toCharArray());
             }

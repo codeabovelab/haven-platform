@@ -19,34 +19,41 @@ package com.codeabovelab.dm.agent;
 import com.codeabovelab.dm.agent.notifier.Notifier;
 import com.codeabovelab.dm.agent.security.AuthConfiguration;
 import com.codeabovelab.dm.agent.security.SslServletContainerCustomizer;
-import com.codeabovelab.dm.agent.proxy.DockerProxyConfiguration;
-import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import com.codeabovelab.dm.common.json.JacksonUtils;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.boot.autoconfigure.web.EmbeddedServletContainerAutoConfiguration;
-import org.springframework.boot.autoconfigure.web.ServerProperties;
 import org.springframework.boot.autoconfigure.websocket.WebSocketAutoConfiguration;
-import org.springframework.boot.builder.SpringApplicationBuilder;
-import org.springframework.boot.context.properties.EnableConfigurationProperties;
-import org.springframework.boot.web.support.SpringBootServletInitializer;
+import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
-import org.springframework.context.support.PropertySourcesPlaceholderConfigurer;
-
-import java.security.Security;
+import org.springframework.web.client.RestTemplate;
 
 /**
  */
 @Import({
-  PropertySourcesPlaceholderConfigurer.class,
-  DockerProxyConfiguration.class,
-  WebConfiguration.class
+  SslServletContainerCustomizer.class,
+  AuthConfiguration.class,
+  EmbeddedServletContainerAutoConfiguration.class,
+  WebSocketAutoConfiguration.class,
+  WebConfiguration.PreConfiguration.class,
+  Notifier.class
 })
-@EnableConfigurationProperties(ServerProperties.class)
-// do not use @EnableAutoConfiguration
 @Configuration
-public class Application extends SpringBootServletInitializer {
+public class WebConfiguration {
 
-    public static void main(String[] args) {
-        Security.addProvider(new BouncyCastleProvider());
-        new SpringApplicationBuilder(Application.class).run(args);
+    /**
+     * It need for beans like {@link Notifier}
+     */
+    @Configuration
+    public class PreConfiguration {
+        @Bean
+        RestTemplate restTemplate() {
+            return new RestTemplate();
+        }
+
+        @Bean
+        ObjectMapper objectMapper() {
+            return JacksonUtils.objectMapperBuilder();
+        }
     }
 }
