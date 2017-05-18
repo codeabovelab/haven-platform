@@ -64,7 +64,7 @@ public class DiscoveryNodeControllerTest {
     }
 
     @Test
-    public void load() throws Exception {
+    public void testAgent() throws Exception {
         mvc.perform(MockMvcRequestBuilders.get("/discovery/agent/")
                 .contentType(MimeTypeUtils.APPLICATION_JSON_VALUE))
                 .andExpect(status().isOk())
