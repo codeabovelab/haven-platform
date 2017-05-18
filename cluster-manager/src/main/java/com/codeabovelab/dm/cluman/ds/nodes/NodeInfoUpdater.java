@@ -20,7 +20,7 @@ import com.codeabovelab.dm.cluman.cluster.docker.management.DockerServiceEvent;
 import com.codeabovelab.dm.cluman.ds.SwarmUtils;
 import com.codeabovelab.dm.cluman.model.*;
 import com.codeabovelab.dm.cluman.security.TempAuth;
-import com.codeabovelab.dm.cluman.utils.AbstractAutostartup;
+import com.codeabovelab.dm.common.utils.AbstractAutostartup;
 import com.codeabovelab.dm.common.mb.Subscriptions;
 import com.codeabovelab.dm.common.utils.ExecutorUtils;
 import lombok.extern.slf4j.Slf4j;

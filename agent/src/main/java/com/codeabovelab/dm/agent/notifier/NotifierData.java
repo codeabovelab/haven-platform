@@ -14,24 +14,18 @@
  * limitations under the License.
  */
 
-package com.codeabovelab.dm.agent.infocol;
+package com.codeabovelab.dm.agent.notifier;
 
-import com.google.common.base.Splitter;
+import com.codeabovelab.dm.agent.infocol.Info;
+import lombok.Data;
 
-import java.io.*;
-import java.nio.charset.StandardCharsets;
-import java.util.Iterator;
+import java.time.LocalDateTime;
 
 /**
  */
-final class InfoUtils {
-    static final Splitter SPLITTER_ON_SPACE = Splitter.on(' ').omitEmptyStrings().trimResults();
-
-    static BufferedReader readFile(File file) throws IOException {
-        return new BufferedReader(new InputStreamReader(new FileInputStream(file), StandardCharsets.US_ASCII));
-    }
-
-    static long nextLong(Iterator<String> iter) {
-        return Long.parseLong(iter.next());
-    }
+@Data
+public class NotifierData {
+    private LocalDateTime time;
+    private String name;
+    private Info system;
 }

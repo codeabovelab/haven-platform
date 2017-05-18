@@ -14,24 +14,17 @@
  * limitations under the License.
  */
 
-package com.codeabovelab.dm.agent.infocol;
+package com.codeabovelab.dm.agent.notifier;
 
-import com.google.common.base.Splitter;
-
-import java.io.*;
-import java.nio.charset.StandardCharsets;
-import java.util.Iterator;
+import lombok.Data;
+import org.springframework.boot.context.properties.ConfigurationProperties;
 
 /**
  */
-final class InfoUtils {
-    static final Splitter SPLITTER_ON_SPACE = Splitter.on(' ').omitEmptyStrings().trimResults();
-
-    static BufferedReader readFile(File file) throws IOException {
-        return new BufferedReader(new InputStreamReader(new FileInputStream(file), StandardCharsets.US_ASCII));
-    }
-
-    static long nextLong(Iterator<String> iter) {
-        return Long.parseLong(iter.next());
-    }
+@Data
+@ConfigurationProperties("dm.agent.notifier")
+public class NotifierProps {
+    private String secret;
+    private String rootPath;
+    private String server;
 }

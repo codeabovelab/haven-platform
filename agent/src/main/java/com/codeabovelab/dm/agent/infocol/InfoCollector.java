@@ -17,24 +17,17 @@
 package com.codeabovelab.dm.agent.infocol;
 
 import com.google.common.base.MoreObjects;
-import com.google.common.base.Splitter;
 import com.google.common.collect.ImmutableList;
-import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import lombok.extern.slf4j.Slf4j;
 
 import java.io.*;
-import java.nio.charset.StandardCharsets;
 import java.util.List;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
 
 /**
  * Collect info. Must be thread safe.
  */
 @Slf4j
 public class InfoCollector {
-    private final ScheduledExecutorService executor;
     private final String rootPath;
     private final List<Collector> collectors;
     /**
@@ -44,23 +37,28 @@ public class InfoCollector {
     public InfoCollector(String rootPath) {
         this.rootPath = MoreObjects.firstNonNull(rootPath, "/");
         this.collectors = ImmutableList.of(new ProcStatCollector(this), new ProcMeminfoCollector(this), new NetCollector(this));
-        executor = Executors.newSingleThreadScheduledExecutor(new ThreadFactoryBuilder()
-          .setNameFormat(getClass().getSimpleName() + "@" + this.rootPath + "-%d")
-          .build());
-        executor.scheduleAtFixedRate(this::refresh, 1, 1, TimeUnit.SECONDS);
     }
 
     public String getRootPath() {
         return rootPath;
     }
 
+    /**
+     * Get current info. Some Collectors may periodically gather info, therefore you must manually cal {@link #refresh()}
+     * @see #refresh()
+     * @return info
+     */
     public Info getInfo() {
         Info info = new Info();
         collectors.forEach(c -> safe(() -> c.fill(info)));
         return info;
     }
 
-    private void refresh() {
+    /**
+     * For proper work you need at least two invocation of this method, between {@link #getInfo()}.
+     * Not that small (less than one second) timeout between invocation may cause incorrect results.
+     */
+    public void refresh() {
         collectors.forEach(c -> {
             if(!(c instanceof Refreshable)) {
                 return;
