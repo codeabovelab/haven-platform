@@ -132,7 +132,7 @@ public class DiscoveryNodeController {
     public String agent(HttpServletRequest request) {
         return StrSubstitutor.replace(startString,
                 of("secret", nodeSecret == null ? "" : "-e \"dm_agent_notifier_secret=" + nodeSecret + "\"",
-                        "server", getServerAddress(request)));
+                        "server", getServerAddress(request)), "{", "}");
     }
 
 
