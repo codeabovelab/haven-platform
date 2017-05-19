@@ -58,7 +58,7 @@ public class DiscoveryNodeControllerTest {
     @Before
     public void before() {
         mvc = standaloneSetup(new DiscoveryNodeController(nodeStorage, SECRET,
-                "docker run --name havenAgent -d -e \"dm_agent_notifier_server=${server}\" ${secret} " +
+                "docker run --name havenAgent -d -e \"dm_agent_notifier_server={server}\" {secret} " +
                 "--restart=unless-stopped -p 8771:8771 -v /run/docker.sock:/run/docker.sock codeabovelab/agent:latest"))
                 .build();
     }
