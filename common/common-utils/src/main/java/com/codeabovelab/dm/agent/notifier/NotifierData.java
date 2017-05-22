@@ -16,17 +16,19 @@
 
 package com.codeabovelab.dm.agent.notifier;
 
-import com.codeabovelab.dm.agent.infocol.Info;
 import lombok.Data;
 
 import java.time.LocalDateTime;
 
 /**
- * TODO refactoring with com.codeabovelab.dm.cluman.ds.nodes.NodeAgentData
+ * DTO for node agent
  */
 @Data
 public class NotifierData {
+    public static final String HEADER = "X-Auth-Node";
+
     private LocalDateTime time;
     private String name;
-    private Info system;
+    private String address;
+    private SysInfo system;
 }

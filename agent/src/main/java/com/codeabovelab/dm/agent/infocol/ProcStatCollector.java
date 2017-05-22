@@ -16,6 +16,8 @@
 
 package com.codeabovelab.dm.agent.infocol;
 
+import com.codeabovelab.dm.agent.notifier.SysInfo;
+
 import java.io.BufferedReader;
 import java.io.File;
 import java.util.Iterator;
@@ -75,7 +77,7 @@ class ProcStatCollector implements Collector, Refreshable {
     }
 
     @Override
-    public void fill(Info info) {
+    public void fill(SysInfo info) {
         Data c;
         Data p;
         synchronized (this) {

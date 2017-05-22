@@ -16,6 +16,7 @@
 
 package com.codeabovelab.dm.agent.infocol;
 
+import com.codeabovelab.dm.agent.notifier.SysInfo;
 import com.codeabovelab.dm.common.utils.DataSize;
 
 import java.io.BufferedReader;
@@ -34,7 +35,7 @@ public class ProcMeminfoCollector implements Collector {
     }
 
     @Override
-    public void fill(Info info) throws Exception {
+    public void fill(SysInfo info) throws Exception {
         try(BufferedReader br = InfoUtils.readFile(meminfo)) {
             /*
             * cat /proc/meminfo
@@ -46,7 +47,7 @@ public class ProcMeminfoCollector implements Collector {
             long free = parse(br.readLine());
             // avail - is free + file cache  & etc
             long avail = parse(br.readLine());
-            Info.Memory mem = new Info.Memory();
+            SysInfo.Memory mem = new SysInfo.Memory();
             mem.setTotal(total);
             mem.setAvailable(free);
             // used is total - avail (which include free, unloadable file cache)

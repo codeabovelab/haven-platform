@@ -16,6 +16,8 @@
 
 package com.codeabovelab.dm.cluman.ds.nodes;
 
+import com.codeabovelab.dm.agent.notifier.NotifierData;
+import com.codeabovelab.dm.agent.notifier.SysInfo;
 import com.codeabovelab.dm.cluman.model.DiskInfo;
 import com.codeabovelab.dm.cluman.model.NetIfaceCounter;
 import com.codeabovelab.dm.cluman.model.NodeMetrics;
@@ -49,7 +51,6 @@ import static org.springframework.web.bind.annotation.RequestMethod.POST;
 @Slf4j
 public class DiscoveryNodeController {
 
-    private static final String HEADER = "X-Auth-Node";
     private final NodeStorage storage;
     private final String nodeSecret;
     private final String startString;
@@ -64,12 +65,12 @@ public class DiscoveryNodeController {
     }
 
     @RequestMapping(value = "/nodes/{name}", method = POST, consumes = {TEXT_PLAIN_VALUE, APPLICATION_JSON_VALUE})
-    public ResponseEntity<String> registerNodeFromAgent(@RequestBody NodeAgentData data,
+    public ResponseEntity<String> registerNodeFromAgent(@RequestBody NotifierData data,
                                                         @PathVariable("name") String name,
-                                                        @RequestHeader(name = HEADER, required = false) String nodeSecret,
+                                                        @RequestHeader(name = NotifierData.HEADER, required = false) String nodeSecret,
                                                         @RequestParam(value = "ttl", required = false) Integer ttl) {
         if (this.nodeSecret != null && !this.nodeSecret.equals(nodeSecret)) {
-            return new ResponseEntity<>("Server required node auth, need correct value of '" + HEADER + "' header.", UNAUTHORIZED);
+            return new ResponseEntity<>("Server required node auth, need correct value of '" + NotifierData.HEADER + "' header.", UNAUTHORIZED);
         }
         NodeMetrics health = createNodeHealth(data);
         if (ttl == null) {
@@ -79,7 +80,6 @@ public class DiscoveryNodeController {
         try (TempAuth ta = TempAuth.asSystem()) {
             storage.updateNode(name, ttl, b -> {
                 b.address(data.getAddress());
-                b.labels(data.getLabels());
                 b.mergeHealth(health);
             });
         }
@@ -87,21 +87,21 @@ public class DiscoveryNodeController {
         return new ResponseEntity<>(HttpStatus.OK);
     }
 
-    private NodeMetrics createNodeHealth(NodeAgentData nad) {
-        NodeAgentData.SystemStatus system = nad.getSystem();
+    private NodeMetrics createNodeHealth(NotifierData nad) {
+        SysInfo system = nad.getSystem();
         NodeMetrics.Builder nhb = NodeMetrics.builder();
         nhb.setTime(nad.getTime());
         if (system != null) {
-            NodeAgentData.Tau mem = system.getMemory();
+            SysInfo.Memory mem = system.getMemory();
             if (mem != null) {
                 nhb.setSysMemAvail(mem.getAvailable());
                 nhb.setSysMemTotal(mem.getTotal());
                 nhb.setSysMemUsed(mem.getUsed());
             }
-            Map<String, NodeAgentData.Tu> disks = system.getDisks();
+            Map<String, SysInfo.Disk> disks = system.getDisks();
             if (disks != null) {
-                for (Map.Entry<String, NodeAgentData.Tu> disk : disks.entrySet()) {
-                    NodeAgentData.Tu value = disk.getValue();
+                for (Map.Entry<String, SysInfo.Disk> disk : disks.entrySet()) {
+                    SysInfo.Disk value = disk.getValue();
                     if (value == null) {
                         continue;
                     }
@@ -109,13 +109,13 @@ public class DiscoveryNodeController {
                     nhb.addDisk(new DiskInfo(disk.getKey(), used, value.getTotal()));
                 }
             }
-            Map<String, NodeAgentData.Nic> net = system.getNet();
+            Map<String, SysInfo.Net> net = system.getNet();
             if (net != null) {
-                for (Map.Entry<String, NodeAgentData.Nic> nic : net.entrySet()) {
+                for (Map.Entry<String, SysInfo.Net> nic : net.entrySet()) {
                     if (nic == null) {
                         continue;
                     }
-                    NodeAgentData.Nic nicValue = nic.getValue();
+                    SysInfo.Net nicValue = nic.getValue();
                     NetIfaceCounter counter = new NetIfaceCounter(nic.getKey(), nicValue.getBytesIn(), nicValue.getBytesOut());
                     nhb.addNet(counter);
                 }

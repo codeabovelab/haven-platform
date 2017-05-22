@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.codeabovelab.dm.agent.infocol;
+package com.codeabovelab.dm.agent.notifier;
 
 import lombok.Data;
 
@@ -42,25 +42,25 @@ import java.util.Map;
     }
  */
 @Data
-public class Info {
+public class SysInfo {
 
     @Data
     public static class Disk {
-        private float total;
-        private float used;
+        private long total;
+        private long used;
     }
 
     @Data
     public static class Memory {
-        private float total;
-        private float used;
-        private float available;
+        private long total;
+        private long used;
+        private long available;
     }
 
     @Data
     public static class Net {
-        private float bytesIn;
-        private float bytesOut;
+        private long bytesIn;
+        private long bytesOut;
     }
 
     private float cpuLoad;

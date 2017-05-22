@@ -24,10 +24,12 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
-import org.springframework.http.ResponseEntity;
+import org.springframework.http.*;
 import org.springframework.stereotype.Component;
+import org.springframework.web.client.ResourceAccessException;
 import org.springframework.web.client.RestTemplate;
 
+import java.net.URI;
 import java.time.LocalDateTime;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
@@ -42,10 +44,11 @@ import java.util.concurrent.TimeUnit;
 public class Notifier extends AbstractAutostartup {
     private final ScheduledExecutorService executor;
     private final RestTemplate restTemplate;
-    private final String url;
+    private final URI url;
     private final InfoCollector collector;
     private final ObjectMapper objectMapper;
     private final String hostName;
+    private final String secret;
 
     @Autowired
     public Notifier(NotifierProps config, RestTemplate restTemplate, ObjectMapper objectMapper) {
@@ -54,6 +57,7 @@ public class Notifier extends AbstractAutostartup {
         this.collector = new InfoCollector(config.getRootPath());
         this.hostName = OSUtils.getHostName();
         this.url = calculateUrl(config);
+        this.secret = config.getSecret();
 
         this.executor = ExecutorUtils.singleThreadScheduledExecutor(this.getClass());
         ScheduledFuture<?> future = this.executor.scheduleWithFixedDelay(this::send, 60L, 60L, TimeUnit.SECONDS);
@@ -62,19 +66,29 @@ public class Notifier extends AbstractAutostartup {
 
     }
 
-    private String calculateUrl(NotifierProps config) {
-        return config.getServer() + "/discovery/nodes/" + hostName;
+    private URI calculateUrl(NotifierProps config) {
+        return URI.create(config.getServer() + "/discovery/nodes/" + hostName);
     }
 
     private void send() {
         try {
             NotifierData data = getData();
-            ResponseEntity<String> resp = restTemplate.postForEntity(url, data, String.class);
+            HttpHeaders headers = new HttpHeaders();
+            if(secret != null) {
+                headers.set(NotifierData.HEADER, secret);
+            }
+            RequestEntity<NotifierData> req = new RequestEntity<>(data, headers, HttpMethod.POST, url);
+            ResponseEntity<String> resp = restTemplate.exchange(req, String.class);
             if(log.isDebugEnabled()) {
                 log.debug("Send data {} to {}, with result: {}", objectMapper.writeValueAsString(data), url, resp.getStatusCode());
             }
         } catch (Exception e) {
-            log.error("Can not send to {}", url, e);
+            if(e instanceof ResourceAccessException) {
+                // we reduce stack trace of some errors
+                log.error("Can not send to {}, due to error: {}", url, e.toString());
+            } else {
+                log.error("Can not send to {}", url, e);
+            }
         }
     }
 

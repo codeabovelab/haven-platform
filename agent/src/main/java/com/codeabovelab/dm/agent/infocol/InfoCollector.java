@@ -16,11 +16,11 @@
 
 package com.codeabovelab.dm.agent.infocol;
 
+import com.codeabovelab.dm.agent.notifier.SysInfo;
 import com.google.common.base.MoreObjects;
 import com.google.common.collect.ImmutableList;
 import lombok.extern.slf4j.Slf4j;
 
-import java.io.*;
 import java.util.List;
 
 /**
@@ -48,8 +48,8 @@ public class InfoCollector {
      * @see #refresh()
      * @return info
      */
-    public Info getInfo() {
-        Info info = new Info();
+    public SysInfo getInfo() {
+        SysInfo info = new SysInfo();
         collectors.forEach(c -> safe(() -> c.fill(info)));
         return info;
     }
