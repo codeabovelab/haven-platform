@@ -1,14 +1,12 @@
 package com.codeabovelab.dm.cluman.ds.nodes;
 
+import com.codeabovelab.dm.agent.notifier.NotifierData;
 import com.codeabovelab.dm.cluman.model.DiscoveryStorage;
 import com.codeabovelab.dm.cluman.model.NodeInfo;
 import com.codeabovelab.dm.cluman.model.NodeInfoImpl;
 import com.codeabovelab.dm.cluman.model.NodesGroup;
 import com.codeabovelab.dm.common.utils.StringUtils;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.apache.commons.lang.text.StrSubstitutor;
-import org.hamcrest.CoreMatchers;
-import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -19,7 +17,6 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import org.springframework.util.MimeTypeUtils;
@@ -35,7 +32,6 @@ import static org.hamcrest.Matchers.*;
 import static org.junit.Assert.assertThat;
 import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.model;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static org.springframework.test.web.servlet.setup.MockMvcBuilders.standaloneSetup;
 
@@ -101,7 +97,7 @@ public class DiscoveryNodeControllerTest {
 
     @SuppressWarnings("deprecation")
     private void addNode(String hostPort, boolean auth) throws Exception {
-        NodeAgentData data = new NodeAgentData();
+        NotifierData data = new NotifierData();
         data.setName(StringUtils.before(hostPort, ':'));
         data.setAddress(hostPort);
         MockHttpServletRequestBuilder b = MockMvcRequestBuilders.post(getClusterUrl(data.getName()))

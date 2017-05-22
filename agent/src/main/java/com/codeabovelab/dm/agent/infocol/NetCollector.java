@@ -16,8 +16,9 @@
 
 package com.codeabovelab.dm.agent.infocol;
 
+import com.codeabovelab.dm.agent.notifier.SysInfo;
+
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -33,19 +34,19 @@ public class NetCollector implements Collector {
     }
 
     @Override
-    public void fill(Info info) throws Exception {
+    public void fill(SysInfo info) throws Exception {
         // /sys/class/net/eth0/statistics/rx_bytes
         // /sys/class/net/eth0/statistics/tx_bytes
-        Map<String, Info.Net> nets = info.getNet();
+        Map<String, SysInfo.Net> nets = info.getNet();
         for(Path devPath: (Iterable<Path>)(Files.list(path)::iterator)) {
             String dev = devPath.getFileName().toString();
-            Info.Net net = new Info.Net();
+            SysInfo.Net net = new SysInfo.Net();
             readNet(devPath, net);
             nets.put(dev, net);
         }
     }
 
-    private void readNet(Path dev, Info.Net net) throws IOException {
+    private void readNet(Path dev, SysInfo.Net net) throws IOException {
         long rx = readLong(dev.resolve("statistics/rx_bytes"));
         long tx = readLong(dev.resolve("statistics/tx_bytes"));
         net.setBytesIn(rx);
