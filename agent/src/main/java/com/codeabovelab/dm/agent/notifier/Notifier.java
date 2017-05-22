@@ -26,6 +26,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.http.*;
 import org.springframework.stereotype.Component;
+import org.springframework.util.StringUtils;
 import org.springframework.web.client.ResourceAccessException;
 import org.springframework.web.client.RestTemplate;
 
@@ -60,14 +61,23 @@ public class Notifier extends AbstractAutostartup {
         this.secret = config.getSecret();
 
         this.executor = ExecutorUtils.singleThreadScheduledExecutor(this.getClass());
-        ScheduledFuture<?> future = this.executor.scheduleWithFixedDelay(this::send, 60L, 60L, TimeUnit.SECONDS);
-        addToClose(() -> future.cancel(true));
-        addToClose(this.executor::shutdownNow);
+        if(url != null) {
+            log.warn("Server url is '{}', schedule notifier.", url);
+            ScheduledFuture<?> future = this.executor.scheduleWithFixedDelay(this::send, 60L, 60L, TimeUnit.SECONDS);
+            addToClose(() -> future.cancel(true));
+        } else {
+            log.warn("Server url is null, disable notifier.");
+        }
 
+        addToClose(this.executor::shutdownNow);
     }
 
     private URI calculateUrl(NotifierProps config) {
-        return URI.create(config.getServer() + "/discovery/nodes/" + hostName);
+        String server = config.getServer();
+        if(!StringUtils.hasText(server)) {
+            return null;
+        }
+        return URI.create(server + "/discovery/nodes/" + hostName);
     }
 
     private void send() {
