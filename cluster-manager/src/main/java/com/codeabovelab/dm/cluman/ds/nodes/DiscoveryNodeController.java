@@ -79,7 +79,7 @@ public class DiscoveryNodeController {
         }
         try (TempAuth ta = TempAuth.asSystem()) {
             storage.updateNode(name, ttl, b -> {
-                b.address(data.getAddress());
+                b.addressIfNeed(data.getAddress());
                 b.mergeHealth(health);
             });
         }

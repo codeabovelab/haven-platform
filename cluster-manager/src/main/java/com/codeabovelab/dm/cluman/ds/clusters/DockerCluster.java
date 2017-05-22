@@ -659,10 +659,8 @@ public class DockerCluster extends AbstractNodesGroup<DockerClusterConfig> {
                 return;
             }
             b.idInCluster(id);
-            if(b.getAddress() == null && address != null) {
-                // we must not update address, because cluster node may report wrong value
-                b.address(address);
-            }
+            // we must not update address, because cluster node may report wrong value
+            b.addressIfNeed(address);
             NodeMetrics.Builder nmb = NodeMetrics.builder();
             NodeMetrics.State state;
             if(sn != null) {
