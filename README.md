@@ -8,7 +8,7 @@ commandline tools. Built on top of Docker, Swarm, and Compose, it offers multipl
 
 License
 -------
-Copyright 2016 Code Above Lab LLC
+Copyright 2017 Code Above Lab LLC
 
 Licensed under the [Apache License, Version 2.0](http://www.apache.org/licenses/LICENSE-2.0) (the "License");
 you may not use this file except in compliance with the License.
