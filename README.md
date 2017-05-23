@@ -6,7 +6,7 @@
 Haven is a Docker cluster management system. The user controls the entire platform via user-friendly yet powerful UI and 
 commandline tools. Built on top of Docker, Swarm, and Compose, it offers multiple clusters and image registries management.
 
-License
+License ([Apache Version 2.0](http://www.apache.org/licenses/LICENSE-2.0))
 -------
 Copyright 2017 Code Above Lab LLC
 
