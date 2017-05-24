@@ -26,7 +26,7 @@ Change directory into the local repo:
 
     cd haven-platform
 
-Build the backend (note that it downloads ~150MB of dependencies to '~/.m2/repository'):
+Build the backend (note that it downloads about 150MB of dependencies to '~/.m2/repository'):
 
     mvn -P staging -Dmaven.test.skip=true clean package
 
