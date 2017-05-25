@@ -18,14 +18,14 @@ Below problems which caused development of agent:
 
 ## Agent image ##
 
-New version (1.2) of system, can work without agent, but we implement new agent with proxy of docker connection. It 
+New version (1.2) of system, can work without agent, but we implement new agent with proxy of docker connection (1.2.1). 
 agent connect with docker through unix socket and expose it on 8771 port with ssl encryption and authorization 
 (credentials admin:password, see 'dm.auth.adminPassword' option of agent)
 
 Command for run agent on node:
 ```docker run --name agent -d --restart=unless-stopped -p 8771:8771 -v /run/docker.sock:/run/docker.sock codeabovelab/agent:1.2.1```
 
-Note that agent is built with self-signed certificate, cluster-manager use same certificate too. [Certificate generated on each build](https://github.com/codeabovelab/haven-platform/blob/dc38ed2ed9368fa4436b411400f4b20cd92457a2/pom.xml#L121), therefore when you use agent with cluster-manager of different verision, you will get error. It can be fixed by usage of same version, or option 'dm.ssl.check=false' to cluster-manager.
+Note that agent is built with self-signed certificate, cluster-manager use same certificate too. [Certificate generated on each build](https://github.com/codeabovelab/haven-platform/blob/dc38ed2ed9368fa4436b411400f4b20cd92457a2/pom.xml#L121), therefore when you use agent with cluster-manager of different verision, you will get error. It can be fixed by usage of same version, or option 'dm.ssl.check=false' to cluster-manager (default value is false).
 
 
 The Agent sends data in JSON format to 'http://$MASTER/discovery/nodes/$NODE_NAME' (see `com.codeabovelab.dm.cluman.ds.nodes.NodeAgentData` ). 
