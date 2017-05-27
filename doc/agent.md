@@ -1,38 +1,38 @@
 # Haven Agent #
 
-Currently system may act without agent, use old python based agent or use new agent from docker image.
+Currently Havens can be setup to use with or without agents on child nodes. However, whenever possible, we recommend using the agent image for additional stats to be sent back to the server.
 
-Comparison:
+Quick Comparison:
 
-| name        | secure usage docker API | gather node metrics | do not have extra dependencies | 
+| name        | secure usage Docker API | gather node metrics | do not have extra dependencies | 
 |-------------|---|---|---|
 | no agent    | - | - | + |
 | agent image | + | + | + |
 
-Below problems which caused development of agent:
- - By default docker listen on unix socket, inaccessible from network. When you enable listening on 
- TCP, docker will stay insecure or require some complex configuration with certificates
+The problems listed have caused issues with agent development:
+ - By default, docker listens on the unix socket and is inaccessible from network. When you enable the listening on 
+ TCP port, Docker will be insecure or require additional certificate configuration 
  <sup>[1](https://docs.docker.com/edge/engine/reference/commandline/dockerd/#daemon-socket-option)</sup>.
- - Health of node depend from load usage of CPU & RAM and some other parameters like disk space. Docker can monitor 
- only small part of above characteristics.
+ - The health of the node depends on CPU and RAM usage and other additional resources like disk space. Docker can monitor 
+ only a subset of the mentioned resource.
 
-## Agent image ##
+## Agent Image ##
 
-New version (1.2) of system, can work without agent, but we implement new agent with proxy of docker connection (1.2.1). 
-agent connect with docker through unix socket and expose it on 8771 port with ssl encryption and authorization 
-(credentials admin:password, see 'dm.auth.adminPassword' option of agent)
+New version (1.2) of system can work without the agent installed but we have implement the new agent with proxy of Docker 
+connection (1.2.1). Agent is connected to Docker via unix socket. Port 8771 is opened with SSL encryption and
+authorization (credentials admin:password, see 'dm.auth.adminPassword' option of agent)
 
-Command for run agent on node:
+The command for running the agent on node is:
 ```docker run --name agent -d --restart=unless-stopped -p 8771:8771 -v /run/docker.sock:/run/docker.sock codeabovelab/agent:1.2.1```
 
-Note that agent is built with self-signed certificate, cluster-manager use same certificate too. [Certificate generated on each build](https://github.com/codeabovelab/haven-platform/blob/dc38ed2ed9368fa4436b411400f4b20cd92457a2/pom.xml#L121), therefore when you use agent with cluster-manager of different verision, you will get error. It can be fixed by usage of same version, or option 'dm.ssl.check=false' to cluster-manager (default value is false).
+Note that the agent is built with a self-signed certificate and cluster-manager use same certificate too. 
+[Certificate generated on each build](https://github.com/codeabovelab/haven-platform/blob/dc38ed2ed9368fa4436b411400f4b20cd92457a2/pom.xml#L121). Therefore, when you use the agent with cluster-manager of different version, you will get an error. It can be fixed by using the same version or by setting the option 'dm.ssl.check=false' in the cluster-manager (default value is false).
 
 
 The Agent sends data in JSON format to 'http://$MASTER/discovery/nodes/$NODE_NAME' (see `com.codeabovelab.dm.cluman.ds.nodes.NodeAgentData` ). 
-The [cluman](cluman.md) data is processed by `TokenDiscoveryServer.registerNodeFromAgent()`. 
-Data is gathered from Docker info, optionally through `psutil`, and contains:
+The [cluman](cluman.md) data is processed by `TokenDiscoveryServer.registerNodeFromAgent()`. Data is gathered from Docker info, optionally through `psutil`, and contains:
 
-### Data sent by agents to the master ###
+### Data Transmitted from Agents to Master ###
 
 * time - local time
 * name - Docker host name
