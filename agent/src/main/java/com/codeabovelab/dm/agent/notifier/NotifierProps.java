@@ -27,4 +27,5 @@ public class NotifierProps {
     private String secret;
     private String rootPath;
     private String server;
+    private String address;
 }

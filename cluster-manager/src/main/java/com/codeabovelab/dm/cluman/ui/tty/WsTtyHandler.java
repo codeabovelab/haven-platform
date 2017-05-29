@@ -23,7 +23,7 @@ import com.codeabovelab.dm.cluman.ds.nodes.NodeStorage;
 import com.codeabovelab.dm.cluman.model.DockerContainer;
 import com.codeabovelab.dm.cluman.model.NodeInfo;
 import com.codeabovelab.dm.cluman.security.TempAuth;
-import com.codeabovelab.dm.cluman.utils.AddressUtils;
+import com.codeabovelab.dm.common.utils.AddressUtils;
 import com.codeabovelab.dm.cluman.validate.ExtendedAssert;
 import com.google.common.collect.ImmutableMap;
 import lombok.extern.slf4j.Slf4j;

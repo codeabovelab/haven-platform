@@ -16,7 +16,6 @@
 
 package com.codeabovelab.dm.agent.notifier;
 
-import com.codeabovelab.dm.agent.infocol.InfoCollector;
 import com.codeabovelab.dm.common.utils.AbstractAutostartup;
 import com.codeabovelab.dm.common.utils.ExecutorUtils;
 import com.codeabovelab.dm.common.utils.OSUtils;
@@ -31,7 +30,6 @@ import org.springframework.web.client.ResourceAccessException;
 import org.springframework.web.client.RestTemplate;
 
 import java.net.URI;
-import java.time.LocalDateTime;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
@@ -46,17 +44,15 @@ public class Notifier extends AbstractAutostartup {
     private final ScheduledExecutorService executor;
     private final RestTemplate restTemplate;
     private final URI url;
-    private final InfoCollector collector;
     private final ObjectMapper objectMapper;
-    private final String hostName;
     private final String secret;
+    private final DataProvider dataProvider;
 
     @Autowired
-    public Notifier(NotifierProps config, RestTemplate restTemplate, ObjectMapper objectMapper) {
+    public Notifier(NotifierProps config, RestTemplate restTemplate, ObjectMapper objectMapper, DataProvider dataProvider) {
         this.restTemplate = restTemplate;
         this.objectMapper = objectMapper;
-        this.collector = new InfoCollector(config.getRootPath());
-        this.hostName = OSUtils.getHostName();
+        this.dataProvider = dataProvider;
         this.url = calculateUrl(config);
         this.secret = config.getSecret();
 
@@ -77,12 +73,12 @@ public class Notifier extends AbstractAutostartup {
         if(!StringUtils.hasText(server)) {
             return null;
         }
-        return URI.create(server + "/discovery/nodes/" + hostName);
+        return URI.create(server + "/discovery/nodes/" + dataProvider.getHostName());
     }
 
     private void send() {
         try {
-            NotifierData data = getData();
+            NotifierData data = dataProvider.getData();
             HttpHeaders headers = new HttpHeaders();
             if(secret != null) {
                 headers.set(NotifierData.HEADER, secret);
@@ -102,11 +98,4 @@ public class Notifier extends AbstractAutostartup {
         }
     }
 
-    private NotifierData getData() {
-        NotifierData data = new NotifierData();
-        data.setName(hostName);
-        data.setSystem(collector.getInfo());
-        data.setTime(LocalDateTime.now());
-        return data;
-    }
 }
