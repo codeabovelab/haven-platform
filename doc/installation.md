@@ -77,7 +77,7 @@ copy start string from 'Admin' -> 'Add node'
 start string example:
 
 ```
-docker run --name havenAgent -d -e "dm_agent_notifier_server=http://hb1.codeabovelab.com:80"  --restart=unless-stopped -p 8771:8771 -v /run/docker.sock:/run/docker.sock codeabovelab/agent:latest
+docker run --name havenAgent -d -e "dm_agent_notifier_server=URL-TO-HOST"  --restart=unless-stopped -p 8771:8771 -v /run/docker.sock:/run/docker.sock codeabovelab/agent:latest
 ```
 
 _Agent-less way._ If you want to run a node without installing and running an agent, then you need to expose docker on a network port.
