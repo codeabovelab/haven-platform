@@ -22,6 +22,7 @@ import com.codeabovelab.dm.cluman.model.DiskInfo;
 import com.codeabovelab.dm.cluman.model.NetIfaceCounter;
 import com.codeabovelab.dm.cluman.model.NodeMetrics;
 import com.codeabovelab.dm.cluman.security.TempAuth;
+import com.codeabovelab.dm.common.utils.AddressUtils;
 import com.google.common.base.Strings;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang.text.StrSubstitutor;
@@ -70,10 +71,12 @@ public class DiscoveryNodeController {
     public ResponseEntity<String> registerNodeFromAgent(@RequestBody NotifierData data,
                                                         @PathVariable("name") String name,
                                                         @RequestHeader(name = NotifierData.HEADER, required = false) String nodeSecret,
-                                                        @RequestParam(value = "ttl", required = false) Integer ttl) {
+                                                        @RequestParam(value = "ttl", required = false) Integer ttl,
+                                                        HttpServletRequest request) {
         if (this.nodeSecret != null && !this.nodeSecret.equals(nodeSecret)) {
             return new ResponseEntity<>("Server required node auth, need correct value of '" + NotifierData.HEADER + "' header.", UNAUTHORIZED);
         }
+        fixAddress(data, request);
         NodeMetrics health = createNodeHealth(data);
         if (ttl == null) {
             // it workaround, we must rewrite ttl system (it not used)
@@ -87,6 +90,15 @@ public class DiscoveryNodeController {
         }
         log.info("Update node {}", name);
         return new ResponseEntity<>(HttpStatus.OK);
+    }
+
+    private void fixAddress(NotifierData data, HttpServletRequest request) {
+        String host = request.getRemoteHost();
+        String addrs = data.getAddress();
+        String declaredHost  = AddressUtils.getHost(addrs);
+        if(AddressUtils.isLocal(declaredHost)) {
+            data.setAddress(AddressUtils.setHost(addrs, host));
+        }
     }
 
     private NodeMetrics createNodeHealth(NotifierData nad) {

@@ -16,6 +16,7 @@
 
 package com.codeabovelab.dm.cluman.ds.nodes;
 
+import com.codeabovelab.dm.cluman.cluster.docker.management.DockerService;
 import com.codeabovelab.dm.cluman.cluster.docker.management.DockerServiceEvent;
 import com.codeabovelab.dm.cluman.ds.SwarmUtils;
 import com.codeabovelab.dm.cluman.model.*;
@@ -23,12 +24,15 @@ import com.codeabovelab.dm.cluman.security.TempAuth;
 import com.codeabovelab.dm.common.utils.AbstractAutostartup;
 import com.codeabovelab.dm.common.mb.Subscriptions;
 import com.codeabovelab.dm.common.utils.ExecutorUtils;
+import com.codeabovelab.dm.common.utils.Throwables;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
+import java.net.ConnectException;
+import java.net.SocketException;
 import java.util.Objects;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
@@ -115,13 +119,7 @@ class NodeInfoUpdater extends AbstractAutostartup {
         String clusterName = nr.getCluster();
         final NodesGroup ng = clusterName == null? null : discoveryStorage.getCluster(clusterName);
         log.info("Update node '{}' of '{}' cluster", nr.getName(), ng == null? null : ng.getName());
-        DockerServiceInfo tmp = null;
-        try {
-            tmp = nr.getDocker().getInfo();
-        } catch (Exception e) {
-            log.error("Fail to load node '{}' info due to error: {}", nr.getName(), e.toString());
-        }
-        final DockerServiceInfo dsi = tmp;
+        final DockerServiceInfo dsi = loadDockerInfo(nr);
         nr.updateNodeInfo(b -> {
             NodeMetrics.Builder nmb = NodeMetrics.builder().from(b.getHealth());
             boolean online = dsi != null;
@@ -139,5 +137,25 @@ class NodeInfoUpdater extends AbstractAutostartup {
         });
         // this check offline status internal and cause status change event
         nr.getNodeInfo();
+    }
+
+    private DockerServiceInfo loadDockerInfo(NodeRegistrationImpl nr) {
+        DockerServiceInfo tmp = null;
+        try {
+            DockerService docker = nr.getDocker();
+            if(docker != null) {
+                tmp = docker.getInfo();
+            } else {
+                log.error("Fail to load node '{}' info due to docker is null (address is '{}').", nr.getName(), nr.getAddress());
+            }
+        } catch (Exception e) {
+            if(Throwables.has(e, SocketException.class)) {
+                // suppress stack traces when exception is expected
+                log.error("Fail to load node '{}' info due to error: {}", nr.getName(), e.toString());
+            } else {
+                log.error("Fail to load node '{}' info.", nr.getName(), e);
+            }
+        }
+        return tmp;
     }
 }

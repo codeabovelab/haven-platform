@@ -31,7 +31,7 @@ import com.codeabovelab.dm.cluman.ds.nodes.NodeRegistration;
 import com.codeabovelab.dm.cluman.ds.nodes.NodeStorage;
 import com.codeabovelab.dm.cluman.model.*;
 import com.codeabovelab.dm.cluman.security.TempAuth;
-import com.codeabovelab.dm.cluman.utils.AddressUtils;
+import com.codeabovelab.dm.common.utils.AddressUtils;
 import com.codeabovelab.dm.common.utils.Closeables;
 import com.codeabovelab.dm.common.utils.RescheduledTask;
 import com.codeabovelab.dm.common.utils.SingleValueCache;

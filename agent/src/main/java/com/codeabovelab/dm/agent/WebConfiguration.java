@@ -16,6 +16,7 @@
 
 package com.codeabovelab.dm.agent;
 
+import com.codeabovelab.dm.agent.notifier.DataProvider;
 import com.codeabovelab.dm.agent.notifier.Notifier;
 import com.codeabovelab.dm.agent.security.AuthConfiguration;
 import com.codeabovelab.dm.agent.security.SslServletContainerCustomizer;
@@ -36,7 +37,8 @@ import org.springframework.web.client.RestTemplate;
   EmbeddedServletContainerAutoConfiguration.class,
   WebSocketAutoConfiguration.class,
   WebConfiguration.PreConfiguration.class,
-  Notifier.class
+  Notifier.class,
+  DataProvider.class
 })
 @Configuration
 public class WebConfiguration {

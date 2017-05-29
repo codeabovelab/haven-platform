@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 Code Above Lab LLC
+ * Copyright 2017 Code Above Lab LLC
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,9 +14,12 @@
  * limitations under the License.
  */
 
-package com.codeabovelab.dm.cluman.utils;
+package com.codeabovelab.dm.common.utils;
 
+import com.google.common.net.InetAddresses;
 import org.springframework.util.Assert;
+
+import java.net.InetAddress;
 
 /**
  */
@@ -72,25 +75,83 @@ public class AddressUtils {
         if (addr == null) {
             return null;
         }
+        int hostStart = getHostStart(addr);
+        int portEnd = addr.indexOf('/', hostStart);
+        if(portEnd < 0 && hostStart < 0) {
+            return addr;
+        }
+        if(hostStart > 0) {
+            if(portEnd < hostStart) {
+                return addr.substring(hostStart);
+            }
+            return addr.substring(hostStart, portEnd);
+        }
+        return addr.substring(0, portEnd);
+    }
+
+    private static int getHostStart(String addr) {
         final int prefixLen = 3  /* '://'.length() */;
         int hostStart = addr.indexOf("://");
         if(hostStart > 0) {
             hostStart += prefixLen;
         }
-        int portStart = addr.indexOf('/', hostStart);
-        if(portStart < 0 && hostStart < 0) {
-            return addr;
+        return hostStart;
+    }
+
+    private static int getHostEnd(String addr, boolean ipv6, int from) {
+        if(ipv6) {
+            from = addr.indexOf(']', from);
         }
-        if(hostStart > 0) {
-            if(portStart < hostStart) {
-                return addr.substring(hostStart);
-            }
-            return addr.substring(hostStart, portStart);
+        int hostEnd = addr.indexOf(':', from);
+        if(hostEnd < 0) {
+            hostEnd = addr.indexOf('/', from);
         }
-        return addr.substring(0, portStart);
+        return hostEnd;
     }
 
     public static boolean isHttps(String url) {
         return url != null && url.startsWith("https://");
+    }
+
+    public static String getHost(String addr) {
+        if (addr == null) {
+            return null;
+        }
+        int hostStart = getHostStart(addr);
+        boolean ipv6 = isIpv6(addr);
+        int hostEnd = getHostEnd(addr, ipv6, hostStart);
+        if(hostEnd < 0 && hostStart < 0) {
+            return addr;
+        }
+        if(hostStart > 0) {
+            if(hostEnd < hostStart) {
+                return addr.substring(hostStart);
+            }
+            return addr.substring(hostStart, hostEnd);
+        }
+        return addr.substring(0, hostEnd);
+    }
+
+    public static String setHost(String addr, String host) {
+        int hostStart = getHostStart(addr);
+        boolean ipv6 = isIpv6(addr);
+        int hostEnd = getHostEnd(addr, ipv6, hostStart);
+        if(hostEnd < 0 && hostStart < 0) {
+            return host;
+        }
+        String prefix = hostStart > 0? addr.substring(0, hostStart) : "";
+        String suff = hostEnd > 0? addr.substring(hostEnd) : "";
+        return prefix + host + suff;
+    }
+
+    public static boolean isLocal(String host) {
+        if("localhost".equalsIgnoreCase(host) || "localhost.localdomain".equalsIgnoreCase(host)) {
+            return true;
+        }
+        boolean ip = InetAddresses.isInetAddress(host);
+        if(!ip) {
+            return true;
+        }
+        return InetAddresses.forString(host).isLoopbackAddress();
     }
 }
