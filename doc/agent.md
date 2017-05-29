@@ -22,8 +22,14 @@ New version (1.2) of system can work without the agent installed but we have imp
 connection (1.2.1). Agent is connected to Docker via unix socket. Port 8771 is opened with SSL encryption and
 authorization (credentials admin:password, see 'dm.auth.adminPassword' option of agent)
 
-The command for running the agent on node is:
-```docker run --name agent -d --restart=unless-stopped -p 8771:8771 -v /run/docker.sock:/run/docker.sock codeabovelab/agent:1.2.1```
+Copy start string from 'Admin' -> 'Add node'
+
+![agent](https://raw.githubusercontent.com/codeabovelab/haven-platform/master/doc/img/agent.png)
+start string example:
+
+```
+docker run --name havenAgent -d -e "dm_agent_notifier_server=http://hb1.codeabovelab.com:80"  --restart=unless-stopped -p 8771:8771 -v /run/docker.sock:/run/docker.sock codeabovelab/agent:latest
+```
 
 Note that the agent is built with a self-signed certificate and cluster-manager use same certificate too. 
 [Certificate generated on each build](https://github.com/codeabovelab/haven-platform/blob/dc38ed2ed9368fa4436b411400f4b20cd92457a2/pom.xml#L121). Therefore, when you use the agent with cluster-manager of different version, you will get an error. It can be fixed by using the same version or by setting the option 'dm.ssl.check=false' in the cluster-manager (default value is false).

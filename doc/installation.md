@@ -70,13 +70,15 @@ and MacOS instruction:
 
 b. You have two way to run agents on nodes: use agent which is proxy docker container to local network or use themore complex but agent-less configuration.
 
-_Simply way._ Run agent on each node:
+_Simply way._ Run agent:
+copy start string from 'Admin' -> 'Add node'
+
+![agent](https://raw.githubusercontent.com/codeabovelab/haven-platform/master/doc/img/agent.png)
+start string example:
 
 ```
-docker run --name agent -d --restart=unless-stopped -p 8771:8771 -v /run/docker.sock:/run/docker.sock codeabovelab/agent:1.2.1
+docker run --name havenAgent -d -e "dm_agent_notifier_server=http://hb1.codeabovelab.com:80"  --restart=unless-stopped -p 8771:8771 -v /run/docker.sock:/run/docker.sock codeabovelab/agent:latest
 ```
-
-Open in UI in 'Admin' -> 'Add node' and add node with address like 'http://$SELF_IP:8771'.
 
 _Agent-less way._ If you want to run a node without installing and running an agent, then you need to expose docker on a network port.
 
