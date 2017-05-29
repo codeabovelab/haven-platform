@@ -19,8 +19,8 @@ package com.codeabovelab.dm.cluman.cluster.docker.management;
 import com.codeabovelab.dm.cluman.cluster.docker.model.Info;
 import com.codeabovelab.dm.cluman.cluster.docker.model.InfoSwarm;
 import com.codeabovelab.dm.cluman.model.DockerServiceInfo;
-import com.codeabovelab.dm.cluman.model.NodeMetrics;
 import com.codeabovelab.dm.cluman.model.NodeInfoImpl;
+import com.codeabovelab.dm.cluman.model.NodeMetrics;
 import com.codeabovelab.dm.cluman.model.SwarmInfo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -236,9 +236,7 @@ class DockerInfoParser {
         // is not sure that it mean 'is manager'
         sib.setManager(src.isControlAvailable());
         sib.setNodeId(src.getNodeId());
-        src.getRemoteManagers().forEach(rm -> {
-            sib.getManagers().add(rm.getAddress());
-        });
+        src.getRemoteManagers().forEach(rm -> sib.getManagers().add(rm.getAddress()));
         return sib.build();
     }
 }

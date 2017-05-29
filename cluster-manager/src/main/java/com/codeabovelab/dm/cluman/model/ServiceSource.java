@@ -93,7 +93,7 @@ public class ServiceSource implements Cloneable, Comparable<ServiceSource> {
       @JsonSubTypes.Type(value = ReplicatedMode.class, name = "replicated")
     })
     @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.PROPERTY, visible = true, property = "type")
-    public static interface Mode {
+    public interface Mode {
     }
 
     public static class GlobalMode implements Mode {

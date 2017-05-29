@@ -55,12 +55,10 @@ public class YamlParser extends AbstractParser {
 
     @Override
     public void parse(Map<String, Object> map, ContainerCreationContext context) {
-        return;
     }
 
     @Override
     public void parse(Map<String, Object> map, ContainerSource arg) {
-        return;
     }
 
 }
