@@ -14,7 +14,7 @@ For running Haven:
 
 * JRE (Oracle or Open) >= 1.8
 * etcd >= 2.2.5
-* Swarm >= 1.2.4
+* Swarm >= 1.2.6 (optional or docker with swarm-mode)
 
 ## Building ##
 
@@ -26,14 +26,11 @@ Change directory into the local repo:
 
     cd haven-platform
 
-Build the backend (note that it downloads ~150MB of dependencies to '~/.m2/repository'):
-
-    mvn -Dmaven.test.skip=true clean package
-
-For embedding frontend into backend run build with 'staging' profile. It consumes more time 
-therefore disabled by default:
+Build the backend (note that it downloads about 150MB of dependencies to '~/.m2/repository'):
 
     mvn -P staging -Dmaven.test.skip=true clean package
+
+'staging' profile embed frontend into backend. 
 
 ## Running ##
 
