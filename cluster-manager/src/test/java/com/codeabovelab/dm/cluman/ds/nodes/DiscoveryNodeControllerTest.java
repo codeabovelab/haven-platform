@@ -65,7 +65,7 @@ public class DiscoveryNodeControllerTest {
                 .contentType(MimeTypeUtils.APPLICATION_JSON_VALUE))
                 .andExpect(status().isOk())
         .andExpect(content().string("docker run --name havenAgent -d" +
-                " -e \"dm_agent_notifier_server=localhost:80\"" +
+                " -e \"dm_agent_notifier_server=http://localhost:80\"" +
                 " -e \"dm_agent_notifier_secret=secr3t\" " +
                 "--restart=unless-stopped -p 8771:8771 -v /run/docker.sock:/run/docker.sock codeabovelab/agent:latest"));
     }

@@ -30,6 +30,8 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.util.UriComponents;
+import org.springframework.web.util.UriComponentsBuilder;
 
 import javax.servlet.http.HttpServletRequest;
 import java.util.Map;
@@ -137,12 +139,13 @@ public class DiscoveryNodeController {
 
 
     private String getServerAddress(HttpServletRequest request) {
-        String name = request.getServerName() + ":" + request.getServerPort();
-        if ("localhost".equals(name)) {
-            // it mean that server covered by proxy
-            // also we may define server hostname in config
-            name = null;
-        }
+        UriComponents build = UriComponentsBuilder
+                .newInstance()
+                .scheme(request.getScheme())
+                .host(request.getServerName())
+                .port(request.getServerPort())
+                .build();
+        String name = build.toUriString();
         return name;
     }
 
