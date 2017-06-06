@@ -17,7 +17,6 @@
 package com.codeabovelab.dm.cluman.job;
 
 import com.fasterxml.jackson.core.JsonGenerator;
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonSerializer;
 import com.fasterxml.jackson.databind.SerializerProvider;
 import lombok.AllArgsConstructor;
@@ -51,7 +50,8 @@ class JobParameterDescriptionSerializer extends JsonSerializer<JobParameterDescr
     }
 
     private String toString(Type type) {
-        ModelContext modelContext = ModelContext.returnValue(type, DocumentationType.SPRING_WEB, null, new DefaultGenericTypeNamingStrategy(), null);
+        ModelContext modelContext = ModelContext.returnValue("com.codeabovelab.dm", type, DocumentationType.SPRING_WEB, null,
+                new DefaultGenericTypeNamingStrategy(), null);
         String typeName = typeNameExtractor.typeName(modelContext);
         return typeName;
     }
