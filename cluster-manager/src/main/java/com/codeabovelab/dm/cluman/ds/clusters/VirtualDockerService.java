@@ -22,7 +22,6 @@ import com.codeabovelab.dm.cluman.cluster.docker.management.DockerService;
 import com.codeabovelab.dm.cluman.cluster.docker.management.argument.*;
 import com.codeabovelab.dm.cluman.cluster.docker.management.result.*;
 import com.codeabovelab.dm.cluman.cluster.docker.management.result.ResultCode;
-import com.codeabovelab.dm.cluman.cluster.docker.management.result.ServiceCallResult;
 import com.codeabovelab.dm.cluman.cluster.docker.model.*;
 import com.codeabovelab.dm.cluman.cluster.docker.model.swarm.*;
 import com.codeabovelab.dm.cluman.ds.nodes.NodeStorage;
@@ -161,8 +160,7 @@ class VirtualDockerService implements DockerService {
         if(isOffline(service)) {
             return null;
         }
-        ContainerDetails container = service.getContainer(id);
-        return container;
+        return service.getContainer(id);
     }
 
     private DockerService getServiceByContainer(String id) {

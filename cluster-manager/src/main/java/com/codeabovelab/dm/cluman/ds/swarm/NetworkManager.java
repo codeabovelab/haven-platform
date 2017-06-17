@@ -22,12 +22,14 @@ import com.codeabovelab.dm.cluman.cluster.docker.management.result.ServiceCallRe
 import com.codeabovelab.dm.cluman.cluster.docker.model.*;
 import com.codeabovelab.dm.cluman.ds.clusters.AbstractNodesGroup;
 import com.codeabovelab.dm.cluman.ds.clusters.ClusterUtils;
-import com.codeabovelab.dm.cluman.model.*;
 import com.codeabovelab.dm.common.utils.SingleValueCache;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.*;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 public class NetworkManager {
@@ -50,9 +52,7 @@ public class NetworkManager {
         LOG.debug("Load networks for cluster {}: {}", group.getName(), networks);
         Map<String, Network> map = new HashMap<>();
         if(networks != null) {
-            networks.forEach(network -> {
-                map.put(network.getId(), network);
-            });
+            networks.forEach(network -> map.put(network.getId(), network));
         }
         return Collections.unmodifiableMap(map);
     }

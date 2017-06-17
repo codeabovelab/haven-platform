@@ -16,15 +16,12 @@
 
 package com.codeabovelab.dm.cluman.ui;
 
+import com.codeabovelab.dm.cluman.cluster.application.ApplicationService;
+import com.codeabovelab.dm.cluman.cluster.application.CreateApplicationResult;
 import com.codeabovelab.dm.cluman.cluster.compose.ComposeExecutor;
 import com.codeabovelab.dm.cluman.cluster.compose.ComposeUtils;
 import com.codeabovelab.dm.cluman.cluster.compose.model.ComposeArg;
-import com.codeabovelab.dm.cluman.cluster.application.ApplicationService;
-import com.codeabovelab.dm.cluman.cluster.application.CreateApplicationResult;
-import com.codeabovelab.dm.cluman.cluster.docker.management.result.ServiceCallResult;
 import com.codeabovelab.dm.cluman.model.*;
-import com.codeabovelab.dm.cluman.ui.model.UIResult;
-import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.io.Files;
 import lombok.RequiredArgsConstructor;
@@ -104,8 +101,7 @@ public class ApplicationApi {
 
     @RequestMapping(value = "{cluster}/{appId}", method = GET)
     public Application getApplication(@PathVariable("cluster") String cluster, @PathVariable("appId") String appId) {
-        Application application = applicationService.getApplication(cluster, appId);
-        return application;
+        return applicationService.getApplication(cluster, appId);
     }
 
     @RequestMapping(value = "{cluster}/{appId}", method = DELETE)
@@ -125,14 +121,12 @@ public class ApplicationApi {
 
     @RequestMapping(value = "{cluster}/all", method = GET)
     public List<Application> applicationList(@PathVariable("cluster") String cluster) {
-        List<Application> applications = applicationService.getApplications(cluster);
-        return applications;
+        return applicationService.getApplications(cluster);
     }
 
     @RequestMapping(value = "{cluster}/{appId}/source", method = GET)
     public ApplicationSource getSource(@PathVariable("cluster") String cluster, @PathVariable("appId") String appId) {
-        ApplicationSource src = applicationService.getSource(cluster, appId);
-        return src;
+        return applicationService.getSource(cluster, appId);
     }
 
     @RequestMapping(value = "{cluster}/{appId}/initFile", method = GET, produces = APPLICATION_OCTET_STREAM_VALUE)

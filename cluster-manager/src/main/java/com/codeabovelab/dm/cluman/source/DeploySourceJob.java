@@ -18,7 +18,6 @@ package com.codeabovelab.dm.cluman.source;
 
 import com.codeabovelab.dm.cluman.cluster.application.ApplicationService;
 import com.codeabovelab.dm.cluman.cluster.docker.management.DockerService;
-import com.codeabovelab.dm.cluman.model.CreateContainerArg;
 import com.codeabovelab.dm.cluman.cluster.docker.management.argument.DeleteContainerArg;
 import com.codeabovelab.dm.cluman.cluster.docker.management.result.CreateAndStartContainerResult;
 import com.codeabovelab.dm.cluman.cluster.docker.management.result.ResultCode;
@@ -27,7 +26,6 @@ import com.codeabovelab.dm.cluman.ds.SwarmUtils;
 import com.codeabovelab.dm.cluman.ds.container.ContainerRegistration;
 import com.codeabovelab.dm.cluman.ds.container.ContainerStorage;
 import com.codeabovelab.dm.cluman.ds.nodes.NodeStorage;
-import com.codeabovelab.dm.cluman.ds.swarm.NetworkManager;
 import com.codeabovelab.dm.cluman.job.JobBean;
 import com.codeabovelab.dm.cluman.job.JobContext;
 import com.codeabovelab.dm.cluman.job.JobParam;
@@ -76,11 +74,11 @@ public class DeploySourceJob implements Runnable {
         private NodesGroup nodesGroup;
 
         public String getPath(String container) {
-            StringBuilder sb = new StringBuilder()
-              .append(getClusterName()).append('/')
-              .append(getApplicationName()).append('/')
-              .append(container);
-            return sb.toString();
+            return new StringBuilder()
+                    .append(getClusterName()).append('/')
+                    .append(getApplicationName()).append('/')
+                    .append(container)
+                    .toString();
         }
 
         private String getApplicationName() {
@@ -132,9 +130,7 @@ public class DeploySourceJob implements Runnable {
         String cluster = clusterSource.getName();
         jobContext.fire("Begin create cluster: {0}", cluster);
         NodesGroup ng = discoveryStorage.getOrCreateCluster(cluster, ccc -> {
-            ccc.setBeforeClusterInit((c) -> {
-                jobContext.fire("Create cluster: {0}, with config: {1}", cluster, c.getConfig());
-            });
+            ccc.setBeforeClusterInit((c) -> jobContext.fire("Create cluster: {0}, with config: {1}", cluster, c.getConfig()));
             return ccc.createConfig(clusterSource.getType());
         });
         dc.setNodesGroup(ng);
@@ -202,9 +198,7 @@ public class DeploySourceJob implements Runnable {
         dc.setApp(appSrc);
         jobContext.fire("Begin create app {0}", appSrc.getName());
         List<String> containerNames = new ArrayList<>();
-        ContainerHandler ch = (cs, cr) -> {
-            containerNames.add(cr.getName());
-        };
+        ContainerHandler ch = (cs, cr) -> containerNames.add(cr.getName());
         deployContainers(dc, appSrc, ch);
         ApplicationImpl app = ApplicationImpl.builder()
           .name(appSrc.getName())

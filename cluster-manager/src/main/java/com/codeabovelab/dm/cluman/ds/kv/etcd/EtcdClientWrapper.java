@@ -191,8 +191,7 @@ public class EtcdClientWrapper implements KeyValueStorage {
 
     private EtcdKeysResponse executeRequest(EtcdKeyRequest req) throws Exception {
         EtcdResponsePromise<EtcdKeysResponse> send = req.send();
-        EtcdKeysResponse resp = send.get();
-        return resp;
+        return send.get();
     }
 
     private void fillPutReq(WriteOptions ops, EtcdKeyPutRequest req) {

@@ -52,7 +52,6 @@ class JobParameterDescriptionSerializer extends JsonSerializer<JobParameterDescr
     private String toString(Type type) {
         ModelContext modelContext = ModelContext.returnValue("com.codeabovelab.dm", type, DocumentationType.SPRING_WEB, null,
                 new DefaultGenericTypeNamingStrategy(), null);
-        String typeName = typeNameExtractor.typeName(modelContext);
-        return typeName;
+        return typeNameExtractor.typeName(modelContext);
     }
 }

@@ -19,16 +19,15 @@ package com.codeabovelab.dm.cluman.ds;
 import com.codeabovelab.dm.cluman.cluster.docker.management.DockerService;
 import com.codeabovelab.dm.cluman.cluster.docker.management.argument.*;
 import com.codeabovelab.dm.cluman.cluster.docker.management.result.CreateAndStartContainerResult;
-import com.codeabovelab.dm.cluman.cluster.docker.model.ContainerDetails;
-import com.codeabovelab.dm.cluman.model.*;
 import com.codeabovelab.dm.cluman.cluster.docker.management.result.ServiceCallResult;
+import com.codeabovelab.dm.cluman.cluster.docker.model.ContainerDetails;
 import com.codeabovelab.dm.cluman.cluster.docker.model.UpdateContainerCmd;
 import com.codeabovelab.dm.cluman.ds.container.ContainerCreator;
+import com.codeabovelab.dm.cluman.model.*;
 import org.springframework.util.Assert;
 
 import java.util.Collection;
 import java.util.Collections;
-import java.util.List;
 import java.util.function.Supplier;
 
 /**
@@ -50,8 +49,7 @@ public class SwarmClusterContainers extends AbstractContainersManager {
 
     @Override
     public Collection<DockerContainer> getContainers() {
-        List<DockerContainer> containers = getDocker().getContainers(new GetContainersArg(true));
-        return containers;
+        return getDocker().getContainers(new GetContainersArg(true));
     }
 
     @Override

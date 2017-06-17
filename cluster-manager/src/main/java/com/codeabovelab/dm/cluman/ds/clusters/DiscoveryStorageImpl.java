@@ -272,8 +272,7 @@ public class DiscoveryStorageImpl implements DiscoveryStorage {
     }
 
     private NodesGroup makeClusterFromConfig(AbstractNodesGroupConfig<?> config, String cid) {
-        NodesGroup cluster = clusterFactory().config(config).build(cid);
-        return cluster;
+        return clusterFactory().config(config).build(cid);
     }
 
     private ClusterFactory clusterFactory() {
@@ -304,8 +303,7 @@ public class DiscoveryStorageImpl implements DiscoveryStorage {
      * @return
      */
     NodesGroup getClusterBypass(String clusterId) {
-        NodesGroup ng = clusters.get(clusterId);
-        return ng;
+        return clusters.get(clusterId);
     }
 
     @Override

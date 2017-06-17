@@ -22,7 +22,6 @@ import com.codeabovelab.dm.cluman.cluster.docker.management.result.RemoveImageRe
 import com.codeabovelab.dm.cluman.cluster.docker.model.ImageItem;
 import com.codeabovelab.dm.cluman.cluster.filter.FilterFactory;
 import com.codeabovelab.dm.cluman.cluster.registry.RegistryRepository;
-import com.codeabovelab.dm.cluman.ds.swarm.DockerServices;
 import com.codeabovelab.dm.cluman.job.JobBean;
 import com.codeabovelab.dm.cluman.job.JobContext;
 import com.codeabovelab.dm.cluman.job.JobParam;
@@ -81,7 +80,7 @@ public class RemoveNotUsedClusterImagesJob implements Runnable {
     }
 
     private List<String> filter(List<RemoveImageResult> result, Predicate<RemoveImageResult> filter) {
-        return result.stream().filter(filter).map(s -> s.getImage()).collect(Collectors.toList());
+        return result.stream().filter(filter).map(RemoveImageResult::getImage).collect(Collectors.toList());
     }
 
 }

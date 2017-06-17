@@ -31,10 +31,9 @@ public class ComposeConfiguration {
 
     @Bean
     ComposeExecutor composeExecutor() {
-        ComposeExecutor composeExecutor = ComposeExecutor.builder()
+        return ComposeExecutor.builder()
                 .basedir(baseDir)
                 .checkIntervalInSec(checkInterval)
                 .build();
-        return composeExecutor;
     }
 }

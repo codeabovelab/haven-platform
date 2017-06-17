@@ -106,8 +106,6 @@ public class Throwables {
     }
 
     public static Thread.UncaughtExceptionHandler uncaughtHandler(Logger log, String msg) {
-        return (thread, ex) -> {
-            log.error(msg, ex);
-        };
+        return (thread, ex) -> log.error(msg, ex);
     }
 }

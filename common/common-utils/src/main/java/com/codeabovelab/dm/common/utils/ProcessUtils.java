@@ -59,8 +59,7 @@ public class ProcessUtils {
     }
 
     public static ExecuteWatchdog createTimeoutWatchdog(TimeUnit timeunit, int timeout) {
-        ExecuteWatchdog timeoutWatchdog = new ExecuteWatchdog(timeunit.toMillis(timeout));
-        return timeoutWatchdog;
+        return new ExecuteWatchdog(timeunit.toMillis(timeout));
     }
 
     public static int executeCommand(String command,

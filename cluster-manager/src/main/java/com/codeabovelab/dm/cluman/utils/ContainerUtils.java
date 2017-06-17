@@ -20,7 +20,6 @@ import com.codeabovelab.dm.cluman.model.ContainerBaseIface;
 import com.codeabovelab.dm.cluman.model.ImageName;
 import com.codeabovelab.dm.common.utils.ContainerDetector;
 import com.codeabovelab.dm.common.utils.OSUtils;
-import org.springframework.util.StringUtils;
 
 
 public final class ContainerUtils {
@@ -93,8 +92,7 @@ public final class ContainerUtils {
         if (end < 0) {
             return "";
         }
-        String registry = imageName.substring(0, end);
-        return registry;
+        return imageName.substring(0, end);
     }
 
     /**

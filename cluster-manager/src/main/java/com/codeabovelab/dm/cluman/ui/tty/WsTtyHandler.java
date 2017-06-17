@@ -23,8 +23,8 @@ import com.codeabovelab.dm.cluman.ds.nodes.NodeStorage;
 import com.codeabovelab.dm.cluman.model.DockerContainer;
 import com.codeabovelab.dm.cluman.model.NodeInfo;
 import com.codeabovelab.dm.cluman.security.TempAuth;
-import com.codeabovelab.dm.common.utils.AddressUtils;
 import com.codeabovelab.dm.cluman.validate.ExtendedAssert;
+import com.codeabovelab.dm.common.utils.AddressUtils;
 import com.google.common.collect.ImmutableMap;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -66,7 +66,7 @@ public class WsTtyHandler implements WebSocketHandler {
             String containerId = params.getFirst("container");
             try(TempAuth ta = withAuth(session)) {
                 connectToContainer(session, containerId);
-            };
+            }
         } catch (Exception e) {
             log.error("Can not establish connection for '{}' due to error:", uri, e);
         }
@@ -92,9 +92,7 @@ public class WsTtyHandler implements WebSocketHandler {
         );
         TtyProxy.set(session, tty);
         ListenableFuture<WebSocketSession> future = webSocketClient.doHandshake(tty, getContainerUri(containerReg.getId(), nodeReg));
-        future.addCallback((r) -> {}, (e) -> {
-            log.error("failure to open backend connection to '{}' of cluster '{}' due to error: ", containerId, nodeReg.getCluster(), e);
-        });
+        future.addCallback((r) -> {}, (e) -> log.error("failure to open backend connection to '{}' of cluster '{}' due to error: ", containerId, nodeReg.getCluster(), e));
     }
 
     private String getContainerUri(String containerId, NodeRegistration nr) {

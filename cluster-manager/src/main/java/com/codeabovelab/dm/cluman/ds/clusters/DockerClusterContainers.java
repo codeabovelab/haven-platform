@@ -18,16 +18,15 @@ package com.codeabovelab.dm.cluman.ds.clusters;
 
 import com.codeabovelab.dm.cluman.cluster.docker.management.DockerService;
 import com.codeabovelab.dm.cluman.cluster.docker.management.argument.*;
+import com.codeabovelab.dm.cluman.cluster.docker.management.result.CreateAndStartContainerResult;
 import com.codeabovelab.dm.cluman.cluster.docker.management.result.ResultCode;
+import com.codeabovelab.dm.cluman.cluster.docker.management.result.ServiceCallResult;
 import com.codeabovelab.dm.cluman.cluster.docker.model.ContainerDetails;
 import com.codeabovelab.dm.cluman.cluster.docker.model.UpdateContainerCmd;
+import com.codeabovelab.dm.cluman.cluster.docker.model.swarm.Service;
 import com.codeabovelab.dm.cluman.cluster.docker.model.swarm.Task;
 import com.codeabovelab.dm.cluman.ds.SwarmUtils;
 import com.codeabovelab.dm.cluman.ds.container.ContainerCreator;
-import com.codeabovelab.dm.cluman.model.CreateContainerArg;
-import com.codeabovelab.dm.cluman.cluster.docker.management.result.*;
-import com.codeabovelab.dm.cluman.cluster.docker.management.result.ServiceCallResult;
-import com.codeabovelab.dm.cluman.cluster.docker.model.swarm.Service;
 import com.codeabovelab.dm.cluman.ds.container.ContainerRegistration;
 import com.codeabovelab.dm.cluman.ds.container.ContainerStorage;
 import com.codeabovelab.dm.cluman.model.*;
@@ -76,8 +75,7 @@ class DockerClusterContainers implements ContainersManager {
         ImmutableMap.Builder<String, ContainerService> ilb = ImmutableMap.builder();
         Map<String, List<Task>> tpsmap = tasksmap.get();
         services.forEach((s) -> ilb.put(s.getId(), convertService(s, tpsmap.get(s.getId()))));
-        Map<String, ContainerService> map = ilb.build();
-        return map;
+        return ilb.build();
     }
 
     private ContainerService convertService(Service s, List<Task> tasks) {

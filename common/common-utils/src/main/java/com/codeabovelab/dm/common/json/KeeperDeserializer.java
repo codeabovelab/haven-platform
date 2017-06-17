@@ -50,8 +50,7 @@ class KeeperDeserializer extends JsonDeserializer<Object> implements ContextualD
      */
     @Override
     public Object deserialize(JsonParser p, DeserializationContext ctxt) throws IOException {
-        Object value = getInternalValue(p, ctxt);
-        return value;
+        return getInternalValue(p, ctxt);
     }
 
     private Object getInternalValue(JsonParser p, DeserializationContext ctxt) throws IOException {

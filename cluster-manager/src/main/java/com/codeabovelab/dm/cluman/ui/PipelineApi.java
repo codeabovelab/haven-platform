@@ -16,8 +16,8 @@
 
 package com.codeabovelab.dm.cluman.ui;
 
-import com.codeabovelab.dm.cluman.model.CreateContainerArg;
 import com.codeabovelab.dm.cluman.model.ContainerSource;
+import com.codeabovelab.dm.cluman.model.CreateContainerArg;
 import com.codeabovelab.dm.cluman.model.NotFoundException;
 import com.codeabovelab.dm.cluman.pipeline.PipelineService;
 import com.codeabovelab.dm.cluman.pipeline.arg.PipelineDeployArg;
@@ -63,13 +63,12 @@ public class PipelineApi {
     }
 
     private PipelineSchemaArg toPipelineSchema(UIPipeline pipeline) {
-        PipelineSchemaArg pipelineSchema = PipelineSchemaArg.builder()
+        return PipelineSchemaArg.builder()
                 .name(pipeline.getName())
                 .filter(pipeline.getFilter())
                 .recipients(pipeline.getRecipients())
                 .registry(pipeline.getRegistry())
                 .pipelineStages(toStagesSchema(pipeline.getPipelineStages())).build();
-        return pipelineSchema;
     }
 
     private List<PipelineStageSchemaArg> toStagesSchema(List<UIPipelineStage> pipelineStages) {
@@ -130,7 +129,7 @@ public class PipelineApi {
     private Map<String, UIPipeline> convertPipelines(Map<String, PipelineSchema> pipelinesMap) {
         return pipelinesMap.values().stream()
                 .map(p -> new UIPipeline(p.getName(), p.getFilter(), p.getRegistry(), p.getRecipients(), covertStages(p.getPipelineStages())))
-                .collect(Collectors.toMap(a -> a.getName(), a -> a));
+                .collect(Collectors.toMap(UIPipeline::getName, a -> a));
     }
 
     private List<UIPipelineStage> covertStages(List<PipelineStageSchema> pipelineStages) {
@@ -168,14 +167,14 @@ public class PipelineApi {
                         .histories(convertHistory(p.getHistories()))
                         .args(p.getArgs())
                         .build())
-                .collect(Collectors.toMap(a -> a.getId(), a -> a));
+                .collect(Collectors.toMap(UIPipelineInstance::getId, a -> a));
     }
 
     private Map<String, UIPipelineInstanceHistory> convertHistory(Map<String, PipelineInstanceHistory> histories) {
 
         return histories.values().stream()
                 .map(h -> new UIPipelineInstanceHistory(h.getComments(), h.getStage(), h.getTag()))
-                .collect(Collectors.toMap(u -> u.getStage(), u -> u));
+                .collect(Collectors.toMap(UIPipelineInstanceHistory::getStage, u -> u));
     }
 
     @RequestMapping(value = "instances/{id}", method = GET)
