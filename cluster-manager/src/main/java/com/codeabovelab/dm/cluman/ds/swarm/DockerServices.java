@@ -23,9 +23,10 @@ import com.codeabovelab.dm.cluman.cluster.docker.management.DockerServiceEvent;
 import com.codeabovelab.dm.cluman.cluster.docker.management.DockerServiceImpl;
 import com.codeabovelab.dm.cluman.ds.DockerServiceFactory;
 import com.codeabovelab.dm.cluman.ds.nodes.NodeStorage;
-import com.codeabovelab.dm.cluman.model.*;
-import com.codeabovelab.dm.common.mb.MessageBus;
+import com.codeabovelab.dm.cluman.model.NodesGroup;
+import com.codeabovelab.dm.cluman.model.StandardActions;
 import com.codeabovelab.dm.cluman.security.TempAuth;
+import com.codeabovelab.dm.common.mb.MessageBus;
 import com.codeabovelab.dm.common.utils.Throwables;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
@@ -37,7 +38,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.util.Assert;
 
 import javax.annotation.PreDestroy;
-import java.util.*;
+import java.util.Set;
 import java.util.concurrent.*;
 import java.util.function.Consumer;
 
@@ -125,8 +126,7 @@ public class DockerServices {
      * @return docker service
      */
     public DockerService getService(String instanceId) {
-        DockerService service = clusters.get(instanceId);
-        return service;
+        return clusters.get(instanceId);
     }
 
     /**

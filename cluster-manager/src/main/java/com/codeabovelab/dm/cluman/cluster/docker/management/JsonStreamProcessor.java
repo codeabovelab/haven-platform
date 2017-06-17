@@ -56,7 +56,7 @@ public class JsonStreamProcessor<T> implements ResponseStreamProcessor<T> {
         InputStream response = context.getStream();
         final Thread thread = Thread.currentThread();
         SettableFuture<Boolean> interrupter = context.getInterrupter();
-        interrupter.addListener(() -> thread.interrupt(), MoreExecutors.directExecutor());
+        interrupter.addListener(thread::interrupt, MoreExecutors.directExecutor());
         try {
             JsonParser jp = JSON_FACTORY.createParser(response);
             Boolean closed = jp.isClosed();

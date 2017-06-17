@@ -16,18 +16,17 @@
 
 package com.codeabovelab.dm.cluman.cluster.docker.management;
 
-import com.codeabovelab.dm.cluman.cluster.docker.management.result.*;
-import com.codeabovelab.dm.cluman.cluster.docker.management.result.ResultCode;
-import com.codeabovelab.dm.cluman.cluster.docker.management.result.ServiceCallResult;
-import com.codeabovelab.dm.cluman.cluster.docker.model.swarm.*;
-import com.codeabovelab.dm.cluman.model.Port;
-import com.codeabovelab.dm.cluman.utils.ContainerUtils;
 import com.codeabovelab.dm.cluman.cluster.docker.ClusterConfig;
 import com.codeabovelab.dm.cluman.cluster.docker.ClusterConfigImpl;
 import com.codeabovelab.dm.cluman.cluster.docker.HttpAuthInterceptor;
 import com.codeabovelab.dm.cluman.cluster.docker.management.argument.*;
+import com.codeabovelab.dm.cluman.cluster.docker.management.result.*;
+import com.codeabovelab.dm.cluman.cluster.docker.management.result.ResultCode;
 import com.codeabovelab.dm.cluman.cluster.docker.model.*;
+import com.codeabovelab.dm.cluman.cluster.docker.model.swarm.*;
 import com.codeabovelab.dm.cluman.model.*;
+import com.codeabovelab.dm.cluman.model.Port;
+import com.codeabovelab.dm.cluman.utils.ContainerUtils;
 import com.codeabovelab.dm.common.utils.Consumers;
 import com.codeabovelab.dm.common.utils.SingleValueCache;
 import com.codeabovelab.dm.common.utils.StringUtils;
@@ -781,8 +780,7 @@ public class DockerServiceImpl implements DockerService {
     private <T> HttpEntity<T> wrapEntity(T cmd) {
         HttpHeaders headers = new HttpHeaders();
         installContentType(headers);
-        HttpEntity<T> entity = new HttpEntity<>(cmd, headers);
-        return entity;
+        return new HttpEntity<>(cmd, headers);
     }
 
     private void installContentType(HttpHeaders headers) {

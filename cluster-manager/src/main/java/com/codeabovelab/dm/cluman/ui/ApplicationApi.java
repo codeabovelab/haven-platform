@@ -121,8 +121,7 @@ public class ApplicationApi {
 
     @RequestMapping(value = "{cluster}/all", method = GET)
     public List<Application> applicationList(@PathVariable("cluster") String cluster) {
-        List<Application> applications = applicationService.getApplications(cluster);
-        return applications;
+        return applicationService.getApplications(cluster);
     }
 
     @RequestMapping(value = "{cluster}/{appId}/source", method = GET)

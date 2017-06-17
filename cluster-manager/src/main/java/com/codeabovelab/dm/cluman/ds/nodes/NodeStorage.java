@@ -33,7 +33,10 @@ import com.codeabovelab.dm.cluman.ui.HttpException;
 import com.codeabovelab.dm.cluman.validate.ExtendedAssert;
 import com.codeabovelab.dm.common.kv.KeyValueStorage;
 import com.codeabovelab.dm.common.kv.KvStorageEvent;
-import com.codeabovelab.dm.common.kv.mapping.*;
+import com.codeabovelab.dm.common.kv.mapping.KvMap;
+import com.codeabovelab.dm.common.kv.mapping.KvMapEvent;
+import com.codeabovelab.dm.common.kv.mapping.KvMapLocalEvent;
+import com.codeabovelab.dm.common.kv.mapping.KvMapperFactory;
 import com.codeabovelab.dm.common.mb.MessageBus;
 import com.codeabovelab.dm.common.mb.Subscriptions;
 import com.codeabovelab.dm.common.security.Action;
@@ -265,8 +268,7 @@ public class NodeStorage implements NodeInfoProvider, NodeRegistry {
         ExtendedAssert.matchAz09Hyp(name, "node name");
         return nodes.computeIfAbsent(name, (n) -> {
             AccessContextFactory.getLocalContext().assertGranted(SecuredType.NODE.id(name), Action.CREATE);
-            NodeRegistrationImpl nr = newRegistration(NodeInfoImpl.builder().name(name));
-            return nr;
+            return newRegistration(NodeInfoImpl.builder().name(name));
         });
     }
 
@@ -413,8 +415,7 @@ public class NodeStorage implements NodeInfoProvider, NodeRegistry {
         if(nr == null) {
             return null;
         }
-        DockerService service = nr.getDocker();
-        return service;
+        return nr.getDocker();
     }
 
     public DockerService registerNode(String nodeName, String address) {

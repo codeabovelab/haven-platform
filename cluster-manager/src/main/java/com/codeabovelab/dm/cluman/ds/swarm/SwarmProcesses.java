@@ -86,8 +86,7 @@ public class SwarmProcesses {
         private int choosePort() {
             int min = config.getMinPort();
             int max = config.getMaxPort();
-            int port = min + (int) (Math.random() * (max - min));
-            return port;
+            return min + (int) (Math.random() * (max - min));
         }
 
         void run() {

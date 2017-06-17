@@ -27,7 +27,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  * Common utilities for {@link java.util.concurrent.Executor }
  */
 public final class ExecutorUtils {
-    public static final Executor DIRECT = command -> command.run();
+    public static final Executor DIRECT = Runnable::run;
 
     /**
      * Executor deffer tasks into internal storage and run its only at {@link #flush()} .

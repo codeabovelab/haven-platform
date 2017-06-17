@@ -23,7 +23,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.acls.domain.AuditLogger;
 import org.springframework.security.acls.domain.GrantedAuthoritySid;
 import org.springframework.security.acls.domain.PrincipalSid;
-import org.springframework.security.acls.model.*;
+import org.springframework.security.acls.model.AccessControlEntry;
+import org.springframework.security.acls.model.Acl;
+import org.springframework.security.acls.model.Permission;
+import org.springframework.security.acls.model.Sid;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.util.Assert;
 
@@ -113,8 +116,7 @@ public final class TenantBasedPermissionGrantedStrategy implements ExtPermission
         }
         final PrincipalSid owner = (PrincipalSid)sid;
         final OwnedByTenant user = (OwnedByTenant)userDetailsService.loadUserByUsername(owner.getPrincipal());
-        final String tenantId = user.getTenant();
-        return tenantId;
+        return user.getTenant();
     }
 
     @Override

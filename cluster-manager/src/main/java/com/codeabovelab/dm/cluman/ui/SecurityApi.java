@@ -21,28 +21,23 @@ import com.codeabovelab.dm.cluman.security.AbstractAclService;
 import com.codeabovelab.dm.cluman.security.AuthoritiesService;
 import com.codeabovelab.dm.cluman.security.ProvidersAclService;
 import com.codeabovelab.dm.cluman.security.SecuredType;
-import com.codeabovelab.dm.cluman.ui.model.*;
-import com.codeabovelab.dm.cluman.users.UserRegistration;
+import com.codeabovelab.dm.cluman.ui.model.UIResult;
+import com.codeabovelab.dm.cluman.ui.model.UiAclUpdate;
+import com.codeabovelab.dm.cluman.ui.model.UiRole;
 import com.codeabovelab.dm.cluman.users.UsersStorage;
-import com.codeabovelab.dm.cluman.validate.ExtendedAssert;
-import com.codeabovelab.dm.common.security.*;
+import com.codeabovelab.dm.common.security.Authorities;
+import com.codeabovelab.dm.common.security.MultiTenancySupport;
+import com.codeabovelab.dm.common.security.UserIdentifiersDetailsService;
 import com.codeabovelab.dm.common.security.acl.AceSource;
 import com.codeabovelab.dm.common.security.acl.AclSource;
-import com.codeabovelab.dm.common.security.acl.AclUtils;
 import com.codeabovelab.dm.common.security.dto.ObjectIdentityData;
 import com.codeabovelab.dm.common.utils.Sugar;
 import io.swagger.annotations.ApiOperation;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
 import org.springframework.security.access.annotation.Secured;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.acls.model.ObjectIdentity;
-import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
@@ -100,8 +95,7 @@ public class SecurityApi {
         SecuredType securedType = SecuredType.valueOf(type);
         ObjectIdentity oid = securedType.id(id);
         try {
-            AclSource acl = aclService.getAclSource(oid);
-            return acl;
+            return aclService.getAclSource(oid);
         } catch (org.springframework.security.acls.model.NotFoundException e) {
             throw new NotFoundException(e);
         }

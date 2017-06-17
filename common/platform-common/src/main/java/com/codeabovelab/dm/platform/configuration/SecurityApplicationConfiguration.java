@@ -38,8 +38,7 @@ public class SecurityApplicationConfiguration {
 
     @Bean
     public PasswordEncoder getPasswordEncoder() {
-        PasswordEncoder passwordEncoder = new BCryptPasswordEncoder(bcryptStrength);
-        return passwordEncoder;
+        return new BCryptPasswordEncoder(bcryptStrength);
     }
 
     @Bean

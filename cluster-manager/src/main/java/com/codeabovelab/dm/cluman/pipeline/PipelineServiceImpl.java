@@ -18,7 +18,6 @@ package com.codeabovelab.dm.cluman.pipeline;
 
 import com.codeabovelab.dm.cluman.batch.LoadContainersOfImageTasklet;
 import com.codeabovelab.dm.cluman.cluster.docker.management.DockerService;
-import com.codeabovelab.dm.cluman.model.CreateContainerArg;
 import com.codeabovelab.dm.cluman.cluster.docker.management.argument.GetContainersArg;
 import com.codeabovelab.dm.cluman.cluster.docker.management.argument.TagImageArg;
 import com.codeabovelab.dm.cluman.cluster.filter.Filter;
@@ -28,10 +27,7 @@ import com.codeabovelab.dm.cluman.cluster.registry.RegistryService;
 import com.codeabovelab.dm.cluman.job.JobInstance;
 import com.codeabovelab.dm.cluman.job.JobParameters;
 import com.codeabovelab.dm.cluman.job.JobsManager;
-import com.codeabovelab.dm.cluman.model.DiscoveryStorage;
-import com.codeabovelab.dm.cluman.model.DockerContainer;
-import com.codeabovelab.dm.cluman.model.NodesGroup;
-import com.codeabovelab.dm.cluman.model.Severity;
+import com.codeabovelab.dm.cluman.model.*;
 import com.codeabovelab.dm.cluman.pipeline.arg.PipelineDeployArg;
 import com.codeabovelab.dm.cluman.pipeline.arg.PipelinePromoteArg;
 import com.codeabovelab.dm.cluman.pipeline.arg.PipelineSchemaArg;
@@ -385,8 +381,7 @@ public class PipelineServiceImpl implements PipelineService {
 
     @Override
     public PipelineSchema getPipeline(String pipelineId) {
-        PipelineSchema pipelineSchema = getPipelineSchema(pipelineId);
-        return pipelineSchema;
+        return getPipelineSchema(pipelineId);
     }
 
     @Override
@@ -398,8 +393,7 @@ public class PipelineServiceImpl implements PipelineService {
 
     @Override
     public PipelineInstance getInstance(String pipelineInstanceId) {
-        PipelineInstance pipelineInstance = getPipelineInstance(pipelineInstanceId);
-        return pipelineInstance;
+        return getPipelineInstance(pipelineInstanceId);
     }
 
     @Override
@@ -408,7 +402,7 @@ public class PipelineServiceImpl implements PipelineService {
             Map<String, PipelineInstance> instancesMap = getInstancesMap();
             return instancesMap.values().stream()
                     .filter(p -> p.getPipeline().equals(pipelineId))
-                    .collect(Collectors.toMap(a -> a.getId(), a -> a));
+                    .collect(Collectors.toMap(PipelineInstance::getId, a -> a));
         } catch (Exception e) {
             return Collections.emptyMap();
         }

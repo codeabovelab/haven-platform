@@ -92,9 +92,7 @@ public class WsTtyHandler implements WebSocketHandler {
         );
         TtyProxy.set(session, tty);
         ListenableFuture<WebSocketSession> future = webSocketClient.doHandshake(tty, getContainerUri(containerReg.getId(), nodeReg));
-        future.addCallback((r) -> {}, (e) -> {
-            log.error("failure to open backend connection to '{}' of cluster '{}' due to error: ", containerId, nodeReg.getCluster(), e);
-        });
+        future.addCallback((r) -> {}, (e) -> log.error("failure to open backend connection to '{}' of cluster '{}' due to error: ", containerId, nodeReg.getCluster(), e));
     }
 
     private String getContainerUri(String containerId, NodeRegistration nr) {
