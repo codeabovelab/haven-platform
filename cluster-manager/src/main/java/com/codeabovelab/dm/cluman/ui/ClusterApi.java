@@ -16,8 +16,8 @@
 
 package com.codeabovelab.dm.cluman.ui;
 
-import com.codeabovelab.dm.cluman.cluster.docker.ClusterConfigImpl;
 import com.codeabovelab.dm.cluman.cluster.application.ApplicationService;
+import com.codeabovelab.dm.cluman.cluster.docker.ClusterConfigImpl;
 import com.codeabovelab.dm.cluman.cluster.docker.management.DockerUtils;
 import com.codeabovelab.dm.cluman.cluster.docker.model.Network;
 import com.codeabovelab.dm.cluman.cluster.registry.RegistryRepository;
@@ -47,6 +47,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.annotation.Secured;
+import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.*;
@@ -144,11 +145,15 @@ public class ClusterApi {
 
     @RequestMapping(value = "/{cluster}/containers", method = GET)
     public ResponseEntity<Collection<UiContainer>> listContainers(@PathVariable("cluster") String cluster) {
+        return new ResponseEntity<>(fetchContainers(cluster), HttpStatus.OK);
+    }
+
+    private Collection<UiContainer> fetchContainers(String cluster) {
         AccessContext ac = aclContextFactory.getContext();
         List<UiContainer> list = new ArrayList<>();
         NodesGroup nodesGroup = discoveryStorage.getCluster(cluster);
         ExtendedAssert.notFound(nodesGroup, "Cluster was not found by " + cluster);
-        if(nodesGroup.getState().isOk()) {
+        if (nodesGroup.getState().isOk()) {
             Collection<DockerContainer> containers = nodesGroup.getContainers().getContainers();
             Map<String, String> apps = UiUtils.mapAppContainer(applicationService, nodesGroup);
             for (DockerContainer container : containers) {
@@ -159,17 +164,24 @@ public class ClusterApi {
                 UiPermission.inject(uic, ac, SecuredType.CONTAINER.id(uic.getId()));
                 list.add(uic);
             }
-            Collections.sort(list);
+            Collections.sort(filter(list));
         }
-        return new ResponseEntity<>(list, HttpStatus.OK);
+        return list;
+    }
+
+    /**
+     * workaround for preventing getting empty lines at UI
+     * TODO: fix in https://github.com/codeabovelab/haven-platform/issues/56
+     */
+    private List<UiContainer> filter(List<UiContainer> list) {
+        return list.stream().filter(c -> StringUtils.hasText(c.getNode())).collect(Collectors.toList());
     }
 
     @RequestMapping(value = "/{cluster}/containers", method = PUT)
     public ResponseEntity<Collection<UiContainer>> filteredListContainers(@PathVariable("cluster") String cluster,
                                                                           @RequestBody UISearchQuery searchQuery) {
-        ResponseEntity<Collection<UiContainer>> listResponseEntity = listContainers(cluster);
-        Collection<UiContainer> body = listResponseEntity.getBody();
-        Collection<UiContainer> uiContainers = filterApi.listNodes(body, searchQuery);
+        Collection<UiContainer> containers = fetchContainers(cluster);
+        Collection<UiContainer> uiContainers = filterApi.listNodes(containers, searchQuery);
         return new ResponseEntity<>(uiContainers, HttpStatus.OK);
 
     }
