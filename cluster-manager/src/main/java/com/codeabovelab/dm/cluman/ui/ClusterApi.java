@@ -47,7 +47,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.annotation.Secured;
-import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.*;
@@ -150,10 +149,10 @@ public class ClusterApi {
 
     private Collection<UiContainer> fetchContainers(String cluster) {
         AccessContext ac = aclContextFactory.getContext();
-        List<UiContainer> list = new ArrayList<>();
         NodesGroup nodesGroup = discoveryStorage.getCluster(cluster);
         ExtendedAssert.notFound(nodesGroup, "Cluster was not found by " + cluster);
         if (nodesGroup.getState().isOk()) {
+            List<UiContainer> list = new ArrayList<>();
             Collection<DockerContainer> containers = nodesGroup.getContainers().getContainers();
             Map<String, String> apps = UiUtils.mapAppContainer(applicationService, nodesGroup);
             for (DockerContainer container : containers) {
@@ -164,17 +163,9 @@ public class ClusterApi {
                 UiPermission.inject(uic, ac, SecuredType.CONTAINER.id(uic.getId()));
                 list.add(uic);
             }
-            Collections.sort(filterEmptyContainers(list));
+            return UiUtils.sortAndFilterContainers(list);
         }
-        return list;
-    }
-
-    /**
-     * workaround for preventing getting empty lines at UI
-     * TODO: fix in https://github.com/codeabovelab/haven-platform/issues/56
-     */
-    private List<UiContainer> filterEmptyContainers(List<UiContainer> list) {
-        return list.stream().filter(c -> StringUtils.hasText(c.getNode())).collect(Collectors.toList());
+        return Collections.emptyList();
     }
 
     @RequestMapping(value = "/{cluster}/containers", method = PUT)

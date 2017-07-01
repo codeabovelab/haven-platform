@@ -177,8 +177,7 @@ public class ContainerApi {
             UiContainer.resolveStatus(uc, nodeStorage);
             return uc;
         }).collect(Collectors.toList());
-        containers.sort(null);
-        return containers;
+        return UiUtils.sortAndFilterContainers(containers);
     }
 
 
@@ -473,8 +472,7 @@ public class ContainerApi {
         NodeRegistration nodeReg = this.nodeStorage.getNodeRegistration(node);
         //below is not an 404, because above we found container with link to node, but cannot give existed node
         Assert.notNull(nodeReg, "Node \"" + node + "\" has invalid registration.");
-        String cluster = nodeReg.getNodeInfo().getCluster();
-        return cluster;
+        return nodeReg.getNodeInfo().getCluster();
     }
 
     @RequestMapping(value = "/{id}/rename", method = RequestMethod.PUT)

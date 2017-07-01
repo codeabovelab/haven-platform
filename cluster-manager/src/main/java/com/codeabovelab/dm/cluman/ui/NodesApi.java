@@ -58,7 +58,7 @@ public class NodesApi {
 
     private NodeInfo prepareForUi(NodeInfo ni) {
         if(ni == null) {
-            return ni;
+            return null;
         }
         NodesGroup ng = discoveryStorage.getClusterForNode(ni.getName());
         String clusterName = ng == null? null : ng.getName();
