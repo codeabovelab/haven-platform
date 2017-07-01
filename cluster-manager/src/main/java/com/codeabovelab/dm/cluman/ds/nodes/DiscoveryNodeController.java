@@ -157,8 +157,7 @@ public class DiscoveryNodeController {
                 .host(request.getServerName())
                 .port(request.getServerPort())
                 .build();
-        String name = build.toUriString();
-        return name;
+        return build.toUriString();
     }
 
 }

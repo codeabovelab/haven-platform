@@ -16,10 +16,10 @@
 
 package com.codeabovelab.dm.cluman.ds.container;
 
+import com.codeabovelab.dm.cluman.model.ContainerBaseIface;
 import com.codeabovelab.dm.cluman.model.DockerContainer;
 import com.codeabovelab.dm.common.kv.mapping.KvMap;
 import com.codeabovelab.dm.common.kv.mapping.KvMapping;
-import com.codeabovelab.dm.cluman.model.ContainerBaseIface;
 import com.codeabovelab.dm.common.utils.RescheduledTask;
 import org.springframework.util.Assert;
 
@@ -126,9 +126,10 @@ public class ContainerRegistration {
 
     protected String forLog() {
         synchronized (lock) {
-            StringBuilder sb = new StringBuilder().append(id);
-            return sb.append(" \'").append(container.getName()).append("\' of \'")
-              .append(container.getImage()).append('\'').toString();
+            return new StringBuilder().append(id).append(" \'")
+                    .append(container.getName()).append("\' of \'")
+                    .append(container.getImage()).append('\'')
+                    .toString();
         }
     }
 

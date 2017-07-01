@@ -49,8 +49,7 @@ public class EtcdConfiguration {
         }
         log.info("About to connect to etcd: {}", (Object)etcdUrls);
         EtcdClient etcd = new EtcdClient(uris.toArray(new URI[uris.size()]));
-        EtcdClientWrapper etcdClientWrapper = new EtcdClientWrapper(etcd, prefix.trim());
-        return etcdClientWrapper;
+        return new EtcdClientWrapper(etcd, prefix.trim());
     }
 
     @Bean

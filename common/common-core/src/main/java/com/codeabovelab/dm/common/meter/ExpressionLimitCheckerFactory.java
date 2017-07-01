@@ -48,8 +48,7 @@ final class ExpressionLimitCheckerFactory {
             return null;
         }
         Expression expression = parser.parseExpression(expressionSource);
-        ExpressionLimitChecker limitChecker = new ExpressionLimitChecker(expression, checkerSource.getPeriod(), checkerSource.getTimeUnit());
-        return limitChecker;
+        return new ExpressionLimitChecker(expression, checkerSource.getPeriod(), checkerSource.getTimeUnit());
     }
 
     private ExpressionLimitCheckerSource configureSource(ExpressionLimitCheckerSource checkerSource) {

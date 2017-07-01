@@ -21,5 +21,5 @@ import org.bouncycastle.cert.X509v3CertificateBuilder;
 /**
  */
 public interface CertBuilderHandler {
-    void handle(X509v3CertificateBuilder cb) throws Exception;
+    void handle(X509v3CertificateBuilder cb);
 }

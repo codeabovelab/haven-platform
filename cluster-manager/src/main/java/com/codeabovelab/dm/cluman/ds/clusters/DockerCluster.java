@@ -505,9 +505,7 @@ public class DockerCluster extends AbstractNodesGroup<DockerClusterConfig> {
         }
         SwarmJoinCmd cmd = new SwarmJoinCmd();
         cmd.setToken(workerToken);
-        this.managers.forEach((k, v) -> {
-            cmd.getManagers().addAll(clusterData.getManagers());
-        });
+        this.managers.forEach((k, v) -> cmd.getManagers().addAll(clusterData.getManagers()));
         cmd.setListen(getSwarmAddress(ds));
         try {
             ServiceCallResult res = ds.joinSwarm(cmd);
@@ -782,8 +780,7 @@ public class DockerCluster extends AbstractNodesGroup<DockerClusterConfig> {
     }
 
     private SwarmSpec getSwarmConfig() {
-        SwarmSpec sc = new SwarmSpec();
-        return sc;
+        return new SwarmSpec();
     }
 
     @Override

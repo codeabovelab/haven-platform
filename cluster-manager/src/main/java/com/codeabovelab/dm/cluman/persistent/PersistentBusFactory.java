@@ -62,7 +62,7 @@ public class PersistentBusFactory implements InitializingBean, DisposableBean {
               .storage(fbStorage)
               .maxSize(size)
               .build();
-            this.queueListener = t -> queue.push(t);
+            this.queueListener = queue::push;
             this.bus = MessageBusImpl
               .builder(type, MessageSubscriptionsWrapper::new)
               .id(id)

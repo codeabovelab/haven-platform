@@ -191,8 +191,7 @@ public class ApplicationServiceImpl implements ApplicationService {
         ApplicationImpl.Builder clone = ApplicationImpl.builder().from(applicationInstance);
         List<String> existedContainers = applicationInstance.getContainers().stream()
                 .filter(c -> service.getContainer(c) != null).collect(Collectors.toList());
-        ApplicationImpl result = clone.containers(existedContainers).build();
-        return result;
+        return clone.containers(existedContainers).build();
     }
 
     @Override

@@ -68,8 +68,7 @@ public class ImagesApi {
     @RequestMapping(value = "/clusters/{cluster}/list", method = RequestMethod.GET)
     public List<ImageItem> getImages(@PathVariable("cluster") String cluster) {
         //TODO check usage of this method in CLI and if it not used - remove
-        List<ImageItem> images = discoveryStorage.getService(cluster).getImages(GetImagesArg.ALL);
-        return images;
+        return discoveryStorage.getService(cluster).getImages(GetImagesArg.ALL);
     }
 
     @RequestMapping(value = "/clusters/{cluster}/deployed-list", method = RequestMethod.GET)

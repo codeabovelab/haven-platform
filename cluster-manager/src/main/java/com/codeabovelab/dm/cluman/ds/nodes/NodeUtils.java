@@ -39,8 +39,7 @@ public class NodeUtils {
     public static DockerService getDockerByContainer(ContainerStorage containers, NodeStorage nodes, String containerId) {
         ContainerRegistration container = containers.getContainer(containerId);
         ExtendedAssert.notFound(container, "Can't find container by id " + containerId);
-        DockerService dockerService = nodes.getNodeService(container.getNode());
-        return dockerService;
+        return nodes.getNodeService(container.getNode());
     }
 
 }

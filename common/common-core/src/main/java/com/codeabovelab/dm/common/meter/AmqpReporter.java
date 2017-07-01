@@ -189,8 +189,7 @@ public class AmqpReporter extends ScheduledReporter {
                 }
             }
 
-            RabbitTemplate rabbitTemplate = new RabbitTemplate(connectionFactory);
-            return rabbitTemplate;
+            return new RabbitTemplate(connectionFactory);
         }
     });
     private final String routingKey;

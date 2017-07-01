@@ -78,14 +78,12 @@ class DockerMethodSubscriber<E, A extends WithInterrupter> implements LazySubscr
     }
 
     private final String id;
-    private final DockerService service;
     private final ExecutorService executorService;
     private final Function<Consumer<E>, A> argument;
     private final Function<A, ServiceCallResult> method;
 
     private DockerMethodSubscriber(Builder<E, A> b) {
         this.id = b.id;
-        this.service = b.docker;
         this.argument = b.argument;
         this.executorService = b.executorService;
         this.method = b.method;

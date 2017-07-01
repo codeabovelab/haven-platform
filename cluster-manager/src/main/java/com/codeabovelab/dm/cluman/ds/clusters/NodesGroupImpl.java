@@ -73,7 +73,7 @@ class NodesGroupImpl extends AbstractNodesGroup<DefaultNodesGroupConfig> {
         public List<DockerContainer> getContainers(NodesGroupImpl ng, GetContainersArg arg) {
             List<ContainerRegistration> containers = ng.containerStorage.getContainers();
             ArrayList<DockerContainer> list = new ArrayList<>(containers.size());
-            containers.forEach(cr -> {list.add(cr.getContainer());});
+            containers.forEach(cr -> list.add(cr.getContainer()));
             return list;
         }
     }
@@ -158,9 +158,7 @@ class NodesGroupImpl extends AbstractNodesGroup<DefaultNodesGroupConfig> {
     @Override
     public Collection<String> getGroups() {
         Set<String> clusters = new HashSet<>();
-        getNodesInternal().forEach(n -> {
-            clusters.add(n.getCluster());
-        });
+        getNodesInternal().forEach(n -> clusters.add(n.getCluster()));
         return clusters;
     }
 

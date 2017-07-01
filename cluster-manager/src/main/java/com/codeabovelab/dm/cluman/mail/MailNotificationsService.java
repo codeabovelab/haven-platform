@@ -16,34 +16,36 @@
 
 package com.codeabovelab.dm.cluman.mail;
 
-import com.codeabovelab.dm.common.kv.KeyValueStorage;
-import com.codeabovelab.dm.common.kv.KvUtils;
-import com.codeabovelab.dm.common.kv.WriteOptions;
-import com.codeabovelab.dm.common.kv.mapping.KvClassMapper;
-import com.codeabovelab.dm.common.kv.mapping.KvMapperFactory;
 import com.codeabovelab.dm.cluman.model.Severity;
 import com.codeabovelab.dm.cluman.model.WithSeverity;
 import com.codeabovelab.dm.cluman.objprinter.ObjectPrinterFactory;
 import com.codeabovelab.dm.cluman.reconfig.ReConfigObject;
 import com.codeabovelab.dm.cluman.reconfig.ReConfigurable;
 import com.codeabovelab.dm.cluman.validate.ExtendedAssert;
+import com.codeabovelab.dm.common.kv.KeyValueStorage;
+import com.codeabovelab.dm.common.kv.KvUtils;
+import com.codeabovelab.dm.common.kv.WriteOptions;
+import com.codeabovelab.dm.common.kv.mapping.KvClassMapper;
+import com.codeabovelab.dm.common.kv.mapping.KvMapperFactory;
 import com.codeabovelab.dm.common.mb.SmartConsumer;
 import com.codeabovelab.dm.common.mb.Subscriptions;
 import com.codeabovelab.dm.common.security.ExtendedUserDetails;
 import com.codeabovelab.dm.common.security.UserIdentifiersDetailsService;
-import com.codeabovelab.dm.mail.dto.*;
+import com.codeabovelab.dm.mail.dto.MailSourceImpl;
+import com.codeabovelab.dm.mail.dto.MailStatus;
 import com.codeabovelab.dm.mail.service.SendMailWithTemplateService;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.stereotype.Component;
 import org.springframework.util.Assert;
 import org.springframework.util.StringUtils;
 
 import javax.annotation.PostConstruct;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
 
@@ -265,6 +267,6 @@ public class MailNotificationsService {
         if(subs == null) {
             return;
         }
-        subs.forEach((s) -> put(s));
+        subs.forEach(this::put);
     }
 }

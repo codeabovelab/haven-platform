@@ -77,8 +77,7 @@ public class PipelineInstance {
     }
 
     public PipelineInstanceHistory getOrCreateHistoryByStage(String name) {
-        PipelineInstanceHistory pipelineInstanceHistory = histories.computeIfAbsent(name, s -> new PipelineInstanceHistory(name));
-        return pipelineInstanceHistory;
+        return histories.computeIfAbsent(name, s -> new PipelineInstanceHistory(name));
     }
 
     public void setRegistry(String registry) {

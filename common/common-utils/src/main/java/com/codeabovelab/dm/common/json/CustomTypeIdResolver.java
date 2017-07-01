@@ -42,8 +42,7 @@ public class CustomTypeIdResolver extends TypeIdResolverBase {
     public String idFromValueAndType(Object value, Class<?> suggestedType) {
         Class<?> type = suggestedType;
         if(value != null && (suggestedType == null || Object.class.equals(type))) {
-            Class<?> instanceType = value.getClass();
-            type = instanceType;
+            type = value.getClass();
         }
         return type != null? type.getName() : null;
     }

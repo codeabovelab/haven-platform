@@ -200,8 +200,7 @@ public final class SwarmCluster extends AbstractNodesGroup<SwarmNodesGroupConfig
 
     public ClusterConfigImpl getClusterConfig() {
         synchronized (lock) {
-            ClusterConfigImpl config = this.config.getConfig();
-            return config;
+            return this.config.getConfig();
         }
     }
 

@@ -22,20 +22,24 @@ import lombok.extern.slf4j.Slf4j;
 import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.asn1.x500.X500NameBuilder;
 import org.bouncycastle.asn1.x500.style.RFC4519Style;
-import org.bouncycastle.asn1.x509.*;
+import org.bouncycastle.asn1.x509.Extension;
+import org.bouncycastle.asn1.x509.GeneralName;
+import org.bouncycastle.asn1.x509.GeneralNamesBuilder;
 import org.bouncycastle.cert.X509CertificateHolder;
 import org.bouncycastle.cert.jcajce.JcaX509v3CertificateBuilder;
 import org.bouncycastle.jce.provider.X509CertificateObject;
 import org.bouncycastle.operator.ContentSigner;
 import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
 
-
 import java.io.File;
 import java.io.FileOutputStream;
 import java.math.BigInteger;
 import java.net.InetAddress;
 import java.net.NetworkInterface;
-import java.security.*;
+import java.security.KeyPair;
+import java.security.KeyPairGenerator;
+import java.security.KeyStore;
+import java.security.PrivateKey;
 import java.security.cert.Certificate;
 import java.util.*;
 
@@ -119,11 +123,11 @@ public class CertificateGenerator {
 
     static JcaX509v3CertificateBuilder createCert(KeyPair keyPair,
                                                     X500Name issuer,
-                                                    X500Name subject) throws Exception {
+                                                    X500Name subject) {
         Calendar calendar = Calendar.getInstance();
         Date fromTime = calendar.getTime();
         calendar.add(Calendar.YEAR, 5);
-        JcaX509v3CertificateBuilder cb = new JcaX509v3CertificateBuilder(
+        return new JcaX509v3CertificateBuilder(
             issuer,
             BigInteger.valueOf(System.currentTimeMillis()),
             fromTime,
@@ -131,7 +135,6 @@ public class CertificateGenerator {
             subject,
             keyPair.getPublic()
         );
-        return cb;
     }
 
     static KeyPair createKeypair() throws Exception {

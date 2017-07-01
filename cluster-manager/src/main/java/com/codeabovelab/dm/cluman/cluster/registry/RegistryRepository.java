@@ -31,7 +31,6 @@ import com.codeabovelab.dm.common.kv.KvStorageEvent;
 import com.codeabovelab.dm.common.kv.mapping.*;
 import com.codeabovelab.dm.common.mb.MessageBus;
 import com.codeabovelab.dm.common.utils.Closeables;
-import com.codeabovelab.dm.common.validate.ValidityException;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import lombok.extern.slf4j.Slf4j;
@@ -41,7 +40,9 @@ import org.springframework.util.Assert;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
 
-import java.util.*;
+import java.util.Collection;
+import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
@@ -210,7 +211,7 @@ public class RegistryRepository implements SupportSearch {
         if (CollectionUtils.isEmpty(names)) {
             names = getAvailableRegistries();
         }
-        List<ImageCatalog> collect = names.stream()
+        return names.stream()
                 .filter(f -> !getByName(f).getConfig().isDisabled())
                 .filter(f -> !StringUtils.hasText(getByName(f).getConfig().getErrorMessage()))
                 .filter(f -> !(getByName(f) instanceof DockerHubRegistry))
@@ -219,7 +220,6 @@ public class RegistryRepository implements SupportSearch {
                     imageCatalog.setName(n);
                     return imageCatalog;
                 }).collect(Collectors.toList());
-        return collect;
     }
 
     public Collection<String> getAvailableRegistries() {
@@ -337,8 +337,7 @@ public class RegistryRepository implements SupportSearch {
         @Override
         public RegistryService set(String key, RegistryService source, Object value) {
             RegistryConfig config = (RegistryConfig) value;
-            RegistryService service = factory.createRegistryService(config);
-            return service;
+            return factory.createRegistryService(config);
         }
     }
 }

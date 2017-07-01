@@ -21,7 +21,6 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.ObjectCodec;
 import com.fasterxml.jackson.databind.*;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
@@ -84,7 +83,7 @@ public class LogConfig {
     public enum LoggingType {
         DEFAULT("json-file"), JSON_FILE("json-file"), NONE("none"), SYSLOG("syslog"), JOURNALD("journald");
 
-        private String type;
+        private final String type;
 
         LoggingType(String type) {
             this.type = type;

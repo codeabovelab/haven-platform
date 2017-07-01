@@ -25,7 +25,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
 import org.springframework.util.Assert;
 
-import java.util.*;
+import java.util.List;
 import java.util.stream.Collectors;
 
 /**
@@ -33,9 +33,7 @@ import java.util.stream.Collectors;
 @Slf4j
 public class KvClassMapper<T> {
 
-    private static final KvObjectFactory<Object> FACTORY = (String key, Class<?> type) -> {
-        return BeanUtils.instantiate(type);
-    };
+    private static final KvObjectFactory<Object> FACTORY = (String key, Class<?> type) -> BeanUtils.instantiate(type);
 
     @Data
     public static class Builder<T> {
@@ -125,7 +123,7 @@ public class KvClassMapper<T> {
             createPrefix();
             list = this.storage.list(prefix);
         }
-        return list.stream().map(k -> getName(k)).collect(Collectors.toList());
+        return list.stream().map(this::getName).collect(Collectors.toList());
     }
 
     /**

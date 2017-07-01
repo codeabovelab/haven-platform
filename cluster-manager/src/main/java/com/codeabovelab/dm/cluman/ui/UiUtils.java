@@ -16,23 +16,28 @@
 
 package com.codeabovelab.dm.cluman.ui;
 
-import com.codeabovelab.dm.cluman.ds.clusters.ClusterUtils;
-import com.codeabovelab.dm.cluman.utils.ContainerUtils;
 import com.codeabovelab.dm.cluman.cluster.application.ApplicationService;
 import com.codeabovelab.dm.cluman.cluster.docker.management.result.ResultCode;
 import com.codeabovelab.dm.cluman.cluster.docker.management.result.ServiceCallResult;
-import com.codeabovelab.dm.cluman.cluster.docker.model.*;
+import com.codeabovelab.dm.cluman.cluster.docker.model.Node;
+import com.codeabovelab.dm.cluman.ds.clusters.ClusterUtils;
 import com.codeabovelab.dm.cluman.model.Application;
 import com.codeabovelab.dm.cluman.model.ContainerBaseIface;
 import com.codeabovelab.dm.cluman.model.NodesGroup;
-import com.codeabovelab.dm.cluman.ui.model.*;
+import com.codeabovelab.dm.cluman.ui.model.UIResult;
+import com.codeabovelab.dm.cluman.ui.model.UiContainerIface;
+import com.codeabovelab.dm.cluman.ui.model.UiError;
+import com.codeabovelab.dm.cluman.utils.ContainerUtils;
 import com.codeabovelab.dm.common.utils.Booleans;
 import org.joda.time.LocalTime;
 import org.springframework.core.env.Environment;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 
-import java.util.*;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 import static org.springframework.http.HttpStatus.*;
 
@@ -103,8 +108,7 @@ public final class UiUtils {
 
     public static String convertToStringFromJiffies(Long jiffies) {
         LocalTime timeOfDay = LocalTime.fromMillisOfDay(jiffies / 1000_000L);
-        String time = timeOfDay.toString("HH:mm:ss");
-        return time;
+        return timeOfDay.toString("HH:mm:ss");
     }
 
     public static double convertToPercentFromJiffies(Long cpu, Long prevCpu, Long system, Long previousSystem, int cores) {

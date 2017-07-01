@@ -20,7 +20,6 @@ import com.codeabovelab.dm.cluman.cluster.docker.management.DockerService;
 import com.codeabovelab.dm.cluman.cluster.docker.management.DockerServiceImpl;
 import com.codeabovelab.dm.cluman.cluster.docker.management.DockerUtils;
 import com.codeabovelab.dm.cluman.cluster.docker.management.argument.CalcNameArg;
-import com.codeabovelab.dm.cluman.model.*;
 import com.codeabovelab.dm.cluman.cluster.docker.management.result.CreateAndStartContainerResult;
 import com.codeabovelab.dm.cluman.cluster.docker.management.result.ProcessEvent;
 import com.codeabovelab.dm.cluman.cluster.docker.management.result.ResultCode;
@@ -28,7 +27,7 @@ import com.codeabovelab.dm.cluman.cluster.docker.management.result.ServiceCallRe
 import com.codeabovelab.dm.cluman.cluster.docker.model.*;
 import com.codeabovelab.dm.cluman.configs.container.ConfigProvider;
 import com.codeabovelab.dm.cluman.ds.SwarmUtils;
-import com.codeabovelab.dm.cluman.ds.swarm.NetworkManager;
+import com.codeabovelab.dm.cluman.model.*;
 import com.codeabovelab.dm.cluman.source.ContainerSourceFactory;
 import com.codeabovelab.dm.cluman.source.SourceUtil;
 import com.codeabovelab.dm.cluman.utils.ContainerUtils;
@@ -39,7 +38,6 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.util.Assert;
 import org.springframework.util.CollectionUtils;
@@ -283,7 +281,7 @@ public class ContainerCreator {
         if (CollectionUtils.isEmpty(strings)) {
             return null;
         }
-        List<String> collect = strings.stream().filter(s -> StringUtils.hasText(s)).collect(Collectors.toList());
+        List<String> collect = strings.stream().filter(StringUtils::hasText).collect(Collectors.toList());
         if (CollectionUtils.isEmpty(collect)) {
             return null;
         }

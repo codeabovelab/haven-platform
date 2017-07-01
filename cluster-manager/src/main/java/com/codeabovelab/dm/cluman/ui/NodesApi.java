@@ -99,8 +99,7 @@ public class NodesApi {
     @RequestMapping(value = "/filtered", method = RequestMethod.PUT)
     public Collection<NodeInfo> listNodes(@RequestBody UISearchQuery searchQuery) {
         Collection<NodeInfo> nodes = listNodes();
-        Collection<NodeInfo> nodeInfos = filterApi.listNodes(nodes, searchQuery);
-        return nodeInfos;
+        return filterApi.listNodes(nodes, searchQuery);
     }
 
 
