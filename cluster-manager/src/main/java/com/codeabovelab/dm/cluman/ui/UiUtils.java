@@ -25,6 +25,7 @@ import com.codeabovelab.dm.cluman.model.Application;
 import com.codeabovelab.dm.cluman.model.ContainerBaseIface;
 import com.codeabovelab.dm.cluman.model.NodesGroup;
 import com.codeabovelab.dm.cluman.ui.model.UIResult;
+import com.codeabovelab.dm.cluman.ui.model.UiContainer;
 import com.codeabovelab.dm.cluman.ui.model.UiContainerIface;
 import com.codeabovelab.dm.cluman.ui.model.UiError;
 import com.codeabovelab.dm.cluman.utils.ContainerUtils;
@@ -33,11 +34,13 @@ import org.joda.time.LocalTime;
 import org.springframework.core.env.Environment;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.util.StringUtils;
 
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import static org.springframework.http.HttpStatus.*;
 
@@ -125,7 +128,7 @@ public final class UiUtils {
         return round(cpuPercent, 2);
     }
 
-    public static double round(double value, int places) {
+    static double round(double value, int places) {
         if (places < 0) throw new IllegalArgumentException();
 
         long factor = (long) Math.pow(10, places);
@@ -196,4 +199,19 @@ public final class UiUtils {
         }
         return host + ":" + environment.getProperty("dm.server.port");
     }
+
+    static List<UiContainer> sortAndFilterContainers(List<UiContainer> list) {
+        List<UiContainer> filteredContainers = filterEmptyContainers(list);
+        Collections.sort(filteredContainers);
+        return filteredContainers;
+    }
+
+    /**
+     * workaround for preventing getting empty lines at UI
+     * TODO: fix in https://github.com/codeabovelab/haven-platform/issues/56
+     */
+    static List<UiContainer> filterEmptyContainers(List<UiContainer> list) {
+        return list.stream().filter(c -> StringUtils.hasText(c.getNode())).collect(Collectors.toList());
+    }
+
 }
