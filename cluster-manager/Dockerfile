@@ -1,4 +1,4 @@
-FROM debian:stretch
+FROM debian:testing
 
 MAINTAINER docker@codeabovelab.com
 
@@ -11,14 +11,15 @@ RUN curl -L https://github.com/docker/compose/releases/download/1.11.1/docker-co
   chmod +x /usr/local/bin/docker-compose
 
 RUN export GOPATH=/gocode && \
-  go get github.com/tools/godep && \
   export PATH=$PATH:$GOPATH/bin && \
+  go get github.com/LK4d4/vndr && \
+  go get github.com/golang/lint/golint && \
   mkdir -p $GOPATH/src/github.com/docker/ && \
   cd $GOPATH/src/github.com/docker/ && \
   git clone https://github.com/docker/swarm && \
   cd swarm && \
-  git checkout -b v1.2.7 v1.2.7 &&\
-  godep go install . && \
+  git checkout -b v1.2.7 v1.2.7 && \
+  go install . && \
   rm -rf $GOPATH/src/*
 
 ENV PATH $PATH:/bin:/usr/bin:/gocode/bin

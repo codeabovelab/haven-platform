@@ -46,7 +46,6 @@ import com.codeabovelab.dm.common.cache.DefineCache;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectWriter;
-import com.fasterxml.jackson.databind.SerializationFeature;
 import com.google.common.util.concurrent.SettableFuture;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
@@ -140,7 +139,7 @@ public class ContainerApi {
         ContainerRegistration cr = containerStorage.getContainer(id);
         ExtendedAssert.notFound(cr, "Can not find container: " + id);
         String node = cr.getNode();
-        if(node == null) {
+        if (node == null) {
             // container not found on any node, we must remove it from storage
             containerStorage.deleteContainer(id);
             return UiUtils.okResponse("Container '" + id + "' removed from storage. ");
@@ -167,7 +166,7 @@ public class ContainerApi {
         List<UiContainer> containers = crs.stream().map((cr) -> {
             DockerContainer container = cr.getContainer();
             UiContainer uc = new UiContainer();
-            if(container != null) {
+            if (container != null) {
                 UiContainer.from(uc, container);
             } else {
                 uc.setName("<invalid>");
@@ -183,7 +182,6 @@ public class ContainerApi {
     }
 
 
-
     @RequestMapping(value = "/{id}/details", method = RequestMethod.GET)
     @DefineCache(expireAfterWrite = Integer.MAX_VALUE)
     public UIContainerDetails getDetails(@PathVariable("id") String id) {
@@ -191,8 +189,8 @@ public class ContainerApi {
         ContainerRegistration cr = containerStorage.getContainer(id);
         ExtendedAssert.notFound(cr, "Not found container: " + id);
         String node = cr.getNode();
-        DockerService nodeService = (node == null)? null : nodeStorage.getNodeService(node);
-        if(nodeService != null && nodeService.isOnline()) {
+        DockerService nodeService = (node == null) ? null : nodeStorage.getNodeService(node);
+        if (nodeService != null && nodeService.isOnline()) {
             ContainerDetails container = nodeService.getContainer(id);
             return toContainerDetails(cr, container);
         }
@@ -206,7 +204,7 @@ public class ContainerApi {
         UIContainerDetails res = new UIContainerDetails();
         res.setId(cr.getId());
         DockerContainer dc = cr.getContainer();
-        if(container != null) {
+        if (container != null) {
             res.from(containerSourceFactory, container);
             res.setState(dc.getState());
         } else {
@@ -221,17 +219,17 @@ public class ContainerApi {
         res.setNode(node);
         String cluster = getClusterForNode(node);
         res.setCluster(cluster);
-        if(cluster != null) {
+        if (cluster != null) {
             List<Application> apps = applicationService.getApplications(cluster);
-            for(Application app: apps) {
-                if(app.getContainers().contains(id)) {
+            for (Application app : apps) {
+                if (app.getContainers().contains(id)) {
                     res.setApplication(app.getName());
                     break;
                 }
             }
         }
         Map<String, String> additionalLabels = cr.getAdditionalLabels();
-        if(additionalLabels != null) {
+        if (additionalLabels != null) {
             res.getLabels().putAll(additionalLabels);
         }
         return res;
@@ -343,12 +341,12 @@ public class ContainerApi {
     public void createContainer(@RequestBody ContainerSource container, final HttpServletResponse response) throws Exception {
         String node = container.getNode();
         String cluster = container.getCluster();
-        if(node != null) {
+        if (node != null) {
             NodeInfo nodeInfo = nodeStorage.getNodeInfo(node);
             ExtendedAssert.notFound(nodeInfo, "Can not find node: " + node);
             String nodeCluster = nodeInfo.getCluster();
-            if(!Objects.equals(nodeCluster, cluster)) {
-                if(cluster != null) {
+            if (!Objects.equals(nodeCluster, cluster)) {
+                if (cluster != null) {
                     // when cluster is null we simply use node cluster
                     log.info("Node has different cluster '{}' than specified '{}', we use node cluster.", nodeCluster, cluster);
                 }
@@ -464,11 +462,12 @@ public class ContainerApi {
 
     /**
      * Return cluster of null
+     *
      * @param node
      * @return
      */
     private String getClusterForNode(String node) {
-        if(node == null) {
+        if (node == null) {
             return null;
         }
         NodeRegistration nodeReg = this.nodeStorage.getNodeRegistration(node);
