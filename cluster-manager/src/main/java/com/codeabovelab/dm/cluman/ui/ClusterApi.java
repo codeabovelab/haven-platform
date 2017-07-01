@@ -164,7 +164,7 @@ public class ClusterApi {
                 UiPermission.inject(uic, ac, SecuredType.CONTAINER.id(uic.getId()));
                 list.add(uic);
             }
-            Collections.sort(filter(list));
+            Collections.sort(filterEmptyContainers(list));
         }
         return list;
     }
@@ -173,7 +173,7 @@ public class ClusterApi {
      * workaround for preventing getting empty lines at UI
      * TODO: fix in https://github.com/codeabovelab/haven-platform/issues/56
      */
-    private List<UiContainer> filter(List<UiContainer> list) {
+    private List<UiContainer> filterEmptyContainers(List<UiContainer> list) {
         return list.stream().filter(c -> StringUtils.hasText(c.getNode())).collect(Collectors.toList());
     }
 
