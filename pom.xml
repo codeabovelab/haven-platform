@@ -271,13 +271,6 @@
 
             <!--     SPRING     -->
 
-            <!--<dependency>-->
-            <!--<groupId>io.spring.platform</groupId>-->
-            <!--<artifactId>platform-bom</artifactId>-->
-            <!--<version>2.0.7.RELEASE</version>-->
-            <!--<scope>import</scope>-->
-            <!--<type>pom</type>-->
-            <!--</dependency>-->
             <dependency>
                 <groupId>org.springframework.cloud</groupId>
                 <artifactId>spring-cloud-dependencies</artifactId>
