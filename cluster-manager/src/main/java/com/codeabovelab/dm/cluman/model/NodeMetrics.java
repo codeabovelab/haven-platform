@@ -23,7 +23,7 @@ import com.google.common.collect.ImmutableMap;
 import lombok.Data;
 import org.springframework.util.CollectionUtils;
 
-import java.time.LocalDateTime;
+import java.time.ZonedDateTime;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -52,7 +52,7 @@ public class NodeMetrics {
 
     @Data
     public static class Builder {
-        private LocalDateTime time;
+        private ZonedDateTime time;
         private Boolean healthy;
         private Boolean manager;
         private State state;
@@ -67,7 +67,7 @@ public class NodeMetrics {
         private final Map<String, DiskInfo> disks = new HashMap<>();
         private final Map<String, NetIfaceCounter> net = new HashMap<>();
 
-        public Builder time(LocalDateTime time) {
+        public Builder time(ZonedDateTime time) {
             setTime(time);
             return this;
         }
@@ -131,8 +131,8 @@ public class NodeMetrics {
                 return this;
             }
             //choose latest time
-            LocalDateTime time = getTime();
-            LocalDateTime newTime = metrics.getTime();
+            ZonedDateTime time = getTime();
+            ZonedDateTime newTime = metrics.getTime();
             if(time == null || newTime != null && newTime.isAfter(time)) {
                 setTime(newTime);
             }
@@ -201,7 +201,7 @@ public class NodeMetrics {
 
     }
 
-    private final LocalDateTime time;
+    private final ZonedDateTime time;
     private final Boolean healthy;
     private final Boolean manager;
     private final State state;

@@ -18,7 +18,7 @@ package com.codeabovelab.dm.agent.notifier;
 
 import lombok.Data;
 
-import java.time.LocalDateTime;
+import java.time.ZonedDateTime;
 
 /**
  * DTO for node agent
@@ -27,7 +27,7 @@ import java.time.LocalDateTime;
 public class NotifierData {
     public static final String HEADER = "X-Auth-Node";
 
-    private LocalDateTime time;
+    private ZonedDateTime time;
     private String name;
     private String address;
     private SysInfo system;

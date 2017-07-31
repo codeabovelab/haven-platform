@@ -193,7 +193,7 @@ class DockerInfoParser {
           .memory(info.getMemory());
         ZonedDateTime systemTime = info.getSystemTime();
         if(systemTime != null) {
-            this.result.setSystemTime(systemTime.toLocalDateTime());
+            this.result.setSystemTime(systemTime);
         }
         parseLabels();
         List<List<String>> statusList = info.getSystemStatus();

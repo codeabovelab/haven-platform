@@ -21,6 +21,7 @@ import com.google.common.collect.ImmutableMap;
 import lombok.Data;
 
 import java.time.LocalDateTime;
+import java.time.ZonedDateTime;
 import java.util.*;
 
 /**
@@ -33,7 +34,7 @@ public class DockerServiceInfo {
 
     private final String id;
     private final String name;
-    private final LocalDateTime systemTime;
+    private final ZonedDateTime systemTime;
     private final Integer images;
     private final Integer ncpu;
     private final long memory;
@@ -69,7 +70,7 @@ public class DockerServiceInfo {
     public static final class Builder {
         private String id;
         private String name;
-        private LocalDateTime systemTime;
+        private ZonedDateTime systemTime;
         private Integer images;
         private Integer ncpu;
         private long memory;
@@ -111,7 +112,7 @@ public class DockerServiceInfo {
             return this;
         }
 
-        public Builder systemTime(LocalDateTime systemTime) {
+        public Builder systemTime(ZonedDateTime systemTime) {
             setSystemTime(systemTime);
             return this;
         }
