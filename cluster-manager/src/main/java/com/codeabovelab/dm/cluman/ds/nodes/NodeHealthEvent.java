@@ -23,8 +23,7 @@ import lombok.Data;
 import org.springframework.util.Assert;
 
 import java.beans.ConstructorProperties;
-import java.time.LocalDateTime;
-import java.time.ZoneOffset;
+import java.time.ZonedDateTime;
 
 /**
  */
@@ -45,10 +44,10 @@ public class NodeHealthEvent implements EventWithTime, WithCluster {
 
     @Override
     public long getTimeInMilliseconds() {
-        LocalDateTime time = health.getTime();
+        ZonedDateTime time = health.getTime();
         if(time == null) {
             return Long.MIN_VALUE;
         }
-        return time.toEpochSecond(ZoneOffset.UTC);
+        return time.toEpochSecond();
     }
 }

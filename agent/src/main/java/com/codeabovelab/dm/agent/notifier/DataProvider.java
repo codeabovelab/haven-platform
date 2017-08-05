@@ -28,6 +28,7 @@ import org.springframework.web.util.UriComponentsBuilder;
 
 import java.net.InetAddress;
 import java.time.LocalDateTime;
+import java.time.ZonedDateTime;
 
 /**
  */
@@ -53,7 +54,7 @@ public class DataProvider {
         NotifierData data = new NotifierData();
         data.setName(hostName);
         data.setSystem(collector.getInfo());
-        data.setTime(LocalDateTime.now());
+        data.setTime(ZonedDateTime.now());
         data.setAddress(address);
         return data;
     }

@@ -125,10 +125,13 @@ public class RegistryFactory implements DisposableBean {
             if (converter instanceof MappingJackson2HttpMessageConverter) {
                 MappingJackson2HttpMessageConverter jsonConverter = (MappingJackson2HttpMessageConverter) converter;
                 jsonConverter.setObjectMapper(objectMapper);
+                //note that this content-type will be placed in Acceptable header
                 jsonConverter.setSupportedMediaTypes(Arrays.asList(
-                        new MediaType("*", "json", MappingJackson2HttpMessageConverter.DEFAULT_CHARSET),
-                        new MediaType("*", "*+json", MappingJackson2HttpMessageConverter.DEFAULT_CHARSET),
-                        new MediaType("*", "plain", MappingJackson2HttpMessageConverter.DEFAULT_CHARSET)));
+                  new MediaType("application", "json", MappingJackson2HttpMessageConverter.DEFAULT_CHARSET),
+                  new MediaType("application", "*+json", MappingJackson2HttpMessageConverter.DEFAULT_CHARSET),
+                  // it need for blobs (with json) from registry
+                  new MediaType("application", "octet-stream", MappingJackson2HttpMessageConverter.DEFAULT_CHARSET)
+                ));
             }
         }
         return restTemplate;
