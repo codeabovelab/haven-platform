@@ -4,7 +4,7 @@
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
-        <version>1.5.4.RELEASE</version>
+        <version>1.5.6.RELEASE</version>
     </parent>
 
     <groupId>com.codeabovelab.dm</groupId>
@@ -405,7 +405,7 @@
             <dependency>
                 <groupId>io.netty</groupId>
                 <artifactId>netty-all</artifactId>
-                <version>4.1.3.Final</version>
+                <version>4.1.7.Final</version>
             </dependency>
         </dependencies>
     </dependencyManagement>
