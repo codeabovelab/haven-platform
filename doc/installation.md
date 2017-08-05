@@ -7,8 +7,6 @@ Haven is comprised of Master and Agent components. The Master requires etcd and 
  The standard requirements are: 
  
  * Docker >= 1.10
- * Python >= 3.5
- * python3-psutil >= 4.2 (optional library for retrieving system utilization information (CPU, memory, disks, network))
  
 For the Master node, it will also require:
  
