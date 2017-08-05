@@ -26,12 +26,14 @@ repositories we have setup to see the structure.
 The following installation instruction has been tested on Debian / Ubuntu.
 
 **Installing Docker (Skip step if you already have Docker):**
+
 Use the following instruction to install Docker on the different Linux/Cloud, 
 and MacOS instruction:
  
  https://docs.docker.com/engine/installation/
 
 **Step 1 (installing Etcd):** 
+
 Define the common variables for configuration needed in the scripts and configuration files.  Feel free to set them as environment variables or replace them in the script:
  
 ```sh
@@ -61,6 +63,7 @@ In addition, you can also mount a directory from your Docker engine’s host int
 https://coreos.com/etcd/docs/latest/docker_guide.html
 
 **Step 2 (Installing server):** 
+
 Install the Haven container by executing the following command:
  
 ```sh
@@ -73,13 +76,12 @@ For storing data use:
 -v /home/user/data/haven:/data/
 
 ```
- 
-The Haven container can be started only with etcd's URL as its environment variable. It can have other optional parameters passed in as environment variables to enable other features. 
 
 **At this point you should be able to login to the UI via http://<MASTER_IP>:8761/.**  The default admin credential is 
 admin/password.
 
 **Step 3 (adding nodes):** 
+
 You have two way to add nodes: use agent which is docker container or use themore complex but agent-less configuration.
 
 _Simply way._ Run agent:
