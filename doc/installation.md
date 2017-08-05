@@ -72,7 +72,7 @@ admin/password.
 You have two way to add nodes: use agent which is docker container or use themore complex but agent-less configuration.
 
 _Simply way._ Run agent:
-copy start string from 'Admin' -> 'Get Agent Command'
+copy start string from 'Admin' -> 'Add node' -> 'Get Agent Command'
 
 ![agent](https://raw.githubusercontent.com/codeabovelab/haven-platform/master/doc/img/agent.png)
 start string example:
@@ -83,13 +83,15 @@ docker run --name havenAgent -d -e "dm_agent_notifier_server=URL-TO-SERVER"  --r
 
 _Agent-less way._ If you want to run a node without installing and running an agent, then you need to expose docker on a network port.
 
-By default, Docker listens on Unix socket, so TCP socket configuration is needed. See the config file in /etc/default/docker 
-and make sure the DOCKER_OPTS argument matches the one listed below (with the IP variables replaced with real value):
+By default, Docker listens on Unix socket, so TCP socket configuration is needed. See https://docs.docker.com/v1.11/engine/admin/systemd/#custom-docker-daemon-options 
+and make sure the DOCKER_OPTS has something like:
   
 ```sh
- %cat /etc/default/docker
-a DOCKER_OPTS="--cluster-store=etcd://$MASTER_IP:2379/dn --cluster-advertise=$SELF_IP:2375 \
-  -H tcp://0.0.0.0:2375"
+... -H tcp://0.0.0.0:2375
+```
+or 
+```sh
+... -H tcp://$SELF_IP:2375
 ```
 Open in UI in 'Admin' -> 'Add node' and add node with address like 'http://$SELF_IP:2375'.
 
@@ -132,7 +134,7 @@ https://github.com/codeabovelab/haven-example-configuration
 
   
 ## Using swarm (not swarm-mode) and agentless installation: ##
-If you are running on the latest Linux distros where systemd is used, you will need to manually modify the Docker daemon options in the systemd drop-in file (See https://docs.docker.com/engine/admin/systemd/ for details). The docker.service file's 
+The docker.service file's (https://docs.docker.com/v1.11/engine/admin/systemd/#custom-docker-daemon-options)
 ExecStart parameter will need to be modified to something like:
 ```sh
 ExecStart=/usr/bin/dockerd  -H unix:///var/run/docker.sock --cluster-store=etcd://<MASTER_IP>:2379/dn --cluster-advertise=eth0:2375 -H tcp://0.0.0.0:2375
