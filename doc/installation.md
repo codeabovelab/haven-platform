@@ -71,7 +71,7 @@ admin/password.
 
 You have two way to add nodes: use agent which is docker container or use themore complex but agent-less configuration.
 
-**Simply way.** Run agent:
+**Simple way.** Run agent:
 copy start string from 'Admin' -> 'Add node' -> 'Get Agent Command'
 
 ![agent](https://raw.githubusercontent.com/codeabovelab/haven-platform/master/doc/img/agent.png)
