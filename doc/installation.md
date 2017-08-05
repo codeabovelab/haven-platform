@@ -10,7 +10,7 @@ Haven is comprised of Master and Agent components. The Master requires etcd and 
 
 ## Installation Steps
 
-The following installation instruction has been tested on Debian / Ubuntu.
+The following installation instruction has been tested on Debian / Ubuntu / CentOS.
 
 **Installing Docker (Skip step if you already have Docker):**
 
