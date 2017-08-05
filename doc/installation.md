@@ -7,8 +7,6 @@ Haven is comprised of Master and Agent components. The Master requires etcd and 
  The standard requirements are: 
  
  * Docker >= 1.10
- * Python >= 3.5
- * python3-psutil >= 4.2 (optional library for retrieving system utilization information (CPU, memory, disks, network))
  
 For the Master node, it will also require:
  
@@ -27,24 +25,25 @@ repositories we have setup to see the structure.
 
 The following installation instruction has been tested on Debian / Ubuntu.
 
-*Installation for both Master and Agent*
+**Installing Docker (Skip step if you already have Docker):**
 
-**Step 1:** Define the common variables for configuration needed in the scripts and configuration files.  Feel free to set them as environment variables or replace them in the script:
+Use the following instruction to install Docker on the different Linux/Cloud, 
+and MacOS instruction:
+ 
+ https://docs.docker.com/engine/installation/
+
+**Step 1 (installing Etcd):** 
+
+Define the common variables for configuration needed in the scripts and configuration files.  Feel free to set them as environment variables or replace them in the script:
  
 ```sh
  
  # IP of master instance
  MASTER_IP=172.31.0.3 
  
- # IP of current configured node. This IP must be accessible from master instance
- SELF_IP=172.31.0.12
 ```
 
-*Skip steps 2 and 3 if you already have Docker with etcd installed on the Master and Agent nodes* 
-
-**Step 2:** Configure etcd on Master node by following this instruction:
- 
-https://coreos.com/etcd/docs/latest/docker_guide.html
+*Skip step if you already have installed etcd* 
 
 Use the following command to start the etcd container: 
 ```sh
@@ -59,25 +58,40 @@ docker run -d -v /usr/share/ca-certificates/:/etc/ssl/certs \
 ```
 In addition, you can also mount a directory from your Docker engine’s host into the etcd's data directory.
 ```sh
--v /home/user/data/docker/etcd/:/data/
+-v /home/user/data/etcd/:/data/
 ```
-**Step 3:** 
+https://coreos.com/etcd/docs/latest/docker_guide.html
 
-a. Use the following instruction to install Docker on the different Linux/Cloud, Windows, 
-and MacOS instruction:
+**Step 2 (Installing server):** 
+
+Install the Haven container by executing the following command:
  
- https://docs.docker.com/engine/installation/
+```sh
+ docker run -d --name=cluman -p 8761:8761 --restart=always \
+         -e "dm_kv_etcd_urls=http://$MASTER_IP:2379" codeabovelab/cluster-manager
 
-b. You have two way to run agents on nodes: use agent which is proxy docker container to local network or use themore complex but agent-less configuration.
+```
+For storing data use:
+```sh
+-v /home/user/data/haven:/data/
+
+```
+
+**At this point you should be able to login to the UI via http://<MASTER_IP>:8761/.**  The default admin credential is 
+admin/password.
+
+**Step 3 (adding nodes):** 
+
+You have two way to add nodes: use agent which is docker container or use themore complex but agent-less configuration.
 
 _Simply way._ Run agent:
-copy start string from 'Admin' -> 'Add node'
+copy start string from 'Admin' -> 'Get Agent Command'
 
 ![agent](https://raw.githubusercontent.com/codeabovelab/haven-platform/master/doc/img/agent.png)
 start string example:
 
 ```
-docker run --name havenAgent -d -e "dm_agent_notifier_server=URL-TO-HOST"  --restart=unless-stopped -p 8771:8771 -v /run/docker.sock:/run/docker.sock codeabovelab/agent:latest
+docker run --name havenAgent -d -e "dm_agent_notifier_server=URL-TO-SERVER"  --restart=unless-stopped -p 8771:8771 -v /run/docker.sock:/run/docker.sock codeabovelab/agent:latest
 ```
 
 _Agent-less way._ If you want to run a node without installing and running an agent, then you need to expose docker on a network port.
@@ -92,23 +106,6 @@ a DOCKER_OPTS="--cluster-store=etcd://$MASTER_IP:2379/dn --cluster-advertise=$SE
 ```
 Open in UI in 'Admin' -> 'Add node' and add node with address like 'http://$SELF_IP:2375'.
 
-**Step 4:** Install the Haven container by executing the following command:
- 
-```sh
- docker run -d --name=cluman -p 8761:8761 --restart=always \
-         -e "dm_kv_etcd_urls=http://$MASTER_IP:2379" codeabovelab/cluster-manager
-
-```
-For storing data use:
-```sh
--v /home/user/data/docker/haven/:/data
-
-```
- 
-The Haven container can be started only with etcd's URL as its environment variable. It can have other optional parameters passed in as environment variables to enable other features. 
-
-**At this point you should be able to login to the UI via http://<MASTER_IP>:8761/.**  The default admin credential is 
-admin/password.
 
 **Configuration**
 
@@ -137,7 +134,7 @@ You should take a look at the example configuration repository to see all of the
 https://github.com/codeabovelab/haven-example-configuration
 
   
-## Troubleshooting ##
+## Using swarm (not swarm-mode) and agentless installation: ##
 If you are running on the latest Linux distros where systemd is used, you will need to manually modify the Docker daemon options in the systemd drop-in file (See https://docs.docker.com/engine/admin/systemd/ for details). The docker.service file's 
 ExecStart parameter will need to be modified to something like:
 ```sh

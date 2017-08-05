@@ -18,7 +18,7 @@ RUN export GOPATH=/gocode && \
   cd $GOPATH/src/github.com/docker/ && \
   git clone https://github.com/docker/swarm && \
   cd swarm && \
-  git checkout -b v1.2.7 v1.2.7 && \
+  git checkout -b v1.2.8 v1.2.8 && \
   go install . && \
   rm -rf $GOPATH/src/*
 
