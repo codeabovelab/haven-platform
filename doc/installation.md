@@ -71,7 +71,7 @@ admin/password.
 
 You have two way to add nodes: use agent which is docker container or use themore complex but agent-less configuration.
 
-_Simply way._ Run agent:
+**Simply way.** Run agent:
 copy start string from 'Admin' -> 'Add node' -> 'Get Agent Command'
 
 ![agent](https://raw.githubusercontent.com/codeabovelab/haven-platform/master/doc/img/agent.png)
@@ -81,7 +81,7 @@ start string example:
 docker run --name havenAgent -d -e "dm_agent_notifier_server=URL-TO-SERVER"  --restart=unless-stopped -p 8771:8771 -v /run/docker.sock:/run/docker.sock codeabovelab/agent:latest
 ```
 
-_Agent-less way._ If you want to run a node without installing and running an agent, then you need to expose docker on a network port.
+**Agent-less way.** If you want to run a node _without_ installing and running an agent, then you need to expose docker on a network port.
 
 By default, Docker listens on Unix socket, so TCP socket configuration is needed. See https://docs.docker.com/v1.11/engine/admin/systemd/#custom-docker-daemon-options 
 and make sure the DOCKER_OPTS has something like:
