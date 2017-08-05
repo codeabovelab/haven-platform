@@ -106,8 +106,8 @@ a DOCKER_OPTS="--cluster-store=etcd://$MASTER_IP:2379/dn --cluster-advertise=$SE
 ```
 Open in UI in 'Admin' -> 'Add node' and add node with address like 'http://$SELF_IP:2375'.
 
-
-**Configuration**
+________________________________
+**Optional Configuration**
 
 Haven's Master settings can also be passed directly via environment variables or, as mentioned before, they can also be stored in a Git repository and credentials passed in via an environment variable. For reading cluster-manager.properties or cluster-manager.yml from a Git repository, you must specify the Git URL, username, and password:
 
