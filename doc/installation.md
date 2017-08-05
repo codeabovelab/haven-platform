@@ -2,28 +2,15 @@
 
 Haven is comprised of Master and Agent components. The Master requires etcd and the Haven Server; both are installable as Docker containers as per instruction below.  The agent is a Python script which should be installed as a service on the other nodes. 
 
-## Requirements
-
- The standard requirements are: 
+## Requirements (installation is described in installation steps):
  
  * Docker >= 1.10
  
-For the Master node, it will also require:
- 
  * etcd >= 2.2.5
-
-### Optional 
-
-Haven has the option to use Git repositories to store its settings and the containers' setting and environment variables. If
-you intend to make use of this feature, we recommend that the Git repositories be setup first.  Also, you can see the example
-repositories we have setup to see the structure.
-
-* Repository for Haven configuration: https://github.com/codeabovelab/haven-example-configuration
-* Repository for containner configuration: https://github.com/codeabovelab/haven-example-container-configuration
 
 ## Installation Steps
 
-The following installation instruction has been tested on Debian / Ubuntu.
+The following installation instruction has been tested on Debian / Ubuntu / CentOS.
 
 **Installing Docker (Skip step if you already have Docker):**
 
@@ -106,8 +93,18 @@ a DOCKER_OPTS="--cluster-store=etcd://$MASTER_IP:2379/dn --cluster-advertise=$SE
 ```
 Open in UI in 'Admin' -> 'Add node' and add node with address like 'http://$SELF_IP:2375'.
 
+________________________________
 
-**Configuration**
+### Optional 
+
+Haven has the option to use Git repositories to store its settings and the containers' setting and environment variables. If
+you intend to make use of this feature, we recommend that the Git repositories be setup first.  Also, you can see the example
+repositories we have setup to see the structure.
+
+* Repository for Haven configuration: https://github.com/codeabovelab/haven-example-configuration
+* Repository for containner configuration: https://github.com/codeabovelab/haven-example-container-configuration
+
+**Optional Configuration**
 
 Haven's Master settings can also be passed directly via environment variables or, as mentioned before, they can also be stored in a Git repository and credentials passed in via an environment variable. For reading cluster-manager.properties or cluster-manager.yml from a Git repository, you must specify the Git URL, username, and password:
 
