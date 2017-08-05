@@ -2,13 +2,9 @@
 
 Haven is comprised of Master and Agent components. The Master requires etcd and the Haven Server; both are installable as Docker containers as per instruction below.  The agent is a Python script which should be installed as a service on the other nodes. 
 
-## Requirements
-
- The standard requirements are: 
+## Requirements (installation is described in installation steps):
  
  * Docker >= 1.10
- 
-For the Master node, it will also require:
  
  * etcd >= 2.2.5
 
