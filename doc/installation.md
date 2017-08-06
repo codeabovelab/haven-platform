@@ -12,7 +12,7 @@ Haven is comprised of Master and Agent components. The Master requires etcd and 
 
 The following installation instruction has been tested on Debian / Ubuntu / CentOS.
 
-**Installing Docker (Skip step if you already have Docker):**
+**Installing Docker (Skip this step if you already have Docker):**
 
 Use the following instruction to install Docker on the different Linux/Cloud, 
 and MacOS instruction:
@@ -69,7 +69,7 @@ admin/password.
 
 **Step 3 (adding nodes):** 
 
-You have two way to add nodes: use agent which is docker container or use themore complex but agent-less configuration.
+You have two way to add nodes: 1) use agent which is docker container or 2) use the more complex but the agent-less configuration.
 
 **Simple way.** Run agent:
 copy start string from 'Admin' -> 'Add node' -> 'Get Agent Command'
@@ -128,12 +128,12 @@ or via Git repository:
 
 dm.kv.etcd.urls=http://$MASTER_IP:2379
 
-You should take a look at the example configuration repository to see all of the settings available:
+You should take a look at the example configuration repository to see all of the available settings:
 
 https://github.com/codeabovelab/haven-example-configuration
 
   
-## Using swarm (not swarm-mode) and agentless installation: ##
+## Using the Swarm (not swarm-mode) and agentless installation: ##
 The docker.service file's (https://docs.docker.com/v1.11/engine/admin/systemd/#custom-docker-daemon-options)
 ExecStart parameter will need to be modified to something like:
 ```sh
