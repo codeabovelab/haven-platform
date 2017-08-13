@@ -23,7 +23,9 @@ import com.codeabovelab.dm.cluman.ds.container.ContainerRegistration;
 import com.codeabovelab.dm.cluman.ds.container.ContainerStorage;
 import com.codeabovelab.dm.cluman.model.DiscoveryStorage;
 import com.codeabovelab.dm.cluman.model.NodesGroup;
-import com.codeabovelab.dm.cluman.ui.model.*;
+import com.codeabovelab.dm.cluman.ui.model.UiNetworkBase;
+import com.codeabovelab.dm.cluman.ui.model.UiNetworkCreateResult;
+import com.codeabovelab.dm.cluman.ui.model.UiNetworkDetails;
 import com.codeabovelab.dm.cluman.validate.ExtendedAssert;
 import io.swagger.annotations.ApiOperation;
 import lombok.RequiredArgsConstructor;
@@ -32,7 +34,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.*;
-
 
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 
@@ -59,6 +60,7 @@ public class NetworkApi {
         cmd.setCheckDuplicate(true);
         cmd.setAttachable(true);
         cmd.setDriver("overlay");
+        cmd.setIpam(Network.Ipam.DEF_IPAM);
         if(body != null) {
             body.to(cmd);
         }
@@ -132,6 +134,13 @@ public class NetworkApi {
                                            @RequestParam("network") String network) {
         NodesGroup group = getNodesGroup(clusterName);
         ServiceCallResult res = group.getNetworks().deleteNetwork(network);
+        return UiUtils.createResponse(res);
+    }
+
+    @RequestMapping(path = "delete-unused", method = RequestMethod.DELETE)
+    public ResponseEntity<?> deleteUnusedNetworks(@RequestParam("cluster") String clusterName) {
+        NodesGroup group = getNodesGroup(clusterName);
+        ServiceCallResult res = group.getNetworks().deleteUnusedNetworks();
         return UiUtils.createResponse(res);
     }
 

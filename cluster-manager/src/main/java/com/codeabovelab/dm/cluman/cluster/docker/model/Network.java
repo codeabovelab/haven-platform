@@ -20,10 +20,7 @@ import com.codeabovelab.dm.common.json.JtEnumLower;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.Singular;
+import lombok.*;
 
 import java.time.ZonedDateTime;
 import java.util.List;
@@ -133,6 +130,8 @@ public class Network {
     @AllArgsConstructor
     @JsonIgnoreProperties(ignoreUnknown = true)
     public static class Ipam {
+
+        public static Ipam DEF_IPAM = Ipam.builder().driver("default").build();
 
         @JsonProperty("Driver")
         private final String driver;

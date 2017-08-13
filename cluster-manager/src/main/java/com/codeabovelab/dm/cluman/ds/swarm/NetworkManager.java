@@ -17,6 +17,7 @@
 package com.codeabovelab.dm.cluman.ds.swarm;
 
 import com.codeabovelab.dm.cluman.cluster.docker.management.DockerService;
+import com.codeabovelab.dm.cluman.cluster.docker.management.argument.PruneNetworksArg;
 import com.codeabovelab.dm.cluman.cluster.docker.management.result.ResultCode;
 import com.codeabovelab.dm.cluman.cluster.docker.management.result.ServiceCallResult;
 import com.codeabovelab.dm.cluman.cluster.docker.model.*;
@@ -26,10 +27,7 @@ import com.codeabovelab.dm.common.utils.SingleValueCache;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 
 public class NetworkManager {
@@ -71,6 +69,7 @@ public class NetworkManager {
         cmd.setDriver(OVERLAY_DRIVER);
         cmd.setCheckDuplicate(true);
         cmd.setAttachable(true);
+        cmd.setIpam(Network.Ipam.DEF_IPAM);
         return createNetwork(cmd);
     }
 
@@ -110,5 +109,11 @@ public class NetworkManager {
         DockerService service = group.getDocker();
         networksCache.invalidate();
         return service.disconnectNetwork(cmd);
+    }
+
+    public ServiceCallResult deleteUnusedNetworks() {
+        DockerService service = group.getDocker();
+        networksCache.invalidate();
+        return service.pruneNetworks(new PruneNetworksArg());
     }
 }
