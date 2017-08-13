@@ -19,7 +19,7 @@ The problems listed have caused issues with agent development:
 ## Agent Image ##
 
 New version (1.2) of system can work without the agent installed but we have implement the new agent with proxy of Docker 
-connection (1.2.3-SNAPSHOT). Agent is connected to Docker via unix socket. Port 8771 is opened with SSL encryption and
+connection (1.2.3). Agent is connected to Docker via unix socket. Port 8771 is opened with SSL encryption and
 authorization (credentials admin:password, see 'dm.auth.adminPassword' option of agent)
 
 Copy start string from 'Admin' -> 'Add node'
