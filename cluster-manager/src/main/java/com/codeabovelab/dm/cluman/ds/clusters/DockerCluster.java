@@ -318,7 +318,12 @@ public class DockerCluster extends AbstractNodesGroup<DockerClusterConfig> {
      * @return address with swarm port
      */
     private String getSwarmAddress(DockerService service) {
-        return AddressUtils.setPort(service.getAddress(), config.getSwarmPort());
+        String addr = AddressUtils.setPort(service.getAddress(), config.getSwarmPort());
+        return cleanPrefix(addr);
+    }
+
+    private String cleanPrefix(String address) {
+        return address.replace("http://", "").replace("https://", "");
     }
 
     @Override
@@ -551,7 +556,8 @@ public class DockerCluster extends AbstractNodesGroup<DockerClusterConfig> {
         SwarmJoinCmd cmd = new SwarmJoinCmd();
         cmd.setToken(masterToken);
         cmd.getManagers().addAll(clusterData.getManagers());
-        cmd.setListen(getSwarmAddress(ds).replace("http://", "").replace("https://", ""));
+        String swarmAddress = getSwarmAddress(ds);
+        cmd.setListen(swarmAddress);
         try {
             ServiceCallResult res = ds.joinSwarm(cmd);
             log.info("Result of joining node '{}': {} {}", manager.name, res.getCode(), res.getMessage());
