@@ -31,10 +31,7 @@ import com.codeabovelab.dm.cluman.ds.nodes.NodeRegistration;
 import com.codeabovelab.dm.cluman.ds.nodes.NodeStorage;
 import com.codeabovelab.dm.cluman.model.*;
 import com.codeabovelab.dm.cluman.security.TempAuth;
-import com.codeabovelab.dm.common.utils.AddressUtils;
-import com.codeabovelab.dm.common.utils.Closeables;
-import com.codeabovelab.dm.common.utils.RescheduledTask;
-import com.codeabovelab.dm.common.utils.SingleValueCache;
+import com.codeabovelab.dm.common.utils.*;
 import com.google.common.base.MoreObjects;
 import com.google.common.collect.ImmutableList;
 import com.google.common.net.InetAddresses;
@@ -554,7 +551,7 @@ public class DockerCluster extends AbstractNodesGroup<DockerClusterConfig> {
         SwarmJoinCmd cmd = new SwarmJoinCmd();
         cmd.setToken(masterToken);
         cmd.getManagers().addAll(clusterData.getManagers());
-        cmd.setListen(getSwarmAddress(ds));
+        cmd.setListen(getSwarmAddress(ds).replace("http://", "").replace("https://", ""));
         try {
             ServiceCallResult res = ds.joinSwarm(cmd);
             log.info("Result of joining node '{}': {} {}", manager.name, res.getCode(), res.getMessage());
