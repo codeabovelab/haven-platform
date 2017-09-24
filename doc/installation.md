@@ -81,6 +81,7 @@ start string example:
 docker run --name havenAgent -d -e "dm_agent_notifier_server=http://$MASTER_IP:8761"  --hostname=$(hostname) --restart=unless-stopped -p 8771:8771 -v /run/docker.sock:/run/docker.sock codeabovelab/agent:latest
 
 ```
+Server should have access to 8771 port (agent port)
 
 **Agent-less way.** If you want to run a node _without_ installing and running an agent, then you need to expose docker on a network port.
 
@@ -140,3 +141,12 @@ ExecStart parameter will need to be modified to something like:
 ```sh
 ExecStart=/usr/bin/dockerd  -H unix:///var/run/docker.sock --cluster-store=etcd://<MASTER_IP>:2379/dn --cluster-advertise=eth0:2375 -H tcp://0.0.0.0:2375
 ```
+
+## Troubleshooting
+
+![Agent Health](https://raw.githubusercontent.com/codeabovelab/haven-platform/master/doc/img/troubleshooting.png) 
+
+*Agent Health = off*, means that server can't connect to agent, 
+agent's ip and port can be checked via *Info* button:
+ 
+![Agent Info](https://raw.githubusercontent.com/codeabovelab/haven-platform/master/doc/img/troubleshooting_2.png) 
