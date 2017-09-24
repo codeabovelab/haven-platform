@@ -26,7 +26,7 @@ Define the common variables for configuration needed in the scripts and configur
 ```sh
  
  # IP of master instance
- MASTER_IP=172.31.0.3 
+ export MASTER_IP=172.31.0.3 
  
 ```
 
@@ -78,7 +78,8 @@ copy start string from 'Admin' -> 'Add node' -> 'Get Agent Command'
 start string example:
 
 ```
-docker run --name havenAgent -d -e "dm_agent_notifier_server=URL-TO-SERVER"  --restart=unless-stopped -p 8771:8771 -v /run/docker.sock:/run/docker.sock codeabovelab/agent:latest
+docker run --name havenAgent -d -e "dm_agent_notifier_server=http://$MASTER_IP:8761"  --hostname=$(hostname) --restart=unless-stopped -p 8771:8771 -v /run/docker.sock:/run/docker.sock codeabovelab/agent:latest
+
 ```
 
 **Agent-less way.** If you want to run a node _without_ installing and running an agent, then you need to expose docker on a network port.
