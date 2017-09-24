@@ -26,7 +26,7 @@ Define the common variables for configuration needed in the scripts and configur
 ```sh
  
  # IP of master instance
- MASTER_IP=172.31.0.3 
+ export MASTER_IP=172.31.0.3 
  
 ```
 
