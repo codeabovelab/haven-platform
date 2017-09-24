@@ -71,6 +71,11 @@ public class AddressUtils {
         return sqBegin >= 0 && sqEnd > sqBegin;
     }
 
+    /**
+     * Extract host:port pair from url.
+     * @param addr any url with host & port
+     * @return host:port
+     */
     public static String getHostPort(String addr) {
         if (addr == null) {
             return null;
@@ -113,6 +118,11 @@ public class AddressUtils {
         return url != null && url.startsWith("https://");
     }
 
+    /**
+     * Extract host from url.
+     * @param addr any url with host
+     * @return host
+     */
     public static String getHost(String addr) {
         if (addr == null) {
             return null;
