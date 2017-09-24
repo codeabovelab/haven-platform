@@ -4,7 +4,7 @@
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
-        <version>1.5.6.RELEASE</version>
+        <version>1.5.7.RELEASE</version>
     </parent>
 
     <groupId>com.codeabovelab.dm</groupId>
@@ -61,7 +61,7 @@
         <commons-codec.version>1.10</commons-codec.version>
         <javax-mail.version>1.5.2</javax-mail.version>
         <greenmail.version>1.4.0</greenmail.version>
-        <guava.version>22.0</guava.version>
+        <guava.version>23.0</guava.version>
         <commons-io.version>2.5</commons-io.version>
         <swagger.version>2.7.0</swagger.version>
 
