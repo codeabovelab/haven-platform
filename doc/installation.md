@@ -146,6 +146,7 @@ ExecStart=/usr/bin/dockerd  -H unix:///var/run/docker.sock --cluster-store=etcd:
 
 ![Agent Health](https://raw.githubusercontent.com/codeabovelab/haven-platform/master/doc/img/troubleshooting.png) 
 
-Agent Health = off, means that server can't connect to agent, agent's ip and port can be checked via *Info* button:
+*Agent Health = off*, means that server can't connect to agent, 
+agent's ip and port can be checked via *Info* button:
  
 ![Agent Info](https://raw.githubusercontent.com/codeabovelab/haven-platform/master/doc/img/troubleshooting_2.png) 
