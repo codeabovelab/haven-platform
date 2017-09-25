@@ -14,3 +14,5 @@
 * [Jobs](jobs.md) - System tasks that can be scheduled and executed according to different parameters
 ..* [Update Job](jobs-update.md)
 * [Security](security.md) - Haven's Access Control Link model and APIs
+
+### [All docs](https://github.com/codeabovelab/haven-platform/wiki)
