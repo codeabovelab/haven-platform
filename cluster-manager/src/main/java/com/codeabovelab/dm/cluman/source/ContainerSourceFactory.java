@@ -28,10 +28,7 @@ import lombok.AllArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
@@ -46,6 +43,7 @@ public class ContainerSourceFactory {
         convert(details, dest);
         SwarmUtils.restoreEnv(objectMapper, dest);
         SwarmUtils.clearConstraints(dest.getLabels());
+
     }
 
     @SuppressWarnings("deprecation")
@@ -84,9 +82,7 @@ public class ContainerSourceFactory {
         nc.setVolumeDriver(hostConfig.getVolumeDriver());
         VolumesFrom[] volumesFrom = hostConfig.getVolumesFrom();
         if(volumesFrom != null) {
-            for(VolumesFrom vf : volumesFrom) {
-                nc.getVolumesFrom().add(vf.toString());
-            }
+            Arrays.stream(volumesFrom).forEach(vf -> nc.getVolumesFrom().add(vf.toString()));
         }
         nc.setVolumeDriver(hostConfig.getVolumeDriver());
         nc.getVolumeBinds().addAll(hostConfig.getBinds());
@@ -104,7 +100,7 @@ public class ContainerSourceFactory {
         // otherwise hostConfig.mounts have full info but sometime may be empty, therefore we use both sources
         Map<String, MountSource> converted = new HashMap<>();
         if(srcMounts != null) {
-            srcMounts.forEach(m -> {
+            srcMounts.stream().filter(m -> !m.isSystem()).forEach(m -> {
                 MountSource ms = SourceUtil.toMountSource(m);
                 if (ms != null) {
                     converted.put(ms.getTarget(), ms);
