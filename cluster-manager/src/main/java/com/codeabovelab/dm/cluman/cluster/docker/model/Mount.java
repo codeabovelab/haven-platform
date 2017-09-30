@@ -54,6 +54,27 @@ public class Mount {
     @JsonProperty("TmpfsOptions")
     private final TmpfsOptions tmpfsOptions;
 
+    /**
+     * system mapping like:
+     * "Type": "volume",
+     * "Name": "810a2b9f8d08ba620612e1227d1214",
+     * "Source": "/var/lib/docker/volumes/810a2b9f8d08ba620612e1/_data",
+     * "Driver": "local",
+     */
+    public boolean isSystem() {
+
+        if (volumeOptions == null) {
+            return false;
+        }
+
+        Mount.Driver driverConfig = volumeOptions.getDriverConfig();
+        if (driverConfig == null) {
+            return false;
+        }
+
+        return Mount.Type.VOLUME.equals(getType()) && driverConfig.isLocal();
+    }
+
     @JtEnumLower
     public enum Type {
         /**
@@ -116,10 +137,16 @@ public class Mount {
     @AllArgsConstructor
     @lombok.Builder(builderClassName = "Builder")
     public static class Driver {
+        private static final String LOCAL = "local";
+
         @JsonProperty("Name")
         private final String name;
         @JsonProperty("Options")
         private final Map<String, String> options;
+
+        public boolean isLocal() {
+            return LOCAL.equals(name);
+        }
     }
 
     /**
