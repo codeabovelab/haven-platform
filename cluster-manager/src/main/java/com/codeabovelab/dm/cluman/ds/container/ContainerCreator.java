@@ -20,10 +20,8 @@ import com.codeabovelab.dm.cluman.cluster.docker.management.DockerService;
 import com.codeabovelab.dm.cluman.cluster.docker.management.DockerServiceImpl;
 import com.codeabovelab.dm.cluman.cluster.docker.management.DockerUtils;
 import com.codeabovelab.dm.cluman.cluster.docker.management.argument.CalcNameArg;
-import com.codeabovelab.dm.cluman.cluster.docker.management.result.CreateAndStartContainerResult;
-import com.codeabovelab.dm.cluman.cluster.docker.management.result.ProcessEvent;
+import com.codeabovelab.dm.cluman.cluster.docker.management.result.*;
 import com.codeabovelab.dm.cluman.cluster.docker.management.result.ResultCode;
-import com.codeabovelab.dm.cluman.cluster.docker.management.result.ServiceCallResult;
 import com.codeabovelab.dm.cluman.cluster.docker.model.*;
 import com.codeabovelab.dm.cluman.configs.container.ConfigProvider;
 import com.codeabovelab.dm.cluman.ds.SwarmUtils;
@@ -49,6 +47,7 @@ import java.util.stream.Collectors;
 
 import static com.codeabovelab.dm.cluman.cluster.docker.management.DockerUtils.SCALABLE;
 import static com.codeabovelab.dm.cluman.cluster.docker.model.RestartPolicy.parse;
+import static com.codeabovelab.dm.common.utils.StringUtils.before;
 import static com.google.common.base.MoreObjects.firstNonNull;
 
 /**
@@ -222,7 +221,7 @@ public class ContainerCreator {
         cmd.setName(name);
         cmd.setHostName(MoreObjects.firstNonNull(nc.getHostname(), name));
         cmd.setDomainName(nc.getDomainname());
-        cmd.setEnv(env.toArray(new String[env.size()]));
+        cmd.setEnv(filterEnv(result.getEnvironment()));
         cmd.setImage(imageName);
         cmd.setLabels(result.getLabels());
         cmd.getLabels().put(ContainerUtils.LABEL_IMAGE_NAME, imageName);
@@ -237,6 +236,11 @@ public class ContainerCreator {
         LOG.info("Command for execution: {}", cmd);
         ProcessEvent.watch(cc.watcher, "Command for execution: {0}", cmd);
         return cmd;
+    }
+
+    private String[] filterEnv(Collection<String> env) {
+        Set<String> filter = new HashSet<>();
+        return env.stream().filter(e -> filter.add(before(e, '='))).toArray(String[]::new);
     }
 
     private ImageDescriptor getImage(CreateContainerContext cc) {
