@@ -17,6 +17,7 @@
 package com.codeabovelab.dm.cluman.cluster.docker.model;
 
 import com.codeabovelab.dm.cluman.model.ContainerBaseIface;
+import com.codeabovelab.dm.common.utils.StringUtils;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -135,5 +136,9 @@ public class ContainerDetails implements ContainerBaseIface {
 
         @JsonProperty("Propagation")
         private final Mount.Propagation propagation;
+
+        public boolean isSystem() {
+            return name != null && name.trim().length() == 64 && StringUtils.matchHex(name);
+        }
     }
 }
