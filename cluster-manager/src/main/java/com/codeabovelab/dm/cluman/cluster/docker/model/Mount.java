@@ -17,11 +17,13 @@
 package com.codeabovelab.dm.cluman.cluster.docker.model;
 
 import com.codeabovelab.dm.common.json.JtEnumLower;
+import com.codeabovelab.dm.common.utils.StringUtils;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 
+import java.util.Arrays;
 import java.util.Map;
 
 /**
@@ -62,17 +64,7 @@ public class Mount {
      * "Driver": "local",
      */
     public boolean isSystem() {
-
-        if (volumeOptions == null) {
-            return false;
-        }
-
-        Mount.Driver driverConfig = volumeOptions.getDriverConfig();
-        if (driverConfig == null) {
-            return false;
-        }
-
-        return Mount.Type.VOLUME.equals(getType()) && driverConfig.isLocal();
+        return Arrays.stream(getSource().split("/")).anyMatch(s -> s.trim().length() == 64 && StringUtils.matchHex(s));
     }
 
     @JtEnumLower

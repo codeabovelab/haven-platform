@@ -22,9 +22,11 @@ import com.codeabovelab.dm.cluman.model.ContainerSource;
 import com.codeabovelab.dm.cluman.model.ImageName;
 import com.codeabovelab.dm.cluman.model.MountSource;
 import com.codeabovelab.dm.cluman.utils.ContainerUtils;
+import com.codeabovelab.dm.common.utils.StringUtils;
 import com.codeabovelab.dm.common.utils.Sugar;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.AllArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -33,6 +35,7 @@ import java.util.stream.Collectors;
 
 /**
  */
+@Slf4j
 @Component
 @AllArgsConstructor(onConstructor = @__(@Autowired))
 public class ContainerSourceFactory {
@@ -86,7 +89,8 @@ public class ContainerSourceFactory {
         }
         nc.setVolumeDriver(hostConfig.getVolumeDriver());
         nc.getVolumeBinds().addAll(hostConfig.getBinds());
-        loadMounts(container.getMounts(), hostConfig.getMounts(), nc.getMounts());
+        Set<String> ignored = hostConfig.getBinds().stream().map(s -> StringUtils.afterLast(s, ':')).collect(Collectors.toSet());
+        loadMounts(container.getMounts(), hostConfig.getMounts(), nc.getMounts(), ignored);
 
 //TODO            createContainerArg.setLogging(hostConfig.getLogConfig()); and etc
         Sugar.setIfNotNull(nc.getSecurityOpt()::addAll, hostConfig.getSecurityOpts());
@@ -95,22 +99,29 @@ public class ContainerSourceFactory {
         nc.setImageId(container.getImageId());
     }
 
-    private static void loadMounts(List<ContainerDetails.MountPoint> srcPoints, List<Mount> srcMounts, List<MountSource> dest) {
+    private static void loadMounts(List<ContainerDetails.MountPoint> srcPoints, List<Mount> srcMounts,
+                                   List<MountSource> dest, Set<String> ignored) {
+        log.info("srcPoints: {}, srcMounts:{}, ignored: {}");
         // docker place all mounts to MountPoints, but this does not provide enough info
         // otherwise hostConfig.mounts have full info but sometime may be empty, therefore we use both sources
-        Map<String, MountSource> converted = new HashMap<>();
+        Set<String> converted = new HashSet<>();
         if(srcMounts != null) {
-            srcMounts.stream().filter(m -> !m.isSystem()).forEach(m -> {
+            srcMounts.stream()
+                    .filter(m -> !m.isSystem())
+                    .filter(m -> !ignored.contains(m.getTarget()))
+                    .forEach(m -> {
                 MountSource ms = SourceUtil.toMountSource(m);
                 if (ms != null) {
-                    converted.put(ms.getTarget(), ms);
+                    converted.add(ms.getTarget());
                     dest.add(ms);
                 }
             });
         }
         if(srcPoints != null) {
             srcPoints.stream()
-                    .filter(p -> !converted.containsKey(p.getDestination())) // we prevent appearing same mount from multiple source
+                    .filter(m -> !m.isSystem())
+                    .filter(m -> !ignored.contains(m.getDestination()))
+                    .filter(p -> !converted.contains(p.getDestination())) // we prevent appearing same mount from multiple source
                     .filter(p -> p.getType() != null)
                     .forEach(p -> {
                 MountSource ms = SourceUtil.toMountSource(p);
@@ -119,6 +130,7 @@ public class ContainerSourceFactory {
                 }
             });
         }
+        log.info("result mounts: {}", dest);
     }
 
     public static String resolveImageName(ContainerDetails container) {
