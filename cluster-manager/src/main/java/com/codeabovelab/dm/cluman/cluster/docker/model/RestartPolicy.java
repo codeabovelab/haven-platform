@@ -78,4 +78,16 @@ public class RestartPolicy {
         }
     }
 
+    /**
+     * Returns a string representation of this {@link RestartPolicy}. The format is <code>name[:count]</code>, like the argument in
+     * {@link #parse(String)}.
+     *
+     * @return a string representation of this {@link RestartPolicy}
+     */
+    @Override
+    public String toString() {
+        String result = name.isEmpty() ? "no" : name;
+        return maximumRetryCount > 0 ? result + ":" + maximumRetryCount : result;
+    }
+
 }
