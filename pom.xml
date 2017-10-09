@@ -9,7 +9,7 @@
 
     <groupId>com.codeabovelab.dm</groupId>
     <artifactId>dm-parent</artifactId>
-    <version>1.2.3</version>
+    <version>1.2.4</version>
     <packaging>pom</packaging>
     <name>Haven platform</name>
 
@@ -241,32 +241,32 @@
             <dependency>
                 <groupId>com.codeabovelab.dm</groupId>
                 <artifactId>cluster-manager</artifactId>
-                <version>1.2.3</version>
+                <version>1.2.4</version>
             </dependency>
             <dependency>
                 <groupId>com.codeabovelab.dm</groupId>
                 <artifactId>common-utils</artifactId>
-                <version>1.2.3</version>
+                <version>1.2.4</version>
             </dependency>
             <dependency>
                 <groupId>com.codeabovelab.dm</groupId>
                 <artifactId>common-core</artifactId>
-                <version>1.2.3</version>
+                <version>1.2.4</version>
             </dependency>
             <dependency>
                 <groupId>com.codeabovelab.dm</groupId>
                 <artifactId>gateway-common</artifactId>
-                <version>1.2.3</version>
+                <version>1.2.4</version>
             </dependency>
             <dependency>
                 <groupId>com.codeabovelab.dm</groupId>
                 <artifactId>platform-common</artifactId>
-                <version>1.2.3</version>
+                <version>1.2.4</version>
             </dependency>
             <dependency>
                 <groupId>com.codeabovelab.dm</groupId>
                 <artifactId>mail</artifactId>
-                <version>1.2.3</version>
+                <version>1.2.4</version>
             </dependency>
 
             <!--     SPRING     -->
