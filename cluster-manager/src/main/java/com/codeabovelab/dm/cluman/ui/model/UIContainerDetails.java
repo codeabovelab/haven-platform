@@ -67,7 +67,8 @@ public class UIContainerDetails extends ContainerSource implements UiContainerIf
         setFinished(state.getFinishedAt());
         HostConfig hostConfig = container.getHostConfig();
         if (hostConfig != null && hostConfig.getRestartPolicy() != null) {
-            setRestart(container.getHostConfig().getRestartPolicy().toString());
+            setRestart(hostConfig.getRestartPolicy().toString());
+            setPublishAllPorts(Boolean.TRUE.equals(hostConfig.getPublishAllPorts()));
         }
         return this;
     }
