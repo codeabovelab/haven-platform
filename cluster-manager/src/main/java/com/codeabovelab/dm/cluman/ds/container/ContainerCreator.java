@@ -34,6 +34,7 @@ import com.codeabovelab.dm.common.utils.Consumers;
 import com.google.common.base.MoreObjects;
 import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.extern.slf4j.Slf4j;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
@@ -57,6 +58,7 @@ import static com.google.common.base.MoreObjects.firstNonNull;
 @Component
 @Data
 @AllArgsConstructor
+@Slf4j
 public class ContainerCreator {
     private static final Logger LOG = LoggerFactory.getLogger(DockerServiceImpl.class);
     private static final int CREATE_CONTAINER_TRIES = 3;
@@ -239,8 +241,19 @@ public class ContainerCreator {
     }
 
     private String[] filterEnv(Collection<String> env) {
+        log.info("All env {}", env);
         Set<String> filter = new HashSet<>();
-        return env.stream().filter(e -> filter.add(before(e, '='))).toArray(String[]::new);
+        String[] constraints = env.stream()
+                .filter(e -> e.contains("="))
+                .filter(e -> {
+                    String before = before(e, '=');
+                    if (before.contains("constraint")) {
+                        return true;
+                    }
+                    return filter.add(before(e, '='));
+                }).toArray(String[]::new);
+        log.info("Filtered env {}", Arrays.toString(constraints));
+        return constraints;
     }
 
     private ImageDescriptor getImage(CreateContainerContext cc) {
