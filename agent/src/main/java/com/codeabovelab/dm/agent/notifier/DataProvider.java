@@ -19,15 +19,11 @@ package com.codeabovelab.dm.agent.notifier;
 import com.codeabovelab.dm.agent.infocol.InfoCollector;
 import com.codeabovelab.dm.common.utils.AddressUtils;
 import com.codeabovelab.dm.common.utils.OSUtils;
-import com.google.common.base.MoreObjects;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.context.embedded.AbstractConfigurableEmbeddedServletContainer;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
-import org.springframework.web.util.UriComponentsBuilder;
 
-import java.net.InetAddress;
-import java.time.LocalDateTime;
 import java.time.ZonedDateTime;
 
 /**

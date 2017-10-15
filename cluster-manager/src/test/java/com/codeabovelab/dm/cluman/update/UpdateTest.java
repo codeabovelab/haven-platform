@@ -1,10 +1,7 @@
 package com.codeabovelab.dm.cluman.update;
 
 import com.codeabovelab.dm.cluman.DockerServiceMock;
-import com.codeabovelab.dm.cluman.batch.BatchUtils;
-import com.codeabovelab.dm.cluman.batch.HealthCheckContainerTasklet;
-import com.codeabovelab.dm.cluman.batch.ImagesForUpdate;
-import com.codeabovelab.dm.cluman.batch.LoadContainersOfImageTasklet;
+import com.codeabovelab.dm.cluman.batch.*;
 import com.codeabovelab.dm.cluman.cluster.docker.management.DockerService;
 import com.codeabovelab.dm.cluman.cluster.docker.management.argument.GetContainersArg;
 import com.codeabovelab.dm.cluman.cluster.docker.model.CreateContainerCmd;
@@ -44,10 +41,7 @@ import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 import javax.validation.Validation;
 import javax.validation.Validator;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.function.Consumer;
 
 import static org.junit.Assert.assertEquals;
@@ -290,7 +284,7 @@ public class UpdateTest {
         b.parameter(BatchUtils.JP_CLUSTER, TESTCLUSTER);
         b.parameter(LoadContainersOfImageTasklet.JP_IMAGE, ImagesForUpdate.builder()
           .addImage(TESTIMAGE, SRC_VERSION, TARGET_VERSION)
-          .getExclude().addContainer(C_IGNORE).end()
+          .getExcluded().addContainer(C_IGNORE).end()
           .build());
 
         b.parameter(HealthCheckContainerTasklet.JP_HEALTH_CHECK_ENABLED, true);

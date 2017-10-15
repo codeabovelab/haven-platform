@@ -19,13 +19,12 @@ package com.codeabovelab.dm.agent.proxy;
 
 import com.codeabovelab.dm.common.utils.Closeables;
 import com.codeabovelab.dm.common.utils.Uuids;
-import io.netty.channel.*;
+import io.netty.channel.Channel;
+import io.netty.channel.ChannelFuture;
 import io.netty.handler.codec.http.*;
-import io.netty.handler.codec.http.HttpHeaders;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 
-import javax.annotation.security.RolesAllowed;
 import javax.servlet.*;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;

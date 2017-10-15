@@ -16,7 +16,6 @@
 
 package com.codeabovelab.dm.agent.proxy;
 
-import com.codeabovelab.dm.common.utils.Closeables;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
@@ -97,9 +96,7 @@ class NettyHandler extends ChannelInboundHandlerAdapter implements AutoCloseable
             HttpHeaders headers = backendResp.headers();
             for (String name : headers.names()) {
                 List<String> vals = headers.getAll(name);
-                vals.forEach(val -> {
-                    frontResp.addHeader(name, val);
-                });
+                vals.forEach(val -> frontResp.addHeader(name, val));
             }
         }
     }

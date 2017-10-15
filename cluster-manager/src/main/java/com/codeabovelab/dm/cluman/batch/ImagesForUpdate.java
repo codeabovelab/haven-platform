@@ -23,9 +23,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import io.swagger.annotations.ApiModelProperty;
-import lombok.AccessLevel;
-import lombok.Data;
-import lombok.Getter;
+import lombok.*;
 import org.springframework.util.PatternMatchUtils;
 
 import java.util.*;
@@ -38,7 +36,7 @@ public class ImagesForUpdate {
     @Data
     public static class Builder {
         private final List<Image> images = new ArrayList<>();
-        private final ExcludeBuilder exclude = new ExcludeBuilder(this);
+        private final ExcludeBuilder excluded = new ExcludeBuilder(this);
 
         public Builder addImage(String name, String from, String to) {
             addImage(new Image(name, from, to));
@@ -126,7 +124,7 @@ public class ImagesForUpdate {
     }
 
     private final List<Image> images;
-    private final Exclude exclude;
+    private final Exclude excluded;
     @Getter(AccessLevel.NONE)
     private final Map<String, Image> imagesByName = new HashMap<>();
     @Getter(AccessLevel.NONE)
@@ -135,7 +133,7 @@ public class ImagesForUpdate {
     @JsonCreator
     public ImagesForUpdate(Builder builder) {
         this.images = ImmutableList.copyOf(builder.images);
-        this.exclude = builder.exclude.build();
+        this.excluded = builder.excluded.build();
         this.images.forEach((img) -> {
             String name = img.getName();
             if(name.indexOf('*') < 0) {
@@ -189,6 +187,7 @@ public class ImagesForUpdate {
     }
 
     @Data
+    @ToString(of = {"nodes", "containers"})
     public static final class ExcludeBuilder {
         private final Set<String> nodes = new HashSet<>();
         private final Set<String> containers = new HashSet<>();

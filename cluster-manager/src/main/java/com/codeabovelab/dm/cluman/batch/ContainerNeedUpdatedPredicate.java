@@ -75,8 +75,9 @@ public class ContainerNeedUpdatedPredicate implements ContainerPredicate {
     }
 
     private boolean exclude(ProcessedContainer pc) {
-        ImagesForUpdate.Exclude exclude = images.getExclude();
+        ImagesForUpdate.Exclude exclude = images.getExcluded();
         Set<String> containers = exclude.getContainers();
+        log.info("Checking containers, list of excluded: {}, processedContainer: {}", exclude, pc);
         return containers.contains(pc.getId()) ||
           containers.contains(pc.getName()) ||
           exclude.getNodes().contains(pc.getNode());

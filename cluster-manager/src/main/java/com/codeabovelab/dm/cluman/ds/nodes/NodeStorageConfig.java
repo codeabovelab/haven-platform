@@ -31,7 +31,7 @@ public class NodeStorageConfig {
      * It not limit, it used for allocate some resources, so you can
      * exceed this value, but then performance may degrade.
      */
-    private int maxNodes = 10;
+    private int maxNodes = 12;
     /**
      * Minimal ttl of node in seconds, note that node may not respond on maintenance
      * and we must keep they while this time.

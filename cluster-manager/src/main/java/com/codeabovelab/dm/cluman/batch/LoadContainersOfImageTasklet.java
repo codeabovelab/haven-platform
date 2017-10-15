@@ -82,16 +82,18 @@ public class LoadContainersOfImageTasklet {
         for(DockerContainer container : containers) {
             ImagesForUpdate.Image img = images.findImage(container.getImage(), container.getImageId());
             if(img == null) {
-                log.warn("Container does not match any image: {}", container.getName());
+                log.warn("Container does not match any image: {} => {}", container.getId(), container.getName());
                 continue;
             }
             ProcessedContainer processedContainer = convert(container);
             if(ContainerUtils.isOurContainer(processedContainer)) {
-                log.warn("Our container: {}", processedContainer.getName());
+                log.warn("Our container: {} => {}", container.getId(), processedContainer.getName());
                 continue;
             }
 
             if(!predicate.test(processedContainer)) {
+                context.fire("Container skipped by filter: " + container.getId());
+                log.warn("Container skipped by filter: {} => {}", container.getId(), processedContainer.getName());
                 continue;
             }
 
@@ -133,7 +135,11 @@ public class LoadContainersOfImageTasklet {
             if(i > 0) {
                 sb.append(", ");
             }
+            sb.append("[");
             sb.append(container.getId());
+            sb.append(" => ");
+            sb.append(container.getName());
+            sb.append("]");
         }
         log.info(sb.toString());
         context.fire(sb.toString());

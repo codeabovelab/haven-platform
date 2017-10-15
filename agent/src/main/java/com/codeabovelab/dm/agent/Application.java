@@ -16,14 +16,9 @@
 
 package com.codeabovelab.dm.agent;
 
-import com.codeabovelab.dm.agent.notifier.Notifier;
-import com.codeabovelab.dm.agent.security.AuthConfiguration;
-import com.codeabovelab.dm.agent.security.SslServletContainerCustomizer;
 import com.codeabovelab.dm.agent.proxy.DockerProxyConfiguration;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
-import org.springframework.boot.autoconfigure.web.EmbeddedServletContainerAutoConfiguration;
 import org.springframework.boot.autoconfigure.web.ServerProperties;
-import org.springframework.boot.autoconfigure.websocket.WebSocketAutoConfiguration;
 import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.boot.web.support.SpringBootServletInitializer;
