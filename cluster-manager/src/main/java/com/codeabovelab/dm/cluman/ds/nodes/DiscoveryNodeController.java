@@ -88,7 +88,7 @@ public class DiscoveryNodeController {
                 b.mergeHealth(health);
             });
         }
-        log.info("Update node {}", name);
+        log.info("Update node: {}, health: {}", name, health);
         return new ResponseEntity<>(HttpStatus.OK);
     }
 

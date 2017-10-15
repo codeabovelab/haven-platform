@@ -101,7 +101,7 @@ public class ContainerSourceFactory {
 
     private static void loadMounts(List<ContainerDetails.MountPoint> srcPoints, List<Mount> srcMounts,
                                    List<MountSource> dest, Set<String> ignored) {
-        log.info("srcPoints: {}, srcMounts:{}, ignored: {}");
+        log.info("srcPoints: {}, srcMounts:{}, ignored: {}", srcPoints, srcMounts, ignored);
         // docker place all mounts to MountPoints, but this does not provide enough info
         // otherwise hostConfig.mounts have full info but sometime may be empty, therefore we use both sources
         Set<String> converted = new HashSet<>();
