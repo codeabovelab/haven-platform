@@ -100,10 +100,10 @@ public final class ExecutorUtils {
         private boolean daemon = true;
         private Thread.UncaughtExceptionHandler exceptionHandler = Throwables.uncaughtHandler();
         private RejectedExecutionHandler rejectedHandler = new ThreadPoolExecutor.AbortPolicy();
-        private int maxSize = 5;
         private int coreSize = 2;
+        private int maxSize = 5;
         private long keepAlive = 30;
-        private int queueSize = 10;
+        private int queueSize = 50;
 
         /**
          * Name of thread, without thread number pattern.
