@@ -16,11 +16,11 @@
 
 package com.codeabovelab.dm.cluman.ui;
 
+import com.codeabovelab.dm.cluman.cluster.application.ApplicationService;
 import com.codeabovelab.dm.cluman.cluster.compose.ComposeExecutor;
 import com.codeabovelab.dm.cluman.cluster.compose.ComposeResult;
 import com.codeabovelab.dm.cluman.cluster.compose.ComposeUtils;
 import com.codeabovelab.dm.cluman.cluster.compose.model.ComposeArg;
-import com.codeabovelab.dm.cluman.cluster.application.ApplicationService;
 import com.codeabovelab.dm.cluman.cluster.docker.management.DockerService;
 import com.codeabovelab.dm.cluman.cluster.docker.model.ContainerConfig;
 import com.codeabovelab.dm.cluman.cluster.docker.model.ContainerDetails;
@@ -31,12 +31,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
-import org.springframework.util.Assert;
 import org.springframework.util.StringUtils;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestPart;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.File;

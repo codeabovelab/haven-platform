@@ -25,7 +25,6 @@ import com.codeabovelab.dm.cluman.cluster.docker.model.CreateVolumeCmd;
 import com.codeabovelab.dm.cluman.cluster.docker.model.Volume;
 import com.codeabovelab.dm.cluman.model.DiscoveryStorage;
 import com.codeabovelab.dm.cluman.model.NodesGroup;
-import com.codeabovelab.dm.cluman.ui.model.UIResult;
 import com.codeabovelab.dm.cluman.ui.model.UiVolume;
 import com.codeabovelab.dm.cluman.validate.ExtendedAssert;
 import lombok.RequiredArgsConstructor;

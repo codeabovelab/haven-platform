@@ -20,15 +20,13 @@ import com.codeabovelab.dm.cluman.cluster.docker.management.result.ProcessEvent;
 import com.codeabovelab.dm.cluman.cluster.docker.model.Frame;
 import com.google.common.util.concurrent.MoreExecutors;
 import com.google.common.util.concurrent.SettableFuture;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.slf4j.Slf4j;
 
 import java.io.InputStream;
 import java.util.function.Consumer;
 
+@Slf4j
 public class ProcessEventProcessor implements ResponseStreamProcessor<ProcessEvent> {
-
-    private static final Logger LOG = LoggerFactory.getLogger(ProcessEventProcessor.class);
 
     @Override
     public void processResponseStream(StreamContext<ProcessEvent> context) {
@@ -43,13 +41,13 @@ public class ProcessEventProcessor implements ResponseStreamProcessor<ProcessEve
                 try {
                     ProcessEvent.watchRaw(watcher, frame.getMessage(), false);
                 } catch (Exception e) {
-                    LOG.error("Cannot read body", e);
+                    log.error("Cannot read body", e);
                 } finally {
                     frame = frameReader.readFrame();
                 }
             }
         } catch (Exception t) {
-            LOG.error("Cannot close reader", t);
+            log.error("Cannot close reader", t);
         }
 
     }

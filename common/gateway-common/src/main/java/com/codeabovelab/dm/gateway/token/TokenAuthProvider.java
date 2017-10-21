@@ -16,10 +16,8 @@
 
 package com.codeabovelab.dm.gateway.token;
 
-import com.codeabovelab.dm.common.security.SecurityUtils;
 import com.codeabovelab.dm.common.security.SuccessAuthProcessor;
 import com.codeabovelab.dm.common.security.token.TokenData;
-import com.codeabovelab.dm.common.security.token.TokenException;
 import com.codeabovelab.dm.common.security.token.TokenValidator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

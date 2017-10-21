@@ -20,12 +20,8 @@ import com.codeabovelab.dm.cluman.cluster.docker.model.Mount;
 import com.codeabovelab.dm.common.utils.Cloneables;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
-import com.fasterxml.jackson.annotation.JsonTypeId;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
-import lombok.AccessLevel;
-import lombok.Data;
-import lombok.EqualsAndHashCode;
-import lombok.Setter;
+import lombok.*;
 
 import java.util.HashMap;
 import java.util.Map;

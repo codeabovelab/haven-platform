@@ -19,7 +19,6 @@ package com.codeabovelab.dm.cluman.security;
 import com.codeabovelab.dm.common.security.Authorities;
 import com.codeabovelab.dm.common.security.GrantedAuthorityImpl;
 import com.codeabovelab.dm.common.security.MultiTenancySupport;
-import com.google.common.collect.ImmutableMap;
 import org.springframework.security.access.hierarchicalroles.RoleHierarchy;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.util.Assert;

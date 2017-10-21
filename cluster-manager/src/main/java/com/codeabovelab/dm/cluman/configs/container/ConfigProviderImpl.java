@@ -16,12 +16,11 @@
 
 package com.codeabovelab.dm.cluman.configs.container;
 
-import com.codeabovelab.dm.cluman.model.ImageDescriptor;
 import com.codeabovelab.dm.cluman.model.ContainerSource;
+import com.codeabovelab.dm.cluman.model.ImageDescriptor;
 import com.codeabovelab.dm.common.utils.pojo.PojoUtils;
 import com.codeabovelab.dm.common.utils.pojo.Property;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.annotation.AnnotationAwareOrderComparator;
 import org.springframework.stereotype.Component;
@@ -32,10 +31,9 @@ import java.util.*;
 /**
  * Resolves properties from multiple sources and merge to one CreateContainerArg
  */
+@Slf4j
 @Component
 public class ConfigProviderImpl implements ConfigProvider {
-
-    private static final Logger LOG = LoggerFactory.getLogger(ConfigProviderImpl.class);
 
     private final List<ConfigsFetcher> fetcherList;
 
@@ -53,7 +51,7 @@ public class ConfigProviderImpl implements ConfigProvider {
             try {
                 configsFetcher.resolveProperties(context);
             } catch (Exception e) {
-                LOG.error("can't process config for image " + image, e);
+                log.error("can't process config for image " + image, e);
             }
         }
         List<ContainerSource> configs = context.getArgList();
@@ -78,7 +76,7 @@ public class ConfigProviderImpl implements ConfigProvider {
                     Class<?> type = prop.getType();
                     if(Collection.class.isAssignableFrom(type) || Map.class.isAssignableFrom(type)) {
                         // we must not set collections, just add elements to them
-                        LOG.warn("Ignore modifiable property of collection type: {}.{}", prop.getDeclaringClass(), prop.getName());
+                        log.warn("Ignore modifiable property of collection type: {}.{}", prop.getDeclaringClass(), prop.getName());
                         continue;
                     }
                 }
@@ -107,7 +105,7 @@ public class ConfigProviderImpl implements ConfigProvider {
                     prop.set(dest, o);
                 }
             } catch (Exception e) {
-                LOG.error("Can't process property: " + prop.getName(), e);
+                log.error("Can't process property: " + prop.getName(), e);
             }
 
         }

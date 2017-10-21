@@ -19,7 +19,6 @@ package com.codeabovelab.dm.cluman.batch;
 import com.codeabovelab.dm.cluman.cluster.docker.model.ContainerDetails;
 import com.codeabovelab.dm.cluman.job.JobComponent;
 import com.codeabovelab.dm.cluman.model.ContainerSource;
-import com.codeabovelab.dm.cluman.model.DiscoveryStorage;
 import com.codeabovelab.dm.cluman.model.ImageDescriptor;
 import com.codeabovelab.dm.cluman.model.NodesGroup;
 import com.codeabovelab.dm.cluman.source.ContainerSourceFactory;

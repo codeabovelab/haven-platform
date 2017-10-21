@@ -16,8 +16,6 @@
 
 package com.codeabovelab.dm.common.fc;
 
-import java.io.File;
-
 /**
  */
 public interface FileBased extends AutoCloseable {

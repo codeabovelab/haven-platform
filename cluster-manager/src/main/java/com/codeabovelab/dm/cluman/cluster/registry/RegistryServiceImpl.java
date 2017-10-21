@@ -21,8 +21,6 @@ import com.codeabovelab.dm.cluman.cluster.registry.model.RegistryAdapter;
 import lombok.Builder;
 import org.springframework.beans.factory.InitializingBean;
 
-import java.util.concurrent.ScheduledExecutorService;
-
 /**
  * REST implementation of RegistryService
  */

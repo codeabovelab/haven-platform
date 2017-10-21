@@ -17,8 +17,7 @@
 package com.codeabovelab.dm.cluman.security;
 
 import com.codeabovelab.dm.common.security.SecurityUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -27,9 +26,9 @@ import org.springframework.util.Assert;
 /**
  * Utility for temporary credentials. Used in cases when non privileged code must run parts with high privileges.
  */
+@Slf4j
 public final class TempAuth implements AutoCloseable {
 
-    private static final Logger LOG = LoggerFactory.getLogger(TempAuth.class);
     private final Authentication newAuth;
     private final SecurityContext context;
     private final SecurityContext oldContext;
@@ -70,7 +69,7 @@ public final class TempAuth implements AutoCloseable {
     public void close() {
         SecurityContext currContext = SecurityContextHolder.getContext();
         if(currContext != context) {
-            LOG.warn("Current context \"{}\" not equal with expected: \"{}\"", currContext, context);
+            log.warn("Current context \"{}\" not equal with expected: \"{}\"", currContext, context);
         }
         SecurityContextHolder.setContext(oldContext);
         if(aclHolder != null) {

@@ -16,13 +16,9 @@
 
 package com.codeabovelab.dm.cluman.users;
 
-import com.codeabovelab.dm.common.kv.mapping.KvClassMapper;
 import com.codeabovelab.dm.common.kv.mapping.KvMap;
 import com.codeabovelab.dm.common.kv.mapping.KvMapping;
-import com.codeabovelab.dm.common.security.Authorities;
-import com.codeabovelab.dm.common.security.ExtendedUserDetails;
-import com.codeabovelab.dm.common.security.ExtendedUserDetailsImpl;
-import com.codeabovelab.dm.common.security.UserIdentifiers;
+import com.codeabovelab.dm.common.security.*;
 import org.springframework.security.access.ConfigAttribute;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;

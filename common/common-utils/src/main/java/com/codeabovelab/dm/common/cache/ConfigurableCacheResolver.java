@@ -23,7 +23,6 @@ import org.springframework.cache.CacheManager;
 import org.springframework.cache.interceptor.BasicOperation;
 import org.springframework.cache.interceptor.CacheOperationInvocationContext;
 import org.springframework.cache.interceptor.CacheResolver;
-import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
 
 import java.lang.annotation.Annotation;

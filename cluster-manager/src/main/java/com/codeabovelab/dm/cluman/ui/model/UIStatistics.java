@@ -24,12 +24,9 @@ import lombok.Data;
 
 import java.time.LocalDateTime;
 import java.util.Collection;
-import java.util.List;
 import java.util.Map;
 
-import static com.codeabovelab.dm.cluman.ui.UiUtils.convertToMb;
-import static com.codeabovelab.dm.cluman.ui.UiUtils.convertToPercentFromJiffies;
-import static com.codeabovelab.dm.cluman.ui.UiUtils.convertToStringFromJiffies;
+import static com.codeabovelab.dm.cluman.ui.UiUtils.*;
 
 
 @Data

@@ -17,7 +17,6 @@
 package com.codeabovelab.dm.common.meter;
 
 import com.codahale.metrics.Metered;
-import com.codahale.metrics.Metric;
 import com.codahale.metrics.Sampling;
 import org.springframework.util.Assert;
 

@@ -24,11 +24,10 @@ import com.codeabovelab.dm.common.healthcheck.ServiceHealthCheckResultImpl;
 import com.codeabovelab.dm.common.utils.Consumers;
 import com.codeabovelab.dm.common.utils.Uuids;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import lombok.extern.slf4j.Slf4j;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.actuate.autoconfigure.EndpointWebMvcAutoConfiguration;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
@@ -52,12 +51,12 @@ import static org.mockito.Mockito.when;
 
 /**
  */
+@Slf4j
 @RunWith(SpringJUnit4ClassRunner.class)
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
 @SpringBootTest(classes = UpdateTest.AppConfiguration.class)
 public class UpdateTest {
 
-    private static final Logger LOG = LoggerFactory.getLogger(UpdateTest.class);
     static final String TESTIMAGE = "testimage";
     static final String SRC_VERSION = "1";
     static final String TARGET_VERSION = "2";
@@ -297,10 +296,10 @@ public class UpdateTest {
 
     private void executeJobInstance(JobInstance jobInstance) throws InterruptedException, java.util.concurrent.ExecutionException {
         jobsManager.getSubscriptions().subscribeOnKey((e) -> {
-            LOG.info("TEST JOB {}", e);
+            log.info("TEST JOB {}", e);
 
         },  jobInstance.getInfo());
-        LOG.info("Try start job: {}", jobInstance.getInfo().getId());
+        log.info("Try start job: {}", jobInstance.getInfo().getId());
         jobInstance.start();
         //wait end
         jobInstance.atEnd().get();

@@ -15,9 +15,7 @@
  */
 
 package com.codeabovelab.dm.cluman.ui.model;
-import com.codeabovelab.dm.cluman.cluster.docker.model.swarm.Endpoint;
 import com.codeabovelab.dm.cluman.cluster.docker.model.swarm.Service;
-import com.codeabovelab.dm.cluman.cluster.docker.model.swarm.Task;
 import com.codeabovelab.dm.cluman.model.ContainerService;
 import com.codeabovelab.dm.cluman.model.Port;
 import com.codeabovelab.dm.cluman.model.ServiceSource;

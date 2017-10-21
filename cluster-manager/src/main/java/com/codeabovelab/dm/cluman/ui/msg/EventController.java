@@ -16,7 +16,6 @@
 
 package com.codeabovelab.dm.cluman.ui.msg;
 
-import com.codeabovelab.dm.cluman.cluster.filter.Filter;
 import com.codeabovelab.dm.cluman.cluster.filter.FilterFactory;
 import com.codeabovelab.dm.cluman.model.EventWithTime;
 import com.codeabovelab.dm.cluman.persistent.PersistentBusFactory;

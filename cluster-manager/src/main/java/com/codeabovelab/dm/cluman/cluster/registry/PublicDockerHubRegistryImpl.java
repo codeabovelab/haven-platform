@@ -20,7 +20,6 @@ import com.codeabovelab.dm.cluman.cluster.registry.data.ImageCatalog;
 import com.codeabovelab.dm.cluman.cluster.registry.data.SearchResult;
 import com.codeabovelab.dm.cluman.cluster.registry.model.RegistryAdapter;
 import com.codeabovelab.dm.common.utils.Throwables;
-import com.google.common.base.CharMatcher;
 import lombok.Builder;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.client.HttpStatusCodeException;

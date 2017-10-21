@@ -17,7 +17,6 @@
 package com.codeabovelab.dm.mail.dto;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
-import org.springframework.util.Assert;
 
 import java.util.Collections;
 import java.util.HashMap;

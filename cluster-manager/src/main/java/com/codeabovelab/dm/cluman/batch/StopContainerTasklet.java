@@ -16,10 +16,8 @@
 
 package com.codeabovelab.dm.cluman.batch;
 
-import com.codeabovelab.dm.cluman.cluster.docker.management.DockerService;
 import com.codeabovelab.dm.cluman.cluster.docker.management.argument.StopContainerArg;
 import com.codeabovelab.dm.cluman.cluster.docker.management.result.ServiceCallResult;
-import com.codeabovelab.dm.cluman.ds.nodes.NodeStorage;
 import com.codeabovelab.dm.cluman.job.JobComponent;
 import com.codeabovelab.dm.cluman.job.JobContext;
 import com.codeabovelab.dm.cluman.model.NodesGroup;

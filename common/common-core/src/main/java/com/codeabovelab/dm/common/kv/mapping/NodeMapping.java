@@ -20,12 +20,10 @@ import com.codeabovelab.dm.common.kv.KeyValueStorage;
 import com.codeabovelab.dm.common.kv.KvNode;
 import com.codeabovelab.dm.common.kv.KvUtils;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
-import com.fasterxml.jackson.annotation.JsonTypeId;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.annotation.AnnotationUtils;
 
-import java.lang.annotation.Annotation;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;

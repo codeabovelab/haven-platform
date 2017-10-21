@@ -21,7 +21,6 @@ import com.codeabovelab.dm.cluman.ui.HttpException;
 import com.codeabovelab.dm.common.utils.ArrayUtils;
 import com.codeabovelab.dm.common.utils.StringUtils;
 import org.springframework.http.HttpStatus;
-import org.springframework.util.Assert;
 
 import java.text.MessageFormat;
 

@@ -19,8 +19,6 @@ package com.codeabovelab.dm.common.utils;
 import com.google.common.net.InetAddresses;
 import org.springframework.util.Assert;
 
-import java.net.InetAddress;
-
 /**
  */
 public class AddressUtils {

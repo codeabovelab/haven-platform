@@ -16,13 +16,7 @@
 
 package com.codeabovelab.dm.cluman.ui.msg;
 
-import com.codeabovelab.dm.cluman.cluster.docker.management.DockerServiceEvent;
-import com.codeabovelab.dm.cluman.cluster.docker.model.DockerEvent;
 import com.codeabovelab.dm.cluman.events.EventsUtils;
-import com.codeabovelab.dm.cluman.model.LogEvent;
-import com.codeabovelab.dm.cluman.model.NodeEvent;
-import com.codeabovelab.dm.cluman.model.Severity;
-import com.codeabovelab.dm.cluman.model.WithSeverity;
 import com.codeabovelab.dm.common.mb.Subscriptions;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -32,20 +26,14 @@ import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.converter.MessageConverter;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
-import org.springframework.messaging.simp.broker.AbstractBrokerMessageHandler;
-import org.springframework.messaging.simp.broker.DefaultSubscriptionRegistry;
-import org.springframework.messaging.simp.broker.SimpleBrokerMessageHandler;
-import org.springframework.messaging.simp.broker.SubscriptionRegistry;
+import org.springframework.messaging.simp.broker.*;
 import org.springframework.messaging.simp.stomp.StompHeaderAccessor;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.web.authentication.WebAuthenticationDetails;
 import org.springframework.stereotype.Component;
 import org.springframework.util.AntPathMatcher;
 import org.springframework.util.PathMatcher;
-import org.springframework.web.socket.messaging.AbstractSubProtocolEvent;
-import org.springframework.web.socket.messaging.SessionConnectEvent;
-import org.springframework.web.socket.messaging.SessionDisconnectEvent;
-import org.springframework.web.socket.messaging.SessionSubscribeEvent;
+import org.springframework.web.socket.messaging.*;
 
 import java.util.ArrayList;
 import java.util.List;

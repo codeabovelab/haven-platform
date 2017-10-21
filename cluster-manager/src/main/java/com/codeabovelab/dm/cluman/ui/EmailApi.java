@@ -26,7 +26,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
 import javax.validation.Valid;
 import java.util.ArrayList;
@@ -55,7 +57,7 @@ public class EmailApi {
         if(user == null) {
             user = getCurrentUser().getUsername();
         } else {
-            checkAсcess(user);
+            checkAccess(user);
         }
         MailSubscription ms = MailSubscription.builder()
           .severity(subscription.getSeverity())
@@ -71,12 +73,12 @@ public class EmailApi {
         if(user == null) {
             user = getCurrentUser().getUsername();
         } else {
-            checkAсcess(user);
+            checkAccess(user);
         }
         mailNotificationsService.remove(subscription.getEventSource(), user);
     }
 
-    private void checkAсcess(String modifiedUser) {
+    private void checkAccess(String modifiedUser) {
         ExtendedUserDetails eud = getCurrentUser();
         if (Authorities.hasAnyOfAuthorities(eud, Authorities.ADMIN_ROLE)) {
             // admin can do anything

@@ -20,8 +20,7 @@ import com.codeabovelab.dm.cluman.job.JobBean;
 import com.codeabovelab.dm.cluman.job.JobContext;
 import com.codeabovelab.dm.cluman.job.JobParam;
 import com.codeabovelab.dm.cluman.ui.update.UpdateContainersUtil;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import java.util.List;
@@ -30,10 +29,9 @@ import java.util.ListIterator;
 /**
  * Stop all containers, then make updated copy for each and start.
  */
+@Slf4j
 @JobBean(UpdateContainersUtil.JOB_PREFIX + "stopThenStartAll")
 public class UpdateStopThenStartAllJob implements Runnable {
-
-    private static final Logger LOG = LoggerFactory.getLogger(UpdateStopThenStartAllJob.class);
 
     @Autowired
     private LoadContainersOfImageTasklet loader;
@@ -96,7 +94,7 @@ public class UpdateStopThenStartAllJob implements Runnable {
             needRollback = this.rollbackEnable;
             if(needRollback) {
                 jobContext.fire("Error on container {0}, try rollback", curr);
-                LOG.error("Error on container {}, try rollback", curr, e);
+                log.error("Error on container {}, try rollback", curr, e);
             } else {
                 jobContext.fire("Error on container {0}", curr);
                 throw e;

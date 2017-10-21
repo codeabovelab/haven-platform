@@ -18,8 +18,6 @@ package com.codeabovelab.dm.cluman.batch;
 
 import com.codeabovelab.dm.cluman.job.JobBean;
 import com.codeabovelab.dm.cluman.ui.update.UpdateContainersUtil;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 
 /**
@@ -27,8 +25,6 @@ import org.springframework.beans.factory.annotation.Autowired;
  */
 @JobBean(UpdateContainersUtil.JOB_PREFIX + "stopThenStartEach")
 public class UpdateStopThenStartEachJob implements Runnable {
-
-    private static final Logger LOG = LoggerFactory.getLogger(UpdateStopThenStartEachJob.class);
 
     @Autowired
     private StopThenStartEachStrategy startegy;

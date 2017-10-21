@@ -18,12 +18,11 @@ package com.codeabovelab.dm.cluman.ui.model;
 
 import com.codeabovelab.dm.cluman.pipeline.instance.State;
 import com.fasterxml.jackson.annotation.JsonCreator;
-import lombok.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Value;
 
-import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
-import java.util.concurrent.CopyOnWriteArrayList;
 
 @Value
 @Builder

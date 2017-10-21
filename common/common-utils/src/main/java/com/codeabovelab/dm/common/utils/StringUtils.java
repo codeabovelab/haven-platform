@@ -16,7 +16,6 @@
 
 package com.codeabovelab.dm.common.utils;
 
-import java.io.Serializable;
 import java.util.function.Function;
 import java.util.function.IntPredicate;
 import java.util.function.Supplier;

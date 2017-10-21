@@ -18,10 +18,7 @@ package com.codeabovelab.dm.cluman.ui;
 
 import com.codeabovelab.dm.cluman.ui.model.UITokenData;
 import com.codeabovelab.dm.cluman.ui.model.UiUserCredentials;
-import com.codeabovelab.dm.common.security.token.TokenConfiguration;
-import com.codeabovelab.dm.common.security.token.TokenData;
-import com.codeabovelab.dm.common.security.token.TokenService;
-import com.codeabovelab.dm.common.security.token.TokenValidatorSettings;
+import com.codeabovelab.dm.common.security.token.*;
 import com.codeabovelab.dm.gateway.token.AuthenticationTokenFilter;
 import io.swagger.annotations.ApiOperation;
 import lombok.RequiredArgsConstructor;
@@ -37,7 +34,6 @@ import org.springframework.web.bind.annotation.*;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
-import java.util.Date;
 
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 

@@ -19,15 +19,11 @@ package com.codeabovelab.dm.common.security.acl;
 import com.codeabovelab.dm.common.security.dto.ObjectIdentityData;
 import com.google.common.collect.ImmutableMap;
 import org.springframework.security.acls.domain.PrincipalSid;
-import org.springframework.security.acls.model.AccessControlEntry;
-import org.springframework.security.acls.model.Acl;
-import org.springframework.security.acls.model.ObjectIdentity;
-import org.springframework.security.acls.model.Sid;
+import org.springframework.security.acls.model.*;
 import org.springframework.util.Assert;
 
 import java.io.Serializable;
 import java.util.Collection;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;

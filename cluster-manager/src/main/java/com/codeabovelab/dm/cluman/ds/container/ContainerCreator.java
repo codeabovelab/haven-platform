@@ -34,8 +34,6 @@ import com.google.common.base.MoreObjects;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 import org.springframework.util.Assert;
 import org.springframework.util.CollectionUtils;
@@ -59,7 +57,6 @@ import static com.google.common.base.MoreObjects.firstNonNull;
 @AllArgsConstructor
 @Slf4j
 public class ContainerCreator {
-    private static final Logger LOG = LoggerFactory.getLogger(ContainerCreator.class);
     private static final int CREATE_CONTAINER_TRIES = 3;
     private final DiscoveryStorage discoveryStorage;
     private final NodeRegistry nodeRegistry;
@@ -89,7 +86,7 @@ public class ContainerCreator {
             ServiceCallResult startRes = cc.dockerService.startContainer(containerId);
             ResultCode code = startRes.getCode();
             if (code != ResultCode.OK) {
-                LOG.error("Start container '{}' was failed.", startRes.getMessage());
+                log.error("Start container '{}' was failed.", startRes.getMessage());
             }
             result.setCode(code);
             result.setMessage(startRes.getMessage());
@@ -98,17 +95,17 @@ public class ContainerCreator {
                 if (container != null) {
                     String node = container.getNode() == null ? null : container.getNode().getName();
                     if(node == null) {
-                        LOG.error("Container '{}' has null node.", containerId);
+                        log.error("Container '{}' has null node.", containerId);
                     }
                     container.setName(ContainerUtils.fixContainerName(container.getName()));
                     ContainerRegistration orCreateContainer = containerStorage.updateAndGetContainer(container, node);
                     orCreateContainer.setAdditionalLabels(cc.arg.getContainer().getLabels());
                 } else {
-                    LOG.error("Can't receive container '{}' from service.", containerId);
+                    log.error("Can't receive container '{}' from service.", containerId);
                 }
             }
         } catch (Exception e) {
-            LOG.error("Can't create container", e);
+            log.error("Can't create container", e);
             result.setCode(ResultCode.ERROR);
             result.setMessage(e.getMessage());
         }
@@ -206,7 +203,7 @@ public class ContainerCreator {
           result.getNode(),
           appCountPerNode,
           dockerService.getClusterConfig().getMaxCountOfInstances(), env);
-        LOG.info("Env: {}", env);
+        log.info("Env: {}", env);
         ProcessEvent.watch(cc.watcher, "Environment: {0}", env);
 
         String name = containersNameService.calculateName(CalcNameArg.builder()
@@ -216,7 +213,7 @@ public class ContainerCreator {
                 .dockerService(dockerService).build());
         cc.setName(name);
         ProcessEvent.watch(cc.watcher, "Calculated name of the container: {0}", name);
-        LOG.info("Calculated name of the container {}", name);
+        log.info("Calculated name of the container {}", name);
 
         CreateContainerCmd cmd = new CreateContainerCmd();
         cmd.setName(name);
@@ -234,7 +231,7 @@ public class ContainerCreator {
             Map<ExposedPort, Ports.Binding[]> bindings = portBindings.getBindings();
             cmd.setExposedPorts(new ExposedPorts(bindings.keySet()));
         }
-        LOG.info("Command for execution: {}", cmd);
+        log.info("Command for execution: {}", cmd);
         ProcessEvent.watch(cc.watcher, "Command for execution: {0}", cmd);
         return cmd;
     }
@@ -357,7 +354,7 @@ public class ContainerCreator {
                     b.networkMode(ng.getDefaultNetworkName());
                     return;
                 }
-                LOG.warn("Cluster \"{}\" does not have any network, so container \"{}\" will be created with default network.", cluster, cc.getName());
+                log.warn("Cluster \"{}\" does not have any network, so container \"{}\" will be created with default network.", cluster, cc.getName());
             }
         } else {
             b.networkMode(networkSrc);

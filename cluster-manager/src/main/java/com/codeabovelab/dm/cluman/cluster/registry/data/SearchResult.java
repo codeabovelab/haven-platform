@@ -17,12 +17,10 @@
 package com.codeabovelab.dm.cluman.cluster.registry.data;
 
 import com.codeabovelab.dm.cluman.cluster.registry.ImageNameComparator;
-import com.codeabovelab.dm.common.utils.VersionComparator;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Data;
 
-import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;

@@ -18,7 +18,6 @@ package com.codeabovelab.dm.cluman.ui.model;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import lombok.AllArgsConstructor;
-import lombok.Data;
 import lombok.Value;
 
 import java.util.Map;

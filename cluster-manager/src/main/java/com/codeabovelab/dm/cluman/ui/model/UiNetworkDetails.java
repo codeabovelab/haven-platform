@@ -19,7 +19,6 @@ package com.codeabovelab.dm.cluman.ui.model;
 import com.codeabovelab.dm.cluman.cluster.docker.model.Network;
 import com.codeabovelab.dm.cluman.ds.container.ContainerStorage;
 import com.codeabovelab.dm.common.utils.StringUtils;
-import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 

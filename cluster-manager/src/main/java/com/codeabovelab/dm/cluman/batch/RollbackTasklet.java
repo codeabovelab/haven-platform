@@ -22,8 +22,6 @@ import com.codeabovelab.dm.cluman.job.JobComponent;
 import com.codeabovelab.dm.cluman.job.JobContext;
 import com.codeabovelab.dm.cluman.model.ContainersManager;
 import com.codeabovelab.dm.cluman.model.NodesGroup;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import java.util.List;
@@ -34,8 +32,6 @@ import java.util.List;
  */
 @JobComponent
 public class RollbackTasklet {
-
-    private static final Logger LOG = LoggerFactory.getLogger(RollbackTasklet.class);
 
     @Autowired
     private JobContext context;

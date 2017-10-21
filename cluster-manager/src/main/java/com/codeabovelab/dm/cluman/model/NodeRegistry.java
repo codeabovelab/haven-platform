@@ -18,8 +18,6 @@ package com.codeabovelab.dm.cluman.model;
 
 import com.codeabovelab.dm.cluman.cluster.docker.management.DockerService;
 
-import java.util.Set;
-
 /**
  */
 public interface NodeRegistry {

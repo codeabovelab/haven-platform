@@ -16,7 +16,6 @@
 
 package com.codeabovelab.dm.cluman.batch;
 
-import com.codeabovelab.dm.cluman.cluster.docker.management.DockerService;
 import com.codeabovelab.dm.cluman.job.*;
 import com.codeabovelab.dm.cluman.model.DiscoveryStorage;
 import com.codeabovelab.dm.cluman.model.NodesGroup;

@@ -16,12 +16,11 @@
 
 package com.codeabovelab.dm.cluman.ds.container;
 
-import com.codeabovelab.dm.cluman.utils.ContainerUtils;
 import com.codeabovelab.dm.cluman.cluster.docker.management.DockerService;
 import com.codeabovelab.dm.cluman.cluster.docker.management.argument.CalcNameArg;
+import com.codeabovelab.dm.cluman.utils.ContainerUtils;
 import com.codeabovelab.dm.common.utils.StringUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -34,11 +33,11 @@ import java.util.function.Function;
 /**
  * Service which do calculation of new container name
  */
+@Slf4j
 @Component
 public class ContainersNameService {
 
     private static final long TIMEOUT_NAMES = TimeUnit.MINUTES.toMillis(1L);
-    private static final Logger LOG = LoggerFactory.getLogger(ContainersNameService.class);
 
     private final Function<DockerService, Collection<String>> containerNames;
     //we store names instead last name, it allow us to use middle index instead of last
@@ -58,7 +57,7 @@ public class ContainersNameService {
 
         String name = internalProcess(calcNameArg);
         if (calcNameArg.isAllocate()) { storeRecentName(name); }
-        LOG.info("name of container: {}", name);
+        log.info("name of container: {}", name);
         return name;
     }
 
@@ -68,7 +67,7 @@ public class ContainersNameService {
         }
         String applicationName = ContainerUtils.getApplicationName(calcNameArg.getImageName()).toLowerCase();
 
-        LOG.info("applicationName {}", applicationName);
+        log.info("applicationName {}", applicationName);
 
         int last = getMaxNumber(applicationName, calcNameArg.getDockerService());
         if (last == -1) {

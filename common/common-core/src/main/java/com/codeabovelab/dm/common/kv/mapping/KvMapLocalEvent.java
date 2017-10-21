@@ -16,7 +16,6 @@
 
 package com.codeabovelab.dm.common.kv.mapping;
 
-import com.codeabovelab.dm.common.kv.KvStorageEvent;
 import lombok.Data;
 
 /**

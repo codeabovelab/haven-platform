@@ -25,8 +25,7 @@ import com.codeabovelab.dm.cluman.job.JobsManager;
 import com.codeabovelab.dm.cluman.ui.JobApi;
 import com.codeabovelab.dm.cluman.ui.model.UiUpdateContainers;
 import com.codeabovelab.dm.common.utils.Uuids;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
@@ -37,11 +36,10 @@ import java.util.concurrent.TimeUnit;
 /**
  * We use another container because UiRestController is already to big, and need for refactoring
  */
+@Slf4j
 @RestController
 @RequestMapping("/ui/api")
 public class UiUpdateContainersController {
-
-    private static final Logger LOG = LoggerFactory.getLogger(UiUpdateContainersController.class);
 
     private final JobsManager jobsManager;
 
@@ -53,14 +51,14 @@ public class UiUpdateContainersController {
     @RequestMapping(value = "/clusters/{cluster}/containers/update", method = RequestMethod.POST, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseBodyEmitter update(@PathVariable("cluster") String cluster,
                                       @RequestBody UiUpdateContainers req) {
-        LOG.info("got scale update request: {}", req);
+        log.info("got scale update request: {}", req);
         JobParameters params = createParametersString(cluster, req);
 
         ResponseBodyEmitter emitter = new ResponseBodyEmitter(TimeUnit.MINUTES.toMillis(10L));
         JobInstance jobInstance = jobsManager.create(params);
         JobApi.JobEventConsumer consumer = new JobApi.JobEventConsumer(this.jobsManager, emitter, jobInstance);
         jobsManager.getSubscriptions().subscribeOnKey(consumer, jobInstance.getInfo());
-        LOG.info("Try start job: {}", params);
+        log.info("Try start job: {}", params);
         jobInstance.start();
         return emitter;
     }

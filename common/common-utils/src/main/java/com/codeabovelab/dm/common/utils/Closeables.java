@@ -19,8 +19,6 @@ package com.codeabovelab.dm.common.utils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.List;
-
 /**
  * A util for closeables (you can se many similar utilites in guava and apache common-io, but we need some logging)
  */

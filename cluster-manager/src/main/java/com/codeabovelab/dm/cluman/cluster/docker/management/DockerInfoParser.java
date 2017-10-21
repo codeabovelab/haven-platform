@@ -18,12 +18,8 @@ package com.codeabovelab.dm.cluman.cluster.docker.management;
 
 import com.codeabovelab.dm.cluman.cluster.docker.model.Info;
 import com.codeabovelab.dm.cluman.cluster.docker.model.InfoSwarm;
-import com.codeabovelab.dm.cluman.model.DockerServiceInfo;
-import com.codeabovelab.dm.cluman.model.NodeInfoImpl;
-import com.codeabovelab.dm.cluman.model.NodeMetrics;
-import com.codeabovelab.dm.cluman.model.SwarmInfo;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import com.codeabovelab.dm.cluman.model.*;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
 
@@ -33,9 +29,8 @@ import java.util.Map;
 
 /**
  */
+@Slf4j
 class DockerInfoParser {
-
-    private static final Logger LOG = LoggerFactory.getLogger(DockerInfoParser.class);
 
     //an part of ugly swarm info DriverStatus entries
     private static final char NODE_ATTR_PREFIX = '└';
@@ -100,7 +95,7 @@ class DockerInfoParser {
                     try {
                         parseNodeAttr(list, key);
                     } catch(Exception e) {
-                        LOG.error("Can not parse attr: {} at {} entry.", list, i, e);
+                        log.error("Can not parse attr: {} at {} entry.", list, i, e);
                     }
                 }
             }
@@ -185,7 +180,7 @@ class DockerInfoParser {
     }
 
     private DockerServiceInfo.Builder parse() {
-        LOG.debug("info {}", info);
+        log.debug("info {}", info);
         this.result.id(info.getId())
           .name(info.getName())
           .images(info.getImages())

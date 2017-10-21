@@ -17,8 +17,7 @@
 package com.codeabovelab.dm.cluman.source;
 
 import com.codeabovelab.dm.cluman.cluster.docker.management.DockerService;
-import com.codeabovelab.dm.cluman.cluster.docker.management.argument.GetContainersArg;
-import com.codeabovelab.dm.cluman.cluster.docker.model.*;
+import com.codeabovelab.dm.cluman.cluster.docker.model.ContainerDetails;
 import com.codeabovelab.dm.cluman.ds.clusters.*;
 import com.codeabovelab.dm.cluman.job.JobInstance;
 import com.codeabovelab.dm.cluman.job.JobParameters;

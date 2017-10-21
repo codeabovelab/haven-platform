@@ -19,7 +19,6 @@ package com.codeabovelab.dm.common.fc;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.Data;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.util.Assert;
 
 import java.io.IOException;

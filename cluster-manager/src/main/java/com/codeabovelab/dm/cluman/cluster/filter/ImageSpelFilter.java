@@ -16,7 +16,6 @@
 
 package com.codeabovelab.dm.cluman.cluster.filter;
 
-import com.codeabovelab.dm.cluman.cluster.docker.model.Image;
 import com.codeabovelab.dm.cluman.cluster.registry.ImageFilterContext;
 import com.codeabovelab.dm.cluman.model.ImageDescriptor;
 

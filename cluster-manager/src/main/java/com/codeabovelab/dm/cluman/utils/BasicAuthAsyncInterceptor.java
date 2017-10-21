@@ -19,7 +19,6 @@ package com.codeabovelab.dm.cluman.utils;
 import org.springframework.http.HttpRequest;
 import org.springframework.http.client.AsyncClientHttpRequestExecution;
 import org.springframework.http.client.AsyncClientHttpRequestInterceptor;
-import org.springframework.http.client.ClientHttpRequestExecution;
 import org.springframework.http.client.ClientHttpResponse;
 import org.springframework.util.Assert;
 import org.springframework.util.Base64Utils;

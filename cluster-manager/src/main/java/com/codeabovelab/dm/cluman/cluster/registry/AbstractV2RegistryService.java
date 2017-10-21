@@ -26,8 +26,7 @@ import com.codeabovelab.dm.common.utils.Throwables;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.*;
 import org.springframework.util.Assert;
 import org.springframework.web.client.HttpClientErrorException;
@@ -49,8 +48,9 @@ import static org.springframework.web.util.UriComponentsBuilder.newInstance;
 
 /**
  */
+@Slf4j
 abstract class AbstractV2RegistryService implements RegistryService {
-    protected static final Logger log = LoggerFactory.getLogger(AbstractV2RegistryService.class);
+
     private final RegistryAdapter adapter;
     private final LoadingCache<String[], ImageDescriptor> descriptorCache;
     private Consumer<RegistryEvent> eventConsumer;

@@ -16,21 +16,19 @@
 
 package com.codeabovelab.dm.cluman.configs.container;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.slf4j.Slf4j;
 
 import java.io.File;
 
+@Slf4j
 public abstract class AbstractParser implements Parser {
-
-    private static final Logger LOG = LoggerFactory.getLogger(AbstractParser.class);
 
     protected void parse(String fileName, ContainerCreationContext context, String extension) {
         File initialFile = new File(fileName + extension);
-        LOG.info("checking for existing file {}", initialFile);
+        log.info("checking for existing file {}", initialFile);
         if (initialFile.exists()) {
-                LOG.info("ok. parsing file {}", initialFile);
-                parse(initialFile, context);
+            log.info("ok. parsing file {}", initialFile);
+            parse(initialFile, context);
         }
     }
 

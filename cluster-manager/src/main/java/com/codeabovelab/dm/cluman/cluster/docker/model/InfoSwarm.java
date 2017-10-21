@@ -17,10 +17,7 @@
 package com.codeabovelab.dm.cluman.cluster.docker.model;
 
 import com.codeabovelab.dm.cluman.cluster.docker.model.swarm.Cluster;
-import com.codeabovelab.dm.cluman.cluster.docker.model.swarm.SwarmSpec;
-import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import lombok.AllArgsConstructor;
 import lombok.Data;
 
 import java.util.List;

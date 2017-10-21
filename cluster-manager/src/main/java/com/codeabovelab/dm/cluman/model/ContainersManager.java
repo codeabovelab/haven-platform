@@ -16,11 +16,8 @@
 
 package com.codeabovelab.dm.cluman.model;
 
-import com.codeabovelab.dm.cluman.cluster.docker.management.argument.CreateServiceArg;
-import com.codeabovelab.dm.cluman.cluster.docker.management.argument.DeleteContainerArg;
-import com.codeabovelab.dm.cluman.cluster.docker.management.argument.StopContainerArg;
-import com.codeabovelab.dm.cluman.cluster.docker.management.argument.UpdateServiceArg;
-import com.codeabovelab.dm.cluman.cluster.docker.management.result.*;
+import com.codeabovelab.dm.cluman.cluster.docker.management.argument.*;
+import com.codeabovelab.dm.cluman.cluster.docker.management.result.CreateAndStartContainerResult;
 import com.codeabovelab.dm.cluman.cluster.docker.management.result.ServiceCallResult;
 import com.codeabovelab.dm.cluman.cluster.docker.model.ContainerDetails;
 

@@ -17,7 +17,6 @@
 package com.codeabovelab.dm.common.fc;
 
 import lombok.Data;
-import lombok.EqualsAndHashCode;
 import org.springframework.util.Assert;
 
 import java.io.File;
@@ -25,7 +24,6 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.channels.FileChannel;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;

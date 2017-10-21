@@ -17,9 +17,8 @@
 package com.codeabovelab.dm.cluman.configs.container;
 
 import com.codeabovelab.dm.cluman.model.ContainerSource;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.beanutils.BeanUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 
@@ -32,11 +31,10 @@ import java.util.*;
  * Parser for properties like configs
  * TODO: migrate from CLI to compose API
  */
+@Slf4j
 @Deprecated
 @Component
 public class PropertiesParser extends AbstractParser {
-
-    private static final Logger LOG = LoggerFactory.getLogger(PropertiesParser.class);
 
     private final static String ENV = "environment";
     private final static String LABELS = "labels";
@@ -55,7 +53,7 @@ public class PropertiesParser extends AbstractParser {
             Map<String, Object> map = new HashMap<>((Map) prop);
             parse(map, context);
         } catch (IOException e) {
-            LOG.error("can't parse Properties", e);
+            log.error("can't parse Properties", e);
         }
     }
 
@@ -95,12 +93,12 @@ public class PropertiesParser extends AbstractParser {
                         }
                         BeanUtils.setProperty(arg, propKey, value);
                     } catch (Exception e) {
-                        LOG.error("can't set value {} to property {}", propKey, el.getValue());
+                        log.error("can't set value {} to property {}", propKey, el.getValue(), e);
                     }
                 }
             }
         }
-        LOG.info("Result of parsing {}", arg);
+        log.info("Result of parsing {}", arg);
     }
 
     private List<String> parseList(String value) {

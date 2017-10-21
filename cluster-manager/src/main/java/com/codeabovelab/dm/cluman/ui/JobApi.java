@@ -24,8 +24,7 @@ import com.codeabovelab.dm.common.mb.Subscription;
 import com.codeabovelab.dm.common.utils.ExecutorUtils;
 import com.codeabovelab.dm.common.utils.Throwables;
 import lombok.AllArgsConstructor;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
@@ -142,9 +141,9 @@ public class JobApi {
                 .build();
     }
 
+    @Slf4j
     public static class JobEventConsumer implements Consumer<JobEvent> {
 
-        private static final Logger LOG = LoggerFactory.getLogger(JobEventConsumer.class);
         private final ResponseBodyEmitter emitter;
         private final JobInstance jobInstance;
         private final JobsManager jobsManager;
@@ -164,17 +163,17 @@ public class JobApi {
             } catch (IllegalStateException | IOException e) {
                 //we assume that it mean client disconnect or other unrecoverable error
                 close();
-                LOG.error("Disconnect due to error: {}", e.toString());
+                log.error("Disconnect due to error: {}", e.toString());
             } catch (Exception e) {
                 // stack traces for this error too noisy in log
-                LOG.error("Can not send event: {}", e.toString());
+                log.error("Can not send event: {}", e.toString());
             }
             try {
                 if(event.getInfo().getStatus().isEnd()) {
                     close();
                 }
             } catch (Exception e) {
-                LOG.error("end event error", e);
+                log.error("end event error", e);
             }
         }
 

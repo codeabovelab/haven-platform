@@ -17,8 +17,6 @@
 package com.codeabovelab.dm.cluman.cluster.filter;
 
 import lombok.extern.slf4j.Slf4j;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 @Slf4j
 public abstract class AbstractFilter<T> implements Filter {

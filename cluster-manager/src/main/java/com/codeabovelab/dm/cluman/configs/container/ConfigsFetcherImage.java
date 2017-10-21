@@ -19,10 +19,8 @@ package com.codeabovelab.dm.cluman.configs.container;
 import com.codeabovelab.dm.cluman.cluster.docker.model.ContainerConfig;
 import com.codeabovelab.dm.cluman.model.ContainerSource;
 import com.codeabovelab.dm.cluman.model.ImageDescriptor;
-import com.codeabovelab.dm.common.utils.Sugar;
 import lombok.RequiredArgsConstructor;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
@@ -35,12 +33,12 @@ import java.util.Map;
 /**
  * Fetches settings from Image
  */
+@Slf4j
 @Component
 @Order(0)
 @RequiredArgsConstructor(onConstructor = @__(@Autowired))
 public class ConfigsFetcherImage implements ConfigsFetcher {
 
-    private static final Logger LOG = LoggerFactory.getLogger(ConfigsFetcherImage.class);
     public static final String IMAGE_ARGS = "arg.";
 
     private final List<Parser> parser;
@@ -56,7 +54,7 @@ public class ConfigsFetcherImage implements ConfigsFetcher {
         if (containerConfig == null) {
             return;
         }
-        LOG.info("parsing image labels: {}", image.getId());
+        log.info("parsing image labels: {}", image.getId());
         Map<String, String> labels = containerConfig.getLabels();
         if (!CollectionUtils.isEmpty(labels)) {
             Map<String, Object> parsedLabels = new HashMap<>();

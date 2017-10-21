@@ -326,7 +326,7 @@ public final class VersionComparator implements Comparator<String> {
     private int compareStrings(String left, String right) {
         int res = left.compareTo(right);
         // res can be any number, but we need only -1 0 1
-        return res < 0? -1 : (res == 0? 0 : 1);
+        return Integer.compare(res, 0);
     }
 
     public static Builder builder() {

@@ -20,7 +20,6 @@ import com.codeabovelab.dm.cluman.model.ContainerBaseIface;
 import com.codeabovelab.dm.cluman.model.ContainerSource;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.google.common.collect.ImmutableMap;
-import org.springframework.util.Assert;
 
 import java.util.HashMap;
 import java.util.Map;

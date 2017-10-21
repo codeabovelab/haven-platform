@@ -22,7 +22,6 @@ import com.codeabovelab.dm.cluman.security.VirtualAclProvider;
 import com.codeabovelab.dm.cluman.utils.ContainerUtils;
 import com.codeabovelab.dm.common.security.dto.ObjectIdentityData;
 import lombok.AllArgsConstructor;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.acls.model.NotFoundException;
 import org.springframework.stereotype.Component;
 

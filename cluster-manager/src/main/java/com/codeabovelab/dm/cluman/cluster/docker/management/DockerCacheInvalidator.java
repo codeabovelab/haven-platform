@@ -17,13 +17,9 @@
 package com.codeabovelab.dm.cluman.cluster.docker.management;
 
 import com.codeabovelab.dm.cluman.model.ContainerBase;
-import com.codeabovelab.dm.cluman.model.DockerContainer;
 import com.codeabovelab.dm.cluman.model.DockerLogEvent;
-import com.codeabovelab.dm.cluman.model.LogEvent;
 import com.codeabovelab.dm.common.cache.CacheInvalidator;
-import com.codeabovelab.dm.common.mb.ConditionalSubscriptions;
 import com.codeabovelab.dm.common.mb.MessageBus;
-import com.codeabovelab.dm.common.mb.Subscriptions;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.cache.Cache;

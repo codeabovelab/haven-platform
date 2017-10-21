@@ -24,15 +24,14 @@ import com.codeabovelab.dm.cluman.cluster.docker.model.*;
 import com.codeabovelab.dm.cluman.ds.clusters.AbstractNodesGroup;
 import com.codeabovelab.dm.cluman.ds.clusters.ClusterUtils;
 import com.codeabovelab.dm.common.utils.SingleValueCache;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.slf4j.Slf4j;
 
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 
+@Slf4j
 public class NetworkManager {
 
-    private static final Logger LOG = LoggerFactory.getLogger(NetworkManager.class);
     public static final String OVERLAY_DRIVER = "overlay";
     private final SingleValueCache<Map<String, Network>> networksCache;
     private final AbstractNodesGroup<?> group;
@@ -47,7 +46,7 @@ public class NetworkManager {
     private Map<String, Network> loadNetworks() {
         DockerService service = group.getDocker();
         List<Network> networks = service.getNetworks();
-        LOG.debug("Load networks for cluster {}: {}", group.getName(), networks);
+        log.debug("Load networks for cluster {}: {}", group.getName(), networks);
         Map<String, Network> map = new HashMap<>();
         if(networks != null) {
             networks.forEach(network -> map.put(network.getId(), network));
@@ -76,10 +75,10 @@ public class NetworkManager {
     public CreateNetworkResponse createNetwork(CreateNetworkCmd cmd) {
         DockerService service = group.getDocker();
         this.networksCache.invalidate();
-        LOG.debug("About to create network '{}' for cluster '{}'", cmd, group.getName());
+        log.debug("About to create network '{}' for cluster '{}'", cmd, group.getName());
         CreateNetworkResponse res = service.createNetwork(cmd);
         if (res.getCode() == ResultCode.ERROR) {
-            LOG.error("can't create network for cluster {} due: {}", group.getName(), res.getMessage());
+            log.error("can't create network for cluster {} due: {}", group.getName(), res.getMessage());
         }
         return res;
     }
