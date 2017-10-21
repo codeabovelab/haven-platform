@@ -17,7 +17,6 @@
 package com.codeabovelab.dm.cluman.ds.container;
 
 import com.codeabovelab.dm.cluman.cluster.docker.management.DockerService;
-import com.codeabovelab.dm.cluman.cluster.docker.management.DockerServiceImpl;
 import com.codeabovelab.dm.cluman.cluster.docker.management.DockerUtils;
 import com.codeabovelab.dm.cluman.cluster.docker.management.argument.CalcNameArg;
 import com.codeabovelab.dm.cluman.cluster.docker.management.result.*;
@@ -60,7 +59,7 @@ import static com.google.common.base.MoreObjects.firstNonNull;
 @AllArgsConstructor
 @Slf4j
 public class ContainerCreator {
-    private static final Logger LOG = LoggerFactory.getLogger(DockerServiceImpl.class);
+    private static final Logger LOG = LoggerFactory.getLogger(ContainerCreator.class);
     private static final int CREATE_CONTAINER_TRIES = 3;
     private final DiscoveryStorage discoveryStorage;
     private final NodeRegistry nodeRegistry;
@@ -223,7 +222,7 @@ public class ContainerCreator {
         cmd.setName(name);
         cmd.setHostName(MoreObjects.firstNonNull(nc.getHostname(), name));
         cmd.setDomainName(nc.getDomainname());
-        cmd.setEnv(filterEnv(result.getEnvironment()));
+        cmd.setEnv(filterEnv(env));
         cmd.setImage(imageName);
         cmd.setLabels(result.getLabels());
         cmd.getLabels().put(ContainerUtils.LABEL_IMAGE_NAME, imageName);
