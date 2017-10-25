@@ -191,14 +191,16 @@ public class ContainerCreator {
         ImageDescriptor image = getImage(cc);
         String imageName = resolveImageName(nc);
         ContainerSource result = nc;
+        List<String> currentEnvironment = new ArrayList<>(nc.getEnvironment());
+        nc.getEnvironment().clear();
         if (cc.arg.isEnrichConfigs()) {
             result = configProvider.resolveProperties(nc.getCluster(), image, imageName, nc);
         }
         Map<String, Integer> appCountPerNode = getContainersPerNodeForImage(cc, imageName);
         List<String> existsNodes = DockerUtils.listNodes(dockerService.getInfo().getNodeList());
         // we want to save order of entries, but skip duplicates
-        LinkedHashSet<String> env = new LinkedHashSet<>();
-        env.addAll(result.getEnvironment());
+        LinkedHashSet<String> env = new LinkedHashSet<>(result.getEnvironment());
+        env.addAll(currentEnvironment);
         ContainerStarterHelper.calculateConstraints(existsNodes,
           result.getNode(),
           appCountPerNode,
@@ -328,16 +330,24 @@ public class ContainerCreator {
 
         Long mem = arg.getMemoryLimit();
         RestartPolicy restartPolicy = getRestartPolicy(cc, arg);
+        List<String> hostBindings = getHostBindings(arg);
+        Map<String, String> binds = hostBindings.stream()
+                .map(hb -> hb.split(":")).filter(a -> a.length > 1)
+                .collect(Collectors.toMap(a -> a[0].trim(), a -> a[1].trim()));
         HostConfig.HostConfigBuilder builder = HostConfig.builder()
                 .memory(mem)
                 .blkioWeight(arg.getBlkioWeight())
                 .cpuQuota(arg.getCpuQuota())
                 .cpuShares(arg.getCpuShares())
-                .binds(getHostBindings(arg))
+                .binds(hostBindings)
                 .portBindings(getBindings(arg.getPorts()))
                 .publishAllPorts(arg.isPublishAllPorts())
                 .restartPolicy(restartPolicy);
-        builder.mounts(arg.getMounts().stream().map(SourceUtil::fromMountSource).collect(Collectors.toList()));
+        //TODO: fix ugly code
+        builder.mounts(arg.getMounts().stream()
+                .filter(m -> !binds.containsValue(m.getTarget().trim()))
+                .filter(m -> !binds.containsValue(m.getTarget().trim() + "/"))
+                .map(SourceUtil::fromMountSource).collect(Collectors.toList()));
         makeNetwork(cc, arg, builder);
         return builder.build();
     }

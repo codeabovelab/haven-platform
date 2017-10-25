@@ -401,6 +401,7 @@ public class ContainerApi {
         ContainerDetails cd = containers.getContainer(containerId);
         ContainerSource origDetails = new ContainerSource();
         containerSourceFactory.toSource(cd, origDetails);
+        origDetails.setCluster(nodesGroup.getConfig().getName());
         try (ServletOutputStream writer = response.getOutputStream()) {
             ServiceCallResult delres = containers.deleteContainer(DeleteContainerArg.builder().id(containerId).kill(true).build());
             writer.println("Delete container: " + containerId);
