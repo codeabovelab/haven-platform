@@ -18,14 +18,20 @@ package com.codeabovelab.dm.cluman.cluster.registry;
 
 import com.codeabovelab.dm.cluman.cluster.registry.aws.*;
 import com.codeabovelab.dm.cluman.cluster.registry.model.*;
+import com.codeabovelab.dm.cluman.utils.HttpUserAgentInterceptor;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.DisposableBean;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpRequest;
 import org.springframework.http.MediaType;
+import org.springframework.http.client.ClientHttpRequestExecution;
+import org.springframework.http.client.ClientHttpRequestInterceptor;
+import org.springframework.http.client.ClientHttpResponse;
 import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.http.converter.HttpMessageConverter;
 import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
@@ -33,6 +39,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.Assert;
 import org.springframework.web.client.RestTemplate;
 
+import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -119,7 +126,10 @@ public class RegistryFactory implements DisposableBean {
         rf.setReadTimeout(readTimeOut);
         rf.setConnectTimeout(connectTimeOut);
 
-        restTemplate.setInterceptors(Collections.singletonList(new RegistryAuthInterceptor(registryAuthAdapter)));
+        restTemplate.setInterceptors(ImmutableList.of(
+          new RegistryAuthInterceptor(registryAuthAdapter),
+          HttpUserAgentInterceptor.getDefault()
+        ));
 
         for (HttpMessageConverter<?> converter : converters) {
             if (converter instanceof MappingJackson2HttpMessageConverter) {

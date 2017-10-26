@@ -19,7 +19,9 @@ package com.codeabovelab.dm.cluman.cluster.registry;
 import com.codeabovelab.dm.cluman.cluster.registry.model.RegistryAuthAdapter;
 import com.codeabovelab.dm.cluman.cluster.registry.model.RegistryCredentials;
 import com.codeabovelab.dm.cluman.cluster.registry.model.RegistryCredentialsProvider;
+import com.codeabovelab.dm.cluman.utils.HttpUserAgentInterceptor;
 import com.google.common.base.Splitter;
+import com.google.common.collect.ImmutableList;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Value;
@@ -47,6 +49,10 @@ class DockerRegistryAuthAdapter implements RegistryAuthAdapter {
 
     private final RestTemplate restTemplate = new RestTemplate();
     private final RegistryCredentialsProvider provider;
+
+    {
+        restTemplate.setInterceptors(ImmutableList.of(HttpUserAgentInterceptor.getDefault()));
+    }
 
     @Override
     public void handle(AuthContext ctx) {
