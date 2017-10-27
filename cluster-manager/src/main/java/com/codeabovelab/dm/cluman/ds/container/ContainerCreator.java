@@ -31,6 +31,7 @@ import com.codeabovelab.dm.cluman.utils.ContainerUtils;
 import com.codeabovelab.dm.cluman.validate.ExtendedAssert;
 import com.codeabovelab.dm.common.utils.Consumers;
 import com.google.common.base.MoreObjects;
+import com.google.common.base.Splitter;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
@@ -331,9 +332,7 @@ public class ContainerCreator {
         Long mem = arg.getMemoryLimit();
         RestartPolicy restartPolicy = getRestartPolicy(cc, arg);
         List<String> hostBindings = getHostBindings(arg);
-        Map<String, String> binds = hostBindings.stream()
-                .map(hb -> hb.split(":")).filter(a -> a.length > 1)
-                .collect(Collectors.toMap(a -> a[0].trim(), a -> a[1].trim()));
+        Set<String> bindedTargets = getBindedTargets(hostBindings);
         HostConfig.HostConfigBuilder builder = HostConfig.builder()
                 .memory(mem)
                 .blkioWeight(arg.getBlkioWeight())
@@ -343,13 +342,28 @@ public class ContainerCreator {
                 .portBindings(getBindings(arg.getPorts()))
                 .publishAllPorts(arg.isPublishAllPorts())
                 .restartPolicy(restartPolicy);
-        //TODO: fix ugly code
+
         builder.mounts(arg.getMounts().stream()
-                .filter(m -> !binds.containsValue(m.getTarget().trim()))
-                .filter(m -> !binds.containsValue(m.getTarget().trim() + "/"))
+                .filter(m -> !bindedTargets.contains(m.getTarget()))
                 .map(SourceUtil::fromMountSource).collect(Collectors.toList()));
         makeNetwork(cc, arg, builder);
         return builder.build();
+    }
+
+    private Set<String> getBindedTargets(List<String> hostBindings) {
+        Set<String> binds = new HashSet<>();
+        for (String binding : hostBindings) {
+            String[] arr = StringUtils.delimitedListToStringArray(binding, ":");
+            if (arr.length > 1) {
+                String target = arr[1];
+                // remove trailing slashes
+                while(target.endsWith("/") && target.length() > 1) {
+                    target = target.substring(0, target.length() - 1);
+                }
+                binds.add(target);
+            }
+        }
+        return binds;
     }
 
     private void makeNetwork(CreateContainerContext cc, ContainerSource arg, HostConfig.HostConfigBuilder b) {
