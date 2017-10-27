@@ -18,6 +18,7 @@ package com.codeabovelab.dm.cluman.cluster.docker.management;
 
 import com.codeabovelab.dm.cluman.cluster.docker.model.Info;
 import com.codeabovelab.dm.cluman.cluster.docker.model.InfoSwarm;
+import com.codeabovelab.dm.cluman.cluster.docker.model.swarm.Cluster;
 import com.codeabovelab.dm.cluman.model.*;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.util.CollectionUtils;
@@ -223,7 +224,8 @@ class DockerInfoParser {
 
     private SwarmInfo convertSwarm(InfoSwarm src) {
         SwarmInfo.Builder sib = SwarmInfo.builder();
-        String id = src.getCluster().getId();
+        Cluster cluster = src.getCluster();
+        String id = cluster == null? null : cluster.getId();
         if(StringUtils.hasText(id)) {
             // docker can place empty string here
             sib.setClusterId(id);
