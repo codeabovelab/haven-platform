@@ -34,6 +34,7 @@ import com.codeabovelab.dm.common.mb.Subscriptions;
 import com.codeabovelab.dm.common.security.Action;
 import com.codeabovelab.dm.cluman.security.TempAuth;
 import com.codeabovelab.dm.common.utils.Closeables;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -107,6 +108,8 @@ class EventSources {
     public void init() {
         ThreadFactory tf = new ThreadFactoryBuilder().setDaemon(true).setNameFormat(getClass().getSimpleName() + "-%d").build();
         executor = Executors.newCachedThreadPool(tf);
+        // load system subs, it fix issue: "Can not find Subscriptions: 'bus.cluman.errors'"
+        subs.set(ImmutableMap.copyOf(systemSubs));
     }
 
     @PreDestroy
@@ -143,6 +146,7 @@ class EventSources {
             subs.compareAndSet(esuc.getOldMap(), esuc.getNewMap());
             //close outdated subscriptions (do not put it in finally block)
             esuc.free();
+            lastUpdate = System.currentTimeMillis();
         } finally {
             lock.unlock();
         }
