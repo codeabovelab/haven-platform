@@ -30,7 +30,7 @@ class ProcStatCollector implements Collector, Refreshable {
         final long user;
         final long nice;
         final long system;
-        final long ilde;
+        final long idle;
         final long iowait;
 
         Data(String line) {
@@ -51,7 +51,7 @@ class ProcStatCollector implements Collector, Refreshable {
             user = nextLong(iter);
             nice = nextLong(iter);
             system = nextLong(iter);
-            ilde = nextLong(iter);
+            idle = nextLong(iter);
             iowait = nextLong(iter);
         }
     }
@@ -87,9 +87,9 @@ class ProcStatCollector implements Collector, Refreshable {
         if(p == null || c == null) {
             return;
         }
-        float dusage = (c.user - p.user) + (c.nice - p.nice) + (c.system - p.system);
-        float dilde = (c.ilde - p.ilde) + (c.iowait - p.iowait);
-        float cpuLoad = 100f * dusage/(dusage + dilde);
+        float usage = (c.user - p.user) + (c.nice - p.nice) + (c.system - p.system);
+        float idle = (c.idle - p.idle) + (c.iowait - p.iowait);
+        float cpuLoad = 100f * usage/(usage + idle);
         info.setCpuLoad(cpuLoad);
     }
 }

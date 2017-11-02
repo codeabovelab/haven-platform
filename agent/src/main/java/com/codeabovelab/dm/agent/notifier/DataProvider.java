@@ -47,6 +47,7 @@ public class DataProvider {
     }
 
     NotifierData getData() {
+        collector.refresh();
         NotifierData data = new NotifierData();
         data.setName(hostName);
         data.setSystem(collector.getInfo());
