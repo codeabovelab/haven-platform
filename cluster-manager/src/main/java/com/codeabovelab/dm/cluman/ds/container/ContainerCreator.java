@@ -16,38 +16,62 @@
 
 package com.codeabovelab.dm.cluman.ds.container;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.function.Consumer;
+import java.util.stream.Collectors;
+
 import com.codeabovelab.dm.cluman.cluster.docker.management.DockerService;
 import com.codeabovelab.dm.cluman.cluster.docker.management.DockerUtils;
 import com.codeabovelab.dm.cluman.cluster.docker.management.argument.CalcNameArg;
-import com.codeabovelab.dm.cluman.cluster.docker.management.result.*;
+import com.codeabovelab.dm.cluman.cluster.docker.management.result.CreateAndStartContainerResult;
+import com.codeabovelab.dm.cluman.cluster.docker.management.result.ProcessEvent;
 import com.codeabovelab.dm.cluman.cluster.docker.management.result.ResultCode;
-import com.codeabovelab.dm.cluman.cluster.docker.model.*;
+import com.codeabovelab.dm.cluman.cluster.docker.management.result.ServiceCallResult;
+import com.codeabovelab.dm.cluman.cluster.docker.model.ContainerDetails;
+import com.codeabovelab.dm.cluman.cluster.docker.model.CreateContainerCmd;
+import com.codeabovelab.dm.cluman.cluster.docker.model.CreateContainerResponse;
+import com.codeabovelab.dm.cluman.cluster.docker.model.ExposedPort;
+import com.codeabovelab.dm.cluman.cluster.docker.model.ExposedPorts;
+import com.codeabovelab.dm.cluman.cluster.docker.model.HostConfig;
+import com.codeabovelab.dm.cluman.cluster.docker.model.Ports;
+import com.codeabovelab.dm.cluman.cluster.docker.model.RestartPolicy;
 import com.codeabovelab.dm.cluman.configs.container.ConfigProvider;
 import com.codeabovelab.dm.cluman.ds.SwarmUtils;
-import com.codeabovelab.dm.cluman.model.*;
+import com.codeabovelab.dm.cluman.model.ContainerSource;
+import com.codeabovelab.dm.cluman.model.CreateContainerArg;
+import com.codeabovelab.dm.cluman.model.DiscoveryStorage;
+import com.codeabovelab.dm.cluman.model.ImageDescriptor;
+import com.codeabovelab.dm.cluman.model.ImageName;
+import com.codeabovelab.dm.cluman.model.NodeInfo;
+import com.codeabovelab.dm.cluman.model.NodeRegistry;
+import com.codeabovelab.dm.cluman.model.NodesGroup;
 import com.codeabovelab.dm.cluman.source.ContainerSourceFactory;
 import com.codeabovelab.dm.cluman.source.SourceUtil;
 import com.codeabovelab.dm.cluman.utils.ContainerUtils;
 import com.codeabovelab.dm.cluman.validate.ExtendedAssert;
 import com.codeabovelab.dm.common.utils.Consumers;
 import com.google.common.base.MoreObjects;
-import com.google.common.base.Splitter;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import org.springframework.util.Assert;
-import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
-
-import java.util.*;
-import java.util.function.Consumer;
-import java.util.stream.Collectors;
 
 import static com.codeabovelab.dm.cluman.cluster.docker.management.DockerUtils.SCALABLE;
 import static com.codeabovelab.dm.cluman.cluster.docker.model.RestartPolicy.parse;
 import static com.codeabovelab.dm.common.utils.StringUtils.before;
 import static com.google.common.base.MoreObjects.firstNonNull;
+import static org.springframework.util.CollectionUtils.isEmpty;
 
 /**
  * Manager for containers, it use DockerService as backend, but do something things
@@ -230,7 +254,7 @@ public class ContainerCreator {
         cmd.setEntrypoint(convertAndFilter(nc.getEntrypoint()));
         cmd.setHostConfig(getHostConfig(cc, result));
         Ports portBindings = cmd.getHostConfig().getPortBindings();
-        if (portBindings != null && !CollectionUtils.isEmpty(portBindings.getPorts())) {
+        if (portBindings != null && !isEmpty(portBindings.getPorts())) {
             Map<ExposedPort, Ports.Binding[]> bindings = portBindings.getBindings();
             cmd.setExposedPorts(new ExposedPorts(bindings.keySet()));
         }
@@ -246,10 +270,7 @@ public class ContainerCreator {
                 .filter(e -> e.contains("="))
                 .filter(e -> {
                     String before = before(e, '=');
-                    if (before.contains("constraint")) {
-                        return true;
-                    }
-                    return filter.add(before(e, '='));
+                    return before.contains("constraint") || filter.add(before(e, '='));
                 }).toArray(String[]::new);
         log.info("Filtered env {}", Arrays.toString(constraints));
         return constraints;
@@ -294,11 +315,11 @@ public class ContainerCreator {
     }
 
     private String[] convertAndFilter(List<String> strings) {
-        if (CollectionUtils.isEmpty(strings)) {
+        if (isEmpty(strings)) {
             return null;
         }
         List<String> collect = strings.stream().filter(StringUtils::hasText).collect(Collectors.toList());
-        if (CollectionUtils.isEmpty(collect)) {
+        if (isEmpty(collect)) {
             return null;
         }
         return collect.toArray(new String[collect.size()]);
@@ -318,7 +339,7 @@ public class ContainerCreator {
         for (NodeInfo ni : service.getInfo().getNodeList()) {
             String nodeName = ni.getName();
             List<ContainerRegistration> containers = containerStorage.getContainersByNode(ni.getName());
-            if(CollectionUtils.isEmpty(containers)) {
+            if(isEmpty(containers)) {
                 continue;
             }
             int count = (int) containers.stream().filter(c -> imageName.equals(c.getContainer().getImage())).count();
@@ -331,28 +352,27 @@ public class ContainerCreator {
 
         Long mem = arg.getMemoryLimit();
         RestartPolicy restartPolicy = getRestartPolicy(cc, arg);
-        List<String> hostBindings = getHostBindings(arg);
-        Set<String> bindedTargets = getBindedTargets(hostBindings);
+        Targets bindings = getBindedTargets(arg);
         HostConfig.HostConfigBuilder builder = HostConfig.builder()
                 .memory(mem)
                 .blkioWeight(arg.getBlkioWeight())
                 .cpuQuota(arg.getCpuQuota())
                 .cpuShares(arg.getCpuShares())
-                .binds(hostBindings)
+                .binds(bindings.binds)
                 .portBindings(getBindings(arg.getPorts()))
                 .publishAllPorts(arg.isPublishAllPorts())
                 .restartPolicy(restartPolicy);
 
         builder.mounts(arg.getMounts().stream()
-                .filter(m -> !bindedTargets.contains(m.getTarget()))
+                .filter(m -> !bindings.bindTargets.contains(m.getTarget()))
                 .map(SourceUtil::fromMountSource).collect(Collectors.toList()));
         makeNetwork(cc, arg, builder);
         return builder.build();
     }
 
-    private Set<String> getBindedTargets(List<String> hostBindings) {
-        Set<String> binds = new HashSet<>();
-        for (String binding : hostBindings) {
+    private Targets getBindedTargets(ContainerSource arg) {
+        Targets targets = new Targets();
+        for (String binding : isEmpty(arg.getVolumeBinds()) ? Collections.<String>emptyList() : arg.getVolumeBinds()) {
             String[] arr = StringUtils.delimitedListToStringArray(binding, ":");
             if (arr.length > 1) {
                 String target = arr[1];
@@ -360,15 +380,16 @@ public class ContainerCreator {
                 while(target.endsWith("/") && target.length() > 1) {
                     target = target.substring(0, target.length() - 1);
                 }
-                binds.add(target);
+                if (targets.bindTargets.add(target)) {
+                    targets.binds.add(binding);
+                }
             }
         }
-        return binds;
+        return targets;
     }
 
     private void makeNetwork(CreateContainerContext cc, ContainerSource arg, HostConfig.HostConfigBuilder b) {
         String networkSrc = arg.getNetwork();
-        List<String> networksSrc = arg.getNetworks();
         // also we need make support of multiply 'networks'
         if(networkSrc == null) {
             String cluster = arg.getCluster();
@@ -396,14 +417,6 @@ public class ContainerCreator {
         return restartPolicyString == null ? RestartPolicy.noRestart() : parse(restartPolicyString);
     }
 
-    private List<String> getHostBindings(ContainerSource arg) {
-        List<String> volumeBinds = arg.getVolumeBinds();
-        if(volumeBinds == null) {
-            return Collections.emptyList();
-        }
-        return new ArrayList<>(volumeBinds);
-    }
-
     private DockerService getDockerForCluster(String clusterId) {
         return discoveryStorage.getService(clusterId);
     }
@@ -423,6 +436,7 @@ public class ContainerCreator {
         return ports;
     }
 
+    @Data
     private class CreateContainerContext {
         final CreateContainerArg arg;
         final Consumer<ProcessEvent> watcher;
@@ -451,15 +465,11 @@ public class ContainerCreator {
             Assert.notNull(service, "Can not fins service for node: " + node);
             return service;
         }
-
-        public String getName() {
-            return name;
-        }
-
-        public void setName(String name) {
-            this.name = name;
-        }
     }
 
+    private static class Targets {
+        final List<String> binds = new ArrayList<>();
+        final Set<String> bindTargets = new HashSet<>();
+    }
 
 }
