@@ -9,7 +9,7 @@
 
     <groupId>com.codeabovelab.dm</groupId>
     <artifactId>dm-parent</artifactId>
-    <version>1.2.7</version>
+    <version>1.2.8</version>
     <packaging>pom</packaging>
     <name>Haven platform</name>
 
@@ -48,7 +48,7 @@
         <javax.validation.version>1.1.0.Final</javax.validation.version>
 
         <commons-validator.version>1.6</commons-validator.version>
-        <lombok.version>1.16.20</lombok.version>
+        <lombok.version>1.16.16</lombok.version>
 
         <maven-surefire.version>2.18.1</maven-surefire.version>
         <maven-jar.version>3.0.2</maven-jar.version>
@@ -64,7 +64,7 @@
         <guava.version>23.6-jre</guava.version>
         <commons-io.version>2.6</commons-io.version>
         <swagger.version>2.8.0</swagger.version>
-        <netty.version>4.1.19.Final</netty.version>
+        <netty.version>4.1.7.Final</netty.version>
 
         <aws.version>1.11.27</aws.version>
 
@@ -242,32 +242,32 @@
             <dependency>
                 <groupId>com.codeabovelab.dm</groupId>
                 <artifactId>cluster-manager</artifactId>
-                <version>1.2.7</version>
+                <version>1.2.8</version>
             </dependency>
             <dependency>
                 <groupId>com.codeabovelab.dm</groupId>
                 <artifactId>common-utils</artifactId>
-                <version>1.2.7</version>
+                <version>1.2.8</version>
             </dependency>
             <dependency>
                 <groupId>com.codeabovelab.dm</groupId>
                 <artifactId>common-core</artifactId>
-                <version>1.2.7</version>
+                <version>1.2.8</version>
             </dependency>
             <dependency>
                 <groupId>com.codeabovelab.dm</groupId>
                 <artifactId>gateway-common</artifactId>
-                <version>1.2.7</version>
+                <version>1.2.8</version>
             </dependency>
             <dependency>
                 <groupId>com.codeabovelab.dm</groupId>
                 <artifactId>platform-common</artifactId>
-                <version>1.2.7</version>
+                <version>1.2.8</version>
             </dependency>
             <dependency>
                 <groupId>com.codeabovelab.dm</groupId>
                 <artifactId>mail</artifactId>
-                <version>1.2.7</version>
+                <version>1.2.8</version>
             </dependency>
 
             <!--     SPRING     -->
