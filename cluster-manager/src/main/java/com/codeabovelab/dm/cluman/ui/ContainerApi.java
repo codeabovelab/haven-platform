@@ -47,6 +47,7 @@ import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectWriter;
 import com.google.common.util.concurrent.SettableFuture;
+import com.google.common.util.concurrent.Uninterruptibles;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
 import lombok.RequiredArgsConstructor;
@@ -67,6 +68,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
@@ -403,10 +405,12 @@ public class ContainerApi {
         containerSourceFactory.toSource(cd, origDetails);
         origDetails.setCluster(nodesGroup.getConfig().getName());
         try (ServletOutputStream writer = response.getOutputStream()) {
+            writer.println("About to delete container: " + containerId);
             ServiceCallResult delres = containers.deleteContainer(DeleteContainerArg.builder().id(containerId).kill(true).build());
-            writer.println("Delete container: " + containerId);
+            writer.println("Deleted container: " + containerId);
             objectWriter.writeValue(writer, delres);
             writer.println();
+            Uninterruptibles.sleepUninterruptibly(3, TimeUnit.SECONDS);
             createContainerImpl(new CreateContainerArg().container(origDetails).enrichConfigs(true), nodesGroup, writer);
         }
     }
