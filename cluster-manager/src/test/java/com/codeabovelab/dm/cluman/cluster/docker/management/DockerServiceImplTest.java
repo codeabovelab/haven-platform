@@ -28,6 +28,7 @@ import org.springframework.web.client.AsyncRestTemplate;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 
 import static org.mockito.Mockito.mock;
 
@@ -106,7 +107,8 @@ public class DockerServiceImplTest {
         ImageDescriptor image = service.pullImage(imageName, null);
         System.out.println(image);
 
-        ContainerCreationContext context = ContainerCreationContext.builder().cluster("cluster").image(image)
+        ContainerCreationContext context = ContainerCreationContext.builder().cluster("cluster")
+                .containerName(Optional.empty()).image(image)
                 .imageName(imageName).build();
         ConfigsFetcherImage fetcherImage = new ConfigsFetcherImage(Collections.singletonList(new DefaultParser()));
         fetcherImage.resolveProperties(context);

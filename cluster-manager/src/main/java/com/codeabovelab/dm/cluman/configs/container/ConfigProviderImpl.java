@@ -46,7 +46,7 @@ public class ConfigProviderImpl implements ConfigProvider {
     public ContainerSource resolveProperties(String cluster, ImageDescriptor image, String imageName, ContainerSource original) {
 
         ContainerCreationContext context = ContainerCreationContext.builder().cluster(cluster).image(image)
-                .imageName(imageName).build();
+                .imageName(imageName).containerName(Optional.ofNullable(original.getName())).build();
         for (ConfigsFetcher configsFetcher : fetcherList) {
             try {
                 configsFetcher.resolveProperties(context);

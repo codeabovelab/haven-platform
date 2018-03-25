@@ -82,6 +82,7 @@ public class ConfigsFetcherGit implements ConfigsFetcher {
                 ps.parse(path + imageNameWithoutPrefix, context);
                 // search in cluster dir with version
                 ps.parse(path + imageVersionName, context);
+                context.getContainerName().ifPresent(name -> ps.parse(name, context));
             });
         } catch (Exception e) {
             log.error("", e);
