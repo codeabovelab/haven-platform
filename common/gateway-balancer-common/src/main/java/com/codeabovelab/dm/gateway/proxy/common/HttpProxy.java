@@ -45,7 +45,6 @@ import java.util.List;
  */
 public class HttpProxy implements AutoCloseable {
     private static final Logger LOG = LoggerFactory.getLogger(HttpProxy.class);
-    private final static boolean DO_FORWARD_IP = true;
     private final static String FORWARD_HEADER_NAME = "X-Forwarded-For";
     /**
      * User agents shouldn't send the url fragment but what if it does?
@@ -265,14 +264,13 @@ public class HttpProxy implements AutoCloseable {
     private void setXForwardedForHeader(HttpServletRequest servletRequest,
                                         HttpRequest proxyRequest) {
 
-        if (DO_FORWARD_IP) {
-            String newHeader = servletRequest.getRemoteAddr();
-            String existingHeader = servletRequest.getHeader(FORWARD_HEADER_NAME);
-            if (existingHeader != null) {
+        String newHeader = servletRequest.getRemoteAddr();
+        String existingHeader = servletRequest.getHeader(FORWARD_HEADER_NAME);
+        if (existingHeader != null) {
                 newHeader = existingHeader + ", " + newHeader;
-            }
-            proxyRequest.setHeader(FORWARD_HEADER_NAME, newHeader);
         }
+        proxyRequest.setHeader(FORWARD_HEADER_NAME, newHeader);
+        
     }
 
     /**
