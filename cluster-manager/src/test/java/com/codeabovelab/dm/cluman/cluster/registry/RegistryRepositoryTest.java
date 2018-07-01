@@ -5,16 +5,19 @@ import com.codeabovelab.dm.cluman.cluster.registry.data.ImageCatalog;
 import com.codeabovelab.dm.cluman.cluster.registry.data.SearchResult;
 import com.codeabovelab.dm.cluman.cluster.registry.data.Tags;
 import com.codeabovelab.dm.cluman.ds.SwarmsConfig;
+import com.codeabovelab.dm.cluman.model.ImageDescriptor;
+import com.codeabovelab.dm.common.json.JacksonConfiguration;
 import com.codeabovelab.dm.common.kv.KeyValueStorage;
 import com.codeabovelab.dm.common.kv.mapping.KvClassMapper;
 import com.codeabovelab.dm.common.kv.mapping.KvMapperFactory;
-import com.codeabovelab.dm.cluman.model.ImageDescriptor;
-import com.codeabovelab.dm.common.json.JacksonConfiguration;
+import com.codeabovelab.dm.common.mb.ConditionalSubscriptions;
 import com.codeabovelab.dm.common.mb.MessageBus;
 import org.junit.Assert;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.Mockito;
+import org.mockito.stubbing.Answer;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -200,9 +203,13 @@ public class RegistryRepositoryTest {
         public KvMapperFactory kvMapperFactory() {
             KvMapperFactory mapper = mock(KvMapperFactory.class);
             KeyValueStorage storage = mock(KeyValueStorage.class);
-            when(mapper.getStorage()).thenReturn(mock(KeyValueStorage.class));
+            KeyValueStorage keyValueStorage = mock(KeyValueStorage.class);
+            when(mapper.getStorage()).thenReturn(keyValueStorage);
             when(storage.getPrefix()).thenReturn("prefix");
             when(mapper.createClassMapper(anyString(), any(Class.class))).thenReturn(mock(KvClassMapper.class));
+            Mockito.when(mapper.buildClassMapper(any(Class.class))).thenAnswer((Answer) invocation ->
+                    new KvClassMapper.Builder(mapper, (Class) invocation.getArguments()[0]));
+            when(keyValueStorage.subscriptions()).thenReturn(mock(ConditionalSubscriptions.class));
             return mapper;
         }
 
