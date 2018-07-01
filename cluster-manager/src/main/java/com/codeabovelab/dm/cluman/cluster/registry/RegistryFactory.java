@@ -139,6 +139,7 @@ public class RegistryFactory implements DisposableBean {
                 jsonConverter.setSupportedMediaTypes(Arrays.asList(
                   new MediaType("application", "json", MappingJackson2HttpMessageConverter.DEFAULT_CHARSET),
                   new MediaType("application", "*+json", MappingJackson2HttpMessageConverter.DEFAULT_CHARSET),
+                  new MediaType("application", "*+prettyjws", MappingJackson2HttpMessageConverter.DEFAULT_CHARSET),
                   // it need for blobs (with json) from registry
                   new MediaType("application", "octet-stream", MappingJackson2HttpMessageConverter.DEFAULT_CHARSET)
                 ));

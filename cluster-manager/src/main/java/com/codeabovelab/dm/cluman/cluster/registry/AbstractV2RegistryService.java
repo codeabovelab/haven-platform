@@ -38,7 +38,7 @@ import java.net.ConnectException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.text.MessageFormat;
-import java.util.Collections;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.ExecutionException;
@@ -201,7 +201,10 @@ abstract class AbstractV2RegistryService implements RegistryService {
     //"{protocol}://{host}:{port}/v2/{name}/manifests/{reference}
     private Manifest getManifest(String name, String reference) {
         HttpHeaders headers = new HttpHeaders();
-        headers.setAccept(Collections.singletonList(new MediaType("application", "vnd.docker.distribution.manifest.v2+json")));
+        headers.setAccept(Arrays.asList(
+                new MediaType("application", "vnd.docker.distribution.manifest.v2+json"),
+                new MediaType("application", "vnd.docker.distribution.manifest.v2+prettyjws")
+        ));
         HttpEntity entity = new HttpEntity<>(headers);
         URI uri = forName(name).path("/manifests/").path(reference).build().toUri();
         try {
