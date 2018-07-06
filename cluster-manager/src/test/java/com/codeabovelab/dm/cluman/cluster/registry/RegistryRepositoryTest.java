@@ -208,7 +208,7 @@ public class RegistryRepositoryTest {
             when(storage.getPrefix()).thenReturn("prefix");
             when(mapper.createClassMapper(anyString(), any(Class.class))).thenReturn(mock(KvClassMapper.class));
             Mockito.when(mapper.buildClassMapper(any(Class.class))).thenAnswer((Answer) invocation ->
-                    new KvClassMapper.Builder(mapper, (Class) invocation.getArguments()[0]));
+                    KvClassMapper.builder(mapper, (Class) invocation.getArguments()[0]));
             when(keyValueStorage.subscriptions()).thenReturn(mock(ConditionalSubscriptions.class));
             return mapper;
         }
